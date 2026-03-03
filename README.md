@@ -2,6 +2,8 @@
 
 **Day Writer** is a low-friction terminal journaling tool designed for people who live in their command line. It helps you track daily tasks and automatically generate summaries for morning standups or weekly reviews.
 
+[**⬇️ Jump to Commands Reference**](#-command-reference)
+
 ---
 
 ## ✨ Key Features
@@ -63,7 +65,9 @@ Use these commands to record your work and view your history.
 | Command | Description |
 | --- | --- |
 | `dwriter add "message"` | Add a new log entry |
-| `dwriter add "message" --date yesterday` | Add an entry for a specific date |
+| `dwriter add "message" -t TAG` | Add an entry with tags (can use multiple `-t`) |
+| `dwriter add "message" -p PROJECT` | Add an entry with a project name |
+| `dwriter add "message" --date DATE` | Add an entry for a specific date |
 | `dwriter today` | Show all entries logged today |
 | `dwriter` | Show all entries (default view) |
 | `dwriter undo` | Delete the most recent entry |
@@ -109,13 +113,22 @@ Create formatted reports for meetings or documentation.
 | Command | Description |
 | --- | --- |
 | `dwriter standup` | Generate a summary of yesterday's tasks |
-| `dwriter review` | Review entries from the last N days |
+| `dwriter standup -f FORMAT` | Generate standup in specific format (bullets, slack, jira, markdown) |
+| `dwriter standup --no-copy` | Generate standup without copying to clipboard |
+| `dwriter review` | Review entries from the last 5 days (default) |
+| `dwriter review --days N` | Review entries from the last N days |
+| `dwriter review -f FORMAT` | Review in specific format (markdown, plain, slack) |
 | `dwriter stats` | Show logging statistics and your current streak |
 
 #### Examples:
 
 ```bash
 dwriter standup --format slack
+
+```
+
+```bash
+dwriter standup --format jira
 
 ```
 
@@ -131,9 +144,12 @@ Edit your history or customize how the tool behaves.
 | Command | Description |
 | --- | --- |
 | `dwriter edit` | Interactively edit or delete today's entries |
-| `dwriter delete --before DATE` | Bulk delete entries older than a specific date |
+| `dwriter edit -i ID` | Edit a specific entry by ID |
+| `dwriter delete --before DATE` | Bulk delete entries older than a specific date (YYYY-MM-DD) |
 | `dwriter config show` | View your current settings |
 | `dwriter config edit` | Open the configuration file in your editor |
+| `dwriter config reset` | Reset configuration to defaults |
+| `dwriter config path` | Show configuration file path |
 | `dwriter examples` | Display comprehensive usage workflows |
 
 ---
