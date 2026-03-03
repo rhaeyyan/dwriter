@@ -39,8 +39,8 @@ def today(ctx):
         else:
             click.echo(f"{time_str} - {entry.content}")
 
-        if entry.tags:
-            tags_str = " ".join(f"#{t}" for t in entry.tags)
+        if entry.tag_names:
+            tags_str = " ".join(f"#{t}" for t in entry.tag_names)
             click.echo(f"      {tags_str}")
 
         if entry.project:

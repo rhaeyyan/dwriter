@@ -17,8 +17,8 @@ def format_review_markdown(entries_by_date):
         lines.append("")
         for entry in entries:
             line = f"- {entry.content}"
-            if entry.tags:
-                line += f" ({', '.join(f'#{t}' for t in entry.tags)})"
+            if entry.tag_names:
+                line += f" ({', '.join(f'#{t}' for t in entry.tag_names)})"
             if entry.project:
                 line += f" [{entry.project}]"
             lines.append(line)
@@ -35,8 +35,8 @@ def format_review_plain(entries_by_date):
         lines.append("-" * 40)
         for entry in entries:
             line = f"  • {entry.content}"
-            if entry.tags:
-                line += f" ({', '.join(f'#{t}' for t in entry.tags)})"
+            if entry.tag_names:
+                line += f" ({', '.join(f'#{t}' for t in entry.tag_names)})"
             if entry.project:
                 line += f" [{entry.project}]"
             lines.append(line)
@@ -52,8 +52,8 @@ def format_review_slack(entries_by_date):
         lines.append(date_str)
         for entry in entries:
             line = f"  • {entry.content}"
-            if entry.tags:
-                line += f" ({', '.join(f'#{t}' for t in entry.tags)})"
+            if entry.tag_names:
+                line += f" ({', '.join(f'#{t}' for t in entry.tag_names)})"
             if entry.project:
                 line += f" [{entry.project}]"
             lines.append(line)

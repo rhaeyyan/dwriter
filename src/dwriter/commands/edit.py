@@ -74,7 +74,7 @@ def edit(ctx, entry_id: int):
         editable_lines.append("#" + "-" * 60)
 
         for entry in entries:
-            tags_str = ", ".join(entry.tags) if entry.tags else ""
+            tags_str = ", ".join(entry.tag_names) if entry.tag_names else ""
             project_str = entry.project or ""
             line = f"[{entry.id}] {entry.content} | {tags_str} | {project_str}"
             editable_lines.append(line)
