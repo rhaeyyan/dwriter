@@ -63,6 +63,7 @@ Use these commands to record your work and view your history.
 | Command | Description |
 | --- | --- |
 | `dwriter add "message"` | Add a new log entry |
+| `dwriter add "message" --date yesterday` | Add an entry for a specific date |
 | `dwriter today` | Show all entries logged today |
 | `dwriter` | Show all entries (default view) |
 | `dwriter undo` | Delete the most recent entry |
@@ -78,6 +79,28 @@ dwriter add "Fixed the race condition in auth"
 dwriter add "Refactored database layer" -t refactor -t backend -p myapp
 
 ```
+
+```bash
+dwriter add "Finished report" --date yesterday
+
+```
+
+```bash
+dwriter add "Meeting notes" --date "last Friday"
+
+```
+
+```bash
+dwriter add "Completed sprint" --date "3 days ago"
+
+```
+
+**Supported date formats:**
+- Relative: `today`, `yesterday`, `tomorrow`
+- Days/weeks ago: `3 days ago`, `2 weeks ago`
+- Last weekday: `last Monday`, `last Friday`
+- Weekday (most recent): `Monday`, `Friday`
+- Standard dates: `2024-01-15`, `01/15/2024`, `January 15, 2024`
 
 ### Generation and Summaries
 

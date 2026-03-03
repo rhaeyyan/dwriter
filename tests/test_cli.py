@@ -54,6 +54,56 @@ def test_add_command_with_project():
     assert result.exit_code == 0
 
 
+def test_add_command_with_date_yesterday():
+    """Test adding entry with --date yesterday."""
+    runner = CliRunner()
+    result = runner.invoke(main, ["add", "Test task", "--date", "yesterday"])
+
+    assert result.exit_code == 0
+
+
+def test_add_command_with_date_last_friday():
+    """Test adding entry with --date "last Friday"."""
+    runner = CliRunner()
+    result = runner.invoke(
+        main, ["add", "Test task", "--date", "last Friday"]
+    )
+
+    assert result.exit_code == 0
+
+
+def test_add_command_with_date_days_ago():
+    """Test adding entry with --date "3 days ago"."""
+    runner = CliRunner()
+    result = runner.invoke(
+        main, ["add", "Test task", "--date", "3 days ago"]
+    )
+
+    assert result.exit_code == 0
+
+
+def test_add_command_with_date_iso_format():
+    """Test adding entry with --date in ISO format."""
+    runner = CliRunner()
+    result = runner.invoke(
+        main, ["add", "Test task", "--date", "2024-01-15"]
+    )
+
+    assert result.exit_code == 0
+
+
+def test_add_command_with_invalid_date():
+    """Test adding entry with invalid date raises error."""
+    runner = CliRunner()
+    result = runner.invoke(
+        main, ["add", "Test task", "--date", "invalid date"]
+    )
+
+    assert result.exit_code != 0
+    # Click raises ValueError, check the exception info
+    assert "Unable to parse date" in str(result.exception)
+
+
 def test_today_command():
     """Test the today command."""
     runner = CliRunner()
