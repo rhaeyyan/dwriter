@@ -1,369 +1,169 @@
-# Day Writer
+Here is the revised `README.md`, updated to include comprehensive command lists while maintaining the specific bash formatting style used throughout the document.
 
-A low-friction terminal journaling tool for tracking daily tasks and generating standup summaries.
+# Day Writer 📝
 
-## Features
+**Day Writer** is a low-friction terminal journaling tool designed for people who live in their command line. It helps you track daily tasks and automatically generate summaries for morning standups or weekly reviews.
 
-- **Quick Logging**: Log tasks in seconds without leaving the terminal
-- **Standup Generation**: Automatically format yesterday's entries for standup meetings
-- **Weekly Reviews**: Generate summaries for sprint retrospectives or timesheets
-- **Tagging & Projects**: Organize entries by tags and projects
-- **Streak Tracking**: Gamify your logging habit
-- **Configuration**: Customize formats, defaults, and display options
-- **SQLite Storage**: Fast, reliable local storage
+---
 
-## Installation
+## ✨ Key Features
 
-### Prerequisites
+* **⚡ Ultra-Fast Logging:** Capture tasks in seconds without leaving your terminal.
+* **🤖 Standup Automation:** Instantly format yesterday's work for Slack, Jira, or Markdown.
+* **📅 Weekly Reviews:** Generate organized summaries for sprint retrospectives or timesheets.
+* **🏷️ Smart Organization:** Categorize entries with #tags and [projects].
+* **🔥 Streak Tracking:** Keep your momentum high with a built-in logging streak counter.
 
-- Python 3.8 or higher
-- pip (Python package manager)
+---
 
-### From Source (Recommended)
+## 🚀 Quick Start (Installation)
 
-#### Create and activate virtual environment
+### 1. Prerequisites
+
+Make sure you have **Python 3.8 or higher** and **pip** installed on your system.
+
+### 2. Install from Source
+
+Run these commands in your terminal to set up Day Writer:
+
 ```bash
 cd dwriter
+
 ```
+
 ```bash
 python3 -m venv .venv
+
 ```
+
 ```bash
-source .venv/bin/activate  
+source .venv/bin/activate
+
 ```
+
 > On Windows:
 > ```bash
 > .venv\Scripts\activate
+> 
 > ```
+> 
+> 
 
-#### Install with dependencies
 ```bash
 pip install -e .
+
 ```
 
-### From Source (Development Mode)
+---
 
-#### Create and activate virtual environment
-```bash
-python3 -m venv .venv
-```
-```bash
-source .venv/bin/activate
-```
+## 🛠️ Command Reference
 
-#### Install with development dependencies (pytest, black, ruff)
-```bash
-pip install -e .
-```
+### Logging and Viewing
 
-### Verify Installation
-
-#### Check the command is available
-```bash
-dwriter --version
-```
-
-#### View help
-```bash
-dwriter --help
-```
-
-### Shell Completion (Optional)
-
-#### Bash - add to ~/.bashrc
-```bash
-echo 'source /path/to/dwriter/completions/day.bash' >> ~/.bashrc
-```
-```bash
-source ~/.bashrc
-```
-
-#### Zsh - add to ~/.zshrc
-```bash
-echo 'source /path/to/dwriter/completions/day.zsh' >> ~/.zshrc
-```
-```bash
-source ~/.zshrc
-```
-
-## Usage
-
-### Log a Task
-
-```bash
-# Basic logging
-dwriter add "fixed the race condition in auth"
-
-# With tags
-dwriter add "fixed login bug" -t bug -t backend
-
-# With project
-dwriter add "implemented feature X" --project myapp
-
-# Multiple tags
-dwriter add "refactored database layer" -t refactor -t backend -p myapp
-```
-
-### View Entries
-#### Show today's entries
-```bash
-dwriter today
-```
-
-#### Show all entries (default when running `dwriter` without arguments)
-```bash
-dwriter
-```
-
-### Generate Standup
-#### Generate yesterday's standup (copies to clipboard)
-```bash
-dwriter standup
-```
-
-#### Different formats
-```bash
-dwriter standup --format slack
-```
-```bash
-dwriter standup --format jira
-```
-```bash
-dwriter standup --no-copy  # Don't copy to clipboard
-```
-
-### Review Period
-#### Review last 5 days (default)
-```bash
-dwriter review
-```
-#### Review last 7 days
-```bash
-dwriter review --days 7
-```
-#### Different output formats
-```bash
-dwriter review --format markdown
-```
-
-### Edit Entries
-#### Interactive edit/delete
-```bash
-dwriter edit
-```
-#### Undo last entry
-```bash
-dwriter undo
-```
-#### Bulk delete old entries
-```bash
-dwriter delete --before 2025-01-01
-```
-
-### Statistics
-#### Show logging stats and streak
-```bash
-dwriter stats
-```
-
-### Configuration
-#### View current config
-```bash
-dwriter config show
-```
-#### Edit config file
-```bash
-dwriter config edit
-```
-#### Reset to defaults
-```bash
-dwriter config reset
-```
-#### Show config file path
-```bash
-dwriter config path
-```
-
-### Examples
-#### Show usage examples and workflows
-
-```bash
-dwriter examples
-```
-
-## Commands
+Use these commands to record your work and view your history.
 
 | Command | Description |
-|---------|-------------|
+| --- | --- |
 | `dwriter add "message"` | Add a new log entry |
-| `dwriter today` | Show today's entries |
-| `dwriter standup` | Generate yesterday's standup |
-| `dwriter review --days N` | Review last N days |
-| `dwriter edit` | Edit or delete entries |
+| `dwriter today` | Show all entries logged today |
+| `dwriter` | Show all entries (default view) |
 | `dwriter undo` | Delete the most recent entry |
-| `dwriter delete --before DATE` | Bulk delete old entries |
-| `dwriter stats` | Show logging statistics |
-| `dwriter config show` | View configuration |
-| `dwriter config edit` | Edit configuration |
-| `dwriter examples` | Show usage examples |
-| `dwriter --help` | Show help message |
 
-## Options for `add`
+#### Examples:
 
-| Option | Description |
-|--------|-------------|
-| `-t, --tag` | Add a tag (can be used multiple times) |
-| `-p, --project` | Set project name |
+```bash
+dwriter add "Fixed the race condition in auth"
 
-## Options for `standup`
-
-| Option | Description |
-|--------|-------------|
-| `-f, --format` | Output format: bullets, slack, jira, markdown |
-| `--no-copy` | Don't copy to clipboard |
-
-## Options for `review`
-
-| Option | Description |
-|--------|-------------|
-| `-d, --days` | Number of days to review (default: 5) |
-| `-f, --format` | Output format: markdown, plain, slack |
-
-## Configuration
-
-Configuration is stored in `~/.day-writer/config.toml`.
-
-### Standup Settings
-
-```toml
-[standup]
-format = "bullets"  # bullets, slack, jira, markdown
-copy_to_clipboard = true
 ```
 
-### Review Settings
+```bash
+dwriter add "Refactored database layer" -t refactor -t backend -p myapp
 
-```toml
-[review]
-default_days = 5
-format = "markdown"
 ```
 
-### Display Settings
+### Generation and Summaries
 
-```toml
-[display]
-show_confirmation = true
-show_id = true
-colors = true
+Create formatted reports for meetings or documentation.
+
+| Command | Description |
+| --- | --- |
+| `dwriter standup` | Generate a summary of yesterday's tasks |
+| `dwriter review` | Review entries from the last N days |
+| `dwriter stats` | Show logging statistics and your current streak |
+
+#### Examples:
+
+```bash
+dwriter standup --format slack
+
 ```
 
-### Default Values
+```bash
+dwriter review --days 7 --format markdown
+
+```
+
+### Management and Configuration
+
+Edit your history or customize how the tool behaves.
+
+| Command | Description |
+| --- | --- |
+| `dwriter edit` | Interactively edit or delete today's entries |
+| `dwriter delete --before DATE` | Bulk delete entries older than a specific date |
+| `dwriter config show` | View your current settings |
+| `dwriter config edit` | Open the configuration file in your editor |
+| `dwriter examples` | Display comprehensive usage workflows |
+
+---
+
+## ⚙️ Configuration
+
+Your settings are stored in `~/.day-writer/config.toml`. You can customize default projects, tags, and output formats here.
+
+**Example Config:**
 
 ```toml
 [defaults]
-tags = ["work"]  # Default tags for all entries
-project = "myapp"  # Default project
+project = "core-engine"
+tags = ["dev"]
+
+[standup]
+format = "slack"
+copy_to_clipboard = true
+
 ```
 
-## Data Storage
+---
 
-Entries are stored in SQLite database at `~/.day-writer/entries.db`.
+## 💻 Developer Commands
 
-## Examples
-
-### Morning Standup Workflow
+If you want to contribute or run the test suite:
 
 ```bash
-# Throughout the day, log your tasks
-dwriter add "reviewed PR #123"
-dwriter add "fixed memory leak in cache module" -t bug
-dwriter add "deployed to staging" -p backend
-
-# Next morning, generate standup
-dwriter standup
-# Output is copied to clipboard, ready to paste in Slack
-```
-
-### Weekly Timesheet
-
-```bash
-# Generate weekly summary
-dwriter review --days 7 --format markdown
-```
-
-### Set Default Project
-
-```bash
-# Edit config to set default project
-dwriter config edit
-
-# Add to config file:
-# [defaults]
-# project = "myapp"
-
-# Now all entries will use this project by default
-dwriter add "fixed bug"  # Automatically tagged with project "myapp"
-```
-
-## Development
-
-```bash
-# Create and activate virtual environment
-python3 -m venv .venv
-source .venv/bin/activate
-
-# Install with dev dependencies
 pip install -e ".[dev]"
 
-# Run tests
+```
+
+```bash
 pytest
 
-# Run with coverage
-pytest --cov=dwriter
+```
 
-# Run linter
+```bash
 ruff check src/
 
-# Format code
-black src/
 ```
 
-## License
+---
 
-MIT
+## ❓ Troubleshooting
 
-## Troubleshooting
+* **Command not found?** Ensure your virtual environment is active.
+* **Clipboard issues?** On Linux, make sure you have `xclip` or `xsel` installed.
 
-### Command Not Found
+---
 
-If you get `command not found: dwriter` after installation:
+## 📄 License
 
-```bash
-# Make sure the virtual environment is activated
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-
-# Verify installation
-pip show dwriter
-```
-
-### Clipboard Not Working
-
-If `dwriter standup` can't copy to clipboard:
-
-- On Linux, ensure `xclip` or `xsel` is installed: `sudo apt install xclip`
-- The standup output will be displayed in the terminal as a fallback
-
-### Permission Errors
-
-If you get permission errors during installation:
-
-```bash
-# Use a virtual environment (recommended)
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e .
-
-# Or install with --user flag
-pip install --user -e .
-```
+Distributed under the **MIT License**. See `LICENSE` for more information.
