@@ -32,7 +32,7 @@ class TestDatabase:
 
         assert entry.id == 1
         assert entry.content == "Test entry"
-        assert entry.tags == ["test", "demo"]
+        assert entry.tag_names == ["test", "demo"]
         assert entry.project == "test-project"
         assert isinstance(entry.created_at, datetime)
 
@@ -57,7 +57,7 @@ class TestDatabase:
 
         assert retrieved.id == added.id
         assert retrieved.content == added.content
-        assert retrieved.tags == added.tags
+        assert retrieved.tag_names == added.tag_names
         assert retrieved.project == added.project
 
     def test_get_entry_not_found(self, temp_db):
@@ -108,7 +108,7 @@ class TestDatabase:
         )
 
         assert updated.content == "Updated"
-        assert updated.tags == ["new"]
+        assert updated.tag_names == ["new"]
         assert updated.project == "new-project"
 
     def test_update_entry_partial(self, temp_db):
@@ -122,7 +122,7 @@ class TestDatabase:
         updated = temp_db.update_entry(entry.id, content="New content only")
 
         assert updated.content == "New content only"
-        assert updated.tags == ["tag1"]  # Unchanged
+        assert updated.tag_names == ["tag1"]  # Unchanged
         assert updated.project == "proj"  # Unchanged
 
     def test_get_latest_entry(self, temp_db):
@@ -181,16 +181,17 @@ class TestDatabase:
         assert all(isinstance(d, datetime) for d in dates)
 
     def test_entry_dataclass(self):
-        """Test the Entry dataclass."""
+        """Test the Entry model tag_names property."""
         entry = Entry(
             id=1,
             content="Test",
             created_at=datetime.now(),
-            tags=["a", "b"],
             project="test",
         )
-
+        # Entry is now a SQLAlchemy model - tags are Tag objects
+        # The tag_names property provides string access
         assert entry.id == 1
         assert entry.content == "Test"
-        assert entry.tags == ["a", "b"]
         assert entry.project == "test"
+        assert entry.tags == []
+        assert entry.tag_names == []

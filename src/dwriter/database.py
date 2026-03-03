@@ -1,41 +1,87 @@
 """Database layer for Day Writer.
 
 This module handles all SQLite database operations for storing and retrieving
-journal entries.
+journal entries using SQLAlchemy 2.0.
 """
 
-import sqlite3
-from contextlib import contextmanager
-from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Generator, List, Optional
+from typing import List, Optional
+
+from sqlalchemy import (
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    create_engine,
+    select,
+    delete,
+    func,
+)
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    Mapped,
+    mapped_column,
+    relationship,
+    sessionmaker,
+    Session,
+)
 
 
-@dataclass
-class Entry:
-    """Represents a journal entry.
+class Base(DeclarativeBase):
+    """Base class for SQLAlchemy models."""
 
-    Attributes:
-        id: Unique identifier for the entry.
-        content: The text content of the entry.
-        created_at: Timestamp when the entry was created.
-        tags: List of tags associated with the entry.
-        project: Optional project name.
-    """
+    pass
 
-    id: int
-    content: str
-    created_at: datetime
-    tags: List[str]
-    project: Optional[str] = None
+
+class Tag(Base):
+    """Represents a tag associated with a journal entry."""
+
+    __tablename__ = "tags"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    entry_id: Mapped[int] = mapped_column(
+        ForeignKey("entries.id", ondelete="CASCADE")
+    )
+    name: Mapped[str] = mapped_column(String, index=True)
+
+    entry: Mapped["Entry"] = relationship(back_populates="tags")
+
+
+class Entry(Base):
+    """Represents a journal entry."""
+
+    __tablename__ = "entries"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    project: Mapped[Optional[str]] = mapped_column(String)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=func.now(), index=True
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=func.now(), onupdate=func.now()
+    )
+
+    tags: Mapped[List["Tag"]] = relationship(
+        back_populates="entry",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+    )
+
+    @property
+    def tag_names(self) -> List[str]:
+        """Return tag names as a list of strings."""
+        return [tag.name for tag in self.tags]
 
 
 class Database:
     """SQLite database manager for Day Writer entries.
 
     This class handles database connections, schema management, and CRUD
-    operations for journal entries.
+    operations for journal entries using SQLAlchemy.
 
     Attributes:
         db_path: Path to the SQLite database file.
@@ -53,61 +99,25 @@ class Database:
             data_dir.mkdir(parents=True, exist_ok=True)
             db_path = data_dir / "entries.db"
 
-        self.db_path = db_path
-        self._init_schema()
+        self.engine = create_engine(f"sqlite:///{db_path}")
+        Base.metadata.create_all(self.engine)
+        self.Session = sessionmaker(bind=self.engine)
 
-    @contextmanager
-    def connection(self) -> Generator[sqlite3.Connection, None, None]:
-        """Context manager for database connections.
+    def connection(self):
+        """Return a raw SQLite connection for low-level operations.
 
-        Yields:
+        Returns:
             A sqlite3.Connection object.
+
+        Note:
+            This is provided for backward compatibility and advanced use cases.
+            Prefer using the high-level methods when possible.
         """
-        conn = sqlite3.connect(str(self.db_path))
+        import sqlite3
+
+        conn = sqlite3.connect(str(self.engine.url.database))
         conn.row_factory = sqlite3.Row
-        try:
-            yield conn
-        finally:
-            conn.close()
-
-    def _init_schema(self) -> None:
-        """Initialize the database schema."""
-        with self.connection() as conn:
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS entries (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    content TEXT NOT NULL,
-                    created_at TIMESTAMP DEFAULT (datetime('now', 'localtime')),
-                    project TEXT,
-                    updated_at TIMESTAMP DEFAULT (datetime('now', 'localtime'))
-                )
-            """)
-
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS tags (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    entry_id INTEGER NOT NULL,
-                    name TEXT NOT NULL,
-                    FOREIGN KEY (entry_id) REFERENCES entries(id) ON DELETE CASCADE
-                )
-            """)
-
-            conn.execute("""
-                CREATE INDEX IF NOT EXISTS idx_entries_created_at
-                ON entries(created_at)
-            """)
-
-            conn.execute("""
-                CREATE INDEX IF NOT EXISTS idx_tags_entry_id
-                ON tags(entry_id)
-            """)
-
-            conn.execute("""
-                CREATE INDEX IF NOT EXISTS idx_tags_name
-                ON tags(name)
-            """)
-
-            conn.commit()
+        return conn
 
     def add_entry(
         self,
@@ -125,23 +135,14 @@ class Database:
         Returns:
             The created Entry object.
         """
-        with self.connection() as conn:
-            cursor = conn.execute(
-                "INSERT INTO entries (content, project) VALUES (?, ?)",
-                (content, project),
-            )
-            entry_id = cursor.lastrowid
-
+        with self.Session() as session:
+            entry = Entry(content=content, project=project)
             if tags:
-                for tag in tags:
-                    conn.execute(
-                        "INSERT INTO tags (entry_id, name) VALUES (?, ?)",
-                        (entry_id, tag),
-                    )
-
-            conn.commit()
-
-            return self.get_entry(entry_id)
+                entry.tags = [Tag(name=t) for t in tags]
+            session.add(entry)
+            session.commit()
+            session.refresh(entry)
+            return entry
 
     def get_entry(self, entry_id: int) -> Entry:
         """Retrieve a single entry by ID.
@@ -155,29 +156,13 @@ class Database:
         Raises:
             ValueError: If no entry exists with the given ID.
         """
-        with self.connection() as conn:
-            row = conn.execute(
-                "SELECT * FROM entries WHERE id = ?", (entry_id,)
-            ).fetchone()
+        with self.Session() as session:
+            entry = session.get(Entry, entry_id)
+            if not entry:
+                raise ValueError(f"Entry with id {entry_id} not found")
+            return entry
 
-            if row is None:
-                msg = f"Entry with id {entry_id} not found"
-                raise ValueError(msg)
-
-            tags = self._get_tags_for_entry(conn, entry_id)
-
-            return Entry(
-                id=row["id"],
-                content=row["content"],
-                created_at=datetime.fromisoformat(row["created_at"]),
-                tags=tags,
-                project=row["project"],
-            )
-
-    def get_entries_by_date(
-        self,
-        date: datetime,
-    ) -> List[Entry]:
+    def get_entries_by_date(self, date: datetime) -> List[Entry]:
         """Retrieve all entries for a specific date.
 
         Args:
@@ -186,38 +171,17 @@ class Database:
         Returns:
             A list of Entry objects for the specified date.
         """
-        with self.connection() as conn:
-            # Use SQLite's DATE function for reliable date comparison
-            date_str = date.strftime("%Y-%m-%d")
-
-            rows = conn.execute(
-                """
-                SELECT * FROM entries
-                WHERE DATE(created_at) = ?
-                ORDER BY created_at ASC
-                """,
-                (date_str,),
-            ).fetchall()
-
-            entries = []
-            for row in rows:
-                tags = self._get_tags_for_entry(conn, row["id"])
-                entries.append(
-                    Entry(
-                        id=row["id"],
-                        content=row["content"],
-                        created_at=datetime.fromisoformat(row["created_at"]),
-                        tags=tags,
-                        project=row["project"],
-                    )
-                )
-
-            return entries
+        with self.Session() as session:
+            # Filters entries by date portion of created_at
+            stmt = (
+                select(Entry)
+                .where(func.date(Entry.created_at) == date.date())
+                .order_by(Entry.created_at)
+            )
+            return list(session.scalars(stmt).all())
 
     def get_entries_in_range(
-        self,
-        start_date: datetime,
-        end_date: datetime,
+        self, start_date: datetime, end_date: datetime
     ) -> List[Entry]:
         """Retrieve entries within a date range.
 
@@ -228,30 +192,13 @@ class Database:
         Returns:
             A list of Entry objects within the specified range.
         """
-        with self.connection() as conn:
-            rows = conn.execute(
-                """
-                SELECT * FROM entries
-                WHERE created_at >= ? AND created_at <= ?
-                ORDER BY created_at ASC
-                """,
-                (start_date.isoformat(), end_date.isoformat()),
-            ).fetchall()
-
-            entries = []
-            for row in rows:
-                tags = self._get_tags_for_entry(conn, row["id"])
-                entries.append(
-                    Entry(
-                        id=row["id"],
-                        content=row["content"],
-                        created_at=datetime.fromisoformat(row["created_at"]),
-                        tags=tags,
-                        project=row["project"],
-                    )
-                )
-
-            return entries
+        with self.Session() as session:
+            stmt = (
+                select(Entry)
+                .where(Entry.created_at.between(start_date, end_date))
+                .order_by(Entry.created_at)
+            )
+            return list(session.scalars(stmt).all())
 
     def get_latest_entry(self) -> Optional[Entry]:
         """Retrieve the most recent entry.
@@ -259,23 +206,10 @@ class Database:
         Returns:
             The most recent Entry, or None if no entries exist.
         """
-        with self.connection() as conn:
-            row = conn.execute(
-                "SELECT * FROM entries ORDER BY created_at DESC LIMIT 1"
-            ).fetchone()
-
-            if row is None:
-                return None
-
-            tags = self._get_tags_for_entry(conn, row["id"])
-
-            return Entry(
-                id=row["id"],
-                content=row["content"],
-                created_at=datetime.fromisoformat(row["created_at"]),
-                tags=tags,
-                project=row["project"],
-            )
+        with self.Session() as session:
+            return session.scalars(
+                select(Entry).order_by(Entry.created_at.desc()).limit(1)
+            ).first()
 
     def delete_entry(self, entry_id: int) -> bool:
         """Delete an entry by ID.
@@ -286,10 +220,13 @@ class Database:
         Returns:
             True if the entry was deleted, False if it didn't exist.
         """
-        with self.connection() as conn:
-            cursor = conn.execute("DELETE FROM entries WHERE id = ?", (entry_id,))
-            conn.commit()
-            return cursor.rowcount > 0
+        with self.Session() as session:
+            entry = session.get(Entry, entry_id)
+            if entry:
+                session.delete(entry)
+                session.commit()
+                return True
+            return False
 
     def update_entry(
         self,
@@ -312,31 +249,21 @@ class Database:
         Raises:
             ValueError: If no entry exists with the given ID.
         """
-        with self.connection() as conn:
-            if content is not None or project is not None:
-                current = self.get_entry(entry_id)
-                new_content = content if content is not None else current.content
-                new_project = project if project is not None else current.project
+        with self.Session() as session:
+            entry = session.get(Entry, entry_id)
+            if not entry:
+                raise ValueError(f"Entry {entry_id} not found")
 
-                conn.execute(
-                    """
-                    UPDATE entries
-                    SET content = ?, project = ?, updated_at = CURRENT_TIMESTAMP
-                    WHERE id = ?
-                    """,
-                    (new_content, new_project, entry_id),
-                )
-
+            if content is not None:
+                entry.content = content
+            if project is not None:
+                entry.project = project
             if tags is not None:
-                conn.execute("DELETE FROM tags WHERE entry_id = ?", (entry_id,))
-                for tag in tags:
-                    conn.execute(
-                        "INSERT INTO tags (entry_id, name) VALUES (?, ?)",
-                        (entry_id, tag),
-                    )
+                entry.tags = [Tag(name=t) for t in tags]
 
-            conn.commit()
-            return self.get_entry(entry_id)
+            session.commit()
+            session.refresh(entry)
+            return entry
 
     def delete_entries_before(self, before_date: datetime) -> int:
         """Delete all entries before a specific date.
@@ -347,13 +274,11 @@ class Database:
         Returns:
             The number of entries deleted.
         """
-        with self.connection() as conn:
-            cursor = conn.execute(
-                "DELETE FROM entries WHERE created_at < ?",
-                (before_date.isoformat(),),
-            )
-            conn.commit()
-            return cursor.rowcount
+        with self.Session() as session:
+            stmt = delete(Entry).where(Entry.created_at < before_date)
+            result = session.execute(stmt)
+            session.commit()
+            return result.rowcount or 0
 
     def get_all_entries_count(self) -> int:
         """Get the total count of all entries.
@@ -361,9 +286,8 @@ class Database:
         Returns:
             The total number of entries in the database.
         """
-        with self.connection() as conn:
-            row = conn.execute("SELECT COUNT(*) as count FROM entries").fetchone()
-            return row["count"]
+        with self.Session() as session:
+            return session.scalar(select(func.count(Entry.id)))
 
     def get_entries_with_streaks(self) -> List[datetime]:
         """Get dates with entries for streak calculation.
@@ -371,30 +295,16 @@ class Database:
         Returns:
             A list of unique dates (datetime objects) that have entries.
         """
-        with self.connection() as conn:
-            rows = conn.execute("""
-                SELECT DISTINCT DATE(created_at) as entry_date
-                FROM entries
-                ORDER BY entry_date DESC
-                """).fetchall()
-
-            return [datetime.strptime(row["entry_date"], "%Y-%m-%d") for row in rows]
-
-    def _get_tags_for_entry(
-        self,
-        conn: sqlite3.Connection,
-        entry_id: int,
-    ) -> List[str]:
-        """Retrieve tags for a specific entry.
-
-        Args:
-            conn: Database connection.
-            entry_id: The entry ID to get tags for.
-
-        Returns:
-            A list of tag names.
-        """
-        rows = conn.execute(
-            "SELECT name FROM tags WHERE entry_id = ?", (entry_id,)
-        ).fetchall()
-        return [row["name"] for row in rows]
+        with self.Session() as session:
+            # Returns distinct dates with entries
+            stmt = (
+                select(func.date(Entry.created_at))
+                .distinct()
+                .order_by(Entry.created_at.desc())
+            )
+            date_strings = session.scalars(stmt).all()
+            return [
+                datetime.strptime(d, "%Y-%m-%d")
+                for d in date_strings
+                if d
+            ]
