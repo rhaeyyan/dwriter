@@ -21,48 +21,64 @@ A low-friction terminal journaling tool for tracking daily tasks and generating 
 
 ### From Source (Recommended)
 
+#### Create and activate virtual environment
 ```bash
-# Clone or navigate to the project directory
 cd dwriter
-
-# Create a virtual environment (recommended)
+```
+```bash
 python3 -m venv .venv
+```
+```bash
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+```
 
-# Install with dependencies
+#### Install with dependencies
+```bash
 pip install -e .
 ```
 
 ### From Source (Development Mode)
 
+#### Create and activate virtual environment
 ```bash
-# Create and activate virtual environment
 python3 -m venv .venv
+```
+```bash
 source .venv/bin/activate
+```
 
-# Install with development dependencies (pytest, black, ruff)
+#### Install with development dependencies (pytest, black, ruff)
+```bash
 pip install -e .
 ```
 
 ### Verify Installation
 
+#### Check the command is available
 ```bash
-# Check the command is available
 dwriter --version
+```
 
-# View help
+#### View help
+```bash
 dwriter --help
 ```
 
 ### Shell Completion (Optional)
 
+#### Bash - add to ~/.bashrc
 ```bash
-# Bash - add to ~/.bashrc
 echo 'source /path/to/dwriter/completions/day.bash' >> ~/.bashrc
+```
+```bash
 source ~/.bashrc
+```
 
-# Zsh - add to ~/.zshrc
+#### Zsh - add to ~/.zshrc
+```bash
 echo 'source /path/to/dwriter/completions/day.zsh' >> ~/.zshrc
+```
+```bash
 source ~/.zshrc
 ```
 
