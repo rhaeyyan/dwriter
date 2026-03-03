@@ -29,8 +29,12 @@ cd dwriter
 python3 -m venv .venv
 ```
 ```bash
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+source .venv/bin/activate  
 ```
+> On Windows:
+> ```bash
+> .venv\Scripts\activate
+> ```
 
 #### Install with dependencies
 ```bash
@@ -101,80 +105,89 @@ dwriter add "refactored database layer" -t refactor -t backend -p myapp
 ```
 
 ### View Entries
-
+#### Show today's entries
 ```bash
-# Show today's entries
 dwriter today
+```
 
-# Show all entries (default when running `dwriter` without arguments)
+#### Show all entries (default when running `dwriter` without arguments)
+```bash
 dwriter
 ```
 
 ### Generate Standup
-
+#### Generate yesterday's standup (copies to clipboard)
 ```bash
-# Generate yesterday's standup (copies to clipboard)
 dwriter standup
+```
 
-# Different formats
+#### Different formats
+```bash
 dwriter standup --format slack
+```
+```bash
 dwriter standup --format jira
+```
+```bash
 dwriter standup --no-copy  # Don't copy to clipboard
 ```
 
 ### Review Period
-
+#### Review last 5 days (default)
 ```bash
-# Review last 5 days (default)
 dwriter review
-
-# Review last 7 days
+```
+#### Review last 7 days
+```bash
 dwriter review --days 7
-
-# Different output formats
+```
+#### Different output formats
+```bash
 dwriter review --format markdown
 ```
 
 ### Edit Entries
-
+#### Interactive edit/delete
 ```bash
-# Interactive edit/delete
 dwriter edit
-
-# Undo last entry
+```
+#### Undo last entry
+```bash
 dwriter undo
-
-# Bulk delete old entries
+```
+#### Bulk delete old entries
+```bash
 dwriter delete --before 2025-01-01
 ```
 
 ### Statistics
-
+#### Show logging stats and streak
 ```bash
-# Show logging stats and streak
 dwriter stats
 ```
 
 ### Configuration
-
+#### View current config
 ```bash
-# View current config
 dwriter config show
-
-# Edit config file
+```
+#### Edit config file
+```bash
 dwriter config edit
-
-# Reset to defaults
+```
+#### Reset to defaults
+```bash
 dwriter config reset
-
-# Show config file path
+```
+#### Show config file path
+```bash
 dwriter config path
 ```
 
 ### Examples
+#### Show usage examples and workflows
 
 ```bash
-# Show usage examples and workflows
 dwriter examples
 ```
 
