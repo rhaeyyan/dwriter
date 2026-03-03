@@ -41,7 +41,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 
 # Install with development dependencies (pytest, black, ruff)
-pip install -e ".[dev]"
+pip install -e .
 ```
 
 ### Verify Installation
