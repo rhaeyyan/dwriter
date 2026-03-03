@@ -1,5 +1,3 @@
-Here is the revised `README.md`, updated to include comprehensive command lists while maintaining the specific bash formatting style used throughout the document.
-
 # Day Writer 📝
 
 **Day Writer** is a low-friction terminal journaling tool designed for people who live in their command line. It helps you track daily tasks and automatically generate summaries for morning standups or weekly reviews.
