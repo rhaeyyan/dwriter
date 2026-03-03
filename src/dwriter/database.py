@@ -9,16 +9,14 @@ from pathlib import Path
 from typing import List, Optional
 
 from sqlalchemy import (
-    Column,
     DateTime,
     ForeignKey,
-    Integer,
     String,
     Text,
     create_engine,
-    select,
     delete,
     func,
+    select,
 )
 from sqlalchemy.orm import (
     DeclarativeBase,
@@ -26,7 +24,6 @@ from sqlalchemy.orm import (
     mapped_column,
     relationship,
     sessionmaker,
-    Session,
 )
 
 
@@ -124,6 +121,7 @@ class Database:
         content: str,
         tags: Optional[List[str]] = None,
         project: Optional[str] = None,
+        created_at: Optional[datetime] = None,
     ) -> Entry:
         """Add a new journal entry.
 
@@ -131,6 +129,8 @@ class Database:
             content: The text content of the entry.
             tags: Optional list of tags to associate with the entry.
             project: Optional project name.
+            created_at: Optional datetime for the entry. If not provided,
+                uses the current time.
 
         Returns:
             The created Entry object.
@@ -139,6 +139,8 @@ class Database:
             entry = Entry(content=content, project=project)
             if tags:
                 entry.tags = [Tag(name=t) for t in tags]
+            if created_at is not None:
+                entry.created_at = created_at
             session.add(entry)
             session.commit()
             session.refresh(entry)

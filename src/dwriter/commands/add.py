@@ -4,6 +4,7 @@ import click
 
 from ..config import ConfigManager
 from ..database import Database
+from ..date_utils import parse_date_or_default
 
 
 @click.command()
@@ -22,8 +23,16 @@ from ..database import Database
     default=None,
     help="Set project name",
 )
+@click.option(
+    "-d",
+    "--date",
+    "date_str",
+    default=None,
+    help="Set entry date using natural language (e.g., 'yesterday', "
+    "'last Friday', '3 days ago') or standard date format (YYYY-MM-DD)",
+)
 @click.pass_context
-def add(ctx, content: str, tags: tuple, project: str):
+def add(ctx, content: str, tags: tuple, project: str, date_str: str):
     """Add a new log entry.
 
     CONTENT: The text content of your log entry.
@@ -36,6 +45,12 @@ def add(ctx, content: str, tags: tuple, project: str):
         dwriter add "implemented feature X" --project myapp
 
         dwriter add "refactored database layer" -t refactor -t backend -p myapp
+
+        dwriter add "Finished report" --date yesterday
+
+        dwriter add "Meeting notes" --date "last Friday"
+
+        dwriter add "Completed sprint" --date "3 days ago"
     """
     db = Database()
     config_manager = ConfigManager()
@@ -48,7 +63,12 @@ def add(ctx, content: str, tags: tuple, project: str):
     if project is None and config.defaults.project:
         project = config.defaults.project
 
-    entry = db.add_entry(content=content, tags=all_tags, project=project)
+    # Parse the date (or use current time if not provided)
+    entry_date = parse_date_or_default(date_str)
+
+    entry = db.add_entry(
+        content=content, tags=all_tags, project=project, created_at=entry_date
+    )
 
     if config.display.show_confirmation:
         click.echo(click.style("✅", fg="green") + f" Logged: {entry.content}")
@@ -59,3 +79,6 @@ def add(ctx, content: str, tags: tuple, project: str):
 
         if entry.project:
             click.echo(f"  Project: {entry.project}")
+
+        if date_str:
+            click.echo(f"  Date: {entry.created_at.strftime('%Y-%m-%d')}")
