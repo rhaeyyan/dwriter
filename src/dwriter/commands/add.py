@@ -53,8 +53,8 @@ def add(ctx, content: str, tags: tuple, project: str):
     if config.display.show_confirmation:
         click.echo(click.style("✅", fg="green") + f" Logged: {entry.content}")
 
-        if entry.tags:
-            tags_str = ", ".join(f"#{t}" for t in entry.tags)
+        if entry.tag_names:
+            tags_str = ", ".join(f"#{t}" for t in entry.tag_names)
             click.echo(f"  Tags: {tags_str}")
 
         if entry.project:
