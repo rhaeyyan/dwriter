@@ -8,18 +8,20 @@ from dwriter.commands.standup import (
     format_standup_markdown,
     format_standup_slack,
 )
-from dwriter.database import Entry
+from dwriter.database import Entry, Tag
 
 
 def create_test_entry(content, tags=None, project=None):
     """Helper to create test entries."""
-    return Entry(
+    entry = Entry(
         id=1,
         content=content,
         created_at=datetime.now(),
-        tags=tags or [],
         project=project,
     )
+    if tags:
+        entry.tags = [Tag(name=t) for t in tags]
+    return entry
 
 
 def test_format_bullets_basic():

@@ -14,7 +14,7 @@ def format_standup_bullets(entries):
     for entry in entries:
         line = f"- {entry.content}"
         if entry.tags:
-            line += f" ({', '.join(f'#{t}' for t in entry.tags)})"
+            line += f" ({', '.join(f'#{tag.name}' for tag in entry.tags)})"
         if entry.project:
             line += f" [{entry.project}]"
         lines.append(line)
@@ -27,7 +27,7 @@ def format_standup_slack(entries):
     for entry in entries:
         line = f"• {entry.content}"
         if entry.tags:
-            line += f" ({', '.join(f'#{t}' for t in entry.tags)})"
+            line += f" ({', '.join(f'#{tag.name}' for tag in entry.tags)})"
         if entry.project:
             line += f" [{entry.project}]"
         lines.append(line)
@@ -40,7 +40,7 @@ def format_standup_jira(entries):
     for entry in entries:
         line = f"* {entry.content}"
         if entry.tags:
-            line += f" ({', '.join(f'#{t}' for t in entry.tags)})"
+            line += f" ({', '.join(f'#{tag.name}' for tag in entry.tags)})"
         if entry.project:
             line += f" [{entry.project}]"
         lines.append(line)
@@ -53,7 +53,7 @@ def format_standup_markdown(entries):
     for entry in entries:
         line = f"- {entry.content}"
         if entry.tags:
-            line += f" ({', '.join(f'#{t}' for t in entry.tags)})"
+            line += f" ({', '.join(f'#{tag.name}' for tag in entry.tags)})"
         if entry.project:
             line += f" [{entry.project}]"
         lines.append(line)
