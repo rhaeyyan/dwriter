@@ -155,11 +155,77 @@ Edit your history or customize how the tool behaves.
 | `dwriter config path` | Show configuration file path |
 | `dwriter examples` | Display comprehensive usage workflows |
 
+### Task Management (Todo)
+
+Manage future tasks and to-dos. When a task is marked as done, it automatically generates a daily log entry.
+
+| Command | Description |
+| --- | --- |
+| `dwriter todo add "task"` | Add a new pending task |
+| `dwriter todo add "task" -t TAG` | Add a task with tags |
+| `dwriter todo add "task" -p PROJECT` | Add a task with a project |
+| `dwriter todo add "task" --priority LEVEL` | Set task priority (low, normal, high, critical) |
+| `dwriter todo list` | List all pending tasks |
+| `dwriter todo list --all` | Show all tasks, including completed ones |
+| `dwriter todo done ID` | Mark a task as complete and log it to today's entries |
+| `dwriter todo rm ID` | Delete a task entirely |
+| `dwriter todo edit ID` | Edit a task's content interactively |
+
+#### Examples:
+
+```bash
+dwriter todo add "Draft new relic ideas" -p Mainframe_Mayhem
+
+```
+
+```bash
+dwriter todo add "Fix card draw bug" --priority critical -t bug
+
+```
+
+```bash
+dwriter todo list
+
+```
+
+```bash
+dwriter todo done 5
+
+```
+
+### Focus Timer (Pomodoro)
+
+Run a focus timer and log the result when finished.
+
+| Command | Description |
+| --- | --- |
+| `dwriter focus` | Start a 25-minute focus timer |
+| `dwriter focus MINUTES` | Start a custom duration timer |
+| `dwriter focus MINUTES -t TAG` | Add tags to the resulting entry |
+| `dwriter focus MINUTES -p PROJECT` | Add project to the resulting entry |
+
+#### Examples:
+
+```bash
+dwriter focus
+
+```
+
+```bash
+dwriter focus 30
+
+```
+
+```bash
+dwriter focus 45 -t deepwork -p backend
+
+```
+
 ---
 
 ## ⚙️ Configuration
 
-Your settings are stored in `~/.day-writer/config.toml`. You can customize default projects, tags, and output formats here.
+Your settings are stored in `~/.day-writer/config.toml`. You can customize default projects, tags, output formats, and display preferences here.
 
 **Example Config:**
 
@@ -172,7 +238,30 @@ tags = ["dev"]
 format = "slack"
 copy_to_clipboard = true
 
+[review]
+default_days = 7
+format = "markdown"
+
+[display]
+show_confirmation = true
+show_id = true
+colors = true
+
 ```
+
+**Configuration Options:**
+
+| Section | Option | Description | Default |
+| --- | --- | --- | --- |
+| `[defaults]` | `project` | Default project for new entries | `null` |
+| `[defaults]` | `tags` | Default tags for new entries | `[]` |
+| `[standup]` | `format` | Default standup format (bullets, slack, jira, markdown) | `"bullets"` |
+| `[standup]` | `copy_to_clipboard` | Auto-copy standup to clipboard | `true` |
+| `[review]` | `default_days` | Default number of days to review | `5` |
+| `[review]` | `format` | Default review format (markdown, plain, slack) | `"markdown"` |
+| `[display]` | `show_confirmation` | Show confirmation after adding entries | `true` |
+| `[display]` | `show_id` | Show entry IDs in output | `true` |
+| `[display]` | `colors` | Enable colored output | `true` |
 
 ---
 
@@ -194,6 +283,28 @@ pytest
 ruff check src/
 
 ```
+
+### Shell Completions
+
+Day Writer includes shell completion scripts for Bash and Zsh for faster command entry.
+
+**For Bash:**
+
+```bash
+source completions/day.bash
+
+```
+
+Add to your `~/.bashrc` for persistent completions.
+
+**For Zsh:**
+
+```bash
+source completions/day.zsh
+
+```
+
+Add to your `~/.zshrc` for persistent completions.
 
 ---
 
