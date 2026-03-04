@@ -90,16 +90,21 @@ def search(
     if matched_entries:
         ctx.console.print("[bold magenta][ENTRIES][/bold magenta]")
         for entry, score in matched_entries:
-            date_str = entry.created_at.strftime("%Y-%m-%d | %I:%M %p")
+            date_str = entry.created_at.strftime("%Y-%m-%d")
+            time_str = entry.created_at.strftime("%I:%M %p")
             score_str = format_score(score)
             tags_str = ""
             if entry.tag_names:
-                tags_str = f" [dim]| {', '.join(entry.tag_names)}[/dim]"
-            project_str = f" [dim]| {entry.project}[/dim]" if entry.project else ""
+                tags_str = " ".join(f"[#ffae00]#[/]{t}" for t in entry.tag_names)
+            project_str = f" [purple]Project:[/purple] {entry.project}" if entry.project else ""
             ctx.console.print(
-                f"[[cyan]{entry.id}[/cyan]] {date_str}: {entry.content}"
-                f"{tags_str}{project_str} (Match: {score_str})"
+                f"[magenta][{entry.id}][/magenta] {date_str} | [#23c76b]{time_str}[/#23c76b]: {entry.content}"
             )
+            if tags_str:
+                ctx.console.print(f"    [#ffae00]Tags:[/#ffae00] {tags_str}")
+            if project_str:
+                ctx.console.print(f"    {project_str}")
+            ctx.console.print(f"    [dim](Match: {score_str})[/dim]")
         ctx.console.print()
 
     if matched_todos:
