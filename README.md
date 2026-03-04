@@ -16,6 +16,9 @@
 * **📅 Weekly Reviews:** Generate organized summaries for sprint retrospectives or timesheets.
 * **🏷️ Smart Organization:** Categorize entries with #tags and [projects].
 * **🔥 Streak Tracking:** Keep your momentum high with a built-in logging streak counter.
+* **🔍 Fuzzy Search:** Find past entries and tasks with typo-tolerant fuzzy matching.
+* **⏱️ Focus Timer:** Built-in Pomodoro timer that auto-logs completed sessions.
+* **✅ Todo Management:** Track pending tasks with priorities and auto-log when completed.
 
 ---
 
@@ -220,6 +223,45 @@ dwriter focus 30
 dwriter focus 45 -t deepwork -p backend
 
 ```
+
+### Search
+
+Fuzzy search your journal entries and to-do tasks. Forgiving of typos and partial matches.
+
+| Command | Description |
+| --- | --- |
+| `dwriter search "query"` | Fuzzy search entries and todos |
+| `dwriter search "query" -p PROJECT` | Filter by project before searching |
+| `dwriter search "query" -t TAG` | Filter by tags before searching (can use multiple `-t`) |
+| `dwriter search "query" --type TYPE` | Restrict search to `entry`, `todo`, or `all` |
+| `dwriter search "query" -n LIMIT` | Limit number of results per category |
+
+#### Examples:
+
+```bash
+dwriter search "auth bug"
+
+```
+
+```bash
+dwriter search "refactor" -p Mainframe_Mayhem
+
+```
+
+```bash
+dwriter search "cache" --type todo
+
+```
+
+```bash
+dwriter search "meeting" -t work -t notes
+
+```
+
+**Match Scores:**
+- 🟢 **90%+** (green): Excellent match
+- 🟡 **75%+** (yellow): Good match
+- ⚪ **60%+** (dim): Partial match
 
 ---
 
