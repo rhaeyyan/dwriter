@@ -36,7 +36,7 @@ def todo():
 )
 @click.option(
     "--priority",
-    type=click.Choice(["low", "normal", "high", "critical"]),
+    type=click.Choice(["low", "normal", "high", "urgent"]),
     default="normal",
     help="Set task priority",
 )
@@ -49,7 +49,7 @@ def todo_add(ctx: AppContext, content: str, tags: tuple, project: str, priority:
     Examples:
         dwriter todo add "Draft new relic ideas" -p Mainframe_Mayhem
 
-        dwriter todo add "Fix card draw bug" --priority critical -t bug
+        dwriter todo add "Fix card draw bug" --priority urgent -t bug
     """
     all_tags = list(ctx.config.defaults.tags) + list(tags)
     if project is None and ctx.config.defaults.project:
@@ -63,7 +63,7 @@ def todo_add(ctx: AppContext, content: str, tags: tuple, project: str, priority:
     )
 
     priority_colors = {
-        "critical": "bold red",
+        "urgent": "bold red",
         "high": "yellow",
         "normal": "white",
         "low": "dim",
@@ -107,7 +107,7 @@ def todo_list(ctx: AppContext, show_all: bool):
     table.add_column("Tags", style="#ffae00")
 
     priority_styles = {
-        "critical": ("[bold red]CRITICAL[/bold red]", "bold red"),
+        "urgent": ("[bold red]URGENT[/bold red]", "bold red"),
         "high": ("[yellow]HIGH[/yellow]", "yellow"),
         "normal": ("NORMAL", "white"),
         "low": ("[dim]LOW[/dim]", "dim"),
