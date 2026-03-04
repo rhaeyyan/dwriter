@@ -5,6 +5,7 @@ from .config import config
 from .delete import delete
 from .edit import edit
 from .examples import examples
+from .focus import focus
 from .review import review
 from .standup import standup
 from .stats import stats
@@ -17,6 +18,7 @@ __all__ = [
     "delete",
     "edit",
     "examples",
+    "focus",
     "review",
     "stats",
     "standup",
