@@ -47,8 +47,9 @@ def search_items(
     )
 
     # Map back to original objects
+    # RapidFuzz 3.x returns (choice_value, score, metadata) tuples
     matched_items = []
-    for item_id, score in results:
+    for _, score, item_id in results:
         original_item = next(i for i in items if i.id == item_id)
         matched_items.append((original_item, score))
 
