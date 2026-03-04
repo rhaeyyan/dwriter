@@ -28,18 +28,21 @@ def today(ctx: AppContext):
     ctx.console.print("-" * 40)
 
     for entry in entries:
+        date_str = entry.created_at.strftime("%Y-%m-%d")
         time_str = entry.created_at.strftime("%I:%M %p")
 
         if ctx.config.display.show_id:
-            ctx.console.print(f"[cyan][{entry.id}][/cyan] {time_str} - {entry.content}")
+            ctx.console.print(
+                f"[magenta][{entry.id}][/magenta] {date_str} | [#23c76b]{time_str}[/#23c76b]: {entry.content}"
+            )
         else:
-            ctx.console.print(f"{time_str} - {entry.content}")
+            ctx.console.print(f"{date_str} | [#23c76b]{time_str}[/#23c76b]: {entry.content}")
 
         if entry.tag_names:
-            tags_str = " ".join(f"#{t}" for t in entry.tag_names)
-            ctx.console.print(f"      {tags_str}")
+            tags_str = " ".join(f"[#ffae00]#[/]{t}" for t in entry.tag_names)
+            ctx.console.print(f"    [#ffae00]Tags:[/#ffae00] {tags_str}")
 
         if entry.project:
-            ctx.console.print(f"      Project: {entry.project}")
+            ctx.console.print(f"    [purple]Project:[/purple] {entry.project}")
 
         ctx.console.print()

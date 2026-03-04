@@ -11,11 +11,12 @@ def format_standup_bullets(entries):
     """Format entries as bullet points."""
     lines = []
     for entry in entries:
-        line = f"- {entry.content}"
+        time_str = entry.created_at.strftime("%I:%M %p")
+        line = f"[#23c76b]{time_str}[/#23c76b] - {entry.content}"
         if entry.tags:
-            line += f" ({', '.join(f'#{tag.name}' for tag in entry.tags)})"
+            line += f" ({', '.join(f'[#ffae00]#[/]{tag.name}' for tag in entry.tags)})"
         if entry.project:
-            line += f" [{entry.project}]"
+            line += f" [magenta]{entry.project}[/magenta]"
         lines.append(line)
     return "\n".join(lines)
 
@@ -24,11 +25,12 @@ def format_standup_slack(entries):
     """Format entries for Slack."""
     lines = []
     for entry in entries:
-        line = f"• {entry.content}"
+        time_str = entry.created_at.strftime("%I:%M %p")
+        line = f"[#23c76b]{time_str}[/#23c76b] • {entry.content}"
         if entry.tags:
-            line += f" ({', '.join(f'#{tag.name}' for tag in entry.tags)})"
+            line += f" ({', '.join(f'[#ffae00]#[/]{tag.name}' for tag in entry.tags)})"
         if entry.project:
-            line += f" [{entry.project}]"
+            line += f" [magenta]{entry.project}[/magenta]"
         lines.append(line)
     return "\n".join(lines)
 
@@ -37,11 +39,12 @@ def format_standup_jira(entries):
     """Format entries for Jira."""
     lines = []
     for entry in entries:
-        line = f"* {entry.content}"
+        time_str = entry.created_at.strftime("%I:%M %p")
+        line = f"[#23c76b]{time_str}[/#23c76b] * {entry.content}"
         if entry.tags:
-            line += f" ({', '.join(f'#{tag.name}' for tag in entry.tags)})"
+            line += f" ({', '.join(f'[#ffae00]#[/]{tag.name}' for tag in entry.tags)})"
         if entry.project:
-            line += f" [{entry.project}]"
+            line += f" [magenta]{entry.project}[/magenta]"
         lines.append(line)
     return "\n".join(lines)
 
@@ -50,11 +53,12 @@ def format_standup_markdown(entries):
     """Format entries as Markdown."""
     lines = []
     for entry in entries:
-        line = f"- {entry.content}"
+        time_str = entry.created_at.strftime("%I:%M %p")
+        line = f"[#23c76b]{time_str}[/#23c76b] - {entry.content}"
         if entry.tags:
-            line += f" ({', '.join(f'#{tag.name}' for tag in entry.tags)})"
+            line += f" ({', '.join(f'[#ffae00]#[/]{tag.name}' for tag in entry.tags)})"
         if entry.project:
-            line += f" [{entry.project}]"
+            line += f" [magenta]{entry.project}[/magenta]"
         lines.append(line)
     return "\n".join(lines)
 

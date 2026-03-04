@@ -15,12 +15,14 @@ def format_review_markdown(entries_by_date):
         lines.append(f"## {date_str}")
         lines.append("")
         for entry in entries:
-            line = f"- {entry.content}"
-            if entry.tag_names:
-                line += f" ({', '.join(f'#{t}' for t in entry.tag_names)})"
-            if entry.project:
-                line += f" [{entry.project}]"
+            time_str = entry.created_at.strftime("%I:%M %p")
+            line = f"- {date.strftime('%Y-%m-%d')} | [#23c76b]{time_str}[/#23c76b]: {entry.content}"
             lines.append(line)
+            if entry.tag_names:
+                tags_str = " ".join(f"[#ffae00]#[/]{t}" for t in entry.tag_names)
+                lines.append(f"  - [#ffae00]Tags:[/#ffae00] {tags_str}")
+            if entry.project:
+                lines.append(f"  - [purple]Project:[/purple] {entry.project}")
         lines.append("")
     return "\n".join(lines)
 
@@ -30,15 +32,17 @@ def format_review_plain(entries_by_date):
     lines = []
     for date, entries in entries_by_date.items():
         date_str = date.strftime("%A, %Y-%m-%d")
-        lines.append(f"{date_str}")
+        lines.append(f"[green]{date_str}[/green]")
         lines.append("-" * 40)
         for entry in entries:
-            line = f"  • {entry.content}"
-            if entry.tag_names:
-                line += f" ({', '.join(f'#{t}' for t in entry.tag_names)})"
-            if entry.project:
-                line += f" [{entry.project}]"
+            time_str = entry.created_at.strftime("%I:%M %p")
+            line = f"  {date.strftime('%Y-%m-%d')} | [#23c76b]{time_str}[/#23c76b]: {entry.content}"
             lines.append(line)
+            if entry.tag_names:
+                tags_str = " ".join(f"[#ffae00]#[/]{t}" for t in entry.tag_names)
+                lines.append(f"    [#ffae00]Tags:[/#ffae00] {tags_str}")
+            if entry.project:
+                lines.append(f"    [purple]Project:[/purple] {entry.project}")
         lines.append("")
     return "\n".join(lines)
 
@@ -48,14 +52,16 @@ def format_review_slack(entries_by_date):
     lines = []
     for date, entries in entries_by_date.items():
         date_str = date.strftime("*%A, %Y-%m-%d*")
-        lines.append(date_str)
+        lines.append(f"[green]{date_str}[/green]")
         for entry in entries:
-            line = f"  • {entry.content}"
-            if entry.tag_names:
-                line += f" ({', '.join(f'#{t}' for t in entry.tag_names)})"
-            if entry.project:
-                line += f" [{entry.project}]"
+            time_str = entry.created_at.strftime("%I:%M %p")
+            line = f"  {date.strftime('%Y-%m-%d')} | [#23c76b]{time_str}[/#23c76b]: {entry.content}"
             lines.append(line)
+            if entry.tag_names:
+                tags_str = " ".join(f"[#ffae00]#[/]{t}" for t in entry.tag_names)
+                lines.append(f"    [#ffae00]Tags:[/#ffae00] {tags_str}")
+            if entry.project:
+                lines.append(f"    [purple]Project:[/purple] {entry.project}")
         lines.append("")
     return "\n".join(lines)
 

@@ -72,9 +72,11 @@ def edit(ctx: AppContext, entry_id: int):
         editable_lines.append("#" + "-" * 60)
 
         for entry in entries:
+            date_str = entry.created_at.strftime("%Y-%m-%d")
+            time_str = entry.created_at.strftime("%I:%M %p")
             tags_str = ", ".join(entry.tag_names) if entry.tag_names else ""
             project_str = entry.project or ""
-            line = f"[{entry.id}] {entry.content} | {tags_str} | {project_str}"
+            line = f"[{entry.id}] {date_str} | {time_str}: {entry.content} | {tags_str} | {project_str}"
             editable_lines.append(line)
 
         edited_text = click.edit("\n".join(editable_lines))

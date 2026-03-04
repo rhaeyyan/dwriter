@@ -62,7 +62,8 @@ def delete(ctx: AppContext, before_date: str):
 
     for entry in entries[:10]:  # Show first 10
         date_str = entry.created_at.strftime("%Y-%m-%d")
-        ctx.console.print(f"  [{entry.id}] {date_str}: {entry.content}")
+        time_str = entry.created_at.strftime("%I:%M [bold]%p[/bold]")
+        ctx.console.print(f"  [{entry.id}] {date_str} | {time_str}: `{entry.content}`")
 
     if len(entries) > 10:
         ctx.console.print(f"  ... and {len(entries) - 10} more")
