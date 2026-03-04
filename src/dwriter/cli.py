@@ -4,8 +4,56 @@ This module provides the main entry point for the dwriter CLI application.
 """
 
 import click
+from rich.console import Console
 
 from . import __version__
+from .config import ConfigManager
+from .database import Database
+
+
+class DWriterError(Exception):
+    """Base exception for Day Writer errors."""
+
+    pass
+
+
+class DatabaseError(DWriterError):
+    """Exception raised for database-related errors."""
+
+    pass
+
+
+class ConfigError(DWriterError):
+    """Exception raised for configuration-related errors."""
+
+    pass
+
+
+class AppContext:
+    """Application context for dependency injection.
+
+    This class holds shared instances of Console, ConfigManager, and Database
+    that are injected into CLI commands via Click's context mechanism.
+
+    Attributes:
+        console: Rich console for formatted output.
+        config: Configuration manager instance.
+        db: Database instance.
+    """
+
+    def __init__(self):
+        """Initialize the application context."""
+        self.console = Console()
+        try:
+            self.config_manager = ConfigManager()
+            self.config = self.config_manager.load()
+        except Exception as e:
+            raise ConfigError(f"Failed to load configuration: {e}")
+
+        try:
+            self.db = Database()
+        except Exception as e:
+            raise DatabaseError(f"Failed to initialize database: {e}")
 
 
 @click.group(invoke_without_command=True)
@@ -25,6 +73,13 @@ def main(ctx):
 
         dwriter review --days 7
     """
+    try:
+        ctx.obj = AppContext()
+    except DWriterError as e:
+        console = Console()
+        console.print(f"[bold red]Error:[/bold red] {e}")
+        ctx.exit(1)
+
     if ctx.invoked_subcommand is None:
         from .commands import today
 

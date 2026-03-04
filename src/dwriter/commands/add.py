@@ -2,8 +2,7 @@
 
 import click
 
-from ..config import ConfigManager
-from ..database import Database
+from ..cli import AppContext
 from ..date_utils import parse_date_or_default
 
 
@@ -31,8 +30,8 @@ from ..date_utils import parse_date_or_default
     help="Set entry date using natural language (e.g., 'yesterday', "
     "'last Friday', '3 days ago') or standard date format (YYYY-MM-DD)",
 )
-@click.pass_context
-def add(ctx, content: str, tags: tuple, project: str, date_str: str):
+@click.pass_obj
+def add(ctx: AppContext, content: str, tags: tuple, project: str, date_str: str):
     """Add a new log entry.
 
     CONTENT: The text content of your log entry.
@@ -52,33 +51,29 @@ def add(ctx, content: str, tags: tuple, project: str, date_str: str):
 
         dwriter add "Completed sprint" --date "3 days ago"
     """
-    db = Database()
-    config_manager = ConfigManager()
-    config = config_manager.load()
-
     # Merge default tags with provided tags
-    all_tags = list(config.defaults.tags) + list(tags)
+    all_tags = list(ctx.config.defaults.tags) + list(tags)
 
     # Use default project if none provided
-    if project is None and config.defaults.project:
-        project = config.defaults.project
+    if project is None and ctx.config.defaults.project:
+        project = ctx.config.defaults.project
 
     # Parse the date (or use current time if not provided)
     entry_date = parse_date_or_default(date_str)
 
-    entry = db.add_entry(
+    entry = ctx.db.add_entry(
         content=content, tags=all_tags, project=project, created_at=entry_date
     )
 
-    if config.display.show_confirmation:
-        click.echo(click.style("✅", fg="green") + f" Logged: {entry.content}")
+    if ctx.config.display.show_confirmation:
+        ctx.console.print(f"[green]✅[/green] Logged: {entry.content}")
 
         if entry.tag_names:
             tags_str = ", ".join(f"#{t}" for t in entry.tag_names)
-            click.echo(f"  Tags: {tags_str}")
+            ctx.console.print(f"  Tags: {tags_str}")
 
         if entry.project:
-            click.echo(f"  Project: {entry.project}")
+            ctx.console.print(f"  Project: {entry.project}")
 
         if date_str:
-            click.echo(f"  Date: {entry.created_at.strftime('%Y-%m-%d')}")
+            ctx.console.print(f"  Date: {entry.created_at.strftime('%Y-%m-%d')}")
