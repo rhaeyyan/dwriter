@@ -466,7 +466,7 @@ class Database:
     def get_todos(self, status: Optional[str] = "pending") -> List[Todo]:
         """Retrieve tasks, optionally filtered by status.
 
-        Results are ordered by priority (critical > high > normal > low)
+        Results are ordered by priority (urgent > high > normal > low)
         and then by creation date (newest first).
         """
         with self.Session() as session:
@@ -475,9 +475,9 @@ class Database:
             if status:
                 stmt = stmt.where(Todo.status == status)
 
-            # Order by priority (critical=1, high=2, normal=3, low=4) then by date
+            # Order by priority (urgent=1, high=2, normal=3, low=4) then by date
             priority_order = case(
-                (Todo.priority == "critical", 1),
+                (Todo.priority == "urgent", 1),
                 (Todo.priority == "high", 2),
                 (Todo.priority == "normal", 3),
                 (Todo.priority == "low", 4),
