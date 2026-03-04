@@ -164,7 +164,7 @@ Manage future tasks and to-dos. When a task is marked as done, it automatically 
 | `dwriter todo add "task"` | Add a new pending task |
 | `dwriter todo add "task" -t TAG` | Add a task with tags |
 | `dwriter todo add "task" -p PROJECT` | Add a task with a project |
-| `dwriter todo add "task" --priority LEVEL` | Set task priority (low, normal, high, critical) |
+| `dwriter todo add "task" --priority LEVEL` | Set task priority (low, normal, high, urgent) |
 | `dwriter todo list` | List all pending tasks |
 | `dwriter todo list --all` | Show all tasks, including completed ones |
 | `dwriter todo done ID` | Mark a task as complete and log it to today's entries |
@@ -179,7 +179,7 @@ dwriter todo add "Draft new relic ideas" -p Mainframe_Mayhem
 ```
 
 ```bash
-dwriter todo add "Fix card draw bug" --priority critical -t bug
+dwriter todo add "Fix card draw bug" --priority urgent -t bug
 
 ```
 
