@@ -5,6 +5,7 @@ from datetime import datetime
 import click
 
 from ..cli import AppContext
+from ..search_utils import find_multiple_matches
 
 
 @click.command()
@@ -16,8 +17,15 @@ from ..cli import AppContext
     default=None,
     help="Edit a specific entry by ID",
 )
+@click.option(
+    "-s",
+    "--search",
+    "search_query",
+    default=None,
+    help="Search for an entry by text (fuzzy match)",
+)
 @click.pass_obj
-def edit(ctx: AppContext, entry_id: int):
+def edit(ctx: AppContext, entry_id: int, search_query: str):
     """Edit or delete entries interactively.
 
     Opens today's entries in your default text editor for bulk editing,
@@ -27,7 +35,49 @@ def edit(ctx: AppContext, entry_id: int):
         dwriter edit
 
         dwriter edit --id 42
+
+        dwriter edit --search "redis cache"
     """
+    # Handle search-based editing
+    if search_query is not None:
+        entries = ctx.db.get_all_entries()
+        matches = find_multiple_matches(search_query, entries, limit=5, threshold=60)
+
+        if not matches:
+            ctx.console.print(
+                f"[red]![/red] No entries found matching \"{search_query}\"."
+            )
+            return
+
+        if len(matches) == 1:
+            # Single high-confidence match
+            entry, score = matches[0]
+            ctx.console.print(
+                f"[green]Found match:[/green] [{entry.id}] {entry.content} "
+                f"(Match: {int(score)}%)"
+            )
+            entry_id = entry.id
+        else:
+            # Multiple matches - ask user to select
+            ctx.console.print(
+                f"[yellow]Multiple matches found for \"{search_query}\":[/yellow]"
+            )
+            for i, (entry, score) in enumerate(matches, 1):
+                date_str = entry.created_at.strftime("%Y-%m-%d")
+                ctx.console.print(
+                    f"  {i}. [[cyan]{entry.id}[/cyan]] {date_str}: {entry.content} "
+                    f"[dim]({int(score)}%)[/dim]"
+                )
+
+            choice = click.prompt(
+                "Which entry do you want to edit? [1-5]", type=int, default=1
+            )
+            if choice < 1 or choice > len(matches):
+                ctx.console.print("[red]Invalid selection.[/red]")
+                return
+            entry, _ = matches[choice - 1]
+            entry_id = entry.id
+
     if entry_id is not None:
         # Edit specific entry
         try:
@@ -76,7 +126,10 @@ def edit(ctx: AppContext, entry_id: int):
             time_str = entry.created_at.strftime("%I:%M %p")
             tags_str = ", ".join(entry.tag_names) if entry.tag_names else ""
             project_str = entry.project or ""
-            line = f"[{entry.id}] {date_str} | {time_str}: {entry.content} | {tags_str} | {project_str}"
+            line = (
+                f"[{entry.id}] {date_str} | {time_str}: {entry.content} | "
+                f"{tags_str} | {project_str}"
+            )
             editable_lines.append(line)
 
         edited_text = click.edit("\n".join(editable_lines))

@@ -418,6 +418,50 @@ class Database:
         with self.Session() as session:
             return session.scalar(select(func.count(Entry.id)))
 
+    def get_all_entries(
+        self,
+        project: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+    ) -> List[Entry]:
+        """Retrieve all entries, optionally filtered by project and/or tags.
+
+        Args:
+            project: Optional project name to filter by.
+            tags: Optional list of tag names to filter by.
+
+        Returns:
+            A list of Entry objects, ordered by creation date (newest first).
+        """
+        with self.Session() as session:
+            stmt = select(Entry).order_by(Entry.created_at.desc())
+            if project:
+                stmt = stmt.where(Entry.project == project)
+            if tags:
+                stmt = stmt.join(Tag).where(Tag.name.in_(tags))
+            return list(session.scalars(stmt).all())
+
+    def get_all_todos(
+        self,
+        project: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+    ) -> List[Todo]:
+        """Retrieve all todos, optionally filtered by project and/or tags.
+
+        Args:
+            project: Optional project name to filter by.
+            tags: Optional list of tag names to filter by.
+
+        Returns:
+            A list of Todo objects, ordered by priority and creation date.
+        """
+        with self.Session() as session:
+            stmt = select(Todo).order_by(Todo.created_at.desc())
+            if project:
+                stmt = stmt.where(Todo.project == project)
+            if tags:
+                stmt = stmt.join(TodoTag).where(TodoTag.name.in_(tags))
+            return list(session.scalars(stmt).all())
+
     def get_entries_with_tags_count(self) -> Dict[str, int]:
         """Get entry counts grouped by tag.
 

@@ -6,6 +6,7 @@ import click
 from rich.table import Table
 
 from ..cli import AppContext
+from ..search_utils import find_multiple_matches
 
 
 @click.group()
@@ -137,14 +138,80 @@ def todo_list(ctx: AppContext, show_all: bool):
 
 
 @todo.command("done")
-@click.argument("task_id", type=int)
+@click.argument("task_identifier")
+@click.option(
+    "-s",
+    "--search",
+    "use_search",
+    is_flag=True,
+    help="Use fuzzy search to find the task by text instead of ID",
+)
 @click.pass_obj
-def todo_done(ctx: AppContext, task_id: int):
+def todo_done(ctx: AppContext, task_identifier: str, use_search: bool):
     """Mark a task as complete and log it.
+
+    TASK_IDENTIFIER: Task ID (number) or search text if using --search.
 
     This completes the task and automatically creates a new daily log
     entry with the task's content, tags, and project.
+
+    Examples:
+        dwriter todo done 42
+
+        dwriter todo done "write tests cache" --search
     """
+    # Determine task ID or search for it
+    task_id = None
+    if use_search:
+        todos = ctx.db.get_todos(status="pending")
+        matches = find_multiple_matches(task_identifier, todos, limit=5, threshold=60)
+
+        if not matches:
+            ctx.console.print(
+                f"[red]![/red] No tasks found matching \"{task_identifier}\"."
+            )
+            return
+
+        if len(matches) == 1:
+            # Single high-confidence match
+            task, score = matches[0]
+            ctx.console.print(
+                f"[green]Found match:[/green] [{task.id}] {task.content} "
+                f"(Match: {int(score)}%)"
+            )
+            task_id = task.id
+        else:
+            # Multiple matches - ask user to select
+            ctx.console.print(
+                f"[yellow]Multiple matches found for \"{task_identifier}\":[/yellow]"
+            )
+            for i, (task, score) in enumerate(matches, 1):
+                ctx.console.print(
+                    f"  {i}. [[cyan]{task.id}[/cyan]] {task.content} "
+                    f"[dim]({int(score)}%)[/dim]"
+                )
+
+            choice = click.prompt(
+                "Which task do you want to mark as done? [1-5]",
+                type=int,
+                default=1,
+            )
+            if choice < 1 or choice > len(matches):
+                ctx.console.print("[red]Invalid selection.[/red]")
+                return
+            task, _ = matches[choice - 1]
+            task_id = task.id
+    else:
+        # Try to parse as integer ID
+        try:
+            task_id = int(task_identifier)
+        except ValueError:
+            ctx.console.print(
+                "[red]![/red] Task identifier must be a number. "
+                "Use --search for text search."
+            )
+            return
+
     try:
         task = ctx.db.get_todo(task_id)
     except ValueError:
