@@ -2,7 +2,10 @@
 
 **Day Writer** is a low-friction terminal journaling tool designed for people who live in their command line. It helps you track daily tasks and automatically generate summaries for morning standups or weekly reviews.
 
-[**⬇️ Jump to Commands Reference**](#-command-reference)
+[🛠️ Command Reference](#️-command-reference)                                                                                                                                    │
+[⚙️ Configuration](#️-configuration)                                                                                                                                            │
+[💻 Developer Commands](#-developer-commands)                                                                                                                                  │
+[❓ Troubleshooting](#-troubleshooting)  
 
 ---
 
@@ -204,3 +207,7 @@ ruff check src/
 ## 📄 License
 
 Distributed under the **MIT License**. See `LICENSE` for more information.
+
+---
+
+[🚀 Quick Start (Installation)](#-quick-start-installation)
