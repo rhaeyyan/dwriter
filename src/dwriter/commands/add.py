@@ -66,14 +66,19 @@ def add(ctx: AppContext, content: str, tags: tuple, project: str, date_str: str)
     )
 
     if ctx.config.display.show_confirmation:
-        ctx.console.print(f"[green]✅[/green] Logged: {entry.content}")
+        date_str = entry.created_at.strftime("%Y-%m-%d")
+        time_str = entry.created_at.strftime("%I:%M %p")
+
+        if ctx.config.display.show_id:
+            ctx.console.print(
+                f"[magenta][{entry.id}][/magenta] {date_str} | [#23c76b]{time_str}[/#23c76b]: {entry.content}"
+            )
+        else:
+            ctx.console.print(f"{date_str} | [#23c76b]{time_str}[/#23c76b]: {entry.content}")
 
         if entry.tag_names:
-            tags_str = ", ".join(f"#{t}" for t in entry.tag_names)
-            ctx.console.print(f"  Tags: {tags_str}")
+            tags_str = " ".join(f"[#ffae00]#[/]{t}" for t in entry.tag_names)
+            ctx.console.print(f"    [#ffae00]Tags:[/#ffae00] {tags_str}")
 
         if entry.project:
-            ctx.console.print(f"  Project: {entry.project}")
-
-        if date_str:
-            ctx.console.print(f"  Date: {entry.created_at.strftime('%Y-%m-%d')}")
+            ctx.console.print(f"    [purple]Project:[/purple] {entry.project}")

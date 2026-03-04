@@ -131,7 +131,7 @@ def stats(ctx: AppContext):
     # Project stats
     project_stats = ctx.db.get_project_stats()
     if project_stats:
-        ctx.console.print("[bold]Top Projects:[/bold]")
+        ctx.console.print("[purple]Top Projects:[/purple]")
         for project, count in list(project_stats.items())[:5]:
             ctx.console.print(f"  {project}: {count} entries")
         ctx.console.print()
@@ -139,7 +139,7 @@ def stats(ctx: AppContext):
     # Tag stats
     tag_stats = ctx.db.get_entries_with_tags_count()
     if tag_stats:
-        ctx.console.print("[bold]Top Tags:[/bold]")
+        ctx.console.print("[#ffae00]Top Tags:[/#ffae00]")
         for tag, count in list(tag_stats.items())[:5]:
             ctx.console.print(f"  #{tag}: {count} entries")
         ctx.console.print()
