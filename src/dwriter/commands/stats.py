@@ -80,7 +80,7 @@ def stats(ctx: AppContext):
     - First and last entry dates
     - Top projects and tags
     """
-    total_entries = ctx.db.get_total_entries_count()
+    total_entries = ctx.db.get_all_entries_count()
 
     if total_entries == 0:
         ctx.console.print(

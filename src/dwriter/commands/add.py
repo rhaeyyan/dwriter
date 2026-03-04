@@ -4,6 +4,7 @@ import click
 
 from ..cli import AppContext
 from ..date_utils import parse_date_or_default
+from ..ui_utils import display_entry
 
 
 @click.command()
@@ -66,19 +67,4 @@ def add(ctx: AppContext, content: str, tags: tuple, project: str, date_str: str)
     )
 
     if ctx.config.display.show_confirmation:
-        date_str = entry.created_at.strftime("%Y-%m-%d")
-        time_str = entry.created_at.strftime("%I:%M %p")
-
-        if ctx.config.display.show_id:
-            ctx.console.print(
-                f"[magenta][{entry.id}][/magenta] {date_str} | [#23c76b]{time_str}[/#23c76b]: {entry.content}"
-            )
-        else:
-            ctx.console.print(f"{date_str} | [#23c76b]{time_str}[/#23c76b]: {entry.content}")
-
-        if entry.tag_names:
-            tags_str = " ".join(f"[#ffae00]#[/]{t}" for t in entry.tag_names)
-            ctx.console.print(f"    [#ffae00]Tags:[/#ffae00] {tags_str}")
-
-        if entry.project:
-            ctx.console.print(f"    [purple]Project:[/purple] {entry.project}")
+        display_entry(ctx.console, entry, ctx.config)

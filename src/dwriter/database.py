@@ -409,15 +409,6 @@ class Database:
                 return result[0], result[1]
             return None, None
 
-    def get_total_entries_count(self) -> int:
-        """Get the total count of all entries.
-
-        Returns:
-            The total number of entries in the database.
-        """
-        with self.Session() as session:
-            return session.scalar(select(func.count(Entry.id)))
-
     def get_all_entries(
         self,
         project: Optional[str] = None,

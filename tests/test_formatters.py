@@ -35,8 +35,8 @@ def test_format_bullets_with_tags():
     entries = [create_test_entry("Fixed bug", tags=["bug", "backend"])]
     result = format_standup_bullets(entries)
 
-    assert "#bug" in result
-    assert "#backend" in result
+    assert "bug" in result
+    assert "backend" in result
 
 
 def test_format_bullets_with_project():

@@ -79,10 +79,12 @@ def format_todos(todos, output_format):
         line = f"{bullet} {todo.content}"
 
         if todo.tag_names:
+            tags_list = ", ".join(f"[#ffae00]#[/]{tag}" for tag in todo.tag_names)
             if output_format in ["bullets", "markdown"]:
-                line += f" ({', '.join(f'[#ffae00]#[/]{tag}' for tag in todo.tag_names)})"
+                line += f" ({tags_list})"
             else:
-                line += f" ({', '.join(f'#{tag}' for tag in todo.tag_names)})"
+                tags_plain = ", ".join(f"#{tag}" for tag in todo.tag_names)
+                line += f" ({tags_plain})"
 
         if todo.project:
             if output_format in ["bullets", "markdown"]:
