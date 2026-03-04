@@ -1,7 +1,6 @@
 """Focus command for running a Pomodoro timer."""
 
 import time
-from datetime import datetime
 
 import click
 from rich.progress import (
@@ -12,6 +11,7 @@ from rich.progress import (
 )
 
 from ..cli import AppContext
+from ..ui_utils import display_entry
 
 
 @click.command()
@@ -46,7 +46,7 @@ def focus(ctx: AppContext, minutes: int, tags: tuple, project: str):
     current_minutes = minutes
     total_minutes = 0
 
-    ctx.console.print(f"[bold blue]Starting focus session...[/bold blue]")
+    ctx.console.print("[bold blue]Starting focus session...[/bold blue]")
     ctx.console.print("Press Ctrl+C to cancel entirely.\n")
 
     try:
@@ -78,7 +78,8 @@ def focus(ctx: AppContext, minutes: int, tags: tuple, project: str):
 
             # Prompt to continue or log
             response = click.prompt(
-                "Add more time (in minutes) to continue, or press Enter to log your entry",
+                "Add more time (in minutes) to continue, "
+                "or press Enter to log your entry",
                 type=str,
                 default="",
                 show_default=False,
@@ -94,7 +95,7 @@ def focus(ctx: AppContext, minutes: int, tags: tuple, project: str):
                     break
                 ctx.console.print("-" * 40)
             except ValueError:
-                # If they typed something that isn't a number, assume they want to stop and log it
+                # Non-numeric input means user wants to stop and log
                 break
 
     except KeyboardInterrupt:
@@ -131,21 +132,4 @@ def focus(ctx: AppContext, minutes: int, tags: tuple, project: str):
 
     # Display confirmation matching the standard add command
     if ctx.config.display.show_confirmation:
-        date_str = entry.created_at.strftime("%Y-%m-%d")
-        time_str = entry.created_at.strftime("%I:%M %p")
-
-        if ctx.config.display.show_id:
-            ctx.console.print(
-                f"[magenta][{entry.id}][/magenta] {date_str} | [#23c76b]{time_str}[/#23c76b]: {entry.content}"
-            )
-        else:
-            ctx.console.print(
-                f"{date_str} | [#23c76b]{time_str}[/#23c76b]: {entry.content}"
-            )
-
-        if entry.tag_names:
-            tags_str = " ".join(f"[#ffae00]#[/]{t}" for t in entry.tag_names)
-            ctx.console.print(f"    [#ffae00]Tags:[/#ffae00] {tags_str}")
-
-        if entry.project:
-            ctx.console.print(f"    [purple]Project:[/purple] {entry.project}")
+        display_entry(ctx.console, entry, ctx.config)

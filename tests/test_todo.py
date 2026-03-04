@@ -93,14 +93,14 @@ class TestTodoDatabase:
     def test_get_todos_priority_order(self, temp_db):
         """Test that todos are ordered by priority."""
         temp_db.add_todo(content="Low priority", priority="low")
-        temp_db.add_todo(content="Critical task", priority="critical")
+        temp_db.add_todo(content="Urgent task", priority="urgent")
         temp_db.add_todo(content="Normal task", priority="normal")
         temp_db.add_todo(content="High priority", priority="high")
 
         todos = temp_db.get_todos(status="pending")
 
-        # Should be ordered: critical, high, normal, low
-        assert todos[0].priority == "critical"
+        # Should be ordered: urgent, high, normal, low
+        assert todos[0].priority == "urgent"
         assert todos[1].priority == "high"
         assert todos[2].priority == "normal"
         assert todos[3].priority == "low"
@@ -206,7 +206,7 @@ class TestTodoCommands:
         """Test adding a todo with priority."""
         runner = CliRunner()
         result = runner.invoke(
-            main, ["todo", "add", "Critical task", "--priority", "critical"]
+            main, ["todo", "add", "Urgent task", "--priority", "urgent"]
         )
 
         assert result.exit_code == 0

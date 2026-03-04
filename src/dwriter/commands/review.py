@@ -16,7 +16,8 @@ def format_review_markdown(entries_by_date):
         lines.append("")
         for entry in entries:
             time_str = entry.created_at.strftime("%I:%M %p")
-            line = f"- {date.strftime('%Y-%m-%d')} | [#23c76b]{time_str}[/#23c76b]: {entry.content}"
+            date_fmt = date.strftime("%Y-%m-%d")
+            line = f"- {date_fmt} | [#23c76b]{time_str}[/#23c76b]: {entry.content}"
             lines.append(line)
             if entry.tag_names:
                 tags_str = " ".join(f"[#ffae00]#[/]{t}" for t in entry.tag_names)
@@ -36,7 +37,8 @@ def format_review_plain(entries_by_date):
         lines.append("-" * 40)
         for entry in entries:
             time_str = entry.created_at.strftime("%I:%M %p")
-            line = f"  {date.strftime('%Y-%m-%d')} | [#23c76b]{time_str}[/#23c76b]: {entry.content}"
+            date_fmt = date.strftime("%Y-%m-%d")
+            line = f"  {date_fmt} | [#23c76b]{time_str}[/#23c76b]: {entry.content}"
             lines.append(line)
             if entry.tag_names:
                 tags_str = " ".join(f"[#ffae00]#[/]{t}" for t in entry.tag_names)
@@ -55,7 +57,8 @@ def format_review_slack(entries_by_date):
         lines.append(f"[green]{date_str}[/green]")
         for entry in entries:
             time_str = entry.created_at.strftime("%I:%M %p")
-            line = f"  {date.strftime('%Y-%m-%d')} | [#23c76b]{time_str}[/#23c76b]: {entry.content}"
+            date_fmt = date.strftime("%Y-%m-%d")
+            line = f"  {date_fmt} | [#23c76b]{time_str}[/#23c76b]: {entry.content}"
             lines.append(line)
             if entry.tag_names:
                 tags_str = " ".join(f"[#ffae00]#[/]{t}" for t in entry.tag_names)
