@@ -13,6 +13,7 @@ from sqlalchemy import (
     ForeignKey,
     String,
     Text,
+    case,
     create_engine,
     delete,
     func,
@@ -64,6 +65,48 @@ class Entry(Base):
 
     tags: Mapped[List["Tag"]] = relationship(
         back_populates="entry",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+    )
+
+    @property
+    def tag_names(self) -> List[str]:
+        """Return tag names as a list of strings."""
+        return [tag.name for tag in self.tags]
+
+
+class TodoTag(Base):
+    """Represents a tag associated with a todo task."""
+
+    __tablename__ = "todo_tags"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    todo_id: Mapped[int] = mapped_column(
+        ForeignKey("todos.id", ondelete="CASCADE")
+    )
+    name: Mapped[str] = mapped_column(String, index=True)
+
+    todo: Mapped["Todo"] = relationship(back_populates="tags")
+
+
+class Todo(Base):
+    """Represents a prospective task."""
+
+    __tablename__ = "todos"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    project: Mapped[Optional[str]] = mapped_column(String)
+    priority: Mapped[str] = mapped_column(String, default="normal")
+    status: Mapped[str] = mapped_column(String, default="pending")
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=func.now(), index=True
+    )
+    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+
+    tags: Mapped[List["TodoTag"]] = relationship(
+        back_populates="todo",
         lazy="selectin",
         cascade="all, delete-orphan",
     )
@@ -389,3 +432,109 @@ class Database:
             )
             results = session.execute(stmt).all()
             return {name: count for name, count in results}
+
+    def add_todo(
+        self,
+        content: str,
+        priority: str = "normal",
+        project: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+    ) -> Todo:
+        """Add a new prospective task."""
+        with self.Session() as session:
+            todo = Todo(content=content, priority=priority, project=project)
+            if tags:
+                todo.tags = [TodoTag(name=t) for t in tags]
+
+            session.add(todo)
+            session.commit()
+            session.refresh(todo)
+            return todo
+
+    def get_todo(self, todo_id: int) -> Todo:
+        """Retrieve a single todo by ID.
+
+        Raises:
+            ValueError: If no todo exists with the given ID.
+        """
+        with self.Session() as session:
+            todo = session.get(Todo, todo_id)
+            if not todo:
+                raise ValueError(f"Todo with id {todo_id} not found")
+            return todo
+
+    def get_todos(self, status: Optional[str] = "pending") -> List[Todo]:
+        """Retrieve tasks, optionally filtered by status.
+
+        Results are ordered by priority (critical > high > normal > low)
+        and then by creation date (newest first).
+        """
+        with self.Session() as session:
+            stmt = select(Todo)
+
+            if status:
+                stmt = stmt.where(Todo.status == status)
+
+            # Order by priority (critical=1, high=2, normal=3, low=4) then by date
+            priority_order = case(
+                (Todo.priority == "critical", 1),
+                (Todo.priority == "high", 2),
+                (Todo.priority == "normal", 3),
+                (Todo.priority == "low", 4),
+                else_=5,
+            )
+            stmt = stmt.order_by(priority_order, Todo.created_at.desc())
+
+            return list(session.scalars(stmt).all())
+
+    def update_todo(
+        self,
+        todo_id: int,
+        content: Optional[str] = None,
+        status: Optional[str] = None,
+        priority: Optional[str] = None,
+        project: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+        completed_at: Optional[datetime] = None,
+    ) -> Todo:
+        """Update an existing task.
+
+        Raises:
+            ValueError: If no todo exists with the given ID.
+        """
+        with self.Session() as session:
+            todo = session.get(Todo, todo_id)
+            if not todo:
+                raise ValueError(f"Todo {todo_id} not found")
+
+            if content is not None:
+                todo.content = content
+            if status is not None:
+                todo.status = status
+            if priority is not None:
+                todo.priority = priority
+            if project is not None:
+                todo.project = project
+            if completed_at is not None:
+                todo.completed_at = completed_at
+            if tags is not None:
+                # Replace existing tags
+                todo.tags = [TodoTag(name=t) for t in tags]
+
+            session.commit()
+            session.refresh(todo)
+            return todo
+
+    def delete_todo(self, todo_id: int) -> bool:
+        """Delete a task by ID.
+
+        Returns:
+            True if the task was deleted, False if it didn't exist.
+        """
+        with self.Session() as session:
+            todo = session.get(Todo, todo_id)
+            if todo:
+                session.delete(todo)
+                session.commit()
+                return True
+            return False

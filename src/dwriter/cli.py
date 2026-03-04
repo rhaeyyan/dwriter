@@ -99,6 +99,7 @@ def _register_commands():
         standup,
         stats,
         today,
+        todo,
         undo,
     )
 
@@ -113,6 +114,7 @@ def _register_commands():
         stats,
         standup,
         today,
+        todo,
         undo,
     ]:
         main.add_command(cmd)

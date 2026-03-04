@@ -10,6 +10,7 @@ from .review import review
 from .standup import standup
 from .stats import stats
 from .today import today
+from .todo import todo
 from .undo import undo
 
 __all__ = [
@@ -23,5 +24,6 @@ __all__ = [
     "stats",
     "standup",
     "today",
+    "todo",
     "undo",
 ]

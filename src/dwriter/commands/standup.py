@@ -63,6 +63,37 @@ def format_standup_markdown(entries):
     return "\n".join(lines)
 
 
+def format_todos(todos, output_format):
+    """Format pending todos based on the selected output format."""
+    lines = []
+    for todo in todos:
+        if output_format == "slack":
+            bullet = "•"
+        elif output_format == "jira":
+            bullet = "*"
+        elif output_format == "markdown":
+            bullet = "- [ ]"
+        else:
+            bullet = "-"
+
+        line = f"{bullet} {todo.content}"
+
+        if todo.tag_names:
+            if output_format in ["bullets", "markdown"]:
+                line += f" ({', '.join(f'[#ffae00]#[/]{tag}' for tag in todo.tag_names)})"
+            else:
+                line += f" ({', '.join(f'#{tag}' for tag in todo.tag_names)})"
+
+        if todo.project:
+            if output_format in ["bullets", "markdown"]:
+                line += f" [magenta]{todo.project}[/magenta]"
+            else:
+                line += f" [{todo.project}]"
+
+        lines.append(line)
+    return "\n".join(lines)
+
+
 FORMATTERS = {
     "bullets": format_standup_bullets,
     "slack": format_standup_slack,
@@ -86,8 +117,14 @@ FORMATTERS = {
     default=None,
     help="Don't copy to clipboard",
 )
+@click.option(
+    "--with-todos",
+    is_flag=True,
+    default=False,
+    help="Append your pending tasks as a 'Plan for Today' section",
+)
 @click.pass_obj
-def standup(ctx: AppContext, output_format: str, no_copy: bool):
+def standup(ctx: AppContext, output_format: str, no_copy: bool, with_todos: bool):
     """Generate yesterday's standup.
 
     Queries all entries from yesterday and formats them for standup meetings.
@@ -101,6 +138,8 @@ def standup(ctx: AppContext, output_format: str, no_copy: bool):
         dwriter standup --format jira
 
         dwriter standup --no-copy
+
+        dwriter standup --with-todos
     """
     # Use config defaults if not specified
     if output_format is None:
@@ -115,17 +154,37 @@ def standup(ctx: AppContext, output_format: str, no_copy: bool):
     yesterday = datetime.now() - timedelta(days=1)
     entries = ctx.db.get_entries_by_date(yesterday)
 
-    if not entries:
-        ctx.console.print("No entries found for yesterday.")
+    # Get pending todos if requested
+    pending_todos = []
+    if with_todos:
+        pending_todos = ctx.db.get_todos(status="pending")
+
+    # Handle empty state
+    if not entries and not pending_todos:
+        ctx.console.print("No entries found for yesterday and no pending tasks.")
         return
 
     # Format the standup
     formatter = FORMATTERS.get(output_format, format_standup_bullets)
-    standup_text = formatter(entries)
+    standup_text = formatter(entries) if entries else ""
 
     # Add header
     header = f"Yesterday's Standup ({yesterday.strftime('%Y-%m-%d')})"
-    output = f"{header}\n{standup_text}"
+    output = f"{header}\n{standup_text}" if standup_text else header
+
+    # Append pending todos if requested
+    if with_todos:
+        if pending_todos:
+            todo_header = "\n\nPlan for Today:"
+            if output_format in ["slack", "jira"]:
+                todo_header = f"\n\n*{todo_header.strip()}*"
+            elif output_format == "markdown":
+                todo_header = f"\n\n### {todo_header.strip()}"
+
+            todo_text = format_todos(pending_todos, output_format)
+            output += f"{todo_header}\n{todo_text}"
+        else:
+            output += "\n\nPlan for Today:\n(No pending tasks)"
 
     # Copy to clipboard if enabled
     if should_copy:
