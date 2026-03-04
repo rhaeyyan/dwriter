@@ -62,7 +62,7 @@ def focus(ctx: AppContext, minutes: int, tags: tuple, project: str):
                 console=ctx.console,
             ) as progress:
                 task = progress.add_task(
-                    f"[cyan]Focusing ({current_minutes}m)...", total=duration_seconds
+                    f"[cyan]🍅 Focusing ({current_minutes}m)...", total=duration_seconds
                 )
 
                 for _ in range(duration_seconds):
