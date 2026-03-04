@@ -33,6 +33,8 @@ dependencies = [
     "tomlkit>=0.11",
     "pyperclip>=1.8",
     "sqlalchemy>=2.0",
+    "rich>=13.0",
+    "rapidfuzz>=3.0",
 ]
 
 [project.optional-dependencies]
