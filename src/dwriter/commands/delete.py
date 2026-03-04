@@ -4,7 +4,7 @@ from datetime import datetime
 
 import click
 
-from ..database import Database
+from ..cli import AppContext
 
 
 def parse_date(date_str: str) -> datetime:
@@ -33,8 +33,8 @@ def parse_date(date_str: str) -> datetime:
     type=str,
     help="Delete entries before this date (YYYY-MM-DD)",
 )
-@click.pass_context
-def delete(ctx, before_date: str):
+@click.pass_obj
+def delete(ctx: AppContext, before_date: str):
     """Bulk delete old entries.
 
     Deletes all entries created before the specified date.
@@ -44,32 +44,30 @@ def delete(ctx, before_date: str):
 
         dwriter delete --before 2024-12-31
     """
-    db = Database()
-
     try:
         cutoff_date = parse_date(before_date)
     except click.BadParameter as e:
-        click.echo(click.style("!", fg="red") + f" {e}")
+        ctx.console.print(f"[red]![/red] {e}")
         return
 
     # Count entries that will be deleted
-    entries = db.get_entries_in_range(datetime(2000, 1, 1), cutoff_date)
+    entries = ctx.db.get_entries_in_range(datetime(2000, 1, 1), cutoff_date)
 
     if not entries:
-        click.echo(f"No entries found before {before_date}.")
+        ctx.console.print(f"No entries found before {before_date}.")
         return
 
-    click.echo(f"About to delete {len(entries)} entries before {before_date}:")
-    click.echo()
+    ctx.console.print(f"About to delete {len(entries)} entries before {before_date}:")
+    ctx.console.print()
 
     for entry in entries[:10]:  # Show first 10
         date_str = entry.created_at.strftime("%Y-%m-%d")
-        click.echo(f"  [{entry.id}] {date_str}: {entry.content}")
+        ctx.console.print(f"  [{entry.id}] {date_str}: {entry.content}")
 
     if len(entries) > 10:
-        click.echo(f"  ... and {len(entries) - 10} more")
+        ctx.console.print(f"  ... and {len(entries) - 10} more")
 
-    click.echo()
+    ctx.console.print()
 
     if click.confirm(
         click.style(
@@ -78,7 +76,7 @@ def delete(ctx, before_date: str):
             bold=True,
         )
     ):
-        deleted_count = db.delete_entries_before(cutoff_date)
-        click.echo(click.style("✅", fg="green") + f" Deleted {deleted_count} entries.")
+        deleted_count = ctx.db.delete_entries_before(cutoff_date)
+        ctx.console.print(f"[green]✅[/green] Deleted {deleted_count} entries.")
     else:
-        click.echo("Cancelled.")
+        ctx.console.print("Cancelled.")

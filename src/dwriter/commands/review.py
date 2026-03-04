@@ -4,8 +4,7 @@ from datetime import datetime, timedelta
 
 import click
 
-from ..config import ConfigManager
-from ..database import Database
+from ..cli import AppContext
 
 
 def format_review_markdown(entries_by_date):
@@ -85,8 +84,8 @@ FORMATTERS = {
     default=None,
     help="Output format: markdown, plain, slack",
 )
-@click.pass_context
-def review(ctx, num_days: int, output_format: str):
+@click.pass_obj
+def review(ctx: AppContext, num_days: int, output_format: str):
     """Review last N days.
 
     Generates a summary of all entries from the past N days,
@@ -99,25 +98,21 @@ def review(ctx, num_days: int, output_format: str):
 
         dwriter review --format markdown
     """
-    db = Database()
-    config_manager = ConfigManager()
-    config = config_manager.load()
-
     # Use config defaults if not specified
     if num_days is None:
-        num_days = config.review.default_days
+        num_days = ctx.config.review.default_days
 
     if output_format is None:
-        output_format = config.review.format
+        output_format = ctx.config.review.format
 
     # Calculate date range
     end_date = datetime.now()
     start_date = end_date - timedelta(days=num_days)
 
-    entries = db.get_entries_in_range(start_date, end_date)
+    entries = ctx.db.get_entries_in_range(start_date, end_date)
 
     if not entries:
-        click.echo(f"No entries found in the last {num_days} days.")
+        ctx.console.print(f"No entries found in the last {num_days} days.")
         return
 
     # Group entries by date
@@ -140,5 +135,5 @@ def review(ctx, num_days: int, output_format: str):
     header = f"Review: Last {num_days} Days"
     output = f"{header}\n{review_text}"
 
-    click.echo()
-    click.echo(output)
+    ctx.console.print()
+    ctx.console.print(output)

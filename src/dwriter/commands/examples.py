@@ -2,6 +2,8 @@
 
 import click
 
+from ..cli import AppContext
+
 EXAMPLES = """
 Day Writer - Usage Examples
 ═══════════════════════════════════════════════════════════════
@@ -29,7 +31,7 @@ Day Writer - Usage Examples
   $ dwriter today
 
   # Show all entries (default when running dwriter without arguments)
-  $ dwriter
+  $ dwriter today
 
 
 3. STANDUP GENERATION
@@ -96,7 +98,7 @@ Day Writer - Usage Examples
   # Reset to defaults
   $ dwriter config reset
 
-  # Show config file path
+  # Show configuration file path
   $ dwriter config path
 
 
@@ -141,11 +143,11 @@ Set Default Project Workflow
 
 
 @click.command()
-@click.pass_context
-def examples(ctx):
+@click.pass_obj
+def examples(ctx: AppContext):
     """Show usage examples and workflows.
 
     Displays comprehensive examples of all dwriter commands
     and common workflows.
     """
-    click.echo(EXAMPLES)
+    ctx.console.print(EXAMPLES)

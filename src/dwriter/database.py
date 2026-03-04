@@ -6,7 +6,7 @@ journal entries using SQLAlchemy 2.0.
 
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from sqlalchemy import (
     DateTime,
@@ -174,10 +174,12 @@ class Database:
             A list of Entry objects for the specified date.
         """
         with self.Session() as session:
-            # Filters entries by date portion of created_at
+            # Convert UTC to local time before comparing dates
+            # SQLite stores datetimes in UTC, so we use 'localtime' modifier
+            date_str = date.strftime("%Y-%m-%d")
             stmt = (
                 select(Entry)
-                .where(func.date(Entry.created_at) == date.date())
+                .where(func.date(Entry.created_at, "localtime") == date_str)
                 .order_by(Entry.created_at)
             )
             return list(session.scalars(stmt).all())
@@ -310,3 +312,80 @@ class Database:
                 for d in date_strings
                 if d
             ]
+
+    def get_project_stats(self) -> Dict[str, int]:
+        """Get entry counts grouped by project.
+
+        Returns:
+            A dictionary mapping project names to entry counts.
+        """
+        with self.Session() as session:
+            stmt = (
+                select(Entry.project, func.count(Entry.id))
+                .group_by(Entry.project)
+                .order_by(func.count(Entry.id).desc())
+            )
+            results = session.execute(stmt).all()
+            return {project: count for project, count in results if project}
+
+    def get_entries_count_by_date(
+        self, start_date: datetime, end_date: datetime
+    ) -> Dict[str, int]:
+        """Get entry counts grouped by date.
+
+        Args:
+            start_date: Start of date range.
+            end_date: End of date range.
+
+        Returns:
+            A dictionary mapping date strings (YYYY-MM-DD) to entry counts.
+        """
+        with self.Session() as session:
+            stmt = (
+                select(func.date(Entry.created_at), func.count(Entry.id))
+                .where(Entry.created_at.between(start_date, end_date))
+                .group_by(func.date(Entry.created_at))
+                .order_by(func.date(Entry.created_at).desc())
+            )
+            results = session.execute(stmt).all()
+            return {str(date): count for date, count in results if date}
+
+    def get_date_range(self) -> tuple[Optional[datetime], Optional[datetime]]:
+        """Get the date range of all entries.
+
+        Returns:
+            A tuple of (first_entry_date, last_entry_date) or (None, None) if empty.
+        """
+        with self.Session() as session:
+            stmt = select(
+                func.min(Entry.created_at),
+                func.max(Entry.created_at)
+            )
+            result = session.execute(stmt).first()
+            if result and result[0] and result[1]:
+                return result[0], result[1]
+            return None, None
+
+    def get_total_entries_count(self) -> int:
+        """Get the total count of all entries.
+
+        Returns:
+            The total number of entries in the database.
+        """
+        with self.Session() as session:
+            return session.scalar(select(func.count(Entry.id)))
+
+    def get_entries_with_tags_count(self) -> Dict[str, int]:
+        """Get entry counts grouped by tag.
+
+        Returns:
+            A dictionary mapping tag names to entry counts.
+        """
+        with self.Session() as session:
+            stmt = (
+                select(Tag.name, func.count(Tag.id))
+                .group_by(Tag.name)
+                .order_by(func.count(Tag.id).desc())
+            )
+            results = session.execute(stmt).all()
+            return {name: count for name, count in results}

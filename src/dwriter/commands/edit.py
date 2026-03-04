@@ -1,8 +1,10 @@
 """Edit command for managing entries interactively."""
 
+from datetime import datetime
+
 import click
 
-from ..database import Database
+from ..cli import AppContext
 
 
 @click.command()
@@ -14,8 +16,8 @@ from ..database import Database
     default=None,
     help="Edit a specific entry by ID",
 )
-@click.pass_context
-def edit(ctx, entry_id: int):
+@click.pass_obj
+def edit(ctx: AppContext, entry_id: int):
     """Edit or delete entries interactively.
 
     Opens today's entries in your default text editor for bulk editing,
@@ -26,44 +28,40 @@ def edit(ctx, entry_id: int):
 
         dwriter edit --id 42
     """
-    db = Database()
-
     if entry_id is not None:
         # Edit specific entry
         try:
-            entry = db.get_entry(entry_id)
+            entry = ctx.db.get_entry(entry_id)
         except ValueError:
-            click.echo(click.style("!", fg="red") + f" Entry {entry_id} not found.")
+            ctx.console.print(f"[red]![/red] Entry {entry_id} not found.")
             return
 
         edited_content = click.edit(entry.content)
 
         if edited_content is None:
-            click.echo("No changes made.")
+            ctx.console.print("No changes made.")
             return
 
         edited_content = edited_content.strip()
 
         if not edited_content:
             if click.confirm("Content is empty. Delete this entry?"):
-                db.delete_entry(entry_id)
-                click.echo(click.style("✅", fg="green") + " Entry deleted.")
+                ctx.db.delete_entry(entry_id)
+                ctx.console.print("[green]✅[/green] Entry deleted.")
             return
 
         if edited_content != entry.content:
-            db.update_entry(entry_id, content=edited_content)
-            click.echo(click.style("✅", fg="green") + " Entry updated.")
+            ctx.db.update_entry(entry_id, content=edited_content)
+            ctx.console.print("[green]✅[/green] Entry updated.")
         else:
-            click.echo("No changes made.")
+            ctx.console.print("No changes made.")
     else:
         # Bulk edit today's entries
-        from datetime import datetime
-
         today_date = datetime.now()
-        entries = db.get_entries_by_date(today_date)
+        entries = ctx.db.get_entries_by_date(today_date)
 
         if not entries:
-            click.echo("No entries for today to edit.")
+            ctx.console.print("No entries for today to edit.")
             return
 
         # Create editable content
@@ -82,7 +80,7 @@ def edit(ctx, entry_id: int):
         edited_text = click.edit("\n".join(editable_lines))
 
         if edited_text is None:
-            click.echo("No changes made.")
+            ctx.console.print("No changes made.")
             return
 
         # Parse edited content
@@ -113,7 +111,7 @@ def edit(ctx, entry_id: int):
 
                 # Skip if content is empty (means delete)
                 if not content:
-                    db.delete_entry(entry_id)
+                    ctx.db.delete_entry(entry_id)
                     deleted_count += 1
                     continue
 
@@ -128,15 +126,17 @@ def edit(ctx, entry_id: int):
                 project = project_str if project_str else None
 
                 # Update entry
-                db.update_entry(entry_id, content=content, tags=tags, project=project)
+                ctx.db.update_entry(
+                    entry_id, content=content, tags=tags, project=project
+                )
                 updated_count += 1
 
             except (ValueError, IndexError):
-                click.echo(
-                    click.style("!", fg="yellow") + f" Could not parse line: {line}"
+                ctx.console.print(
+                    f"[yellow]![/yellow] Could not parse line: {line}"
                 )
 
-        click.echo(
-            click.style("✅", fg="green")
-            + f" Updated {updated_count} entries, deleted {deleted_count}."
+        ctx.console.print(
+            f"[green]✅[/green] Updated {updated_count} entries, "
+            f"deleted {deleted_count}."
         )

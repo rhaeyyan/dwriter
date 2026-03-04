@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 import click
 
-from ..database import Database
+from ..cli import AppContext
 
 
 def calculate_streak(dates_with_entries):
@@ -69,8 +69,8 @@ def calculate_streak(dates_with_entries):
 
 
 @click.command()
-@click.pass_context
-def stats(ctx):
+@click.pass_obj
+def stats(ctx: AppContext):
     """Show logging stats and streak.
 
     Displays statistics about your logging activity including:
@@ -78,75 +78,82 @@ def stats(ctx):
     - Current streak
     - Longest streak
     - First and last entry dates
+    - Top projects and tags
     """
-    db = Database()
-
-    total_entries = db.get_all_entries_count()
+    total_entries = ctx.db.get_total_entries_count()
 
     if total_entries == 0:
-        click.echo("No entries yet. Start logging with:")
-        click.echo(click.style('  dwriter add "your task"', bold=True))
+        ctx.console.print(
+            "No entries yet. Start logging with:\n"
+            '  [bold]dwriter add "your task"[/bold]'
+        )
         return
 
-    dates_with_entries = db.get_entries_with_streaks()
+    dates_with_entries = ctx.db.get_entries_with_streaks()
     current_streak, longest_streak = calculate_streak(dates_with_entries)
 
-    # Get first and last entry
-    all_entries = db.get_entries_in_range(datetime(2000, 1, 1), datetime(2100, 1, 1))
+    # Get date range using optimized SQL query
+    first_date, last_date = ctx.db.get_date_range()
 
-    first_entry = min(all_entries, key=lambda e: e.created_at) if all_entries else None
-    last_entry = max(all_entries, key=lambda e: e.created_at) if all_entries else None
-
-    click.echo(click.style("Day Writer Statistics", bold=True, fg="blue"))
-    click.echo("=" * 40)
-    click.echo()
+    ctx.console.print("[bold blue]Day Writer Statistics[/bold blue]")
+    ctx.console.print("=" * 40)
+    ctx.console.print()
 
     # Total entries
-    click.echo(f"Total Entries:     {click.style(str(total_entries), bold=True)}")
-    click.echo()
+    ctx.console.print(f"Total Entries:     [bold]{total_entries}[/bold]")
+    ctx.console.print()
 
     # Streaks
     streak_display = f"{current_streak} days"
     if current_streak >= 7:
-        streak_display += click.style(" 🔥", fg="yellow")
-    click.echo(f"Current Streak:    {streak_display}")
-    click.echo(f"Longest Streak:    {longest_streak} days")
-    click.echo()
+        streak_display += " 🔥"
+    ctx.console.print(f"Current Streak:    {streak_display}")
+    ctx.console.print(f"Longest Streak:    {longest_streak} days")
+    ctx.console.print()
 
     # Date range
-    if first_entry and last_entry:
-        first_date = first_entry.created_at.strftime("%Y-%m-%d")
-        last_date = last_entry.created_at.strftime("%Y-%m-%d")
-        click.echo(f"First Entry:       {first_date}")
-        click.echo(f"Last Entry:        {last_date}")
+    if first_date and last_date:
+        first_date_str = first_date.strftime("%Y-%m-%d")
+        last_date_str = last_date.strftime("%Y-%m-%d")
+        ctx.console.print(f"First Entry:       {first_date_str}")
+        ctx.console.print(f"Last Entry:        {last_date_str}")
 
-        days_active = (last_entry.created_at - first_entry.created_at).days + 1
+        days_active = (last_date - first_date).days + 1
         if days_active > 0:
             consistency = (len(dates_with_entries) / days_active) * 100
-            click.echo(
+            ctx.console.print(
                 f"Consistency:       {consistency:.1f}% "
                 f"({len(dates_with_entries)}/{days_active} days)"
             )
 
-    click.echo()
+    ctx.console.print()
+
+    # Project stats
+    project_stats = ctx.db.get_project_stats()
+    if project_stats:
+        ctx.console.print("[bold]Top Projects:[/bold]")
+        for project, count in list(project_stats.items())[:5]:
+            ctx.console.print(f"  {project}: {count} entries")
+        ctx.console.print()
+
+    # Tag stats
+    tag_stats = ctx.db.get_entries_with_tags_count()
+    if tag_stats:
+        ctx.console.print("[bold]Top Tags:[/bold]")
+        for tag, count in list(tag_stats.items())[:5]:
+            ctx.console.print(f"  #{tag}: {count} entries")
+        ctx.console.print()
 
     # Encouragement
     if current_streak >= 30:
-        click.echo(
-            click.style(
-                "🏆 Amazing! A month-long streak!",
-                fg="green",
-                bold=True,
-            )
+        ctx.console.print(
+            "[bold green]🏆 Amazing! A month-long streak![/bold green]"
         )
     elif current_streak >= 7:
-        click.echo(
-            click.style(
-                "🔥 Great job! Keep the momentum going!",
-                fg="yellow",
-            )
+        ctx.console.print(
+            "[yellow]🔥 Great job! Keep the momentum going![/yellow]"
         )
     elif current_streak > 0:
-        click.echo("Keep logging! Every entry counts!")
+        ctx.console.print("Keep logging! Every entry counts!")
     else:
-        click.echo("Start your streak by logging something today!")
+        ctx.console.print("Start your streak by logging something today!")

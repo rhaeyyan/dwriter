@@ -4,8 +4,7 @@ from datetime import datetime, timedelta
 
 import click
 
-from ..config import ConfigManager
-from ..database import Database
+from ..cli import AppContext
 
 
 def format_standup_bullets(entries):
@@ -83,8 +82,8 @@ FORMATTERS = {
     default=None,
     help="Don't copy to clipboard",
 )
-@click.pass_context
-def standup(ctx, output_format: str, no_copy: bool):
+@click.pass_obj
+def standup(ctx: AppContext, output_format: str, no_copy: bool):
     """Generate yesterday's standup.
 
     Queries all entries from yesterday and formats them for standup meetings.
@@ -99,25 +98,21 @@ def standup(ctx, output_format: str, no_copy: bool):
 
         dwriter standup --no-copy
     """
-    db = Database()
-    config_manager = ConfigManager()
-    config = config_manager.load()
-
     # Use config defaults if not specified
     if output_format is None:
-        output_format = config.standup.format
+        output_format = ctx.config.standup.format
 
     if no_copy is None:
-        should_copy = config.standup.copy_to_clipboard
+        should_copy = ctx.config.standup.copy_to_clipboard
     else:
         should_copy = not no_copy
 
     # Get yesterday's date
     yesterday = datetime.now() - timedelta(days=1)
-    entries = db.get_entries_by_date(yesterday)
+    entries = ctx.db.get_entries_by_date(yesterday)
 
     if not entries:
-        click.echo("No entries found for yesterday.")
+        ctx.console.print("No entries found for yesterday.")
         return
 
     # Format the standup
@@ -134,14 +129,13 @@ def standup(ctx, output_format: str, no_copy: bool):
             import pyperclip
 
             pyperclip.copy(output)
-            click.echo(click.style("✅", fg="green") + " Standup copied to clipboard!")
+            ctx.console.print("[green]✅[/green] Standup copied to clipboard!")
         except Exception:
-            click.echo(
-                click.style("!", fg="yellow")
-                + " Could not copy to clipboard. Displaying instead:"
+            ctx.console.print(
+                "[yellow]![/yellow] Could not copy to clipboard. Displaying instead:"
             )
-            click.echo()
-            click.echo(output)
+            ctx.console.print()
+            ctx.console.print(output)
     else:
-        click.echo()
-        click.echo(output)
+        ctx.console.print()
+        ctx.console.print(output)
