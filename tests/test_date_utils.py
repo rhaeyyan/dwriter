@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from dwriter.date_utils import parse_natural_date, parse_date_or_default
+from dwriter.date_utils import parse_date_or_default, parse_natural_date
 
 
 class TestParseNaturalDate:

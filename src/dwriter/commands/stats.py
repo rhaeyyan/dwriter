@@ -1,14 +1,15 @@
 """Stats command - launches interactive dashboard."""
 
+from __future__ import annotations
+
 import click
 
 from ..cli import AppContext
-from ..stats_utils import calculate_streak
 
 
 @click.command()
 @click.pass_obj
-def stats(ctx: AppContext):
+def stats(ctx: AppContext) -> None:
     """Launch interactive dashboard.
 
     Displays a visual overview of your logging activity including:

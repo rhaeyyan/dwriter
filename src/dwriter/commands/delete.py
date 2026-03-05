@@ -21,8 +21,8 @@ def parse_date(date_str: str) -> datetime:
     """
     try:
         return datetime.strptime(date_str, "%Y-%m-%d")
-    except ValueError:
-        raise click.BadParameter("Date must be in YYYY-MM-DD format")
+    except ValueError as e:
+        raise click.BadParameter("Date must be in YYYY-MM-DD format") from e
 
 
 @click.command()
@@ -34,7 +34,7 @@ def parse_date(date_str: str) -> datetime:
     help="Delete entries before this date (YYYY-MM-DD)",
 )
 @click.pass_obj
-def delete(ctx: AppContext, before_date: str):
+def delete(ctx: AppContext, before_date: str) -> None:
     """Bulk delete old entries.
 
     Deletes all entries created before the specified date.

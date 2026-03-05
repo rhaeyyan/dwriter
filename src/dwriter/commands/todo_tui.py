@@ -4,8 +4,10 @@ This module provides a real-time interface for managing tasks,
 marking them complete, and editing/deleting.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
-from typing import List, Optional
+from typing import Any, Callable
 
 from textual.app import App, ComposeResult
 from textual.containers import Container, Vertical
@@ -26,7 +28,7 @@ from ..database import Todo
 class TodoListItem(ListItem):
     """Custom list item for todo tasks."""
 
-    def __init__(self, todo: Todo, **kwargs):
+    def __init__(self, todo: Todo, **kwargs: Any) -> None:
         """Initialize the todo list item.
 
         Args:
@@ -37,7 +39,7 @@ class TodoListItem(ListItem):
         self.todo = todo
 
 
-class EditTodoModal(ModalScreen):
+class EditTodoModal(ModalScreen):  # type: ignore[type-arg]
     """Modal dialog for editing a todo."""
 
     CSS = """
@@ -80,7 +82,7 @@ class EditTodoModal(ModalScreen):
         ("enter", "save", "Save"),
     ]
 
-    def __init__(self, todo: Todo, **kwargs):
+    def __init__(self, todo: Todo, **kwargs: Any) -> None:
         """Initialize the edit modal.
 
         Args:
@@ -89,7 +91,7 @@ class EditTodoModal(ModalScreen):
         """
         super().__init__(**kwargs)
         self.todo = todo
-        self.result: Optional[str] = None
+        self.result: str | None = None
 
     def compose(self) -> ComposeResult:
         """Compose the modal UI."""
@@ -121,7 +123,7 @@ class EditTodoModal(ModalScreen):
         self.result = None
         self.dismiss(None)
 
-    def on_button_pressed(self, event) -> None:
+    def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button presses."""
         if event.button.id == "save-btn":
             self.action_save()
@@ -129,7 +131,7 @@ class EditTodoModal(ModalScreen):
             self.action_cancel()
 
 
-class EditTagsModal(ModalScreen):
+class EditTagsModal(ModalScreen):  # type: ignore[type-arg]
     """Modal dialog for editing a todo's tags."""
 
     CSS = """
@@ -176,7 +178,7 @@ class EditTagsModal(ModalScreen):
         ("ctrl+s", "save", "Save"),
     ]
 
-    def __init__(self, todo: Todo, **kwargs):
+    def __init__(self, todo: Todo, **kwargs: Any) -> None:
         """Initialize the edit tags modal.
 
         Args:
@@ -185,7 +187,7 @@ class EditTagsModal(ModalScreen):
         """
         super().__init__(**kwargs)
         self.todo = todo
-        self.result: Optional[List[str]] = None
+        self.result: list[str] | None = None
 
     def compose(self) -> ComposeResult:
         """Compose the modal UI."""
@@ -223,7 +225,7 @@ class EditTagsModal(ModalScreen):
         self.result = None
         self.dismiss(None)
 
-    def on_button_pressed(self, event) -> None:
+    def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button presses."""
         if event.button.id == "save-btn":
             self.action_save()
@@ -231,7 +233,7 @@ class EditTagsModal(ModalScreen):
             self.action_cancel()
 
 
-class EditProjectModal(ModalScreen):
+class EditProjectModal(ModalScreen):  # type: ignore[type-arg]
     """Modal dialog for editing a todo's project."""
 
     CSS = """
@@ -273,7 +275,7 @@ class EditProjectModal(ModalScreen):
         ("ctrl+s", "save", "Save"),
     ]
 
-    def __init__(self, todo: Todo, **kwargs):
+    def __init__(self, todo: Todo, **kwargs: Any) -> None:
         """Initialize the edit project modal.
 
         Args:
@@ -282,7 +284,7 @@ class EditProjectModal(ModalScreen):
         """
         super().__init__(**kwargs)
         self.todo = todo
-        self.result: Optional[str] = None
+        self.result: str | None = None
 
     def compose(self) -> ComposeResult:
         """Compose the modal UI."""
@@ -315,7 +317,7 @@ class EditProjectModal(ModalScreen):
         self.result = None
         self.dismiss(None)
 
-    def on_button_pressed(self, event) -> None:
+    def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button presses."""
         if event.button.id == "save-btn":
             self.action_save()
@@ -326,7 +328,7 @@ class EditProjectModal(ModalScreen):
 class TodoListView(ListView):
     """ListView for displaying todo tasks."""
 
-    def __init__(self, todos: List[Todo] = None, **kwargs):
+    def __init__(self, todos: list[Todo] | None = None, **kwargs: Any) -> None:
         """Initialize the todo list view.
 
         Args:
@@ -336,7 +338,7 @@ class TodoListView(ListView):
         super().__init__(**kwargs)
         self._todos = todos or []
 
-    def update_todos(self, todos: List[Todo]) -> None:
+    def update_todos(self, todos: list[Todo]) -> None:
         """Update the displayed todos.
 
         Args:
@@ -391,7 +393,7 @@ class TodoListView(ListView):
             )
 
     @property
-    def selected_todo(self) -> Optional[Todo]:
+    def selected_todo(self) -> Todo | None:
         """Get the currently selected todo."""
         if self.highlighted_child is None:
             return None
@@ -400,7 +402,7 @@ class TodoListView(ListView):
         return None
 
 
-class TodoApp(App):
+class TodoApp(App):  # type: ignore[type-arg]
     """Interactive todo board application.
 
     Provides a real-time interface for managing tasks.
@@ -495,11 +497,11 @@ class TodoApp(App):
 
     def __init__(
         self,
-        db,
-        console,
+        db: Any,
+        console: Any,
         show_all: bool = False,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> None:
         """Initialize the todo application.
 
         Args:
@@ -512,7 +514,7 @@ class TodoApp(App):
         self.db = db
         self.console = console
         self.show_all = show_all
-        self._all_todos: List[Todo] = []
+        self._all_todos: list[Todo] = []
 
     def compose(self) -> ComposeResult:
         """Compose the todo UI layout."""
@@ -630,7 +632,7 @@ class TodoApp(App):
             self.notify("No task selected", severity="warning", timeout=1.5)
             return
 
-        def on_dismiss(result: Optional[str]) -> None:
+        def on_dismiss(result: str | None) -> None:
             if result is not None and result != todo.content:
                 try:
                     self.db.update_todo(todo.id, content=result)
@@ -736,7 +738,7 @@ class TodoApp(App):
             self.notify("No task selected", severity="warning", timeout=1.5)
             return
 
-        def on_dismiss(result: Optional[List[str]]) -> None:
+        def on_dismiss(result: list[str] | None) -> None:
             if result is not None and result != todo.tag_names:
                 try:
                     self.db.update_todo(todo.id, tags=result)
@@ -760,7 +762,7 @@ class TodoApp(App):
             self.notify("No task selected", severity="warning", timeout=1.5)
             return
 
-        def on_dismiss(result: Optional[str]) -> None:
+        def on_dismiss(result: str | None) -> None:
             if result is not None and result != todo.project:
                 try:
                     self.db.update_todo(todo.id, project=result)
@@ -800,10 +802,12 @@ class TodoApp(App):
         # Show confirmation dialog
         self._show_delete_confirmation(todo.id, on_dismiss)
 
-    def _show_delete_confirmation(self, todo_id: int, callback) -> None:
+    def _show_delete_confirmation(
+        self, todo_id: int, callback: Callable[[bool], None]
+    ) -> None:
         """Show a delete confirmation dialog."""
 
-        class ConfirmModal(ModalScreen):
+        class ConfirmModal(ModalScreen):  # type: ignore[type-arg]
             """Confirmation dialog for deletion."""
 
             CSS = """
@@ -836,7 +840,7 @@ class TodoApp(App):
                 ("escape", "cancel", "Cancel"),
             ]
 
-            def __init__(self, tid: int, **kwargs):
+            def __init__(self, tid: int, **kwargs: Any) -> None:
                 super().__init__(**kwargs)
                 self.todo_id = tid
 
@@ -858,19 +862,19 @@ class TodoApp(App):
             def action_cancel(self) -> None:
                 self.dismiss(False)
 
-            def on_button_pressed(self, event) -> None:
+            def on_button_pressed(self, event: Button.Pressed) -> None:
                 if event.button.id == "yes-btn":
                     self.action_confirm()
                 elif event.button.id == "no-btn":
                     self.action_cancel()
 
-        self.push_screen(ConfirmModal(todo_id), callback)
+        self.push_screen(ConfirmModal(todo_id), callback)  # type: ignore[arg-type]
 
     def action_refresh(self) -> None:
         """Refresh the todo list."""
         self._load_todos()
         self.notify("List refreshed", timeout=1)
 
-    def action_quit(self) -> None:
+    def action_quit(self) -> None:  # type: ignore[override]
         """Quit the todo application."""
         self.exit()

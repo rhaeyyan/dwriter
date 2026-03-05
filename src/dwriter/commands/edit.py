@@ -1,7 +1,8 @@
 """Edit command for managing entries interactively."""
 
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Optional
 
 import click
 
@@ -11,7 +12,7 @@ from ..search_utils import find_multiple_matches
 
 def _handle_search_edit(
     ctx: AppContext, search_query: str
-) -> Optional[int]:
+) -> int | None:
     """Handle search-based entry editing.
 
     Args:
@@ -36,7 +37,7 @@ def _handle_search_edit(
             f"[green]Found match:[/green] [{entry.id}] {entry.content} "
             f"(Match: {int(score)}%)"
         )
-        return entry.id
+        return entry.id  # type: ignore[no-any-return]
 
     ctx.console.print(
         f'[yellow]Multiple matches found for "{search_query}":[/yellow]'
@@ -56,7 +57,7 @@ def _handle_search_edit(
         return None
 
     entry, _ = matches[choice - 1]
-    return entry.id
+    return entry.id  # type: ignore[no-any-return]
 
 
 def _edit_single_entry(ctx: AppContext, entry_id: int) -> None:
@@ -127,7 +128,7 @@ def _bulk_edit_today(ctx: AppContext) -> None:
     help="Search for an entry by text (fuzzy match)",
 )
 @click.pass_obj
-def edit(ctx: AppContext, entry_id: int, search_query: str):
+def edit(ctx: AppContext, entry_id: int | None, search_query: str | None) -> None:
     """Edit or delete entries interactively.
 
     Launches an interactive TUI for editing today's entries with

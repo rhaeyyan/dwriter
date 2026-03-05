@@ -4,8 +4,10 @@ This module provides a real-time interface for editing and deleting
 journal entries.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
-from typing import List, Optional
+from typing import Any, Callable
 
 from textual.app import App, ComposeResult
 from textual.containers import Container, Vertical
@@ -27,7 +29,7 @@ from ..database import Entry
 class EntryListItem(ListItem):
     """Custom list item for journal entries."""
 
-    def __init__(self, entry: Entry, **kwargs):
+    def __init__(self, entry: Entry, **kwargs: Any) -> None:
         """Initialize the entry list item.
 
         Args:
@@ -38,7 +40,7 @@ class EntryListItem(ListItem):
         self.entry = entry
 
 
-class EditEntryModal(ModalScreen):
+class EditEntryModal(ModalScreen):  # type: ignore[type-arg]
     """Modal dialog for editing an entry's content."""
 
     CSS = """
@@ -81,7 +83,7 @@ class EditEntryModal(ModalScreen):
         ("ctrl+s", "save", "Save"),
     ]
 
-    def __init__(self, entry: Entry, **kwargs):
+    def __init__(self, entry: Entry, **kwargs: Any) -> None:
         """Initialize the edit modal.
 
         Args:
@@ -90,7 +92,7 @@ class EditEntryModal(ModalScreen):
         """
         super().__init__(**kwargs)
         self.entry = entry
-        self.result: Optional[str] = None
+        self.result: str | None = None
 
     def compose(self) -> ComposeResult:
         """Compose the modal UI."""
@@ -129,7 +131,7 @@ class EditEntryModal(ModalScreen):
             self.action_cancel()
 
 
-class EditTagsModal(ModalScreen):
+class EditTagsModal(ModalScreen):  # type: ignore[type-arg]
     """Modal dialog for editing an entry's tags."""
 
     CSS = """
@@ -176,7 +178,7 @@ class EditTagsModal(ModalScreen):
         ("ctrl+s", "save", "Save"),
     ]
 
-    def __init__(self, entry: Entry, **kwargs):
+    def __init__(self, entry: Entry, **kwargs: Any) -> None:
         """Initialize the edit tags modal.
 
         Args:
@@ -185,7 +187,7 @@ class EditTagsModal(ModalScreen):
         """
         super().__init__(**kwargs)
         self.entry = entry
-        self.result: Optional[List[str]] = None
+        self.result: list[str] | None = None
 
     def compose(self) -> ComposeResult:
         """Compose the modal UI."""
@@ -231,7 +233,7 @@ class EditTagsModal(ModalScreen):
             self.action_cancel()
 
 
-class EditProjectModal(ModalScreen):
+class EditProjectModal(ModalScreen):  # type: ignore[type-arg]
     """Modal dialog for editing an entry's project."""
 
     CSS = """
@@ -273,7 +275,7 @@ class EditProjectModal(ModalScreen):
         ("ctrl+s", "save", "Save"),
     ]
 
-    def __init__(self, entry: Entry, **kwargs):
+    def __init__(self, entry: Entry, **kwargs: Any) -> None:
         """Initialize the edit project modal.
 
         Args:
@@ -282,7 +284,7 @@ class EditProjectModal(ModalScreen):
         """
         super().__init__(**kwargs)
         self.entry = entry
-        self.result: Optional[str] = None
+        self.result: str | None = None
 
     def compose(self) -> ComposeResult:
         """Compose the modal UI."""
@@ -326,7 +328,7 @@ class EditProjectModal(ModalScreen):
 class EntryListView(ListView):
     """ListView for displaying journal entries."""
 
-    def __init__(self, entries: List[Entry] = None, **kwargs):
+    def __init__(self, entries: list[Entry] | None = None, **kwargs: Any) -> None:
         """Initialize the entry list view.
 
         Args:
@@ -336,7 +338,7 @@ class EntryListView(ListView):
         super().__init__(**kwargs)
         self._entries = entries or []
 
-    def update_entries(self, entries: List[Entry]) -> None:
+    def update_entries(self, entries: list[Entry]) -> None:
         """Update the displayed entries.
 
         Args:
@@ -380,7 +382,7 @@ class EntryListView(ListView):
         )
 
     @property
-    def selected_entry(self) -> Optional[Entry]:
+    def selected_entry(self) -> Entry | None:
         """Get the currently selected entry."""
         if self.highlighted_child is None:
             return None
@@ -389,7 +391,7 @@ class EntryListView(ListView):
         return None
 
 
-class EditApp(App):
+class EditApp(App):  # type: ignore[type-arg]
     """Interactive edit application.
 
     Provides a real-time interface for editing and deleting entries.
@@ -478,11 +480,11 @@ class EditApp(App):
 
     def __init__(
         self,
-        db,
-        console,
-        date: Optional[datetime] = None,
-        **kwargs,
-    ):
+        db: Any,
+        console: Any,
+        date: datetime | None = None,
+        **kwargs: Any,
+    ) -> None:
         """Initialize the edit application.
 
         Args:
@@ -495,7 +497,7 @@ class EditApp(App):
         self.db = db
         self.console = console
         self.edit_date = date or datetime.now()
-        self._all_entries: List[Entry] = []
+        self._all_entries: list[Entry] = []
 
     def compose(self) -> ComposeResult:
         """Compose the edit UI layout."""
@@ -566,7 +568,7 @@ class EditApp(App):
             self.notify("No entry selected", severity="warning", timeout=1.5)
             return
 
-        def on_dismiss(result: Optional[str]) -> None:
+        def on_dismiss(result: str | None) -> None:
             if result is not None and result != entry.content:
                 try:
                     if not result:
@@ -597,7 +599,7 @@ class EditApp(App):
             self.notify("No entry selected", severity="warning", timeout=1.5)
             return
 
-        def on_dismiss(result: Optional[List[str]]) -> None:
+        def on_dismiss(result: list[str] | None) -> None:
             if result is not None and result != entry.tag_names:
                 try:
                     self.db.update_entry(entry.id, tags=result)
@@ -621,7 +623,7 @@ class EditApp(App):
             self.notify("No entry selected", severity="warning", timeout=1.5)
             return
 
-        def on_dismiss(result: Optional[str]) -> None:
+        def on_dismiss(result: str | None) -> None:
             if result is not None and result != entry.project:
                 try:
                     self.db.update_entry(entry.id, project=result)
@@ -660,10 +662,12 @@ class EditApp(App):
 
         self._show_delete_confirmation(entry.id, on_dismiss)
 
-    def _show_delete_confirmation(self, entry_id: int, callback) -> None:
+    def _show_delete_confirmation(
+        self, entry_id: int, callback: Callable[[bool], None]
+    ) -> None:
         """Show a delete confirmation dialog."""
 
-        class ConfirmModal(ModalScreen):
+        class ConfirmModal(ModalScreen):  # type: ignore[type-arg]
             """Confirmation dialog for deletion."""
 
             CSS = """
@@ -696,7 +700,7 @@ class EditApp(App):
                 ("escape", "cancel", "Cancel"),
             ]
 
-            def __init__(self, eid: int, **kwargs):
+            def __init__(self, eid: int, **kwargs: Any) -> None:
                 super().__init__(**kwargs)
                 self.entry_id = eid
 
@@ -722,13 +726,13 @@ class EditApp(App):
                 elif event.button.id == "no-btn":
                     self.action_cancel()
 
-        self.push_screen(ConfirmModal(entry_id), callback)
+        self.push_screen(ConfirmModal(entry_id), callback)  # type: ignore[arg-type]
 
     def action_refresh(self) -> None:
         """Refresh the entry list."""
         self._load_entries()
         self.notify("List refreshed", timeout=1)
 
-    def action_quit(self) -> None:
+    def action_quit(self) -> None:  # type: ignore[override]
         """Quit the edit application."""
         self.exit()

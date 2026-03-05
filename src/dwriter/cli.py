@@ -3,6 +3,8 @@
 This module provides the main entry point for the dwriter CLI application.
 """
 
+from __future__ import annotations
+
 import click
 from rich.console import Console
 
@@ -41,26 +43,26 @@ class AppContext:
         db: Database instance.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the application context."""
         self.console = Console()
         try:
             self.config_manager = ConfigManager()
             self.config = self.config_manager.load()
         except Exception as e:
-            raise ConfigError(f"Failed to load configuration: {e}")
+            raise ConfigError(f"Failed to load configuration: {e}") from e
 
         try:
             self.db = Database()
         except Exception as e:
-            raise DatabaseError(f"Failed to initialize database: {e}")
+            raise DatabaseError(f"Failed to initialize database: {e}") from e
 
 
 @click.group(invoke_without_command=True)
 @click.pass_context
 @click.version_option(version=__version__, prog_name="dwriter")
-def main(ctx):
-    """dwriter - A low-friction terminal journaling tool.
+def main(ctx: click.Context) -> None:
+    """Dwriter - A low-friction terminal journaling tool.
 
     Track daily tasks and generate standup summaries with minimal effort.
 
@@ -104,7 +106,7 @@ def main(ctx):
         ctx.invoke(today)
 
 
-def _register_commands():
+def _register_commands() -> None:
     """Register all CLI commands."""
     from .commands import (
         add,

@@ -1,15 +1,9 @@
 """Tests for the configuration module."""
 
-import tempfile
-from pathlib import Path
 
 from dwriter.config import (
     Config,
     ConfigManager,
-    DefaultsConfig,
-    DisplayConfig,
-    ReviewConfig,
-    StandupConfig,
 )
 
 

@@ -1,6 +1,9 @@
 """Todo command group for managing prospective tasks."""
 
+from __future__ import annotations
+
 from datetime import datetime
+from typing import Any
 
 import click
 from rich.table import Table
@@ -32,7 +35,13 @@ from ..search_utils import find_multiple_matches
     help="Set task priority",
 )
 @click.pass_context
-def todo(ctx, content: tuple, tags: tuple, project: str, priority: str):
+def todo(
+    ctx: click.Context,
+    content: tuple[Any, ...],
+    tags: tuple[Any, ...],
+    project: str | None,
+    priority: str,
+) -> None:
     """Manage future tasks and to-dos.
 
     Add, review, and complete tasks. When a task is marked as done,
@@ -63,7 +72,7 @@ def todo(ctx, content: tuple, tags: tuple, project: str, priority: str):
         # Invoke with remaining args
         rest = list(content[1:])
         sub_ctx = cmd.make_context(ctx.info_name, rest, parent=ctx)
-        return sub_ctx.command.invoke(sub_ctx)
+        return sub_ctx.command.invoke(sub_ctx)  # type: ignore[no-any-return]
 
     # Get the AppContext from parent context
     app_ctx = ctx.obj
@@ -122,7 +131,7 @@ def todo(ctx, content: tuple, tags: tuple, project: str, priority: str):
     help="Launch interactive TUI mode",
 )
 @click.pass_obj
-def todo_list(ctx: AppContext, show_all: bool, use_tui: bool):
+def todo_list(ctx: AppContext, show_all: bool, use_tui: bool) -> None:
     """List pending tasks.
 
     Displays your tasks in a formatted table with priority colors.
@@ -198,7 +207,7 @@ def todo_list(ctx: AppContext, show_all: bool, use_tui: bool):
 @todo.command("rm")
 @click.argument("task_id", type=int)
 @click.pass_obj
-def todo_rm(ctx: AppContext, task_id: int):
+def todo_rm(ctx: AppContext, task_id: int) -> None:
     """Delete a task entirely.
 
     Removes a task from your todo list. Requires confirmation.
@@ -225,7 +234,7 @@ def todo_rm(ctx: AppContext, task_id: int):
 @todo.command("edit")
 @click.argument("task_id", type=int)
 @click.pass_obj
-def todo_edit(ctx: AppContext, task_id: int):
+def todo_edit(ctx: AppContext, task_id: int) -> None:
     """Edit a task's content interactively.
 
     Opens the task content in your default editor for modification.
@@ -270,7 +279,7 @@ def todo_edit(ctx: AppContext, task_id: int):
     help="Use fuzzy search to find the task by text instead of ID",
 )
 @click.pass_obj
-def done(ctx: AppContext, task_identifier: str, use_search: bool):
+def done(ctx: AppContext, task_identifier: str, use_search: bool) -> None:
     """Mark a task as complete and log it.
 
     Completes the task and automatically creates a new daily log
