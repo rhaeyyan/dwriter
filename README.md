@@ -43,7 +43,8 @@
 * **🏷️ Smart Organization:** Categorize entries with #tags and [projects].
 * **🔥 Streak Tracking:** Keep your momentum high with a built-in logging streak counter.
 * **🔍 Fuzzy Search:** Find past entries and tasks with typo-tolerant fuzzy matching.
-* **🎨 Interactive TUI:** Real-time search and todo management with keyboard navigation.
+* **🎨 Interactive TUI:** Real-time search, todo boards, and tabbed navigation with keyboard shortcuts.
+* **📑 Tabbed Interfaces:** Organized views for help, examples, and dashboard with lazy-loading for performance.
 * **⏱️ Focus Timer:** Built-in Pomodoro timer that auto-logs completed sessions.
 * **✅ Todo Management:** Track pending tasks with priorities and auto-log when completed.
 
@@ -508,7 +509,15 @@ dwriter search "meeting" -t work -t notes
 
 ## 🎨 Interactive TUI
 
-dwriter now includes interactive TUI (Text User Interface) modes for enhanced workflow. These modes provide real-time, keyboard-driven interfaces for common tasks.
+dwriter includes interactive TUI (Text User Interface) modes for enhanced workflow. These modes provide real-time, keyboard-driven interfaces for common tasks.
+
+**New: Tabbed Navigation** — Several TUIs now feature tabbed interfaces for better organization:
+- **`dwriter todo`** — Switch between Pending, Completed, and All views
+- **`dwriter help`** — Browse commands by category (8 tabs)
+- **`dwriter examples`** — View examples by topic (10 tabs)
+- **`dwriter stats`** — Toggle between Overview and Activity views
+
+All tabs support keyboard shortcuts (`1`, `2`, `3`... for direct access, `Tab` to cycle).
 
 ### 🔍 Interactive Search (`dwriter search`)
 
@@ -544,6 +553,7 @@ Launch with `dwriter todo` (no arguments) or `dwriter todo list --tui`.
 - Mark tasks complete with automatic journal logging
 - Edit and delete tasks inline
 - Toast notifications for actions
+- **Tabbed views:** Pending, Completed, and All tasks
 
 **Keybindings:**
 
@@ -558,6 +568,8 @@ Launch with `dwriter todo` (no arguments) or `dwriter todo list --tui`.
 | `t` | Edit tags (comma-separated) |
 | `p` | Edit project name |
 | `r` | Refresh list |
+| `1` / `2` / `3` | Switch tabs (Pending / Completed / All) |
+| `Tab` | Cycle through tabs |
 | `q` / `Esc` | Quit |
 
 **Priority Colors:**
@@ -620,13 +632,16 @@ Launch with `dwriter stats`.
 - 📊 Weekly activity bar chart
 - 📈 Statistics summary (total entries, tasks, tags, projects)
 - 🏷️ Top tags with usage bars
+- **Tabbed views:** Overview (KPIs + Calendar) and Activity (Trends + Tables)
 
 **Keybindings:**
 
 | Key | Action |
 | --- | --- |
 | `r` | Refresh all data |
-| `Tab` | Navigate between sections |
+| `1` / `2` | Switch tabs (Overview / Activity) |
+| `Tab` | Cycle through tabs |
+| `d` | Drill down into selected project/tag |
 | `q` / `Esc` | Quit |
 
 **Visual Elements:**
@@ -635,6 +650,7 @@ Launch with `dwriter stats`.
 - **Weekly Chart** - Bar chart showing entries per week for the last 8 weeks
 - **Stats Summary** - Total entries, completed tasks, unique tags, projects, and date range
 - **Top Tags** - Your 10 most-used tags with visual usage bars
+- **Projects/Tags Tables** - Interactive tables with drill-down capability
 
 > **Hybrid CLI/TUI Design:** Quick operations remain CLI-based (`dwriter add`, `dwriter todo "task"`) for frictionless use. TUI modes launch only when needed for interactive workflows.
 
@@ -800,11 +816,13 @@ The script creates a project with:
 | Metric | Value |
 |--------|-------|
 | **Type Coverage** | 100% (mypy strict) |
-| **Lint Errors** | 0 |
+| **Lint Errors** | 0 (ruff) |
 | **Test Coverage** | Enabled via pytest-cov |
-| **Python Versions** | 3.8 - 3.12 |
-| **Dependencies** | 9 (click, tomlkit, pyperclip, sqlalchemy, rich, rapidfuzz, textual) |
-| **Dev Dependencies** | 7 (pytest, pytest-cov, black, ruff, mypy, types-pyperclip, tomli) |
+| **Python Versions** | 3.9 - 3.12 |
+| **Dependencies** | 7 (click, tomlkit, pyperclip, sqlalchemy, rich, rapidfuzz, textual) |
+| **Dev Dependencies** | 6 (pytest, pytest-cov, ruff, mypy, types-pyperclip, tomli) |
+| **TUI Components** | 7 (todo, search, help, examples, dashboard, edit, focus) |
+| **Tabbed Views** | 4 (todo, help, examples, dashboard) |
 
 ---
 

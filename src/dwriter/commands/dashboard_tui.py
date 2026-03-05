@@ -11,6 +11,7 @@ from typing import Any
 
 from textual import work
 from textual.app import App, ComposeResult
+from textual.binding import Binding
 from textual.containers import (
     Container,
     Horizontal,
@@ -25,6 +26,8 @@ from textual.widgets import (
     Label,
     LoadingIndicator,
     Static,
+    TabbedContent,
+    TabPane,
 )
 
 from ..database import Entry
@@ -539,12 +542,23 @@ class DashboardApp(App):  # type: ignore[type-arg]
         background: $panel;
         content-align: center middle;
     }
+
+    TabbedContent {
+        height: 1fr;
+    }
+
+    TabbedContent > TabPane {
+        padding: 0;
+    }
     """
 
     BINDINGS = [
-        ("q", "quit", "Quit"),
-        ("r", "refresh", "Refresh"),
-        ("d", "drill_down", "Drill Down"),
+        Binding("q", "quit", "Quit"),
+        Binding("r", "refresh", "Refresh"),
+        Binding("d", "drill_down", "Drill Down"),
+        Binding("1", "switch_tab(0)", "Overview", show=False),
+        Binding("2", "switch_tab(1)", "Activity", show=False),
+        Binding("tab", "next_tab", "Next Tab", show=False),
     ]
 
     def __init__(self, db: Any, console: Any, **kwargs: Any) -> None:
@@ -563,56 +577,104 @@ class DashboardApp(App):  # type: ignore[type-arg]
         self.project_stats: dict[str, int] = {}
         self.tag_stats: dict[str, int] = {}
 
+        # Track loaded tabs for deferred mounting
+        self._loaded_tabs: set[str] = set()
+
     def compose(self) -> ComposeResult:
-        """Compose the dashboard layout."""
+        """Compose the dashboard layout with tabs for focus mode."""
         yield Header(show_clock=True)
 
-        with Container(id="main-container"):
-            # Loading indicator (will be removed when data loads)
-            yield LoadingIndicator(id="loading-overlay")
-
-            # Row 1: KPI Cards
-            with Horizontal(id="kpi-row"):
-                yield KPICard("Total Entries", "0", color="$primary", id="kpi-total")
-                yield KPICard(
-                    "Current Streak", "0 days", color="$success", id="kpi-streak"
-                )
-                yield KPICard(
-                    "Longest Streak", "0 days", color="$warning", id="kpi-longest"
-                )
-                yield KPICard(
-                    "Consistency", "0%", color="$info", id="kpi-consistency"
-                )
-
-            # Row 2: Charts
-            with Horizontal(id="charts-row"):
-                with Vertical(id="charts-left"):
+        with TabbedContent(initial="overview-pane"):
+            # Tab 1: Overview - KPIs + Calendar
+            with TabPane("📊 Overview", id="overview-pane"):
+                with Container(id="main-container"):
+                    yield LoadingIndicator(id="loading-overlay")
+                    with Horizontal(id="kpi-row"):
+                        yield KPICard(
+                            "Total Entries", "0", color="$primary", id="kpi-total"
+                        )
+                        yield KPICard(
+                            "Current Streak",
+                            "0 days",
+                            color="$success",
+                            id="kpi-streak",
+                        )
+                        yield KPICard(
+                            "Longest Streak",
+                            "0 days",
+                            color="$warning",
+                            id="kpi-longest",
+                        )
+                        yield KPICard(
+                            "Consistency", "0%", color="$info", id="kpi-consistency"
+                        )
+                    # Calendar widget
                     yield StreakCalendar(self.db, id="calendar")
-                with Vertical(id="charts-right"):
+                yield Label(
+                    "r: Refresh | d: Drill Down | 1-2: Tabs | q: Quit",
+                    id="status-bar",
+                )
+
+            # Tab 2: Activity - Trends + Tags
+            with TabPane("📈 Activity", id="activity-pane"):
+                with ScrollableContainer(id="activity-container"):
+                    # Top: Sparkline
                     yield ActivitySparkline(self.db, id="sparkline")
+                    # Bottom: Tables
+                    with Horizontal(id="tables-row"):
+                        with Vertical(id="tables-left"):
+                            projects_table: DataTable[str] = DataTable(
+                                id="projects-table"
+                            )
+                            projects_table.add_columns(
+                                "Project        ", "   Entries"
+                            )
+                            projects_table.cursor_type = "row"
+                            yield projects_table
+                        with Vertical(id="tables-right"):
+                            tags_table: DataTable[str] = DataTable(
+                                id="tags-table"
+                            )
+                            tags_table.add_columns(
+                                "Tag            ", "   Entries"
+                            )
+                            tags_table.cursor_type = "row"
+                            yield tags_table
+                yield Label(
+                    "r: Refresh | d: Drill Down | 1-2: Tabs | q: Quit",
+                    id="status-bar",
+                )
 
-            # Row 3: Interactive Tables
-            with Horizontal(id="tables-row"):
-                with Vertical(id="tables-left"):
-                    projects_table: DataTable[str] = DataTable(id="projects-table")
-                    projects_table.add_columns("Project        ", "   Entries")
-                    projects_table.cursor_type = "row"
-                    yield projects_table
-                with Vertical(id="tables-right"):
-                    tags_table: DataTable[str] = DataTable(id="tags-table")
-                    tags_table.add_columns("Tag            ", "   Entries")
-                    tags_table.cursor_type = "row"
-                    yield tags_table
-
-        yield Label(
-            "r: Refresh | d: Drill Down | q: Quit",
-            id="status-bar",
-        )
         yield Footer()
 
     def on_mount(self) -> None:
         """Start loading data asynchronously."""
         self._load_dashboard_data()
+        # Load overview tab immediately (KPIs)
+        self._load_overview_tab()
+
+    def on_tabbed_content_tab_activated(
+        self, event: TabbedContent.TabActivated
+    ) -> None:
+        """Deferred loading of heavy widgets when tabs are activated."""
+        if not event.pane.id:
+            return
+        tab_id = event.pane.id
+        # Load Activity tab widgets on first activation
+        if tab_id == "activity-pane" and "activity" not in self._loaded_tabs:
+            self._load_activity_tab()
+
+    def _load_overview_tab(self) -> None:
+        """Load KPI data for overview tab."""
+        pass  # KPIs are updated via _update_kpis after data loads
+
+    def _load_activity_tab(self) -> None:
+        """Load activity tab widgets (already mounted, just populate tables)."""
+        if "activity" in self._loaded_tabs:
+            return
+        if self.data_loaded:
+            self._update_tables()
+        self._loaded_tabs.add("activity")
 
     @work(exclusive=True, thread=True)
     def _load_dashboard_data(self) -> None:
@@ -685,39 +747,64 @@ class DashboardApp(App):  # type: ignore[type-arg]
 
     def _update_kpis(self) -> None:
         """Update KPI cards with loaded data."""
-        kpi_total = self.query_one("#kpi-total", KPICard)
-        kpi_streak = self.query_one("#kpi-streak", KPICard)
-        kpi_longest = self.query_one("#kpi-longest", KPICard)
-        kpi_consistency = self.query_one("#kpi-consistency", KPICard)
+        try:
+            kpi_total = self.query_one("#kpi-total", KPICard)
+            kpi_streak = self.query_one("#kpi-streak", KPICard)
+            kpi_longest = self.query_one("#kpi-longest", KPICard)
+            kpi_consistency = self.query_one("#kpi-consistency", KPICard)
 
-        kpi_total.update_value(str(self.total_entries))
-        kpi_streak.update_value(f"{self.current_streak} days")
-        kpi_longest.update_value(f"{self.longest_streak} days")
-        kpi_consistency.update_value(f"{self.consistency_pct:.1f}%")
+            kpi_total.update_value(str(self.total_entries))
+            kpi_streak.update_value(f"{self.current_streak} days")
+            kpi_longest.update_value(f"{self.longest_streak} days")
+            kpi_consistency.update_value(f"{self.consistency_pct:.1f}%")
+            self._hide_loading()
+        except Exception:
+            pass  # Overview tab not active
 
     def _update_tables(self) -> None:
         """Update DataTables with loaded data."""
-        # Projects table
-        projects_table = self.query_one("#projects-table", DataTable)
-        projects_table.clear()
-        for project, count in sorted(
-            self.project_stats.items(), key=lambda x: x[1], reverse=True
-        )[:15]:
-            projects_table.add_row(project, f"     {count}")
+        try:
+            # Projects table
+            projects_table = self.query_one("#projects-table", DataTable)
+            projects_table.clear()
+            for project, count in sorted(
+                self.project_stats.items(), key=lambda x: x[1], reverse=True
+            )[:15]:
+                projects_table.add_row(project, f"     {count}")
 
-        # Tags table
-        tags_table = self.query_one("#tags-table", DataTable)
-        tags_table.clear()
-        for tag, count in sorted(
-            self.tag_stats.items(), key=lambda x: x[1], reverse=True
-        )[:15]:
-            tags_table.add_row(tag, f"     {count}")
+            # Tags table
+            tags_table = self.query_one("#tags-table", DataTable)
+            tags_table.clear()
+            for tag, count in sorted(
+                self.tag_stats.items(), key=lambda x: x[1], reverse=True
+            )[:15]:
+                tags_table.add_row(tag, f"     {count}")
+        except Exception:
+            pass  # Activity tab not active
 
     def _hide_loading(self) -> None:
         """Hide the loading indicator."""
-        loading = self.query_one("#loading-overlay")
-        loading.remove()
+        try:
+            loading = self.query_one("#loading-overlay")
+            loading.remove()
+        except Exception:
+            pass  # Already removed
         self.data_loaded = True
+
+    def action_switch_tab(self, index: int) -> None:
+        """Switch to tab by index."""
+        tabbed = self.query_one(TabbedContent)
+        tabs = ["overview-pane", "activity-pane"]
+        if 0 <= index < len(tabs):
+            tabbed.active = tabs[index]
+
+    def action_next_tab(self) -> None:
+        """Cycle to the next tab."""
+        tabbed = self.query_one(TabbedContent)
+        tabs = ["overview-pane", "activity-pane"]
+        current_idx = tabs.index(tabbed.active)
+        next_idx = (current_idx + 1) % len(tabs)
+        tabbed.active = tabs[next_idx]
 
     def action_quit(self) -> None:  # type: ignore[override]
         """Quit the dashboard."""
@@ -730,6 +817,13 @@ class DashboardApp(App):  # type: ignore[type-arg]
 
     def action_drill_down(self) -> None:
         """Drill down into the selected project or tag."""
+        # First switch to activity tab if not already there
+        tabbed = self.query_one(TabbedContent)
+        if tabbed.active != "activity-pane":
+            tabbed.active = "activity-pane"
+            self.notify("Switching to Activity tab...", timeout=0.5)
+            return
+
         if not self.data_loaded:
             self.notify("Data still loading...", timeout=1)
             return

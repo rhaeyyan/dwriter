@@ -437,7 +437,18 @@ class FocusTimerApp(App):  # type: ignore[type-arg]
         """Start the timer countdown."""
         self._is_running = True
         self._update_display()
-        self._timer_handle = self.set_interval(1, self._tick)
+        self._call_next_tick()
+
+    def _call_next_tick(self) -> None:
+        """Schedule the next tick."""
+        if self._is_running and not self._is_finished:
+            self.call_later(self._tick_and_schedule)
+
+    def _tick_and_schedule(self) -> None:
+        """Tick and schedule next tick."""
+        self._tick()
+        if self._is_running and not self._is_finished:
+            self.call_later(self._call_next_tick)
 
     def _stop_timer(self) -> None:
         """Stop the timer countdown."""

@@ -681,7 +681,13 @@ class SearchApp(App):  # type: ignore[type-arg]
         )
 
     def _get_active_view(self) -> EntryResultsView | TodoResultsView:
-        """Get the currently active results view based on search type."""
+        """Get the currently active results view based on focus or search type."""
+        # Check which view is actually focused
+        focused = self.focused
+        if isinstance(focused, (EntryResultsView, TodoResultsView)):
+            return focused
+
+        # Fallback to search_type-based selection
         if self.search_type == "entry":
             return self.query_one("#entries-results", EntryResultsView)
         elif self.search_type == "todo":
