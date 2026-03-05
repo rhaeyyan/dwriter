@@ -247,7 +247,7 @@ Manage future tasks and to-dos. When a task is marked as done, it automatically 
 #### Examples:
 
 ```bash
-dwriter todo add "Draft new relic ideas" -p Mainframe_Mayhem
+dwriter todo add "Draft new relic ideas" -p my_project
 
 ```
 
@@ -314,7 +314,7 @@ dwriter search "auth bug"
 ```
 
 ```bash
-dwriter search "refactor" -p Mainframe_Mayhem
+dwriter search "refactor" -p my_project
 
 ```
 
