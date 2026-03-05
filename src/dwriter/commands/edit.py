@@ -94,91 +94,20 @@ def _edit_single_entry(ctx: AppContext, entry_id: int) -> None:
 
 
 def _bulk_edit_today(ctx: AppContext) -> None:
-    """Bulk edit today's entries.
+    """Bulk edit today's entries using interactive TUI.
 
     Args:
         ctx: The application context.
     """
+    from .edit_tui import EditApp
+
     today_date = datetime.now()
-    entries = ctx.db.get_entries_by_date(today_date)
-
-    if not entries:
-        ctx.console.print("No entries for today to edit.")
-        return
-
-    editable_lines = []
-    editable_lines.append("# Edit your entries below.")
-    editable_lines.append("# Lines starting with '#' will be ignored.")
-    editable_lines.append("# Format: [id] content | tag1, tag2 | project")
-    editable_lines.append("#" + "-" * 60)
-
-    for entry in entries:
-        date_str = entry.created_at.strftime("%Y-%m-%d")
-        time_str = entry.created_at.strftime("%I:%M %p")
-        tags_str = ", ".join(entry.tag_names) if entry.tag_names else ""
-        project_str = entry.project or ""
-        line = (
-            f"[{entry.id}] {date_str} | {time_str}: {entry.content} | "
-            f"{tags_str} | {project_str}"
-        )
-        editable_lines.append(line)
-
-    edited_text = click.edit("\n".join(editable_lines))
-
-    if edited_text is None:
-        ctx.console.print("No changes made.")
-        return
-
-    lines = edited_text.strip().split("\n")
-    updated_count = 0
-    deleted_count = 0
-
-    for line in lines:
-        line = line.strip()
-
-        if not line or line.startswith("#"):
-            continue
-
-        if "]" not in line:
-            continue
-
-        try:
-            id_end = line.index("]")
-            entry_id = int(line[1:id_end])
-            rest = line[id_end + 1 :].strip()
-
-            parts = rest.split("|")
-            content = parts[0].strip()
-            tags_str = parts[1].strip() if len(parts) > 1 else ""
-            project_str = parts[2].strip() if len(parts) > 2 else ""
-
-            if not content:
-                ctx.db.delete_entry(entry_id)
-                deleted_count += 1
-                continue
-
-            tags = (
-                [t.strip().lstrip("#") for t in tags_str.split(",")]
-                if tags_str
-                else []
-            )
-            tags = [t for t in tags if t]
-            project = project_str if project_str else None
-
-            ctx.db.update_entry(
-                entry_id, content=content, tags=tags, project=project
-            )
-            updated_count += 1
-
-        except (ValueError, IndexError):
-            ctx.console.print(
-                f"[yellow]![/yellow] Could not parse line: {line}"
-            )
-
-    ctx.console.print(
-        f"[green]✅[/green] Updated {updated_count} entries, "
-        f"deleted {deleted_count}."
+    app = EditApp(
+        db=ctx.db,
+        console=ctx.console,
+        date=today_date,
     )
+    app.run()
 
 
 @click.command()
@@ -201,8 +130,8 @@ def _bulk_edit_today(ctx: AppContext) -> None:
 def edit(ctx: AppContext, entry_id: int, search_query: str):
     """Edit or delete entries interactively.
 
-    Opens today's entries in your default text editor for bulk editing,
-    or edits a specific entry by ID.
+    Launches an interactive TUI for editing today's entries,
+    or edits a specific entry by ID or search query.
 
     Examples:
         dwriter edit

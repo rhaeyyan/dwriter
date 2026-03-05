@@ -217,8 +217,9 @@ Edit your history or customize how the tool behaves.
 
 | Command | Description |
 | --- | --- |
-| `dwriter edit` | Interactively edit or delete today's entries |
+| `dwriter edit` | Launch interactive edit TUI for today's entries |
 | `dwriter edit -i ID` | Edit a specific entry by ID |
+| `dwriter edit -s QUERY` | Search for an entry to edit (fuzzy match) |
 | `dwriter delete --before DATE` | Bulk delete entries older than a specific date (YYYY-MM-DD) |
 | `dwriter config show` | View your current settings |
 | `dwriter config edit` | Open the configuration file in your editor |
@@ -316,7 +317,6 @@ Fuzzy search your journal entries and to-do tasks. Forgiving of typos and partia
 | `dwriter search "query" -t TAG` | Filter by tags before searching (can use multiple `-t`) |
 | `dwriter search "query" --type TYPE` | Restrict search to `entry`, `todo`, or `all` |
 | `dwriter search "query" -n LIMIT` | Limit number of results per category |
-| `dwriter search --tui` | Force interactive TUI mode |
 
 #### Examples:
 
@@ -345,11 +345,6 @@ dwriter search "meeting" -t work -t notes
 
 ```
 
-```bash
-dwriter search --tui
-
-```
-
 **Match Scores:**
 - 🟢 **90%+** (green): Excellent match
 - 🟡 **75%+** (yellow): Good match
@@ -363,7 +358,7 @@ dwriter now includes interactive TUI (Text User Interface) modes for enhanced wo
 
 ### 🔍 Interactive Search (`dwriter search`)
 
-Launch with `dwriter search` (no arguments) or `dwriter search --tui`.
+Launch with `dwriter search` (no arguments).
 
 **Features:**
 - Real-time fuzzy filtering as you type
@@ -406,6 +401,28 @@ Launch with `dwriter todo` (no arguments) or `dwriter todo list --tui`.
 - 🟡 **HIGH** (yellow)
 - ⚪ **NORMAL** (white)
 - ⚫ **LOW** (dim)
+
+### ✏️ Edit Entries (`dwriter edit`)
+
+Launch with `dwriter edit` (no arguments).
+
+**Features:**
+- Edit today's entries in a clean table view
+- Modify content, tags, and project separately
+- Delete entries with confirmation
+- No more fragile pipe-delimited syntax
+
+**Keybindings:**
+
+| Key | Action |
+| --- | --- |
+| `j` / `k` | Navigate down / up |
+| `e` / `Enter` | Edit entry content |
+| `t` | Edit tags (comma-separated) |
+| `p` | Edit project name |
+| `d` | Delete entry (with confirmation) |
+| `r` | Refresh list |
+| `q` / `Esc` | Quit |
 
 > **Hybrid CLI/TUI Design:** Quick operations remain CLI-based (`dwriter add`, `dwriter todo "task"`) for frictionless use. TUI modes launch only when needed for interactive workflows.
 
