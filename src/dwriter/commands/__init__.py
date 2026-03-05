@@ -11,13 +11,14 @@ from .search import search
 from .standup import standup
 from .stats import stats
 from .today import today
-from .todo import todo
+from .todo import done, todo
 from .undo import undo
 
 __all__ = [
     "add",
     "config",
     "delete",
+    "done",
     "edit",
     "examples",
     "focus",

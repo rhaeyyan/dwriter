@@ -102,6 +102,37 @@ Day Writer - Usage Examples
   $ dwriter config path
 
 
+8. TODO MANAGEMENT
+───────────────────────────────────────────────────────────────
+
+  # Add a new task
+  $ dwriter todo "Draft new relic ideas"
+
+  # Add task with project
+  $ dwriter todo "Fix card draw bug" -p my_project
+
+  # Add task with priority and tags
+  $ dwriter todo "Fix card draw bug" --priority urgent -t bug
+
+  # Options can come before content too
+  $ dwriter todo --priority urgent -t bug "Fix card draw bug"
+
+  # List pending tasks
+  $ dwriter todo list
+
+  # Mark a task as done (auto-logs to journal)
+  $ dwriter done 5
+
+  # Mark task done using fuzzy search
+  $ dwriter done "card draw bug" --search
+
+  # Delete a task
+  $ dwriter todo rm 3
+
+  # Edit a task
+  $ dwriter todo edit 2
+
+
 WORKFLOWS
 ═══════════════════════════════════════════════════════════════
 
@@ -116,6 +147,24 @@ Morning Standup Workflow
   # Next morning, generate standup
   $ dwriter standup
   # Output is copied to clipboard, ready to paste in Slack
+
+
+Task-to-Journal Workflow
+───────────────────────────────────────────────────────────────
+
+  # Add tasks for the day
+  $ dwriter todo "Review pull requests" --priority high
+  $ dwriter todo "Write unit tests" -p backend
+
+  # List your tasks
+  $ dwriter todo list
+
+  # Complete a task (auto-logs to journal)
+  $ dwriter done 1
+  # Creates journal entry: "Completed: Review pull requests"
+
+  # Generate standup with todos included
+  $ dwriter standup --with-todos
 
 
 Weekly Timesheet Workflow

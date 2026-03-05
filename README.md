@@ -234,25 +234,25 @@ Manage future tasks and to-dos. When a task is marked as done, it automatically 
 
 | Command | Description |
 | --- | --- |
-| `dwriter todo add "task"` | Add a new pending task |
-| `dwriter todo add "task" -t TAG` | Add a task with tags |
-| `dwriter todo add "task" -p PROJECT` | Add a task with a project |
-| `dwriter todo add "task" --priority LEVEL` | Set task priority (low, normal, high, urgent) |
+| `dwriter todo "task"` | Add a new pending task |
+| `dwriter todo "task" -t TAG` | Add a task with tags |
+| `dwriter todo "task" -p PROJECT` | Add a task with a project |
+| `dwriter todo "task" --priority LEVEL` | Set task priority (low, normal, high, urgent) |
 | `dwriter todo list` | List all pending tasks |
 | `dwriter todo list --all` | Show all tasks, including completed ones |
-| `dwriter todo done ID` | Mark a task as complete and log it to today's entries |
+| `dwriter done ID` | Mark a task as complete and log it to today's entries |
 | `dwriter todo rm ID` | Delete a task entirely |
 | `dwriter todo edit ID` | Edit a task's content interactively |
 
 #### Examples:
 
 ```bash
-dwriter todo add "Draft new relic ideas" -p my_project
+dwriter todo "Draft new relic ideas" -p my_project
 
 ```
 
 ```bash
-dwriter todo add "Fix card draw bug" --priority urgent -t bug
+dwriter todo "Fix card draw bug" --priority urgent -t bug
 
 ```
 
@@ -262,9 +262,14 @@ dwriter todo list
 ```
 
 ```bash
-dwriter todo done 5
+dwriter done 5
 
 ```
+
+> **Note:** Options must come **before** the task content:
+> ```bash
+> dwriter todo --priority urgent -t bug "Fix card draw bug"  # Also works
+> ```
 
 ### Focus Timer (Pomodoro)
 
