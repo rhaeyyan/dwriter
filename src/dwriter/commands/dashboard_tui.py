@@ -698,7 +698,7 @@ class DashboardApp(App):  # type: ignore[type-arg]
     def _update_tables(self) -> None:
         """Update DataTables with loaded data."""
         # Projects table
-        projects_table = self.query_one("#projects-table", DataTable[str])
+        projects_table = self.query_one("#projects-table", DataTable)
         projects_table.clear()
         for project, count in sorted(
             self.project_stats.items(), key=lambda x: x[1], reverse=True
@@ -706,7 +706,7 @@ class DashboardApp(App):  # type: ignore[type-arg]
             projects_table.add_row(project, f"     {count}")
 
         # Tags table
-        tags_table = self.query_one("#tags-table", DataTable[str])
+        tags_table = self.query_one("#tags-table", DataTable)
         tags_table.clear()
         for tag, count in sorted(
             self.tag_stats.items(), key=lambda x: x[1], reverse=True
