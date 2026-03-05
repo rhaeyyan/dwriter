@@ -3,6 +3,7 @@
 import click
 
 from ..cli import AppContext
+from ..stats_utils import calculate_streak
 
 
 @click.command()

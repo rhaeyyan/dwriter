@@ -5,11 +5,131 @@ weekly charts, and logging statistics.
 """
 
 from datetime import datetime, timedelta
-from typing import Dict, Tuple
+from typing import Dict, List, Optional, Tuple
 
+from textual import work
 from textual.app import App, ComposeResult
-from textual.containers import Container, Horizontal, Vertical
-from textual.widgets import Footer, Header, Label, Static
+from textual.containers import Container, Grid, Horizontal, ScrollableContainer, Vertical
+from textual.screen import Screen
+from textual.widgets import (
+    DataTable,
+    Digits,
+    Footer,
+    Header,
+    Label,
+    LoadingIndicator,
+    Static,
+)
+
+from ..database import Entry
+
+
+class KPICard(Static):
+    """A KPI card displaying a metric with a large number."""
+
+    DEFAULT_CSS = """
+    KPICard {
+        height: auto;
+        padding: 1 2;
+        background: $panel;
+        border: solid $primary;
+    }
+
+    KPICard .kpi-title {
+        color: $text-muted;
+        text-style: bold;
+        padding: 0 0 1 0;
+    }
+
+    KPICard .kpi-value {
+        text-align: center;
+        text-style: bold;
+    }
+    """
+
+    def __init__(self, title: str, value: str, color: str = "$primary", **kwargs):
+        super().__init__(**kwargs)
+        self.title = title
+        self.value = value
+        self.color = color
+
+    def on_mount(self) -> None:
+        """Render the KPI card."""
+        self._update_display()
+
+    def update_value(self, value: str) -> None:
+        """Update the KPI value."""
+        self.value = value
+        self._update_display()
+
+    def _update_display(self) -> None:
+        """Update the displayed content."""
+        self.update(
+            f"[{self.color} bold]{self.value}[/{self.color} bold]\n"
+            f"[kpi-title]{self.title}[/kpi-title]"
+        )
+
+
+class EntryDetailScreen(Screen):
+    """Screen showing entries for a selected project or tag."""
+
+    CSS = """
+    #entry-container {
+        height: 1fr;
+        padding: 1 2;
+    }
+
+    #entry-header {
+        height: auto;
+        padding: 1;
+        background: $panel;
+        border: solid $primary;
+    }
+
+    #entry-table {
+        height: 1fr;
+    }
+    """
+
+    BINDINGS = [
+        ("escape", "go_back", "Back"),
+        ("q", "go_back", "Back"),
+    ]
+
+    def __init__(
+        self,
+        db,
+        title: str,
+        entries: List[Entry],
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.db = db
+        self.title = title
+        self.entries = entries
+
+    def compose(self) -> ComposeResult:
+        """Compose the entry detail screen."""
+        yield Header(show_clock=True)
+        with ScrollableContainer(id="entry-container"):
+            yield Static(
+                f"[bold]📋 {self.title}[/bold]\n[dim]Press Escape or 'q' to go back[/dim]",
+                id="entry-header",
+            )
+            table = DataTable(id="entry-table")
+            table.add_columns("Date", "Content", "Project", "Tags")
+            for entry in self.entries:
+                date_str = entry.created_at.strftime("%Y-%m-%d %H:%M")
+                content = entry.content[:60] + "..." if len(entry.content) > 60 else entry.content
+                project = entry.project or "-"
+                tags = ", ".join(entry.tag_names) if entry.tag_names else "-"
+                table.add_row(date_str, content, project, tags)
+            yield table
+        yield Footer()
+
+    def action_go_back(self) -> None:
+        """Return to the main dashboard."""
+        self.app.pop_screen()
 
 
 class StreakCalendar(Static):
@@ -18,58 +138,38 @@ class StreakCalendar(Static):
     DEFAULT_CSS = """
     StreakCalendar {
         height: auto;
-        margin: 1 2;
+        margin: 1;
         padding: 1;
         background: $panel;
         border: solid $primary;
     }
 
-    StreakCalendar .title {
-        text-style: bold;
-        padding: 0 0 1 0;
-    }
-
-    StreakCalendar .calendar-grid {
-        grid-size: 53 7;
-        grid-gutter: 1;
-    }
-
-    StreakCalendar .day-cell {
-        width: 1;
-        height: 1;
-    }
-
-    StreakCalendar .day-empty {
-        color: $surface;
-    }
-
     StreakCalendar .day-level-0 {
-        color: #161b22;
-        background: #161b22;
+        color: #D1F8EF;
+        background: #D1F8EF;
     }
 
     StreakCalendar .day-level-1 {
-        color: #0e4429;
-        background: #0e4429;
+        color: #A1E3F9;
+        background: #A1E3F9;
     }
 
     StreakCalendar .day-level-2 {
-        color: #006d32;
-        background: #006d32;
+        color: #578FCA;
+        background: #578FCA;
     }
 
     StreakCalendar .day-level-3 {
-        color: #26a641;
-        background: #26a641;
+        color: #3674B5;
+        background: #3674B5;
     }
 
     StreakCalendar .day-level-4 {
-        color: #39d353;
-        background: #39d353;
+        color: #155E95;
+        background: #155E95;
     }
 
-    StreakCalendar .month-label {
-        color: $text-muted;
+    StreakCalendar .legend {
         padding: 1 0 0 0;
     }
     """
@@ -160,16 +260,16 @@ class StreakCalendar(Static):
     def _render_calendar(self) -> None:
         """Render the contribution calendar."""
         today = datetime.now().date()
-        start_date = today - timedelta(days=364)  # 52 weeks
+        # Show last 10 weeks for better readability
+        num_weeks = 10
+        start_date = today - timedelta(days=num_weeks * 7 - 1)
 
-        # Build calendar data
+        # Align start_date to Monday (start of week)
+        start_date = start_date - timedelta(days=start_date.weekday())
+
+        # Build calendar data - organize by weeks (columns)
         weeks = []
         current_week = []
-
-        # Pad first week
-        day_of_week = start_date.weekday()
-        for _ in range(day_of_week):
-            current_week.append(None)
 
         current_date = start_date
         while current_date <= today:
@@ -183,85 +283,76 @@ class StreakCalendar(Static):
 
             current_date += timedelta(days=1)
 
-        # Pad last week
+        # Pad last week if needed
         while len(current_week) < 7:
             current_week.append(None)
+            current_date += timedelta(days=1)
         if current_week:
             weeks.append(current_week)
 
-        # Build display
-        content = ["[bold]📅 Contribution Calendar[/bold]\n"]
-        content.append(
-            f"Current Streak: [green]{self.current_streak} days[/green] | "
-            f"Longest Streak: [yellow]{self.longest_streak} days[/yellow]\n\n"
-        )
+        # Limit to num_weeks
+        weeks = weeks[-num_weeks:]
 
-        # Month labels
+        # Build display
+        content = ["[bold]📅 Last 10 Weeks[/bold]  "]
+        content.append(f"Current: [green]{self.current_streak}d[/green]  ")
+        content.append(f"Longest: [yellow]{self.longest_streak}d[/yellow]\n")
+
+        # Month labels - show month name at start of each month
         months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
                   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-        month_line = "      "
+        month_line = "    "
         last_month = -1
         for week in weeks:
-            if week[0] is not None:
+            if week and week[0] is not None:
                 month = week[0][0].month
                 if month != last_month:
-                    month_line += f"{months[month-1]} "
+                    month_line += f"{months[month-1]:<5}"
                     last_month = month
                 else:
-                    month_line += "    "
+                    month_line += "     "
         content.append(f"[dim]{month_line}[/dim]\n")
 
-        # Day labels
-        content.append("[dim]Mon    [/dim]")
-
-        # Render grid
+        # Render the grid - each row is a day of week, each column is a week
+        day_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        # Color mapping for activity levels (light to dark blue)
+        bg_colors = ["#D1F8EF", "#A1E3F9", "#578FCA", "#3674B5", "#155E95"]
+        
         for day_idx in range(7):
-            day_line = "[dim]"
-            if day_idx == 0:
-                day_line += "M      [/dim]"
-            elif day_idx == 2:
-                day_line += "W      [/dim]"
-            elif day_idx == 4:
-                day_line += "F      [/dim]"
-            else:
-                day_line += "       [/dim]"
-            content.append(day_line)
-
-        content.append("\n")
-
-        # Render weeks as columns (transposed for display)
-        for day_idx in range(7):
-            line = ""
+            line = f"[bold]{day_names[day_idx]}[/bold] "
             for week in weeks:
                 if day_idx < len(week) and week[day_idx] is not None:
                     _, count = week[day_idx]
                     level = self._get_level(count)
                     if level == 0:
-                        line += "░"
+                        line += " · "  # Light dot for no activity
                     else:
-                        line += f"[day-level-{level}]█[/day-level-{level}]"
+                        # Use colored block with background
+                        color = bg_colors[level - 1]
+                        line += f"[on {color}]{chr(9608)}[/on {color}] "
                 else:
-                    line += " "
+                    line += "   "
             content.append(line + "\n")
+
+        # Legend
+        content.append("\n[legend][dim]Less ")
+        for color in bg_colors:
+            content.append(f"[on {color}]{chr(9608)}[/on {color}]")
+        content.append(" More[/dim][/legend]")
 
         self.update("".join(content))
 
 
-class WeeklyBarChart(Static):
-    """Bar chart showing entries per week."""
+class ActivitySparkline(Static):
+    """Sparkline showing last 30 days of activity with top projects and tags."""
 
     DEFAULT_CSS = """
-    WeeklyBarChart {
+    ActivitySparkline {
         height: auto;
-        margin: 1 2;
+        margin: 1;
         padding: 1;
         background: $panel;
         border: solid $primary;
-    }
-
-    WeeklyBarChart .title {
-        text-style: bold;
-        padding: 0 0 1 0;
     }
     """
 
@@ -270,176 +361,78 @@ class WeeklyBarChart(Static):
         self.db = db
 
     def on_mount(self) -> None:
-        """Load data and render chart."""
-        self._render_chart()
+        """Load data and render sparkline."""
+        self._render_sparkline()
 
-    def _render_chart(self) -> None:
-        """Render the weekly bar chart."""
+    def _render_sparkline(self) -> None:
+        """Render the activity sparkline with top projects and tags."""
         today = datetime.now().date()
-        weeks_data = []
+        start_date = today - timedelta(days=29)  # 30 days total
 
-        # Get last 8 weeks
-        for i in range(7, -1, -1):
-            week_start = today - timedelta(days=i * 7)
-            week_end = week_start + timedelta(days=6)
-            count = 0
+        # Get entry counts by date
+        entries_by_date = self.db.get_entries_count_by_date(start_date, today)
 
-            all_entries = self.db.get_all_entries()
-            for entry in all_entries:
-                entry_date = entry.created_at.date()
-                if week_start <= entry_date <= week_end:
-                    count += 1
+        # Build data array for sparkline (fill in zeros for missing days)
+        data = []
+        for i in range(30):
+            date = start_date + timedelta(days=i)
+            date_str = date.strftime("%Y-%m-%d")
+            data.append(entries_by_date.get(date_str, 0))
 
-            weeks_data.append((week_start.strftime("%m/%d"), count))
+        content = ["[bold]📈 30 Days[/bold] "]
 
-        # Find max for scaling
-        max_count = max((w[1] for w in weeks_data), default=1)
-        if max_count == 0:
-            max_count = 1
-
-        # Build chart
-        content = ["[bold]📊 Weekly Activity[/bold]\n\n"]
-        bar_height = 5
-
-        for row in range(bar_height, 0, -1):
-            threshold = (row / bar_height) * max_count
-            line = f"{int(threshold):>3} │"
-
-            for _, count in weeks_data:
-                if count >= threshold:
-                    if count >= threshold * 0.8:
-                        line += "[green]██[/green]"
-                    else:
-                        line += "[yellow]░░[/yellow]"
-                else:
-                    line += "  "
-            content.append(line + "\n")
-
-        # X-axis
-        content.append("    └" + "─" * 16 + "\n")
-
-        # Labels
-        labels = "      "
-        for label, _ in weeks_data[::2]:  # Show every other label
-            labels += f"{label} "
-        content.append(f"[dim]{labels}[/dim]\n")
-
-        self.update("".join(content))
-
-
-class StatsSummary(Static):
-    """Summary statistics widget."""
-
-    DEFAULT_CSS = """
-    StatsSummary {
-        height: auto;
-        margin: 1 2;
-        padding: 1;
-        background: $panel;
-        border: solid $primary;
-    }
-
-    StatsSummary .stat-row {
-        padding: 0 0 0 1;
-    }
-    """
-
-    def __init__(self, db, **kwargs):
-        super().__init__(**kwargs)
-        self.db = db
-
-    def on_mount(self) -> None:
-        """Load and display stats."""
-        self._render_stats()
-
-    def _render_stats(self) -> None:
-        """Render statistics."""
-        all_entries = self.db.get_all_entries()
-        all_todos = self.db.get_all_todos()
-
-        total_entries = len(all_entries)
-        total_todos = len(all_todos)
-        completed_todos = sum(1 for t in all_todos if t.status == "completed")
-
-        # Get unique projects and tags
-        projects = set(e.project for e in all_entries if e.project)
-        tags = set()
-        for e in all_entries:
-            tags.update(e.tag_names)
-
-        # First and last entry dates
-        if all_entries:
-            dates = [e.created_at for e in all_entries]
-            first_entry = min(dates).strftime("%Y-%m-%d")
-            last_entry = max(dates).strftime("%Y-%m-%d")
+        if any(data):
+            # Create text-based sparkline
+            spark_chars = " ▁▂▃▄▅▆▇█"
+            max_val = max(data) if data else 1
+            spark_line = ""
+            for val in data:
+                idx = int((val / max_val) * 8) if max_val > 0 else 0
+                spark_line += spark_chars[idx]
+            content.append(f"[green]{spark_line}[/green]\n")
+            content.append(f"[dim]{min(data)}/{max(data)}/{sum(data)}[/dim]\n")
         else:
-            first_entry = "N/A"
-            last_entry = "N/A"
+            content.append("[dim]No activity[/dim]\n")
 
-        content = [
-            "[bold]📈 Statistics Summary[/bold]\n\n",
-            f"[stat-row]📝 Total Entries: [cyan]{total_entries}[/cyan][/stat-row]\n",
-            f"[stat-row]✅ Completed Tasks: [green]{completed_todos}[/green]/{total_todos}[/stat-row]\n",
-            f"[stat-row]🏷️ Unique Tags: [yellow]{len(tags)}[/yellow][/stat-row]\n",
-            f"[stat-row]📁 Projects: [purple]{len(projects)}[/purple][/stat-row]\n",
-            f"[stat-row]📅 First Entry: [dim]{first_entry}[/dim][/stat-row]\n",
-            f"[stat-row]📅 Last Entry: [dim]{last_entry}[/dim][/stat-row]\n",
-        ]
-
-        self.update("".join(content))
-
-
-class TopTags(Static):
-    """Widget showing most used tags."""
-
-    DEFAULT_CSS = """
-    TopTags {
-        height: auto;
-        margin: 1 2;
-        padding: 1;
-        background: $panel;
-        border: solid $primary;
-    }
-
-    TopTags .tag-item {
-        padding: 0 0 0 1;
-    }
-    """
-
-    def __init__(self, db, **kwargs):
-        super().__init__(**kwargs)
-        self.db = db
-
-    def on_mount(self) -> None:
-        """Load and display top tags."""
-        self._render_tags()
-
-    def _render_tags(self) -> None:
-        """Render top tags list."""
+        # Get top projects (last 30 days)
         all_entries = self.db.get_all_entries()
-
-        # Count tag usage
+        project_counts: Dict[str, int] = {}
         tag_counts: Dict[str, int] = {}
+
         for entry in all_entries:
-            for tag in entry.tag_names:
-                tag_counts[tag] = tag_counts.get(tag, 0) + 1
+            entry_date = entry.created_at.date()
+            if start_date <= entry_date <= today:
+                if entry.project:
+                    project_counts[entry.project] = project_counts.get(entry.project, 0) + 1
+                for tag in entry.tag_names:
+                    tag_counts[tag] = tag_counts.get(tag, 0) + 1
 
-        # Sort by count
-        sorted_tags = sorted(tag_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+        # Top 3 projects
+        top_projects = sorted(project_counts.items(), key=lambda x: x[1], reverse=True)[:3]
+        # Top 5 tags
+        top_tags = sorted(tag_counts.items(), key=lambda x: x[1], reverse=True)[:5]
 
-        content = ["[bold]🏷️ Top Tags[/bold]\n\n"]
-
-        if not sorted_tags:
-            content.append("[dim]No tags yet[/dim]\n")
-        else:
-            max_count = sorted_tags[0][1] if sorted_tags else 1
-            for tag, count in sorted_tags:
-                bar_len = int((count / max_count) * 20)
-                bar = "█" * bar_len + "░" * (20 - bar_len)
-                content.append(
-                    f"[tag-item][yellow]#{tag}[/yellow] "
-                    f"[dim]{bar}[/dim] [cyan]{count}[/cyan][/tag-item]\n"
-                )
+        # Render projects and tags side-by-side (compact format)
+        if top_projects or top_tags:
+            max_rows = max(len(top_projects), len(top_tags))
+            # Header
+            content.append(f"\n[purple]Projects:[/purple] ")
+            content.append(" " * 6)
+            content.append(f"[yellow]Tags:[/yellow]\n")
+            
+            # Data rows (compact)
+            for i in range(max_rows):
+                if i < len(top_projects):
+                    proj, cnt = top_projects[i]
+                    content.append(f"  {proj[:12]:<12}{cnt:>3}")
+                else:
+                    content.append(" " * 16)
+                content.append("  ")
+                if i < len(top_tags):
+                    tag, cnt = top_tags[i]
+                    content.append(f"#{tag[:10]:<10}{cnt:>3}\n")
+                else:
+                    content.append("\n")
 
         self.update("".join(content))
 
@@ -448,15 +441,16 @@ class DashboardApp(App):
     """Interactive dashboard application.
 
     Provides a visual overview of logging activity with:
+    - KPI cards with big numbers
     - GitHub-style contribution calendar
-    - Weekly activity chart
-    - Statistics summary
-    - Top tags
+    - 30-day activity sparkline
+    - Interactive DataTables for projects and tags
+    - Drill-down to view entries
 
     Key bindings:
         q: Quit
         r: Refresh data
-        Tab: Next section
+        d: Drill-down into selected item
     """
 
     CSS = """
@@ -466,18 +460,53 @@ class DashboardApp(App):
 
     #main-container {
         height: 1fr;
+        padding: 1;
+        overflow-y: auto;
     }
 
-    #top-row {
-        height: 1fr;
+    #kpi-row {
+        height: auto;
+        margin: 0 0 1 0;
     }
 
-    #left-column {
-        width: 2fr;
-    }
-
-    #right-column {
+    #kpi-row KPICard {
         width: 1fr;
+        margin: 0 1;
+    }
+
+    #charts-row {
+        height: 50%;
+        margin: 0 0 1 0;
+    }
+
+    #charts-left {
+        width: 2fr;
+        margin: 0 1 0 0;
+    }
+
+    #charts-right {
+        width: 1fr;
+        margin: 0 0 0 1;
+    }
+
+    #tables-row {
+        height: 50%;
+    }
+
+    #tables-left {
+        width: 1fr;
+        margin: 0 1 0 0;
+    }
+
+    #tables-right {
+        width: 1fr;
+        margin: 0 0 0 1;
+    }
+
+    #loading-overlay {
+        align: center middle;
+        height: 100%;
+        width: 100%;
     }
 
     #status-bar {
@@ -491,30 +520,168 @@ class DashboardApp(App):
     BINDINGS = [
         ("q", "quit", "Quit"),
         ("r", "refresh", "Refresh"),
-        ("tab", "next_section", "Next"),
+        ("d", "drill_down", "Drill Down"),
     ]
 
     def __init__(self, db, console, **kwargs):
         super().__init__(**kwargs)
         self.db = db
         self.console = console
+        self.data_loaded = False
+
+        # KPI data
+        self.total_entries = 0
+        self.current_streak = 0
+        self.longest_streak = 0
+        self.consistency_pct = 0.0
+
+        # Table data
+        self.project_stats: Dict[str, int] = {}
+        self.tag_stats: Dict[str, int] = {}
 
     def compose(self) -> ComposeResult:
         """Compose the dashboard layout."""
-        yield Header()
+        yield Header(show_clock=True)
+
         with Container(id="main-container"):
-            with Horizontal(id="top-row"):
-                with Vertical(id="left-column"):
+            # Loading indicator (will be removed when data loads)
+            yield LoadingIndicator(id="loading-overlay")
+
+            # Row 1: KPI Cards
+            with Horizontal(id="kpi-row"):
+                yield KPICard("Total Entries", "0", color="$primary", id="kpi-total")
+                yield KPICard("Current Streak", "0 days", color="$success", id="kpi-streak")
+                yield KPICard("Longest Streak", "0 days", color="$warning", id="kpi-longest")
+                yield KPICard("Consistency", "0%", color="$info", id="kpi-consistency")
+
+            # Row 2: Charts
+            with Horizontal(id="charts-row"):
+                with Vertical(id="charts-left"):
                     yield StreakCalendar(self.db, id="calendar")
-                    yield WeeklyBarChart(self.db, id="weekly-chart")
-                with Vertical(id="right-column"):
-                    yield StatsSummary(self.db, id="stats")
-                    yield TopTags(self.db, id="top-tags")
+                with Vertical(id="charts-right"):
+                    yield ActivitySparkline(self.db, id="sparkline")
+
+            # Row 3: Interactive Tables
+            with Horizontal(id="tables-row"):
+                with Vertical(id="tables-left"):
+                    projects_table = DataTable(id="projects-table")
+                    projects_table.add_columns("Project        ", "   Entries")
+                    projects_table.cursor_type = "row"
+                    yield projects_table
+                with Vertical(id="tables-right"):
+                    tags_table = DataTable(id="tags-table")
+                    tags_table.add_columns("Tag            ", "   Entries")
+                    tags_table.cursor_type = "row"
+                    yield tags_table
+
         yield Label(
-            "r: Refresh | Tab: Navigate | q: Quit",
+            "r: Refresh | d: Drill Down | q: Quit",
             id="status-bar",
         )
         yield Footer()
+
+    def on_mount(self) -> None:
+        """Start loading data asynchronously."""
+        self._load_dashboard_data()
+
+    @work(exclusive=True, thread=True)
+    def _load_dashboard_data(self) -> None:
+        """Load all dashboard data in a background thread."""
+        # Load entries
+        all_entries = self.db.get_all_entries()
+        self.total_entries = len(all_entries)
+
+        # Calculate streaks
+        entries_by_date: Dict[str, int] = {}
+        for entry in all_entries:
+            date_str = entry.created_at.strftime("%Y-%m-%d")
+            entries_by_date[date_str] = entries_by_date.get(date_str, 0) + 1
+
+        self.current_streak, self.longest_streak = self._calculate_streaks(entries_by_date)
+
+        # Calculate consistency (entries in last 30 days / 30)
+        today = datetime.now().date()
+        start_date = today - timedelta(days=29)
+        entries_in_range = self.db.get_entries_count_by_date(start_date, today)
+        total_in_30_days = sum(entries_in_range.values())
+        self.consistency_pct = min(100.0, (total_in_30_days / 30) * 100)
+
+        # Load project stats
+        self.project_stats = self.db.get_project_stats()
+
+        # Load tag stats
+        self.tag_stats = self.db.get_entries_with_tags_count()
+
+        # Update UI on main thread
+        self.call_from_thread(self._update_kpis)
+        self.call_from_thread(self._update_tables)
+        self.call_from_thread(self._hide_loading)
+
+    def _calculate_streaks(self, entries_by_date: Dict[str, int]) -> Tuple[int, int]:
+        """Calculate current and longest streaks."""
+        if not entries_by_date:
+            return 0, 0
+
+        today = datetime.now().date()
+        dates = sorted(
+            datetime.strptime(d, "%Y-%m-%d").date()
+            for d in entries_by_date.keys()
+        )
+
+        # Current streak
+        current = 0
+        for i in range(14):
+            check_date = today - timedelta(days=i)
+            if check_date in dates:
+                current += 1
+            elif i == 0:
+                continue
+            else:
+                break
+
+        # Longest streak
+        longest = 1
+        streak = 1
+        for i in range(1, len(dates)):
+            if (dates[i] - dates[i - 1]).days == 1:
+                streak += 1
+                longest = max(longest, streak)
+            else:
+                streak = 1
+
+        return current, longest
+
+    def _update_kpis(self) -> None:
+        """Update KPI cards with loaded data."""
+        kpi_total = self.query_one("#kpi-total", KPICard)
+        kpi_streak = self.query_one("#kpi-streak", KPICard)
+        kpi_longest = self.query_one("#kpi-longest", KPICard)
+        kpi_consistency = self.query_one("#kpi-consistency", KPICard)
+
+        kpi_total.update_value(str(self.total_entries))
+        kpi_streak.update_value(f"{self.current_streak} days")
+        kpi_longest.update_value(f"{self.longest_streak} days")
+        kpi_consistency.update_value(f"{self.consistency_pct:.1f}%")
+
+    def _update_tables(self) -> None:
+        """Update DataTables with loaded data."""
+        # Projects table
+        projects_table = self.query_one("#projects-table", DataTable)
+        projects_table.clear()
+        for project, count in sorted(self.project_stats.items(), key=lambda x: x[1], reverse=True)[:15]:
+            projects_table.add_row(project, f"     {count}")
+
+        # Tags table
+        tags_table = self.query_one("#tags-table", DataTable)
+        tags_table.clear()
+        for tag, count in sorted(self.tag_stats.items(), key=lambda x: x[1], reverse=True)[:15]:
+            tags_table.add_row(tag, f"     {count}")
+
+    def _hide_loading(self) -> None:
+        """Hide the loading indicator."""
+        loading = self.query_one("#loading-overlay")
+        loading.remove()
+        self.data_loaded = True
 
     def action_quit(self) -> None:
         """Quit the dashboard."""
@@ -523,29 +690,76 @@ class DashboardApp(App):
     def action_refresh(self) -> None:
         """Refresh all dashboard data."""
         self.notify("Refreshing data...", timeout=1)
-        for widget in self.query(StreakCalendar):
-            widget._load_data()
-            widget._render_calendar()
-        for widget in self.query(WeeklyBarChart):
-            widget._render_chart()
-        for widget in self.query(StatsSummary):
-            widget._render_stats()
-        for widget in self.query(TopTags):
-            widget._render_tags()
-        self.notify("Dashboard refreshed!", timeout=1.5)
+        self._load_dashboard_data()
 
-    def action_next_section(self) -> None:
-        """Cycle focus through sections."""
-        widgets = list(self.query("*"))
+    def action_drill_down(self) -> None:
+        """Drill down into the selected project or tag."""
+        if not self.data_loaded:
+            self.notify("Data still loading...", timeout=1)
+            return
+
+        # Check which table is focused
         focused = self.focused
-        if focused is None:
-            if widgets:
-                widgets[0].focus()
+        if isinstance(focused, DataTable):
+            if focused.id == "projects-table":
+                self._drill_down_project(focused)
+            elif focused.id == "tags-table":
+                self._drill_down_tag(focused)
+            else:
+                self.notify("Select a project or tag first", timeout=1)
         else:
-            try:
-                idx = widgets.index(focused)
-                next_idx = (idx + 1) % len(widgets)
-                widgets[next_idx].focus()
-            except ValueError:
-                if widgets:
-                    widgets[0].focus()
+            self.notify("Focus on a project or tag table first", timeout=1)
+
+    def _drill_down_project(self, table: DataTable) -> None:
+        """Open drill-down screen for selected project."""
+        row_key = table.cursor_row
+        if row_key is None:
+            self.notify("Select a project first", timeout=1)
+            return
+
+        row = table.get_row_at(row_key)
+        if row:
+            project_name = row[0]
+            # Remove any # prefix if present
+            if project_name.startswith("#"):
+                project_name = project_name[1:]
+
+            # Get entries for this project
+            entries = self.db.get_all_entries(project=project_name)
+            if entries:
+                self.push_screen(
+                    EntryDetailScreen(
+                        self.db,
+                        f"Project: {project_name}",
+                        entries[:50],  # Limit to 50 entries
+                    )
+                )
+            else:
+                self.notify("No entries found for this project", timeout=1)
+
+    def _drill_down_tag(self, table: DataTable) -> None:
+        """Open drill-down screen for selected tag."""
+        row_key = table.cursor_row
+        if row_key is None:
+            self.notify("Select a tag first", timeout=1)
+            return
+
+        row = table.get_row_at(row_key)
+        if row:
+            tag_name = row[0]
+            # Remove # prefix
+            if tag_name.startswith("#"):
+                tag_name = tag_name[1:]
+
+            # Get entries with this tag
+            entries = self.db.get_all_entries(tags=[tag_name])
+            if entries:
+                self.push_screen(
+                    EntryDetailScreen(
+                        self.db,
+                        f"Tag: #{tag_name}",
+                        entries[:50],  # Limit to 50 entries
+                    )
+                )
+            else:
+                self.notify("No entries found for this tag", timeout=1)
