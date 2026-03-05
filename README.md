@@ -278,6 +278,13 @@ uv run dwriter search
 
 ## 🛠️ Command Reference
 
+> **💡 Note:** All examples below use `dwriter` directly. If you're using `uv` (recommended), prepend `uv run` to each command:
+> ```bash
+> uv run dwriter add "my task"
+> uv run dwriter standup
+> uv run dwriter search "query"
+> ```
+
 ### Logging and Viewing
 
 Use these commands to record your work and view your history.
