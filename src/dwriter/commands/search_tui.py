@@ -9,10 +9,269 @@ from typing import List, Optional
 from textual.app import App, ComposeResult
 from textual.containers import Container, Vertical
 from textual.reactive import reactive
-from textual.widgets import Footer, Header, Input, Label, ListItem, ListView, Static
+from textual.screen import ModalScreen
+from textual.widgets import (
+    Button,
+    Footer,
+    Header,
+    Input,
+    Label,
+    ListItem,
+    ListView,
+    Static,
+)
 
 from ..database import Entry, Todo
 from ..search_utils import search_items
+
+
+class EditContentModal(ModalScreen):
+    """Modal dialog for editing content."""
+
+    CSS = """
+    EditContentModal {
+        align: center middle;
+    }
+
+    #modal-container {
+        width: 90;
+        height: auto;
+        background: $surface;
+        border: thick $primary;
+        padding: 1 3;
+    }
+
+    #modal-title {
+        text-align: center;
+        text-style: bold;
+        padding: 1 0;
+    }
+
+    #edit-input {
+        width: 100%;
+        height: 6;
+        margin: 1 0;
+    }
+
+    #edit-buttons {
+        align: center middle;
+        padding: 1 0;
+    }
+
+    Button {
+        margin: 0 1;
+    }
+    """
+
+    BINDINGS = [
+        ("escape", "cancel", "Cancel"),
+        ("ctrl+s", "save", "Save"),
+    ]
+
+    def __init__(self, content: str, title: str = "Edit Content", **kwargs):
+        super().__init__(**kwargs)
+        self.content = content
+        self.title_text = title
+        self.result: Optional[str] = None
+
+    def compose(self) -> ComposeResult:
+        with Container(id="modal-container"):
+            yield Label(self.title_text, id="modal-title")
+            yield Input(
+                value=self.content,
+                id="edit-input",
+                placeholder="Enter content...",
+                multiline=True,
+            )
+            with Container(id="edit-buttons"):
+                yield Button("Save", id="save-btn", variant="primary")
+                yield Button("Cancel", id="cancel-btn", variant="default")
+
+    def on_mount(self) -> None:
+        self.query_one("#edit-input", Input).focus()
+
+    def action_save(self) -> None:
+        input_widget = self.query_one("#edit-input", Input)
+        self.result = input_widget.value.strip()
+        self.dismiss(self.result)
+
+    def action_cancel(self) -> None:
+        self.result = None
+        self.dismiss(None)
+
+    def on_button_pressed(self, event) -> None:
+        if event.button.id == "save-btn":
+            self.action_save()
+        elif event.button.id == "cancel-btn":
+            self.action_cancel()
+
+
+class EditTagsModal(ModalScreen):
+    """Modal dialog for editing tags."""
+
+    CSS = """
+    EditTagsModal {
+        align: center middle;
+    }
+
+    #modal-container {
+        width: 70;
+        height: auto;
+        background: $surface;
+        border: thick $primary;
+        padding: 1 3;
+    }
+
+    #modal-title {
+        text-align: center;
+        text-style: bold;
+        padding: 1 0;
+    }
+
+    #edit-input {
+        width: 100%;
+        margin: 1 0;
+    }
+
+    #edit-hint {
+        color: $text-muted;
+        padding: 0 0 1 0;
+    }
+
+    #edit-buttons {
+        align: center middle;
+        padding: 1 0;
+    }
+
+    Button {
+        margin: 0 1;
+    }
+    """
+
+    BINDINGS = [
+        ("escape", "cancel", "Cancel"),
+        ("ctrl+s", "save", "Save"),
+    ]
+
+    def __init__(self, tags: List[str], title: str = "Edit Tags", **kwargs):
+        super().__init__(**kwargs)
+        self.tags = tags
+        self.title_text = title
+        self.result: Optional[List[str]] = None
+
+    def compose(self) -> ComposeResult:
+        with Container(id="modal-container"):
+            yield Label(self.title_text, id="modal-title")
+            yield Input(
+                value=", ".join(self.tags),
+                id="edit-input",
+                placeholder="tag1, tag2, tag3",
+            )
+            yield Label("Separate tags with commas", id="edit-hint")
+            with Container(id="edit-buttons"):
+                yield Button("Save", id="save-btn", variant="primary")
+                yield Button("Cancel", id="cancel-btn", variant="default")
+
+    def on_mount(self) -> None:
+        self.query_one("#edit-input", Input).focus()
+
+    def action_save(self) -> None:
+        input_widget = self.query_one("#edit-input", Input)
+        value = input_widget.value.strip()
+        if value:
+            self.result = [t.strip() for t in value.split(",") if t.strip()]
+        else:
+            self.result = []
+        self.dismiss(self.result)
+
+    def action_cancel(self) -> None:
+        self.result = None
+        self.dismiss(None)
+
+    def on_button_pressed(self, event) -> None:
+        if event.button.id == "save-btn":
+            self.action_save()
+        elif event.button.id == "cancel-btn":
+            self.action_cancel()
+
+
+class EditProjectModal(ModalScreen):
+    """Modal dialog for editing project."""
+
+    CSS = """
+    EditProjectModal {
+        align: center middle;
+    }
+
+    #modal-container {
+        width: 70;
+        height: auto;
+        background: $surface;
+        border: thick $primary;
+        padding: 1 3;
+    }
+
+    #modal-title {
+        text-align: center;
+        text-style: bold;
+        padding: 1 0;
+    }
+
+    #edit-input {
+        width: 100%;
+        margin: 1 0;
+    }
+
+    #edit-buttons {
+        align: center middle;
+        padding: 1 0;
+    }
+
+    Button {
+        margin: 0 1;
+    }
+    """
+
+    BINDINGS = [
+        ("escape", "cancel", "Cancel"),
+        ("ctrl+s", "save", "Save"),
+    ]
+
+    def __init__(self, project: Optional[str], title: str = "Edit Project", **kwargs):
+        super().__init__(**kwargs)
+        self.project = project
+        self.title_text = title
+        self.result: Optional[str] = None
+
+    def compose(self) -> ComposeResult:
+        with Container(id="modal-container"):
+            yield Label(self.title_text, id="modal-title")
+            yield Input(
+                value=self.project or "",
+                id="edit-input",
+                placeholder="Project name (optional)",
+            )
+            with Container(id="edit-buttons"):
+                yield Button("Save", id="save-btn", variant="primary")
+                yield Button("Cancel", id="cancel-btn", variant="default")
+
+    def on_mount(self) -> None:
+        self.query_one("#edit-input", Input).focus()
+
+    def action_save(self) -> None:
+        input_widget = self.query_one("#edit-input", Input)
+        self.result = input_widget.value.strip() or None
+        self.dismiss(self.result)
+
+    def action_cancel(self) -> None:
+        self.result = None
+        self.dismiss(None)
+
+    def on_button_pressed(self, event) -> None:
+        if event.button.id == "save-btn":
+            self.action_save()
+        elif event.button.id == "cancel-btn":
+            self.action_cancel()
 
 
 class EntryResultsView(ListView):
@@ -271,6 +530,11 @@ class SearchApp(App):
         ("escape", "quit", "Quit"),
         ("/", "focus_search", "Search"),
         ("ctrl+n", "toggle_type", "Toggle Type"),
+        ("e", "edit_content", "Edit"),
+        ("t", "edit_tags", "Tags"),
+        ("p", "edit_project", "Project"),
+        ("+", "increase_priority", "Priority +"),
+        ("-", "decrease_priority", "Priority -"),
     ]
 
     search_type = reactive("all")
@@ -401,7 +665,8 @@ class SearchApp(App):
         self.query_one("#status-bar", Label).update(
             f"Found {total} matches ({entry_count} entries, {todo_count} todos) | "
             f"Type: {type_label} | "
-            f"j/k: Navigate | Enter: Select | /: Search | n: Toggle | q: Quit"
+            "j/k: Navigate | Enter: Select | e: Edit | t: Tags | p: Project | "
+            "+/-: Priority | /: Search | n: Toggle | q: Quit"
         )
 
     def _get_active_view(self):
@@ -413,7 +678,7 @@ class SearchApp(App):
         else:
             # For "all" mode, prefer entries view if it has items, otherwise todos
             entries_view = self.query_one("#entries-results", EntryResultsView)
-            if entries_view.child_count > 0:
+            if entries_view._items:
                 return entries_view
             return self.query_one("#todos-results", TodoResultsView)
 
@@ -441,15 +706,206 @@ class SearchApp(App):
         item_data = results_view.highlighted_child.item_data
         if item_data:
             content = item_data["item"].content
-
-            # Copy to clipboard
             try:
                 import pyperclip
-
                 pyperclip.copy(content)
                 self.notify(f"Copied: {content[:50]}...", timeout=2)
             except Exception:
                 self.notify(f"Content: {content}", timeout=3)
+
+    def _get_selected_item(self):
+        """Get currently selected item and its type."""
+        results_view = self._get_active_view()
+        if results_view.highlighted_child is None:
+            return None, None, None
+        item_data = results_view.highlighted_child.item_data
+        if not item_data:
+            return None, None, None
+        return item_data["item"], item_data["type"], results_view
+
+    def action_edit_content(self) -> None:
+        """Edit content of selected item."""
+        item, item_type, _ = self._get_selected_item()
+        if item is None:
+            self.notify("No item selected", severity="warning", timeout=1.5)
+            return
+
+        def on_dismiss(result: Optional[str]) -> None:
+            if result is not None and result != item.content:
+                try:
+                    if not result:
+                        self.notify(
+                            "Content cannot be empty",
+                            severity="warning",
+                            timeout=2,
+                        )
+                        return
+                    if item_type == "entry":
+                        self.db.update_entry(item.id, content=result)
+                    else:
+                        self.db.update_todo(item.id, content=result)
+                    self.notify(
+                        f"{item_type.title()} #{item.id} updated",
+                        timeout=1.5,
+                    )
+                    search_input = self.query_one("#search-input", Input)
+                    self._perform_search(search_input.value)
+                except Exception as e:
+                    self.notify(
+                        f"Error updating: {e}",
+                        severity="error",
+                        timeout=3,
+                    )
+
+        if item_type == "entry":
+            title = f"Edit Entry #{item.id}"
+        else:
+            title = f"Edit Task #{item.id}"
+        self.push_screen(EditContentModal(item.content, title), on_dismiss)
+
+    def action_edit_tags(self) -> None:
+        """Edit tags of selected item."""
+        item, item_type, _ = self._get_selected_item()
+        if item is None:
+            self.notify("No item selected", severity="warning", timeout=1.5)
+            return
+
+        def on_dismiss(result: Optional[List[str]]) -> None:
+            if result is not None and result != item.tag_names:
+                try:
+                    if item_type == "entry":
+                        self.db.update_entry(item.id, tags=result)
+                    else:
+                        self.db.update_todo(item.id, tags=result)
+                    msg = f"{item_type.title()} #{item.id} tags updated"
+                    self.notify(msg, timeout=1.5)
+                    search_input = self.query_one("#search-input", Input)
+                    self._perform_search(search_input.value)
+                except Exception as e:
+                    self.notify(
+                        f"Error updating tags: {e}",
+                        severity="error",
+                        timeout=3,
+                    )
+
+        title = f"Edit {item_type.title()} #{item.id} Tags"
+        self.push_screen(EditTagsModal(item.tag_names, title), on_dismiss)
+
+    def action_edit_project(self) -> None:
+        """Edit project of selected item."""
+        item, item_type, _ = self._get_selected_item()
+        if item is None:
+            self.notify("No item selected", severity="warning", timeout=1.5)
+            return
+
+        def on_dismiss(result: Optional[str]) -> None:
+            if result is not None and result != item.project:
+                try:
+                    if item_type == "entry":
+                        self.db.update_entry(item.id, project=result)
+                    else:
+                        self.db.update_todo(item.id, project=result)
+                    msg = f"{item_type.title()} #{item.id} project updated"
+                    self.notify(msg, timeout=1.5)
+                    search_input = self.query_one("#search-input", Input)
+                    self._perform_search(search_input.value)
+                except Exception as e:
+                    self.notify(
+                        f"Error updating project: {e}",
+                        severity="error",
+                        timeout=3,
+                    )
+
+        title = f"Edit {item_type.title()} #{item.id} Project"
+        self.push_screen(EditProjectModal(item.project, title), on_dismiss)
+
+    def action_increase_priority(self) -> None:
+        """Increase priority of selected todo."""
+        item, item_type, _ = self._get_selected_item()
+        if item is None:
+            self.notify("No item selected", severity="warning", timeout=1.5)
+            return
+        if item_type != "todo":
+            self.notify(
+                "Priority only applies to todos",
+                severity="information",
+                timeout=1.5,
+            )
+            return
+        if item.status == "completed":
+            self.notify(
+                "Cannot change priority of completed task",
+                severity="information",
+                timeout=1.5,
+            )
+            return
+
+        priority_order = ["low", "normal", "high", "urgent"]
+        current_idx = priority_order.index(item.priority)
+        if current_idx < len(priority_order) - 1:
+            new_priority = priority_order[current_idx + 1]
+            try:
+                self.db.update_todo(item.id, priority=new_priority)
+                msg = f"Priority: {item.priority} → {new_priority}"
+                self.notify(msg, timeout=1.5)
+                search_input = self.query_one("#search-input", Input)
+                self._perform_search(search_input.value)
+            except Exception as e:
+                self.notify(
+                    f"Error updating priority: {e}",
+                    severity="error",
+                    timeout=3,
+                )
+        else:
+            self.notify(
+                "Already at highest priority (urgent)",
+                severity="information",
+                timeout=1.5,
+            )
+
+    def action_decrease_priority(self) -> None:
+        """Decrease priority of selected todo."""
+        item, item_type, _ = self._get_selected_item()
+        if item is None:
+            self.notify("No item selected", severity="warning", timeout=1.5)
+            return
+        if item_type != "todo":
+            self.notify(
+                "Priority only applies to todos",
+                severity="information",
+                timeout=1.5,
+            )
+            return
+        if item.status == "completed":
+            self.notify(
+                "Cannot change priority of completed task",
+                severity="information",
+                timeout=1.5,
+            )
+            return
+
+        priority_order = ["low", "normal", "high", "urgent"]
+        current_idx = priority_order.index(item.priority)
+        if current_idx > 0:
+            new_priority = priority_order[current_idx - 1]
+            try:
+                self.db.update_todo(item.id, priority=new_priority)
+                msg = f"Priority: {item.priority} → {new_priority}"
+                self.notify(msg, timeout=1.5)
+                search_input = self.query_one("#search-input", Input)
+                self._perform_search(search_input.value)
+            except Exception as e:
+                self.notify(
+                    f"Error updating priority: {e}",
+                    severity="error",
+                    timeout=3,
+                )
+        else:
+            self.notify(
+                "Already at lowest priority (low)",
+                severity="information",
+                timeout=1.5,
+            )
 
     def action_quit(self) -> None:
         """Quit the search application."""
