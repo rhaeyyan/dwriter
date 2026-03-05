@@ -197,7 +197,7 @@ class TestTodoCommands:
     def test_todo_add(self):
         """Test adding a todo."""
         runner = CliRunner()
-        result = runner.invoke(main, ["todo", "add", "Test task"])
+        result = runner.invoke(main, ["todo", "Test task"])
 
         assert result.exit_code == 0
         assert "Added Task" in result.output or "Test task" in result.output
@@ -206,7 +206,7 @@ class TestTodoCommands:
         """Test adding a todo with priority."""
         runner = CliRunner()
         result = runner.invoke(
-            main, ["todo", "add", "Urgent task", "--priority", "urgent"]
+            main, ["todo", "Urgent task", "--priority", "urgent"]
         )
 
         assert result.exit_code == 0
@@ -215,7 +215,7 @@ class TestTodoCommands:
         """Test adding a todo with project."""
         runner = CliRunner()
         result = runner.invoke(
-            main, ["todo", "add", "Task", "-p", "my-project"]
+            main, ["todo", "Task", "-p", "my-project"]
         )
 
         assert result.exit_code == 0
@@ -224,7 +224,7 @@ class TestTodoCommands:
         """Test adding a todo with tags."""
         runner = CliRunner()
         result = runner.invoke(
-            main, ["todo", "add", "Task", "-t", "bug", "-t", "urgent"]
+            main, ["todo", "Task", "-t", "bug", "-t", "urgent"]
         )
 
         assert result.exit_code == 0
@@ -232,8 +232,9 @@ class TestTodoCommands:
     def test_todo_add_invalid_priority(self):
         """Test adding a todo with invalid priority."""
         runner = CliRunner()
+        # Note: options must come BEFORE content with the new syntax
         result = runner.invoke(
-            main, ["todo", "add", "Task", "--priority", "invalid"]
+            main, ["todo", "--priority", "invalid", "Task"]
         )
 
         assert result.exit_code != 0
@@ -242,7 +243,7 @@ class TestTodoCommands:
         """Test listing todos."""
         runner = CliRunner()
         # First add a task
-        runner.invoke(main, ["todo", "add", "Test task"])
+        runner.invoke(main, ["todo", "Test task"])
 
         result = runner.invoke(main, ["todo", "list"])
 
@@ -261,8 +262,8 @@ class TestTodoCommands:
         """Test listing all todos including completed."""
         runner = CliRunner()
         # Add and complete a task
-        runner.invoke(main, ["todo", "add", "Task to complete"])
-        runner.invoke(main, ["todo", "done", "1"])
+        runner.invoke(main, ["todo", "Task to complete"])
+        runner.invoke(main, ["done", "1"])
 
         result = runner.invoke(main, ["todo", "list", "--all"])
 
@@ -272,9 +273,9 @@ class TestTodoCommands:
         """Test marking a todo as done."""
         runner = CliRunner()
         # First add a task
-        runner.invoke(main, ["todo", "add", "Task to complete"])
+        runner.invoke(main, ["todo", "Task to complete"])
 
-        result = runner.invoke(main, ["todo", "done", "1"])
+        result = runner.invoke(main, ["done", "1"])
 
         assert result.exit_code == 0
         assert "completed" in result.output.lower() or "✅" in result.output
@@ -282,10 +283,10 @@ class TestTodoCommands:
     def test_todo_done_already_completed(self):
         """Test marking an already completed todo."""
         runner = CliRunner()
-        runner.invoke(main, ["todo", "add", "Task"])
-        runner.invoke(main, ["todo", "done", "1"])
+        runner.invoke(main, ["todo", "Task"])
+        runner.invoke(main, ["done", "1"])
 
-        result = runner.invoke(main, ["todo", "done", "1"])
+        result = runner.invoke(main, ["done", "1"])
 
         assert result.exit_code == 0
         assert "already completed" in result.output.lower()
@@ -293,7 +294,7 @@ class TestTodoCommands:
     def test_todo_done_not_found(self):
         """Test marking a non-existent todo as done."""
         runner = CliRunner()
-        result = runner.invoke(main, ["todo", "done", "999"])
+        result = runner.invoke(main, ["done", "999"])
 
         assert result.exit_code == 0
         assert "not found" in result.output.lower()
@@ -301,7 +302,7 @@ class TestTodoCommands:
     def test_todo_rm(self):
         """Test removing a todo."""
         runner = CliRunner()
-        runner.invoke(main, ["todo", "add", "Task to delete"])
+        runner.invoke(main, ["todo", "Task to delete"])
 
         result = runner.invoke(main, ["todo", "rm", "1"], input="y\n")
 
@@ -311,7 +312,7 @@ class TestTodoCommands:
     def test_todo_rm_cancelled(self):
         """Test removing a todo but cancelling."""
         runner = CliRunner()
-        runner.invoke(main, ["todo", "add", "Task"])
+        runner.invoke(main, ["todo", "Task"])
 
         result = runner.invoke(main, ["todo", "rm", "1"], input="n\n")
 
@@ -329,7 +330,7 @@ class TestTodoCommands:
     def test_todo_edit(self):
         """Test editing a todo."""
         runner = CliRunner()
-        runner.invoke(main, ["todo", "add", "Original task"])
+        runner.invoke(main, ["todo", "Original task"])
 
         # Note: click.edit() requires a terminal and doesn't work well in tests
         # It raises SystemExit(1) when stdin is not a terminal
@@ -379,7 +380,7 @@ class TestTodoIntegration:
         """Test standup command with --with-todos flag."""
         runner = CliRunner()
         # Add a todo
-        runner.invoke(main, ["todo", "add", "Plan for today"])
+        runner.invoke(main, ["todo", "Plan for today"])
 
         result = runner.invoke(main, ["standup", "--with-todos"])
 
@@ -391,7 +392,7 @@ class TestTodoIntegration:
         runner = CliRunner()
 
         # Add a task
-        result = runner.invoke(main, ["todo", "add", "Workflow task", "-p", "test"])
+        result = runner.invoke(main, ["todo", "Workflow task", "-p", "test"])
         assert result.exit_code == 0
 
         # List tasks
@@ -400,7 +401,7 @@ class TestTodoIntegration:
         assert "Workflow task" in result.output
 
         # Complete the task
-        result = runner.invoke(main, ["todo", "done", "1"])
+        result = runner.invoke(main, ["done", "1"])
         assert result.exit_code == 0
 
         # List should not show completed task

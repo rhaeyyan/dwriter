@@ -9,18 +9,8 @@ from ..cli import AppContext
 from ..search_utils import find_multiple_matches
 
 
-@click.group()
-def todo():
-    """Manage future tasks and to-dos.
-
-    Add, review, and complete tasks. When a task is marked as done,
-    it automatically generates a daily log entry for your standup.
-    """
-    pass
-
-
-@todo.command("add")
-@click.argument("content")
+@click.group(invoke_without_command=True)
+@click.argument("content", required=False, nargs=-1)
 @click.option(
     "-t",
     "--tag",
@@ -41,40 +31,62 @@ def todo():
     default="normal",
     help="Set task priority",
 )
-@click.pass_obj
-def todo_add(ctx: AppContext, content: str, tags: tuple, project: str, priority: str):
-    """Add a new pending task.
+@click.pass_context
+def todo(ctx, content: tuple, tags: tuple, project: str, priority: str):
+    """Manage future tasks and to-dos.
 
-    CONTENT: The text describing your task.
+    Add, review, and complete tasks. When a task is marked as done,
+    it automatically generates a daily log entry for your standup.
 
     Examples:
-        dwriter todo add "Draft new relic ideas" -p Mainframe_Mayhem
+        dwriter todo "Draft new relic ideas" -p Mainframe_Mayhem
 
-        dwriter todo add "Fix card draw bug" --priority urgent -t bug
+        dwriter todo "Fix card draw bug" --priority urgent -t bug
+
+        dwriter todo list
     """
-    all_tags = list(ctx.config.defaults.tags) + list(tags)
-    if project is None and ctx.config.defaults.project:
-        project = ctx.config.defaults.project
+    # Check if first content token is a known subcommand
+    if content and content[0] in todo.commands:
+        subcommand_name = content[0]
+        cmd = todo.commands[subcommand_name]
+        # Invoke with remaining args
+        rest = list(content[1:])
+        sub_ctx = cmd.make_context(ctx.info_name, rest, parent=ctx)
+        return sub_ctx.command.invoke(sub_ctx)
 
-    task = ctx.db.add_todo(
-        content=content,
-        priority=priority,
-        project=project,
-        tags=all_tags,
-    )
+    # Get the AppContext from parent context
+    app_ctx = ctx.obj
 
-    priority_colors = {
-        "urgent": "bold red",
-        "high": "yellow",
-        "normal": "white",
-        "low": "dim",
-    }
-    color = priority_colors.get(priority, "white")
+    # Default behavior - add task or show list
+    content_str = " ".join(content) if content else None
 
-    if ctx.config.display.show_confirmation:
-        ctx.console.print(
-            f"[green]Added Task [{task.id}]:[/green] [{color}]{task.content}[/{color}]"
+    if content_str is not None:
+        all_tags = list(app_ctx.config.defaults.tags) + list(tags)
+        if project is None and app_ctx.config.defaults.project:
+            project = app_ctx.config.defaults.project
+
+        task = app_ctx.db.add_todo(
+            content=content_str,
+            priority=priority,
+            project=project,
+            tags=all_tags,
         )
+
+        priority_colors = {
+            "urgent": "bold red",
+            "high": "yellow",
+            "normal": "white",
+            "low": "dim",
+        }
+        color = priority_colors.get(priority, "white")
+
+        if app_ctx.config.display.show_confirmation:
+            app_ctx.console.print(
+                f"[green]Added Task [{task.id}]:[/green] [{color}]{task.content}[/{color}]"
+            )
+    else:
+        # No content - show list
+        ctx.invoke(todo_list)
 
 
 @todo.command("list")
@@ -96,7 +108,7 @@ def todo_list(ctx: AppContext, show_all: bool):
 
     if not tasks:
         ctx.console.print(
-            "No tasks found. Relax or add one with [bold]dwriter todo add[/bold]!"
+            "No tasks found. Relax or add one with [bold]dwriter todo[/bold]!"
         )
         return
 
@@ -137,7 +149,60 @@ def todo_list(ctx: AppContext, show_all: bool):
     ctx.console.print(table)
 
 
-@todo.command("done")
+@todo.command("rm")
+@click.argument("task_id", type=int)
+@click.pass_obj
+def todo_rm(ctx: AppContext, task_id: int):
+    """Delete a task entirely."""
+    try:
+        task = ctx.db.get_todo(task_id)
+    except ValueError:
+        ctx.console.print(f"[red]![/red] Task {task_id} not found.")
+        return
+
+    if click.confirm(f"Are you sure you want to delete task {task_id}?"):
+        success = ctx.db.delete_todo(task_id)
+        if success:
+            ctx.console.print(f"[green]✅[/green] Task {task_id} deleted.")
+        else:
+            ctx.console.print(f"[red]![/red] Task {task_id} not found.")
+    else:
+        ctx.console.print("Cancelled.")
+
+
+@todo.command("edit")
+@click.argument("task_id", type=int)
+@click.pass_obj
+def todo_edit(ctx: AppContext, task_id: int):
+    """Edit a task's content interactively."""
+    try:
+        task = ctx.db.get_todo(task_id)
+    except ValueError:
+        ctx.console.print(f"[red]![/red] Task {task_id} not found.")
+        return
+
+    edited_content = click.edit(task.content)
+
+    if edited_content is None:
+        ctx.console.print("No changes made.")
+        return
+
+    edited_content = edited_content.strip()
+
+    if not edited_content:
+        ctx.console.print(
+            "Task content cannot be empty. Use 'todo rm' to delete."
+        )
+        return
+
+    if edited_content != task.content:
+        ctx.db.update_todo(task_id, content=edited_content)
+        ctx.console.print(f"[green]✅[/green] Task {task_id} updated.")
+    else:
+        ctx.console.print("No changes made.")
+
+
+@click.command()
 @click.argument("task_identifier")
 @click.option(
     "-s",
@@ -147,7 +212,7 @@ def todo_list(ctx: AppContext, show_all: bool):
     help="Use fuzzy search to find the task by text instead of ID",
 )
 @click.pass_obj
-def todo_done(ctx: AppContext, task_identifier: str, use_search: bool):
+def done(ctx: AppContext, task_identifier: str, use_search: bool):
     """Mark a task as complete and log it.
 
     TASK_IDENTIFIER: Task ID (number) or search text if using --search.
@@ -156,9 +221,9 @@ def todo_done(ctx: AppContext, task_identifier: str, use_search: bool):
     entry with the task's content, tags, and project.
 
     Examples:
-        dwriter todo done 42
+        dwriter done 42
 
-        dwriter todo done "write tests cache" --search
+        dwriter done "write tests cache" --search
     """
     # Determine task ID or search for it
     task_id = None
@@ -242,50 +307,3 @@ def todo_done(ctx: AppContext, task_identifier: str, use_search: bool):
 
     except Exception as e:
         ctx.console.print(f"[red]Error completing task: {e}[/red]")
-
-
-@todo.command("rm")
-@click.argument("task_id", type=int)
-@click.pass_obj
-def todo_rm(ctx: AppContext, task_id: int):
-    """Delete a task entirely."""
-    if click.confirm(f"Are you sure you want to delete task {task_id}?"):
-        success = ctx.db.delete_todo(task_id)
-        if success:
-            ctx.console.print(f"[green]✅[/green] Task {task_id} deleted.")
-        else:
-            ctx.console.print(f"[red]![/red] Task {task_id} not found.")
-    else:
-        ctx.console.print("Cancelled.")
-
-
-@todo.command("edit")
-@click.argument("task_id", type=int)
-@click.pass_obj
-def todo_edit(ctx: AppContext, task_id: int):
-    """Edit a task's content interactively."""
-    try:
-        task = ctx.db.get_todo(task_id)
-    except ValueError:
-        ctx.console.print(f"[red]![/red] Task {task_id} not found.")
-        return
-
-    edited_content = click.edit(task.content)
-
-    if edited_content is None:
-        ctx.console.print("No changes made.")
-        return
-
-    edited_content = edited_content.strip()
-
-    if not edited_content:
-        ctx.console.print(
-            "Task content cannot be empty. Use 'todo rm' to delete."
-        )
-        return
-
-    if edited_content != task.content:
-        ctx.db.update_todo(task_id, content=edited_content)
-        ctx.console.print(f"[green]✅[/green] Task {task_id} updated.")
-    else:
-        ctx.console.print("No changes made.")
