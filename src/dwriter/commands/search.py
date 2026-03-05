@@ -50,12 +50,6 @@ def format_score(score: float) -> str:
     default=10,
     help="Maximum number of results to show per category",
 )
-@click.option(
-    "--tui",
-    "use_tui",
-    is_flag=True,
-    help="Always use interactive TUI mode",
-)
 @click.pass_obj
 def search(
     ctx: AppContext,
@@ -64,7 +58,6 @@ def search(
     tags: tuple,
     search_type: str,
     limit: int,
-    use_tui: bool,
 ):
     """Fuzzy search your journal entries and tasks.
 
@@ -78,10 +71,10 @@ def search(
 
         dwriter search "refactor" -p Mainframe_Mayhem
 
-        dwriter search --tui
+        dwriter search "cache" --type todo
     """
-    # Launch TUI if no query provided or --tui flag is set
-    if query is None or use_tui:
+    # Launch TUI if no query provided
+    if query is None:
         from .search_tui import SearchApp
 
         tag_list = list(tags) if tags else None
