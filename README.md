@@ -279,11 +279,11 @@ dwriter done 5
 
 ### Focus Timer (Pomodoro)
 
-Run a focus timer and log the result when finished.
+Run a focus timer and log the result when finished. Launches an interactive TUI with pause/resume capability.
 
 | Command | Description |
 | --- | --- |
-| `dwriter focus` | Start a 25-minute focus timer |
+| `dwriter focus` | Start a 25-minute focus timer (interactive TUI) |
 | `dwriter focus MINUTES` | Start a custom duration timer |
 | `dwriter focus MINUTES -t TAG` | Add tags to the resulting entry |
 | `dwriter focus MINUTES -p PROJECT` | Add project to the resulting entry |
@@ -363,7 +363,8 @@ Launch with `dwriter search` (no arguments).
 **Features:**
 - Real-time fuzzy filtering as you type
 - Color-coded match scores
-- Browse entries and todos in a scrollable list
+- Browse entries and todos in separate sections
+- Matching tag/project colors across entries and todos
 
 **Keybindings:**
 
@@ -373,7 +374,12 @@ Launch with `dwriter search` (no arguments).
 | `Enter` | Select item (copy content to clipboard) |
 | `/` | Focus search input |
 | `Ctrl+N` | Toggle search type (All / Entries / Todos) |
-| `q` / `Esc` | Quit |
+| `q` / `Esc` | Quit
+
+**Visual Features:**
+- 📝 **Entries section** - Journal entries with date/time stamps
+- ✅ **Todos section** - Tasks with priority labels
+- 🏷️ **Consistent colors** - Yellow tags (#tag) and purple projects across both sections
 
 ### 📋 Interactive Todo Board (`dwriter todo`)
 
@@ -427,6 +433,27 @@ Launch with `dwriter edit` (no arguments).
 | `d` | Delete entry (with confirmation) |
 | `r` | Refresh list |
 | `q` / `Esc` | Quit |
+
+### ⏱️ Focus Timer (`dwriter focus`)
+
+Launch with `dwriter focus [MINUTES]`.
+
+**Features:**
+- Large digital countdown timer
+- Pause/resume with Space key
+- Adjust time on the fly with +/-
+- Progress bar visualization
+- Auto-prompt to log session on completion
+
+**Keybindings:**
+
+| Key | Action |
+| --- | --- |
+| `Space` | Pause/Resume timer |
+| `+` | Add 5 minutes |
+| `-` | Subtract 5 minutes |
+| `Enter` | Finish session early |
+| `q` / `Esc` | Quit (with confirmation) |
 
 > **Hybrid CLI/TUI Design:** Quick operations remain CLI-based (`dwriter add`, `dwriter todo "task"`) for frictionless use. TUI modes launch only when needed for interactive workflows.
 
