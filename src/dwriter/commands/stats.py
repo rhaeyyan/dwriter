@@ -12,13 +12,21 @@ def stats(ctx: AppContext):
     """Launch interactive dashboard.
 
     Displays a visual overview of your logging activity including:
-    - GitHub-style contribution calendar
-    - Weekly activity chart
-    - Statistics summary
-    - Top tags
+
+    Dashboard Features:
+      - GitHub-style contribution calendar
+      - Current and longest streak tracking
+      - Weekly activity bar chart (last 8 weeks)
+      - Statistics summary (total entries, tasks, tags, projects)
+      - Top 10 tags with usage bars
+
+    Keybindings:
+      - Tab: Navigate between sections
+      - r: Refresh all data
+      - q/Esc: Quit
 
     Examples:
-        dwriter stats
+      dwriter stats
     """
     from .dashboard_tui import DashboardApp
 

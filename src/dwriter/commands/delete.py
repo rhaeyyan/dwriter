@@ -38,11 +38,13 @@ def delete(ctx: AppContext, before_date: str):
     """Bulk delete old entries.
 
     Deletes all entries created before the specified date.
+    Shows a preview of entries to be deleted and requires confirmation.
+
+    ⚠️ This action cannot be undone.
 
     Examples:
-        dwriter delete --before 2025-01-01
-
-        dwriter delete --before 2024-12-31
+      dwriter delete --before 2025-01-01
+      dwriter delete --before 2024-12-31
     """
     try:
         cutoff_date = parse_date(before_date)

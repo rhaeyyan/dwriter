@@ -130,15 +130,22 @@ def _bulk_edit_today(ctx: AppContext) -> None:
 def edit(ctx: AppContext, entry_id: int, search_query: str):
     """Edit or delete entries interactively.
 
-    Launches an interactive TUI for editing today's entries,
-    or edits a specific entry by ID or search query.
+    Launches an interactive TUI for editing today's entries with
+    keyboard navigation, or edits a specific entry by ID or search.
+
+    Edit TUI Keybindings:
+      - j/k: Navigate down/up
+      - e/Enter: Edit content
+      - t: Edit tags (comma-separated)
+      - p: Edit project name
+      - d: Delete entry (with confirmation)
+      - r: Refresh list
+      - q/Esc: Quit
 
     Examples:
-        dwriter edit
-
-        dwriter edit --id 42
-
-        dwriter edit --search "redis cache"
+      dwriter edit                  # Launch interactive TUI
+      dwriter edit --id 42          # Edit specific entry
+      dwriter edit --search "redis cache"  # Search and edit
     """
     if search_query is not None:
         entry_id = _handle_search_edit(ctx, search_query)

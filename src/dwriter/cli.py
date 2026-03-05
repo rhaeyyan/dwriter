@@ -1,4 +1,4 @@
-"""Command-line interface for Day Writer.
+"""Command-line interface for dwriter.
 
 This module provides the main entry point for the dwriter CLI application.
 """
@@ -12,7 +12,7 @@ from .database import Database
 
 
 class DWriterError(Exception):
-    """Base exception for Day Writer errors."""
+    """Base exception for dwriter errors."""
 
     pass
 
@@ -60,18 +60,36 @@ class AppContext:
 @click.pass_context
 @click.version_option(version=__version__, prog_name="dwriter")
 def main(ctx):
-    """Day Writer - A low-friction terminal journaling tool.
+    """dwriter - A low-friction terminal journaling tool.
 
     Track daily tasks and generate standup summaries with minimal effort.
 
-    Examples:
-        dwriter add "fixed the race condition in auth"
+    Quick Start:
+      dwriter add "fixed the race condition in auth"
+      dwriter add "implemented feature X" -t feature -p myapp
+      dwriter todo "write unit tests" --priority high
+      dwriter done 1
+      dwriter standup
+      dwriter review --days 7
 
-        dwriter add "implemented feature X" -t feature -p myapp
+    Interactive TUI Modes:
+      dwriter search    - Fuzzy search with live filtering
+      dwriter todo      - Interactive todo board
+      dwriter edit      - Edit today's entries
+      dwriter focus     - Pomodoro timer
+      dwriter stats     - Dashboard with calendar & charts
 
-        dwriter standup
-
-        dwriter review --days 7
+    Common Commands:
+      add       - Log a new entry
+      todo      - Manage tasks
+      done      - Complete a task
+      standup   - Generate yesterday's summary
+      review    - Review last N days
+      search    - Fuzzy search entries/todos
+      focus     - Start focus timer
+      stats     - View statistics dashboard
+      edit      - Edit entries
+      config    - Manage settings
     """
     try:
         ctx.obj = AppContext()
