@@ -11,6 +11,7 @@ from textual.app import App, ComposeResult
 from textual.containers import Container, Vertical
 from textual.screen import ModalScreen
 from textual.widgets import (
+    Button,
     Footer,
     Header,
     Input,
@@ -113,6 +114,200 @@ class EditTodoModal(ModalScreen):
         """Save the edited content."""
         input_widget = self.query_one("#edit-input", Input)
         self.result = input_widget.value.strip()
+        self.dismiss(self.result)
+
+    def action_cancel(self) -> None:
+        """Cancel editing."""
+        self.result = None
+        self.dismiss(None)
+
+    def on_button_pressed(self, event) -> None:
+        """Handle button presses."""
+        if event.button.id == "save-btn":
+            self.action_save()
+        elif event.button.id == "cancel-btn":
+            self.action_cancel()
+
+
+class EditTagsModal(ModalScreen):
+    """Modal dialog for editing a todo's tags."""
+
+    CSS = """
+    EditTagsModal {
+        align: center middle;
+    }
+
+    #edit-modal-container {
+        width: 70;
+        height: auto;
+        background: $surface;
+        border: thick $primary;
+        padding: 1 3;
+    }
+
+    #edit-modal-title {
+        text-align: center;
+        text-style: bold;
+        padding: 1 0;
+    }
+
+    #edit-input {
+        width: 100%;
+        margin: 1 0;
+    }
+
+    #edit-hint {
+        color: $text-muted;
+        padding: 0 0 1 0;
+    }
+
+    #edit-buttons {
+        align: center middle;
+        padding: 1 0;
+    }
+
+    Button {
+        margin: 0 1;
+    }
+    """
+
+    BINDINGS = [
+        ("escape", "cancel", "Cancel"),
+        ("ctrl+s", "save", "Save"),
+    ]
+
+    def __init__(self, todo: Todo, **kwargs):
+        """Initialize the edit tags modal.
+
+        Args:
+            todo: Todo object to edit.
+            **kwargs: Additional arguments passed to ModalScreen.
+        """
+        super().__init__(**kwargs)
+        self.todo = todo
+        self.result: Optional[List[str]] = None
+
+    def compose(self) -> ComposeResult:
+        """Compose the modal UI."""
+        with Container(id="edit-modal-container"):
+            yield Label(f"Edit Tags for Task #{self.todo.id}", id="edit-modal-title")
+            yield Input(
+                value=", ".join(self.todo.tag_names),
+                id="edit-input",
+                placeholder="tag1, tag2, tag3",
+            )
+            yield Label(
+                "Separate tags with commas",
+                id="edit-hint",
+            )
+            with Container(id="edit-buttons"):
+                yield Button("Save", id="save-btn", variant="primary")
+                yield Button("Cancel", id="cancel-btn", variant="default")
+
+    def on_mount(self) -> None:
+        """Focus the input on mount."""
+        self.query_one("#edit-input", Input).focus()
+
+    def action_save(self) -> None:
+        """Save the edited tags."""
+        input_widget = self.query_one("#edit-input", Input)
+        value = input_widget.value.strip()
+        if value:
+            self.result = [t.strip() for t in value.split(",") if t.strip()]
+        else:
+            self.result = []
+        self.dismiss(self.result)
+
+    def action_cancel(self) -> None:
+        """Cancel editing."""
+        self.result = None
+        self.dismiss(None)
+
+    def on_button_pressed(self, event) -> None:
+        """Handle button presses."""
+        if event.button.id == "save-btn":
+            self.action_save()
+        elif event.button.id == "cancel-btn":
+            self.action_cancel()
+
+
+class EditProjectModal(ModalScreen):
+    """Modal dialog for editing a todo's project."""
+
+    CSS = """
+    EditProjectModal {
+        align: center middle;
+    }
+
+    #edit-modal-container {
+        width: 70;
+        height: auto;
+        background: $surface;
+        border: thick $primary;
+        padding: 1 3;
+    }
+
+    #edit-modal-title {
+        text-align: center;
+        text-style: bold;
+        padding: 1 0;
+    }
+
+    #edit-input {
+        width: 100%;
+        margin: 1 0;
+    }
+
+    #edit-buttons {
+        align: center middle;
+        padding: 1 0;
+    }
+
+    Button {
+        margin: 0 1;
+    }
+    """
+
+    BINDINGS = [
+        ("escape", "cancel", "Cancel"),
+        ("ctrl+s", "save", "Save"),
+    ]
+
+    def __init__(self, todo: Todo, **kwargs):
+        """Initialize the edit project modal.
+
+        Args:
+            todo: Todo object to edit.
+            **kwargs: Additional arguments passed to ModalScreen.
+        """
+        super().__init__(**kwargs)
+        self.todo = todo
+        self.result: Optional[str] = None
+
+    def compose(self) -> ComposeResult:
+        """Compose the modal UI."""
+        with Container(id="edit-modal-container"):
+            yield Label(
+                f"Edit Project for Task #{self.todo.id}",
+                id="edit-modal-title",
+            )
+            yield Input(
+                value=self.todo.project or "",
+                id="edit-input",
+                placeholder="Project name (optional)",
+            )
+            with Container(id="edit-buttons"):
+                yield Button("Save", id="save-btn", variant="primary")
+                yield Button("Cancel", id="cancel-btn", variant="default")
+
+    def on_mount(self) -> None:
+        """Focus the input on mount."""
+        self.query_one("#edit-input", Input).focus()
+
+    def action_save(self) -> None:
+        """Save the edited project."""
+        input_widget = self.query_one("#edit-input", Input)
+        self.result = input_widget.value.strip() or None
         self.dismiss(self.result)
 
     def action_cancel(self) -> None:
@@ -292,6 +487,10 @@ class TodoApp(App):
         ("q", "quit", "Quit"),
         ("escape", "quit", "Quit"),
         ("r", "refresh", "Refresh"),
+        ("+", "increase_priority", "Priority +"),
+        ("-", "decrease_priority", "Priority -"),
+        ("t", "edit_tags", "Tags"),
+        ("p", "edit_project", "Project"),
     ]
 
     def __init__(
@@ -322,7 +521,8 @@ class TodoApp(App):
             with Container(id="header-container"):
                 yield Label("📋 Todo Board", id="title")
                 yield Label(
-                    "Space: Complete | e: Edit | d: Delete | q: Quit",
+                    "Space: Complete | e: Edit | +/-: Priority | "
+                    "t: Tags | p: Project | d: Delete | q: Quit",
                     id="subtitle",
                 )
             with Container(id="list-container"):
@@ -359,14 +559,14 @@ class TodoApp(App):
                 f"Showing {total} tasks | "
                 f"[class=pending-count]{pending_count} pending[/] | "
                 f"[class=completed-count]{completed_count} completed[/] | "
-                "j/k: Navigate | space: Complete | "
-                "e: Edit | d: Delete | r: Refresh | q: Quit"
+                "j/k: Navigate | space: Complete | +/-: Priority | "
+                "e: Edit | t: Tags | p: Project | d: Delete | r: Refresh | q: Quit"
             )
         else:
             status_bar.update(
                 f"Showing {pending_count} pending tasks | "
-                "j/k: Navigate | space: Complete | "
-                "e: Edit | d: Delete | r: Refresh | q: Quit"
+                "j/k: Navigate | space: Complete | +/-: Priority | "
+                "e: Edit | t: Tags | p: Project | d: Delete | r: Refresh | q: Quit"
             )
 
     def action_cursor_down(self) -> None:
@@ -444,6 +644,136 @@ class TodoApp(App):
                     )
 
         self.push_screen(EditTodoModal(todo), on_dismiss)
+
+    def action_increase_priority(self) -> None:
+        """Increase the priority of the selected todo."""
+        list_view = self.query_one(TodoListView)
+        todo = list_view.selected_todo
+
+        if todo is None:
+            self.notify("No task selected", severity="warning", timeout=1.5)
+            return
+
+        if todo.status == "completed":
+            self.notify(
+                "Cannot change priority of completed task",
+                severity="information",
+                timeout=1.5,
+            )
+            return
+
+        priority_order = ["low", "normal", "high", "urgent"]
+        current_idx = priority_order.index(todo.priority)
+        if current_idx < len(priority_order) - 1:
+            new_priority = priority_order[current_idx + 1]
+            try:
+                self.db.update_todo(todo.id, priority=new_priority)
+                self.notify(
+                    f"Priority: {todo.priority} → {new_priority}",
+                    timeout=1.5,
+                )
+                self._load_todos()
+            except Exception as e:
+                self.notify(
+                    f"Error updating priority: {e}",
+                    severity="error",
+                    timeout=3,
+                )
+        else:
+            self.notify(
+                "Already at highest priority (urgent)",
+                severity="information",
+                timeout=1.5,
+            )
+
+    def action_decrease_priority(self) -> None:
+        """Decrease the priority of the selected todo."""
+        list_view = self.query_one(TodoListView)
+        todo = list_view.selected_todo
+
+        if todo is None:
+            self.notify("No task selected", severity="warning", timeout=1.5)
+            return
+
+        if todo.status == "completed":
+            self.notify(
+                "Cannot change priority of completed task",
+                severity="information",
+                timeout=1.5,
+            )
+            return
+
+        priority_order = ["low", "normal", "high", "urgent"]
+        current_idx = priority_order.index(todo.priority)
+        if current_idx > 0:
+            new_priority = priority_order[current_idx - 1]
+            try:
+                self.db.update_todo(todo.id, priority=new_priority)
+                self.notify(
+                    f"Priority: {todo.priority} → {new_priority}",
+                    timeout=1.5,
+                )
+                self._load_todos()
+            except Exception as e:
+                self.notify(
+                    f"Error updating priority: {e}",
+                    severity="error",
+                    timeout=3,
+                )
+        else:
+            self.notify(
+                "Already at lowest priority (low)",
+                severity="information",
+                timeout=1.5,
+            )
+
+    def action_edit_tags(self) -> None:
+        """Edit the selected todo's tags."""
+        list_view = self.query_one(TodoListView)
+        todo = list_view.selected_todo
+
+        if todo is None:
+            self.notify("No task selected", severity="warning", timeout=1.5)
+            return
+
+        def on_dismiss(result: Optional[List[str]]) -> None:
+            if result is not None and result != todo.tag_names:
+                try:
+                    self.db.update_todo(todo.id, tags=result)
+                    self.notify(f"Task #{todo.id} tags updated", timeout=1.5)
+                    self._load_todos()
+                except Exception as e:
+                    self.notify(
+                        f"Error updating tags: {e}",
+                        severity="error",
+                        timeout=3,
+                    )
+
+        self.push_screen(EditTagsModal(todo), on_dismiss)
+
+    def action_edit_project(self) -> None:
+        """Edit the selected todo's project."""
+        list_view = self.query_one(TodoListView)
+        todo = list_view.selected_todo
+
+        if todo is None:
+            self.notify("No task selected", severity="warning", timeout=1.5)
+            return
+
+        def on_dismiss(result: Optional[str]) -> None:
+            if result is not None and result != todo.project:
+                try:
+                    self.db.update_todo(todo.id, project=result)
+                    self.notify(f"Task #{todo.id} project updated", timeout=1.5)
+                    self._load_todos()
+                except Exception as e:
+                    self.notify(
+                        f"Error updating project: {e}",
+                        severity="error",
+                        timeout=3,
+                    )
+
+        self.push_screen(EditProjectModal(todo), on_dismiss)
 
     def action_delete(self) -> None:
         """Delete the selected todo."""
