@@ -61,17 +61,20 @@ def search(
 ):
     """Fuzzy search your journal entries and tasks.
 
-    QUERY: The text to search for (forgiving of typos).
-    If omitted, launches interactive search mode.
+    Uses typo-tolerant fuzzy matching to find relevant entries and todos.
+    If omitted, launches interactive search TUI with live filtering.
+
+    Match Scores:
+      - 🟢 90%+: Excellent match (green)
+      - 🟡 75%+: Good match (yellow)
+      - ⚪ 60%+: Partial match (dim)
 
     Examples:
-        dwriter search
-
-        dwriter search "auth bug"
-
-        dwriter search "refactor" -p Mainframe_Mayhem
-
-        dwriter search "cache" --type todo
+      dwriter search                    # Launch interactive TUI
+      dwriter search "auth bug"         # Fuzzy search all
+      dwriter search "refactor" -p my_project
+      dwriter search "cache" --type todo
+      dwriter search "meeting" -t work -t notes -n 5
     """
     # Launch TUI if no query provided
     if query is None:

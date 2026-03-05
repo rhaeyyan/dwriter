@@ -130,18 +130,21 @@ def standup(ctx: AppContext, output_format: str, no_copy: bool, with_todos: bool
     """Generate yesterday's standup.
 
     Queries all entries from yesterday and formats them for standup meetings.
-    By default, copies the output to clipboard.
+    By default, copies the output to clipboard for easy pasting into Slack,
+    Jira, or other tools.
+
+    Output Formats:
+      - bullets: Simple bullet points
+      - slack: Slack-optimized formatting with bullets
+      - jira: Jira-compatible formatting
+      - markdown: Markdown with proper syntax
 
     Examples:
-        dwriter standup
-
-        dwriter standup --format slack
-
-        dwriter standup --format jira
-
-        dwriter standup --no-copy
-
-        dwriter standup --with-todos
+      dwriter standup                 # Default (copies to clipboard)
+      dwriter standup --format slack
+      dwriter standup --format jira
+      dwriter standup --no-copy
+      dwriter standup --with-todos    # Include pending tasks
     """
     # Use config defaults if not specified
     if output_format is None:

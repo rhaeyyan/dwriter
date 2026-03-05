@@ -12,10 +12,16 @@ from ..cli import AppContext
 def config():
     """View and edit configuration.
 
-    Day Writer stores configuration in ~/.day-writer/config.toml
+    dwriter stores configuration in ~/.day-writer/config.toml
 
     Use 'dwriter config show' to view current settings,
     'dwriter config edit' to modify them.
+
+    Configuration Sections:
+      - [defaults]: Default project and tags for new entries
+      - [standup]: Default format and clipboard behavior
+      - [review]: Default days and output format
+      - [display]: UI preferences (colors, IDs, confirmations)
     """
     pass
 
@@ -23,7 +29,14 @@ def config():
 @config.command("show")
 @click.pass_obj
 def config_show(ctx: AppContext):
-    """View current configuration."""
+    """View current configuration.
+
+    Displays all current settings including defaults, standup,
+    review, and display preferences.
+
+    Examples:
+      dwriter config show
+    """
     config_dict = ctx.config_manager.to_dict()
 
     ctx.console.print("[bold blue]Current Configuration[/bold blue]")
@@ -80,7 +93,14 @@ def config_show(ctx: AppContext):
 @config.command("edit")
 @click.pass_obj
 def config_edit(ctx: AppContext):
-    """Edit configuration file."""
+    """Edit configuration file.
+
+    Opens the config file in your default editor ($EDITOR or nano).
+    After editing, the configuration is automatically reloaded.
+
+    Examples:
+      dwriter config edit
+    """
     config_path = ctx.config_manager.get_config_path()
 
     # Ensure config file exists
@@ -109,7 +129,13 @@ def config_edit(ctx: AppContext):
 @config.command("reset")
 @click.pass_obj
 def config_reset(ctx: AppContext):
-    """Reset configuration to defaults."""
+    """Reset configuration to defaults.
+
+    Restores all settings to their default values. Requires confirmation.
+
+    Examples:
+      dwriter config reset
+    """
     if click.confirm("Reset all settings to defaults?"):
         ctx.config_manager.reset()
         ctx.console.print("[green]✅[/green] Configuration reset to defaults.")
@@ -120,5 +146,11 @@ def config_reset(ctx: AppContext):
 @config.command("path")
 @click.pass_obj
 def config_path(ctx: AppContext):
-    """Show configuration file path."""
+    """Show configuration file path.
+
+    Displays the full path to the configuration file.
+
+    Examples:
+      dwriter config path
+    """
     ctx.console.print(ctx.config_manager.get_config_path())

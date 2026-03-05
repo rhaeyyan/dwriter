@@ -38,16 +38,23 @@ def todo(ctx, content: tuple, tags: tuple, project: str, priority: str):
     Add, review, and complete tasks. When a task is marked as done,
     it automatically generates a daily log entry for your standup.
 
-    If invoked without arguments, launches the interactive todo board.
+    If invoked without arguments, launches the interactive todo board
+    with keyboard navigation for completing, editing, and managing tasks.
+
+    Priority Levels:
+      - low: Dimmed display, low visibility tasks
+      - normal: Default priority, standard display
+      - high: Yellow highlight for important tasks
+      - urgent: Red highlight for critical tasks
 
     Examples:
-        dwriter todo
-
-        dwriter todo "Draft new relic ideas" -p Mainframe_Mayhem
-
-        dwriter todo "Fix card draw bug" --priority urgent -t bug
-
-        dwriter todo list
+      dwriter todo                         # Launch interactive TUI
+      dwriter todo "Draft new relic ideas" -p Mainframe_Mayhem
+      dwriter todo "Fix card draw bug" --priority urgent -t bug
+      dwriter todo --priority urgent -t bug "Fix card draw bug"
+      dwriter todo list                    # Show pending tasks
+      dwriter todo list --all              # Include completed
+      dwriter todo list --tui              # Interactive mode
     """
     # Check if first content token is a known subcommand
     if content and content[0] in todo.commands:
@@ -118,8 +125,17 @@ def todo(ctx, content: tuple, tags: tuple, project: str, priority: str):
 def todo_list(ctx: AppContext, show_all: bool, use_tui: bool):
     """List pending tasks.
 
-    Displays your tasks in a formatted table. By default, only
-    pending tasks are shown.
+    Displays your tasks in a formatted table with priority colors.
+    By default, only pending tasks are shown.
+
+    Options:
+      --all: Include completed tasks (shown with strikethrough)
+      --tui: Launch interactive TUI for managing tasks
+
+    Examples:
+      dwriter todo list
+      dwriter todo list --all
+      dwriter todo list --tui
     """
     # Launch TUI if requested
     if use_tui:
@@ -183,7 +199,13 @@ def todo_list(ctx: AppContext, show_all: bool, use_tui: bool):
 @click.argument("task_id", type=int)
 @click.pass_obj
 def todo_rm(ctx: AppContext, task_id: int):
-    """Delete a task entirely."""
+    """Delete a task entirely.
+
+    Removes a task from your todo list. Requires confirmation.
+
+    Examples:
+      dwriter todo rm 3
+    """
     try:
         ctx.db.get_todo(task_id)
     except ValueError:
@@ -204,7 +226,13 @@ def todo_rm(ctx: AppContext, task_id: int):
 @click.argument("task_id", type=int)
 @click.pass_obj
 def todo_edit(ctx: AppContext, task_id: int):
-    """Edit a task's content interactively."""
+    """Edit a task's content interactively.
+
+    Opens the task content in your default editor for modification.
+
+    Examples:
+      dwriter todo edit 2
+    """
     try:
         task = ctx.db.get_todo(task_id)
     except ValueError:
@@ -245,15 +273,14 @@ def todo_edit(ctx: AppContext, task_id: int):
 def done(ctx: AppContext, task_identifier: str, use_search: bool):
     """Mark a task as complete and log it.
 
-    TASK_IDENTIFIER: Task ID (number) or search text if using --search.
-
-    This completes the task and automatically creates a new daily log
+    Completes the task and automatically creates a new daily log
     entry with the task's content, tags, and project.
 
-    Examples:
-        dwriter done 42
+    TASK_IDENTIFIER: Task ID (number) or search text if using --search.
 
-        dwriter done "write tests cache" --search
+    Examples:
+      dwriter done 42
+      dwriter done "write tests cache" --search
     """
     # Determine task ID or search for it
     task_id = None

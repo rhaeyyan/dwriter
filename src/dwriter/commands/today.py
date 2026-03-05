@@ -14,6 +14,11 @@ def today(ctx: AppContext):
     """Show today's entries.
 
     Displays all log entries created today, ordered by time.
+    This is the default command when running `dwriter` without arguments.
+
+    Examples:
+      dwriter today
+      dwriter    # Same as 'dwriter today'
     """
     today_date = datetime.now()
     entries = ctx.db.get_entries_by_date(today_date)

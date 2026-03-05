@@ -25,14 +25,20 @@ from ..cli import AppContext
 def focus(ctx: AppContext, minutes: int, tags: tuple, project: str):
     """Start a focus timer and log the result.
 
-    MINUTES: Duration of the focus session in minutes (default: 25).
+    Pomodoro-style focus timer with interactive TUI. When the timer
+    completes, you're prompted to log the session as a journal entry.
+
+    Timer Controls:
+      - Space: Pause/Resume
+      - +: Add 5 minutes
+      - -: Subtract 5 minutes
+      - Enter: Finish early
+      - q/Esc: Quit
 
     Examples:
-        dwriter focus
-
-        dwriter focus 30
-
-        dwriter focus 45 -t deepwork -p backend
+      dwriter focus           # Default 25-minute timer
+      dwriter focus 30        # Custom duration
+      dwriter focus 45 -t deepwork -p backend
     """
     # Merge default config tags/projects with provided ones
     all_tags = list(ctx.config.defaults.tags) + list(tags)

@@ -2,7 +2,34 @@
 
 **dwriter** is a low-friction terminal journaling tool designed for people who live in their command line. It helps you track daily tasks and automatically generate summaries for morning standups or weekly reviews.
 
-[🛠️ Command Reference](#️-command-reference) | [🎨 Interactive TUI](#-interactive-tui) | [⚙️ Configuration](#️-configuration) | [💻 Developer Commands](#-developer-commands) | [❓ Troubleshooting](#-troubleshooting)
+---
+
+## 📋 Table of Contents
+
+- [✨ Key Features](#-key-features)
+- [🚀 Quick Start (Installation)](#-quick-start-installation)
+  - [🪟 Windows 11](#-windows-11)
+  - [🐧 Linux (Ubuntu / Mint)](#-linux-ubuntu--mint)
+  - [🍎 macOS (MacBook)](#-macos-macbook)
+  - [✅ Verify Installation](#-verify-installation)
+- [🛠️ Command Reference](#️-command-reference)
+  - [Logging and Viewing](#logging-and-viewing)
+  - [Generation and Summaries](#generation-and-summaries)
+  - [Management and Configuration](#management-and-configuration)
+  - [Task Management (Todo)](#task-management-todo)
+  - [Focus Timer (Pomodoro)](#focus-timer-pomodoro)
+  - [Search](#search)
+- [🎨 Interactive TUI](#-interactive-tui)
+  - [🔍 Interactive Search](#-interactive-search-dwriter-search)
+  - [📋 Interactive Todo Board](#-interactive-todo-board-dwriter-todo)
+  - [✏️ Edit Entries](#️-edit-entries-dwriter-edit)
+  - [⏱️ Focus Timer](#️-focus-timer-dwriter-focus)
+  - [📊 Dashboard](#-dashboard-dwriter-stats)
+- [⚙️ Configuration](#️-configuration)
+- [💻 Developer Commands](#-developer-commands)
+  - [Shell Completions](#shell-completions)
+- [❓ Troubleshooting](#-troubleshooting)
+- [📄 License](#-license)
 
 ---
 

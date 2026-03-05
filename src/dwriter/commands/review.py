@@ -100,12 +100,15 @@ def review(ctx: AppContext, num_days: int, output_format: str):
     Generates a summary of all entries from the past N days,
     grouped by date. Useful for sprint retrospectives or timesheets.
 
+    Output Formats:
+      - markdown: Markdown with date headers and bullet points
+      - plain: Plain text with color-coded dates
+      - slack: Slack-optimized formatting
+
     Examples:
-        dwriter review
-
-        dwriter review --days 7
-
-        dwriter review --format markdown
+      dwriter review                  # Last 5 days (default)
+      dwriter review --days 7         # Last week
+      dwriter review --format markdown
     """
     # Use config defaults if not specified
     if num_days is None:

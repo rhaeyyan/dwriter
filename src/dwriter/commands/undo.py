@@ -10,8 +10,10 @@ from ..cli import AppContext
 def undo(ctx: AppContext):
     """Delete the most recent entry.
 
-    Removes the last logged entry. Use with caution as this action
-    cannot be undone.
+    Removes the last logged entry. Shows a preview and requires
+    confirmation before deletion.
+
+    ⚠️ This action cannot be undone.
     """
     latest = ctx.db.get_latest_entry()
     if latest is None:

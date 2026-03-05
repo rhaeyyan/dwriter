@@ -5,7 +5,7 @@ import click
 from ..cli import AppContext
 
 EXAMPLES = """
-Day Writer - Usage Examples
+dwriter - Usage Examples
 ═══════════════════════════════════════════════════════════════
 
 1. LOGGING TASKS
@@ -23,6 +23,11 @@ Day Writer - Usage Examples
   # Multiple tags and project
   $ dwriter add "refactored database layer" -t refactor -t backend -p myapp
 
+  # With custom date
+  $ dwriter add "Finished report" --date yesterday
+  $ dwriter add "Meeting notes" --date "last Friday"
+  $ dwriter add "Completed sprint" --date "3 days ago"
+
 
 2. VIEWING ENTRIES
 ───────────────────────────────────────────────────────────────
@@ -31,7 +36,7 @@ Day Writer - Usage Examples
   $ dwriter today
 
   # Show all entries (default when running dwriter without arguments)
-  $ dwriter today
+  $ dwriter
 
 
 3. STANDUP GENERATION
@@ -43,9 +48,13 @@ Day Writer - Usage Examples
   # Different formats
   $ dwriter standup --format slack
   $ dwriter standup --format jira
+  $ dwriter standup --format markdown
 
   # Don't copy to clipboard
   $ dwriter standup --no-copy
+
+  # Include pending tasks
+  $ dwriter standup --with-todos
 
 
 4. PERIODIC REVIEWS
@@ -66,11 +75,14 @@ Day Writer - Usage Examples
 5. EDITING ENTRIES
 ───────────────────────────────────────────────────────────────
 
-  # Interactive edit (opens today's entries in editor)
+  # Interactive edit TUI (today's entries)
   $ dwriter edit
 
   # Edit specific entry by ID
   $ dwriter edit --id 42
+
+  # Search and edit entry
+  $ dwriter edit --search "redis cache"
 
   # Undo last entry
   $ dwriter undo
@@ -79,10 +91,14 @@ Day Writer - Usage Examples
   $ dwriter delete --before 2025-01-01
 
 
-6. STATISTICS
+6. STATISTICS & DASHBOARD
 ───────────────────────────────────────────────────────────────
 
-  # Show logging stats and streak
+  # Launch interactive dashboard with:
+  # - GitHub-style contribution calendar
+  # - Weekly activity chart
+  # - Statistics summary
+  # - Top tags
   $ dwriter stats
 
 
@@ -105,6 +121,9 @@ Day Writer - Usage Examples
 8. TODO MANAGEMENT
 ───────────────────────────────────────────────────────────────
 
+  # Launch interactive todo board
+  $ dwriter todo
+
   # Add a new task
   $ dwriter todo "Draft new relic ideas"
 
@@ -117,8 +136,14 @@ Day Writer - Usage Examples
   # Options can come before content too
   $ dwriter todo --priority urgent -t bug "Fix card draw bug"
 
-  # List pending tasks
+  # List pending tasks (static table)
   $ dwriter todo list
+
+  # List all tasks including completed
+  $ dwriter todo list --all
+
+  # Launch interactive todo TUI
+  $ dwriter todo list --tui
 
   # Mark a task as done (auto-logs to journal)
   $ dwriter done 5
@@ -131,6 +156,129 @@ Day Writer - Usage Examples
 
   # Edit a task
   $ dwriter todo edit 2
+
+
+9. FOCUS TIMER (POMODORO)
+───────────────────────────────────────────────────────────────
+
+  # Start default 25-minute timer
+  $ dwriter focus
+
+  # Custom duration
+  $ dwriter focus 30
+  $ dwriter focus 45
+
+  # With tags and project
+  $ dwriter focus 45 -t deepwork -p backend
+
+
+10. SEARCH
+───────────────────────────────────────────────────────────────
+
+  # Launch interactive search TUI
+  $ dwriter search
+
+  # Fuzzy search entries and todos
+  $ dwriter search "auth bug"
+
+  # Filter by project
+  $ dwriter search "refactor" -p my_project
+
+  # Filter by tags
+  $ dwriter search "cache" -t backend
+
+  # Search only todos
+  $ dwriter search "cache" --type todo
+
+  # Limit results
+  $ dwriter search "meeting" -n 5
+
+
+INTERACTIVE TUI MODES
+═══════════════════════════════════════════════════════════════
+
+🔍 Interactive Search (dwriter search)
+───────────────────────────────────────────────────────────────
+  Launch: dwriter search
+
+  Keybindings:
+    j/k       Navigate down/up
+    Enter     Select item (copy content)
+    /         Focus search input
+    Ctrl+N    Toggle search type (All/Entries/Todos)
+    q/Esc     Quit
+
+  Features:
+    - Real-time fuzzy filtering
+    - Color-coded match scores (🟢90%+ 🟡75%+ ⚪60%+)
+    - Consistent tag/project colors
+
+
+📋 Interactive Todo Board (dwriter todo)
+───────────────────────────────────────────────────────────────
+  Launch: dwriter todo
+
+  Keybindings:
+    j/k       Navigate down/up
+    Space     Mark task complete (auto-logs)
+    e         Edit task content
+    d         Delete task
+    +/-       Increase/decrease priority
+    t         Edit tags
+    p         Edit project
+    r         Refresh
+    q/Esc     Quit
+
+  Priority Colors:
+    🔴 URGENT  🟡 HIGH  ⚪ NORMAL  ⚫ LOW
+
+
+✏️ Edit Entries (dwriter edit)
+───────────────────────────────────────────────────────────────
+  Launch: dwriter edit
+
+  Keybindings:
+    j/k       Navigate down/up
+    e/Enter   Edit entry content
+    t         Edit tags
+    p         Edit project
+    d         Delete entry
+    r         Refresh
+    q/Esc     Quit
+
+
+⏱️ Focus Timer (dwriter focus)
+───────────────────────────────────────────────────────────────
+  Launch: dwriter focus [MINUTES]
+
+  Keybindings:
+    Space     Pause/Resume
+    +         Add 5 minutes
+    -         Subtract 5 minutes
+    Enter     Finish early
+    q/Esc     Quit
+
+  Features:
+    - Large countdown display
+    - Progress bar
+    - Auto-prompt to log on completion
+
+
+📊 Dashboard (dwriter stats)
+───────────────────────────────────────────────────────────────
+  Launch: dwriter stats
+
+  Features:
+    - GitHub-style contribution calendar
+    - Current/longest streak tracking
+    - Weekly activity bar chart
+    - Statistics summary
+    - Top 10 tags with usage bars
+
+  Keybindings:
+    Tab       Navigate sections
+    r         Refresh
+    q/Esc     Quit
 
 
 WORKFLOWS
@@ -188,6 +336,28 @@ Set Default Project Workflow
   # Now all entries will use these defaults
   $ dwriter add "fixed bug"
   # Automatically tagged with project "myapp" and tag "work"
+
+
+Focus Session Workflow
+───────────────────────────────────────────────────────────────
+
+  # Start a Pomodoro session
+  $ dwriter focus
+
+  # Or custom duration with tags
+  $ dwriter focus 45 -t deepwork -p backend
+
+  # Session auto-logs when complete
+
+
+Interactive Search Workflow
+───────────────────────────────────────────────────────────────
+
+  # Launch TUI for browsing
+  $ dwriter search
+
+  # Or quick CLI search
+  $ dwriter search "auth module" -p backend -t bug
 """
 
 
