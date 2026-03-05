@@ -4,57 +4,51 @@ This module provides a real-time fuzzy search interface for
 journal entries and to-do tasks.
 """
 
-from typing import Any, List, Optional
+from typing import List, Optional
 
 from textual.app import App, ComposeResult
 from textual.containers import Container, Vertical
 from textual.reactive import reactive
-from textual.widgets import Footer, Header, Input, Label, ListItem, ListView
+from textual.widgets import Footer, Header, Input, Label, ListItem, ListView, Static
 
 from ..database import Entry, Todo
 from ..search_utils import search_items
 
 
-class SearchResultsView(ListView):
-    """ListView for displaying search results."""
+class EntryResultsView(ListView):
+    """ListView for displaying entry search results."""
 
-    def __init__(self, items: List[Any] = None, **kwargs):
-        """Initialize the search results view.
+    def __init__(self, items: List[tuple] = None, **kwargs):
+        """Initialize the entry results view.
 
         Args:
-            items: Optional list of (item, score) tuples to display.
+            items: Optional list of (entry, score) tuples to display.
             **kwargs: Additional arguments passed to ListView.
         """
         super().__init__(**kwargs)
         self._items = items or []
 
-    def update_items(self, items: List[Any]) -> None:
+    def update_items(self, items: List[tuple]) -> None:
         """Update the displayed items.
 
         Args:
-            items: List of (item, score) tuples to display.
+            items: List of (entry, score) tuples to display.
         """
         self._items = items
         self.clear()
-        for item, score in items:
-            self.append_item(item, score)
+        for entry, score in items:
+            self.append_item(entry, score)
 
-    def append_item(self, item: Any, score: float) -> None:
-        """Append a single item to the list.
+    def append_item(self, entry: Entry, score: float) -> None:
+        """Append a single entry to the list.
 
         Args:
-            item: Entry or Todo object to display.
+            entry: Entry object to display.
             score: Match score (0-100).
         """
-        if isinstance(item, Entry):
-            label = self._format_entry(item, score)
-        elif isinstance(item, Todo):
-            label = self._format_todo(item, score)
-        else:
-            label = f"Unknown item type: {item}"
-
+        label = self._format_entry(entry, score)
         list_item = ListItem(Label(label, markup=True))
-        list_item.item_data = {"item": item, "score": score}
+        list_item.item_data = {"item": entry, "score": score, "type": "entry"}
         self.append(list_item)
 
     def _format_entry(self, entry: Entry, score: float) -> str:
@@ -82,6 +76,59 @@ class SearchResultsView(ListView):
             f"[{score_color}]({int(score)}%)[/{score_color}]"
         )
 
+    def _get_score_color(self, score: float) -> str:
+        """Get the color for a match score.
+
+        Args:
+            score: Match score (0-100).
+
+        Returns:
+            Color name string.
+        """
+        if score >= 90:
+            return "green"
+        elif score >= 75:
+            return "yellow"
+        else:
+            return "dim"
+
+
+class TodoResultsView(ListView):
+    """ListView for displaying todo search results."""
+
+    def __init__(self, items: List[tuple] = None, **kwargs):
+        """Initialize the todo results view.
+
+        Args:
+            items: Optional list of (todo, score) tuples to display.
+            **kwargs: Additional arguments passed to ListView.
+        """
+        super().__init__(**kwargs)
+        self._items = items or []
+
+    def update_items(self, items: List[tuple]) -> None:
+        """Update the displayed items.
+
+        Args:
+            items: List of (todo, score) tuples to display.
+        """
+        self._items = items
+        self.clear()
+        for todo, score in items:
+            self.append_item(todo, score)
+
+    def append_item(self, todo: Todo, score: float) -> None:
+        """Append a single todo to the list.
+
+        Args:
+            todo: Todo object to display.
+            score: Match score (0-100).
+        """
+        label = self._format_todo(todo, score)
+        list_item = ListItem(Label(label, markup=True))
+        list_item.item_data = {"item": todo, "score": score, "type": "todo"}
+        self.append(list_item)
+
     def _format_todo(self, todo: Todo, score: float) -> str:
         """Format a todo for display.
 
@@ -100,15 +147,22 @@ class SearchResultsView(ListView):
         }
         color = priority_colors.get(todo.priority, "white")
         score_color = self._get_score_color(score)
-        tags_str = f" [dim]#{', '.join(todo.tag_names)}[/dim]" if todo.tag_names else ""
-        project_str = f" [dim]{todo.project}[/dim]" if todo.project else ""
+        # Match entry formatting: yellow tags, purple project
+        if todo.tag_names:
+            tags_str = f" [yellow]#{' #'.join(todo.tag_names)}[/yellow]"
+        else:
+            tags_str = ""
+        if todo.project:
+            project_str = f" [purple]{todo.project}[/purple]"
+        else:
+            project_str = ""
 
         status_prefix = "[dim][strike]" if todo.status == "completed" else ""
         status_suffix = "[/strike][/dim]" if todo.status == "completed" else ""
 
         return (
             f"{status_prefix}[cyan][{todo.id}][/cyan] "
-            f"[{color}]{todo.priority.upper()}[/{color}] "
+            f"[{color}]{todo.priority.upper()}[/{color}] | "
             f"{todo.content}{tags_str}{project_str} "
             f"[{score_color}]({int(score)}%)[/{score_color}]{status_suffix}"
         )
@@ -163,13 +217,32 @@ class SearchApp(App):
         margin: 0 2;
     }
 
-    SearchResultsView {
+    #entries-section, #todos-section {
+        height: 1fr;
+        margin: 0 0 1 0;
+    }
+
+    .section-header {
+        text-style: bold;
+        padding: 0 0 0 1;
+        background: $panel;
+    }
+
+    .entries-header {
+        color: $accent;
+    }
+
+    .todos-header {
+        color: $success;
+    }
+
+    EntryResultsView, TodoResultsView {
         height: 1fr;
         border: solid $primary;
         padding: 1;
     }
 
-    SearchResultsView:focus {
+    EntryResultsView:focus, TodoResultsView:focus {
         border: solid $accent;
     }
 
@@ -187,10 +260,6 @@ class SearchApp(App):
         background: $panel;
         color: $text-muted;
         padding: 0 2;
-    }
-
-    .highlight {
-        color: $accent;
     }
     """
 
@@ -230,6 +299,7 @@ class SearchApp(App):
         self.tags = tags or []
         self._all_entries = []
         self._all_todos = []
+        self._focused_section = "entries"
 
     def compose(self) -> ComposeResult:
         """Compose the search UI layout."""
@@ -241,7 +311,14 @@ class SearchApp(App):
                     id="search-input",
                 )
             with Container(id="results-container"):
-                yield SearchResultsView(id="results")
+                # Entries section
+                with Container(id="entries-section"):
+                    yield Static("📝 ENTRIES", classes="section-header entries-header")
+                    yield EntryResultsView(id="entries-results")
+                # Todos section
+                with Container(id="todos-section"):
+                    yield Static("✅ TO-DOS", classes="section-header todos-header")
+                    yield TodoResultsView(id="todos-results")
         yield Label(
             "j/k: Navigate | Enter: Select | /: Search | n: Toggle type | q: Quit",
             id="status-bar",
@@ -279,48 +356,75 @@ class SearchApp(App):
         Args:
             query: Search query string.
         """
-        results_view = self.query_one("#results", SearchResultsView)
-        results_view.clear()
+        entries_view = self.query_one("#entries-results", EntryResultsView)
+        todos_view = self.query_one("#todos-results", TodoResultsView)
+        entries_view.clear()
+        todos_view.clear()
 
         if not query.strip():
+            self._update_status_bar(0, 0)
             return
 
         # Search entries
+        matched_entries = []
         if self.search_type in ["all", "entry"]:
             matched_entries = search_items(
                 query, self._all_entries, limit=50, threshold=50
             )
             for entry, score in matched_entries:
-                results_view.append_item(entry, score)
+                entries_view.append_item(entry, score)
 
         # Search todos
+        matched_todos = []
         if self.search_type in ["all", "todo"]:
             matched_todos = search_items(
                 query, self._all_todos, limit=50, threshold=50
             )
             for todo, score in matched_todos:
-                results_view.append_item(todo, score)
+                todos_view.append_item(todo, score)
 
-        # Update status bar with result count
-        total = len(matched_entries) + len(matched_todos) if query.strip() else 0
+        self._update_status_bar(len(matched_entries), len(matched_todos))
+
+    def _update_status_bar(self, entry_count: int, todo_count: int) -> None:
+        """Update the status bar with result counts.
+
+        Args:
+            entry_count: Number of matched entries.
+            todo_count: Number of matched todos.
+        """
+        total = entry_count + todo_count
         type_label = (
             "Entries + Todos"
             if self.search_type == "all"
             else f"{self.search_type.capitalize()}s"
         )
         self.query_one("#status-bar", Label).update(
-            f"Found {total} matches in {type_label} | "
-            f"j/k: Navigate | Enter: Select | /: Search | n: Toggle type | q: Quit"
+            f"Found {total} matches ({entry_count} entries, {todo_count} todos) | "
+            f"Type: {type_label} | "
+            f"j/k: Navigate | Enter: Select | /: Search | n: Toggle | q: Quit"
         )
+
+    def _get_active_view(self):
+        """Get the currently active results view based on search type."""
+        if self.search_type == "entry":
+            return self.query_one("#entries-results", EntryResultsView)
+        elif self.search_type == "todo":
+            return self.query_one("#todos-results", TodoResultsView)
+        else:
+            # For "all" mode, prefer entries view if it has items, otherwise todos
+            entries_view = self.query_one("#entries-results", EntryResultsView)
+            if entries_view.child_count > 0:
+                return entries_view
+            return self.query_one("#todos-results", TodoResultsView)
 
     def action_cursor_down(self) -> None:
         """Move cursor down in results list."""
-        results_view = self.query_one("#results", SearchResultsView)
+        results_view = self._get_active_view()
         results_view.action_cursor_down()
 
     def action_cursor_up(self) -> None:
         """Move cursor up in results list."""
-        results_view = self.query_one("#results", SearchResultsView)
+        results_view = self._get_active_view()
         results_view.action_cursor_up()
 
     def action_focus_search(self) -> None:
@@ -329,8 +433,9 @@ class SearchApp(App):
 
     def action_select(self) -> None:
         """Select the highlighted item and copy its content."""
-        results_view = self.query_one("#results", SearchResultsView)
+        results_view = self._get_active_view()
         if results_view.highlighted_child is None:
+            self.notify("No item selected", severity="warning", timeout=1.5)
             return
 
         item_data = results_view.highlighted_child.item_data
