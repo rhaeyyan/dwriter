@@ -220,6 +220,7 @@ Edit your history or customize how the tool behaves.
 | `dwriter edit` | Launch interactive edit TUI for today's entries |
 | `dwriter edit -i ID` | Edit a specific entry by ID |
 | `dwriter edit -s QUERY` | Search for an entry to edit (fuzzy match) |
+| `dwriter stats` | Launch interactive dashboard TUI |
 | `dwriter delete --before DATE` | Bulk delete entries older than a specific date (YYYY-MM-DD) |
 | `dwriter config show` | View your current settings |
 | `dwriter config edit` | Open the configuration file in your editor |
@@ -454,6 +455,33 @@ Launch with `dwriter focus [MINUTES]`.
 | `-` | Subtract 5 minutes |
 | `Enter` | Finish session early |
 | `q` / `Esc` | Quit (with confirmation) |
+
+> **Hybrid CLI/TUI Design:** Quick operations remain CLI-based (`dwriter add`, `dwriter todo "task"`) for frictionless use. TUI modes launch only when needed for interactive workflows.
+
+### 📊 Dashboard (`dwriter stats`)
+
+Launch with `dwriter stats`.
+
+**Features:**
+- 📅 GitHub-style contribution calendar with streak tracking
+- 📊 Weekly activity bar chart
+- 📈 Statistics summary (total entries, tasks, tags, projects)
+- 🏷️ Top tags with usage bars
+
+**Keybindings:**
+
+| Key | Action |
+| --- | --- |
+| `r` | Refresh all data |
+| `Tab` | Navigate between sections |
+| `q` / `Esc` | Quit |
+
+**Visual Elements:**
+- **Contribution Calendar** - Shows your logging activity over the past year with color-coded squares (darker = more entries)
+- **Current/Longest Streak** - Displays your logging streaks at the top of the calendar
+- **Weekly Chart** - Bar chart showing entries per week for the last 8 weeks
+- **Stats Summary** - Total entries, completed tasks, unique tags, projects, and date range
+- **Top Tags** - Your 10 most-used tags with visual usage bars
 
 > **Hybrid CLI/TUI Design:** Quick operations remain CLI-based (`dwriter add`, `dwriter todo "task"`) for frictionless use. TUI modes launch only when needed for interactive workflows.
 
