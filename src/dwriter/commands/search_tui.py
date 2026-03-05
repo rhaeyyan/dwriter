@@ -4,7 +4,9 @@ This module provides a real-time fuzzy search interface for
 journal entries and to-do tasks.
 """
 
-from typing import List, Optional
+from __future__ import annotations
+
+from typing import Any
 
 from textual.app import App, ComposeResult
 from textual.containers import Container, Vertical
@@ -25,7 +27,7 @@ from ..database import Entry, Todo
 from ..search_utils import search_items
 
 
-class EditContentModal(ModalScreen):
+class EditContentModal(ModalScreen):  # type: ignore[type-arg]
     """Modal dialog for editing content."""
 
     CSS = """
@@ -68,11 +70,13 @@ class EditContentModal(ModalScreen):
         ("ctrl+s", "save", "Save"),
     ]
 
-    def __init__(self, content: str, title: str = "Edit Content", **kwargs):
+    def __init__(
+        self, content: str, title: str = "Edit Content", **kwargs: Any
+    ) -> None:
         super().__init__(**kwargs)
         self.content = content
         self.title_text = title
-        self.result: Optional[str] = None
+        self.result: str | None = None
 
     def compose(self) -> ComposeResult:
         with Container(id="modal-container"):
@@ -81,7 +85,6 @@ class EditContentModal(ModalScreen):
                 value=self.content,
                 id="edit-input",
                 placeholder="Enter content...",
-                multiline=True,
             )
             with Container(id="edit-buttons"):
                 yield Button("Save", id="save-btn", variant="primary")
@@ -99,14 +102,14 @@ class EditContentModal(ModalScreen):
         self.result = None
         self.dismiss(None)
 
-    def on_button_pressed(self, event) -> None:
+    def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "save-btn":
             self.action_save()
         elif event.button.id == "cancel-btn":
             self.action_cancel()
 
 
-class EditTagsModal(ModalScreen):
+class EditTagsModal(ModalScreen):  # type: ignore[type-arg]
     """Modal dialog for editing tags."""
 
     CSS = """
@@ -153,11 +156,13 @@ class EditTagsModal(ModalScreen):
         ("ctrl+s", "save", "Save"),
     ]
 
-    def __init__(self, tags: List[str], title: str = "Edit Tags", **kwargs):
+    def __init__(
+        self, tags: list[str], title: str = "Edit Tags", **kwargs: Any
+    ) -> None:
         super().__init__(**kwargs)
         self.tags = tags
         self.title_text = title
-        self.result: Optional[List[str]] = None
+        self.result: list[str] | None = None
 
     def compose(self) -> ComposeResult:
         with Container(id="modal-container"):
@@ -188,14 +193,14 @@ class EditTagsModal(ModalScreen):
         self.result = None
         self.dismiss(None)
 
-    def on_button_pressed(self, event) -> None:
+    def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "save-btn":
             self.action_save()
         elif event.button.id == "cancel-btn":
             self.action_cancel()
 
 
-class EditProjectModal(ModalScreen):
+class EditProjectModal(ModalScreen):  # type: ignore[type-arg]
     """Modal dialog for editing project."""
 
     CSS = """
@@ -237,11 +242,13 @@ class EditProjectModal(ModalScreen):
         ("ctrl+s", "save", "Save"),
     ]
 
-    def __init__(self, project: Optional[str], title: str = "Edit Project", **kwargs):
+    def __init__(
+        self, project: str | None, title: str = "Edit Project", **kwargs: Any
+    ) -> None:
         super().__init__(**kwargs)
         self.project = project
         self.title_text = title
-        self.result: Optional[str] = None
+        self.result: str | None = None
 
     def compose(self) -> ComposeResult:
         with Container(id="modal-container"):
@@ -267,7 +274,7 @@ class EditProjectModal(ModalScreen):
         self.result = None
         self.dismiss(None)
 
-    def on_button_pressed(self, event) -> None:
+    def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "save-btn":
             self.action_save()
         elif event.button.id == "cancel-btn":
@@ -277,7 +284,9 @@ class EditProjectModal(ModalScreen):
 class EntryResultsView(ListView):
     """ListView for displaying entry search results."""
 
-    def __init__(self, items: List[tuple] = None, **kwargs):
+    def __init__(
+        self, items: list[tuple[Entry, float]] | None = None, **kwargs: Any
+    ) -> None:
         """Initialize the entry results view.
 
         Args:
@@ -287,7 +296,7 @@ class EntryResultsView(ListView):
         super().__init__(**kwargs)
         self._items = items or []
 
-    def update_items(self, items: List[tuple]) -> None:
+    def update_items(self, items: list[tuple[Entry, float]]) -> None:
         """Update the displayed items.
 
         Args:
@@ -307,7 +316,7 @@ class EntryResultsView(ListView):
         """
         label = self._format_entry(entry, score)
         list_item = ListItem(Label(label, markup=True))
-        list_item.item_data = {"item": entry, "score": score, "type": "entry"}
+        list_item.item_data = {"item": entry, "score": score, "type": "entry"}  # type: ignore[attr-defined]
         self.append(list_item)
 
     def _format_entry(self, entry: Entry, score: float) -> str:
@@ -355,7 +364,9 @@ class EntryResultsView(ListView):
 class TodoResultsView(ListView):
     """ListView for displaying todo search results."""
 
-    def __init__(self, items: List[tuple] = None, **kwargs):
+    def __init__(
+        self, items: list[tuple[Todo, float]] | None = None, **kwargs: Any
+    ) -> None:
         """Initialize the todo results view.
 
         Args:
@@ -365,7 +376,7 @@ class TodoResultsView(ListView):
         super().__init__(**kwargs)
         self._items = items or []
 
-    def update_items(self, items: List[tuple]) -> None:
+    def update_items(self, items: list[tuple[Todo, float]]) -> None:
         """Update the displayed items.
 
         Args:
@@ -385,7 +396,7 @@ class TodoResultsView(ListView):
         """
         label = self._format_todo(todo, score)
         list_item = ListItem(Label(label, markup=True))
-        list_item.item_data = {"item": todo, "score": score, "type": "todo"}
+        list_item.item_data = {"item": todo, "score": score, "type": "todo"}  # type: ignore[attr-defined]
         self.append(list_item)
 
     def _format_todo(self, todo: Todo, score: float) -> str:
@@ -443,7 +454,7 @@ class TodoResultsView(ListView):
             return "dim"
 
 
-class SearchApp(App):
+class SearchApp(App):  # type: ignore[type-arg]
     """Interactive search application.
 
     Provides real-time fuzzy search across journal entries and to-dos.
@@ -541,12 +552,12 @@ class SearchApp(App):
 
     def __init__(
         self,
-        db,
-        console,
-        project: Optional[str] = None,
-        tags: Optional[List[str]] = None,
-        **kwargs,
-    ):
+        db: Any,
+        console: Any,
+        project: str | None = None,
+        tags: list[str] | None = None,
+        **kwargs: Any,
+    ) -> None:
         """Initialize the search application.
 
         Args:
@@ -561,8 +572,8 @@ class SearchApp(App):
         self.console = console
         self.project = project
         self.tags = tags or []
-        self._all_entries = []
-        self._all_todos = []
+        self._all_entries: list[Entry] = []
+        self._all_todos: list[Todo] = []
         self._focused_section = "entries"
 
     def compose(self) -> ComposeResult:
@@ -669,7 +680,7 @@ class SearchApp(App):
             "+/-: Priority | /: Search | n: Toggle | q: Quit"
         )
 
-    def _get_active_view(self):
+    def _get_active_view(self) -> EntryResultsView | TodoResultsView:
         """Get the currently active results view based on search type."""
         if self.search_type == "entry":
             return self.query_one("#entries-results", EntryResultsView)
@@ -703,7 +714,7 @@ class SearchApp(App):
             self.notify("No item selected", severity="warning", timeout=1.5)
             return
 
-        item_data = results_view.highlighted_child.item_data
+        item_data = results_view.highlighted_child.item_data  # type: ignore[attr-defined]
         if item_data:
             content = item_data["item"].content
             try:
@@ -713,12 +724,18 @@ class SearchApp(App):
             except Exception:
                 self.notify(f"Content: {content}", timeout=3)
 
-    def _get_selected_item(self):
+    def _get_selected_item(
+        self,
+    ) -> tuple[
+        Entry | Todo | None,
+        str | None,
+        EntryResultsView | TodoResultsView | None,
+    ]:
         """Get currently selected item and its type."""
         results_view = self._get_active_view()
         if results_view.highlighted_child is None:
             return None, None, None
-        item_data = results_view.highlighted_child.item_data
+        item_data = results_view.highlighted_child.item_data  # type: ignore[attr-defined]
         if not item_data:
             return None, None, None
         return item_data["item"], item_data["type"], results_view
@@ -730,7 +747,7 @@ class SearchApp(App):
             self.notify("No item selected", severity="warning", timeout=1.5)
             return
 
-        def on_dismiss(result: Optional[str]) -> None:
+        def on_dismiss(result: str | None) -> None:
             if result is not None and result != item.content:
                 try:
                     if not result:
@@ -745,7 +762,7 @@ class SearchApp(App):
                     else:
                         self.db.update_todo(item.id, content=result)
                     self.notify(
-                        f"{item_type.title()} #{item.id} updated",
+                        f"{item_type.title()} #{item.id} updated",  # type: ignore[union-attr]
                         timeout=1.5,
                     )
                     search_input = self.query_one("#search-input", Input)
@@ -759,8 +776,10 @@ class SearchApp(App):
 
         if item_type == "entry":
             title = f"Edit Entry #{item.id}"
-        else:
+        elif item_type == "todo":
             title = f"Edit Task #{item.id}"
+        else:
+            return
         self.push_screen(EditContentModal(item.content, title), on_dismiss)
 
     def action_edit_tags(self) -> None:
@@ -770,14 +789,14 @@ class SearchApp(App):
             self.notify("No item selected", severity="warning", timeout=1.5)
             return
 
-        def on_dismiss(result: Optional[List[str]]) -> None:
+        def on_dismiss(result: list[str] | None) -> None:
             if result is not None and result != item.tag_names:
                 try:
                     if item_type == "entry":
                         self.db.update_entry(item.id, tags=result)
                     else:
                         self.db.update_todo(item.id, tags=result)
-                    msg = f"{item_type.title()} #{item.id} tags updated"
+                    msg = f"{item_type.title()} #{item.id} tags updated"  # type: ignore[union-attr]
                     self.notify(msg, timeout=1.5)
                     search_input = self.query_one("#search-input", Input)
                     self._perform_search(search_input.value)
@@ -788,7 +807,12 @@ class SearchApp(App):
                         timeout=3,
                     )
 
-        title = f"Edit {item_type.title()} #{item.id} Tags"
+        if item_type == "entry":
+            title = f"Edit Entry #{item.id} Tags"
+        elif item_type == "todo":
+            title = f"Edit Task #{item.id} Tags"
+        else:
+            return
         self.push_screen(EditTagsModal(item.tag_names, title), on_dismiss)
 
     def action_edit_project(self) -> None:
@@ -798,14 +822,14 @@ class SearchApp(App):
             self.notify("No item selected", severity="warning", timeout=1.5)
             return
 
-        def on_dismiss(result: Optional[str]) -> None:
+        def on_dismiss(result: str | None) -> None:
             if result is not None and result != item.project:
                 try:
                     if item_type == "entry":
                         self.db.update_entry(item.id, project=result)
                     else:
                         self.db.update_todo(item.id, project=result)
-                    msg = f"{item_type.title()} #{item.id} project updated"
+                    msg = f"{item_type.title()} #{item.id} project updated"  # type: ignore[union-attr]
                     self.notify(msg, timeout=1.5)
                     search_input = self.query_one("#search-input", Input)
                     self._perform_search(search_input.value)
@@ -816,7 +840,12 @@ class SearchApp(App):
                         timeout=3,
                     )
 
-        title = f"Edit {item_type.title()} #{item.id} Project"
+        if item_type == "entry":
+            title = f"Edit Entry #{item.id} Project"
+        elif item_type == "todo":
+            title = f"Edit Task #{item.id} Project"
+        else:
+            return
         self.push_screen(EditProjectModal(item.project, title), on_dismiss)
 
     def action_increase_priority(self) -> None:
@@ -832,7 +861,7 @@ class SearchApp(App):
                 timeout=1.5,
             )
             return
-        if item.status == "completed":
+        if item.status == "completed":  # type: ignore[union-attr]
             self.notify(
                 "Cannot change priority of completed task",
                 severity="information",
@@ -841,12 +870,12 @@ class SearchApp(App):
             return
 
         priority_order = ["low", "normal", "high", "urgent"]
-        current_idx = priority_order.index(item.priority)
+        current_idx = priority_order.index(item.priority)  # type: ignore[union-attr]
         if current_idx < len(priority_order) - 1:
             new_priority = priority_order[current_idx + 1]
             try:
                 self.db.update_todo(item.id, priority=new_priority)
-                msg = f"Priority: {item.priority} → {new_priority}"
+                msg = f"Priority: {item.priority} → {new_priority}"  # type: ignore[union-attr]
                 self.notify(msg, timeout=1.5)
                 search_input = self.query_one("#search-input", Input)
                 self._perform_search(search_input.value)
@@ -876,7 +905,7 @@ class SearchApp(App):
                 timeout=1.5,
             )
             return
-        if item.status == "completed":
+        if item.status == "completed":  # type: ignore[union-attr]
             self.notify(
                 "Cannot change priority of completed task",
                 severity="information",
@@ -885,12 +914,12 @@ class SearchApp(App):
             return
 
         priority_order = ["low", "normal", "high", "urgent"]
-        current_idx = priority_order.index(item.priority)
+        current_idx = priority_order.index(item.priority)  # type: ignore[union-attr]
         if current_idx > 0:
             new_priority = priority_order[current_idx - 1]
             try:
                 self.db.update_todo(item.id, priority=new_priority)
-                msg = f"Priority: {item.priority} → {new_priority}"
+                msg = f"Priority: {item.priority} → {new_priority}"  # type: ignore[union-attr]
                 self.notify(msg, timeout=1.5)
                 search_input = self.query_one("#search-input", Input)
                 self._perform_search(search_input.value)
@@ -907,7 +936,7 @@ class SearchApp(App):
                 timeout=1.5,
             )
 
-    def action_quit(self) -> None:
+    def action_quit(self) -> None:  # type: ignore[override]
         """Quit the search application."""
         self.exit()
 

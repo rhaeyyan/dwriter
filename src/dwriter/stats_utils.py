@@ -17,7 +17,7 @@ def calculate_streak(dates: List[datetime]) -> Tuple[int, int]:
         return 0, 0
 
     # Get unique dates (as date objects)
-    unique_dates = set(d.date() for d in dates)
+    unique_dates = {d.date() for d in dates}
     sorted_dates = sorted(unique_dates)
 
     today = datetime.now().date()

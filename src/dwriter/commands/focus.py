@@ -1,5 +1,9 @@
 """Focus command for running a Pomodoro timer."""
 
+from __future__ import annotations
+
+from typing import Any
+
 import click
 
 from ..cli import AppContext
@@ -22,7 +26,9 @@ from ..cli import AppContext
     help="Project to apply to the resulting entry",
 )
 @click.pass_obj
-def focus(ctx: AppContext, minutes: int, tags: tuple, project: str):
+def focus(
+    ctx: AppContext, minutes: int, tags: tuple[Any, ...], project: str | None
+) -> None:
     """Start a focus timer and log the result.
 
     Pomodoro-style focus timer with interactive TUI. When the timer

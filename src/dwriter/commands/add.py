@@ -1,5 +1,9 @@
 """Add command for logging new entries."""
 
+from __future__ import annotations
+
+from typing import Any
+
 import click
 
 from ..cli import AppContext
@@ -32,7 +36,13 @@ from ..ui_utils import display_entry
     "'last Friday', '3 days ago') or standard date format (YYYY-MM-DD)",
 )
 @click.pass_obj
-def add(ctx: AppContext, content: str, tags: tuple, project: str, date_str: str):
+def add(
+    ctx: AppContext,
+    content: str,
+    tags: tuple[Any, ...],
+    project: str | None,
+    date_str: str | None,
+) -> None:
     """Add a new log entry.
 
     Quickly capture tasks, notes, or accomplishments with optional

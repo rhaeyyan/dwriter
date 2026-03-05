@@ -516,7 +516,7 @@ Launch with `dwriter stats`.
 
 ## ⚙️ Configuration
 
-Your settings are stored in `~/.day-writer/config.toml`. You can customize default projects, tags, output formats, and display preferences here.
+Your settings are stored in `~/.dwriter/config.toml`. You can customize default projects, tags, output formats, and display preferences here.
 
 **Example Config:**
 
@@ -560,6 +560,30 @@ colors = true
 
 If you want to contribute or run the test suite:
 
+### Using uv (Recommended)
+
+```bash
+uv sync --extra dev
+
+```
+
+```bash
+uv run pytest
+
+```
+
+```bash
+uv run ruff check src/
+
+```
+
+```bash
+uv run mypy src
+
+```
+
+### Using pip
+
 ```bash
 pip install -e ".[dev]"
 
@@ -572,6 +596,11 @@ pytest
 
 ```bash
 ruff check src/
+
+```
+
+```bash
+mypy src
 
 ```
 

@@ -4,7 +4,9 @@ This module provides a real-time Pomodoro timer with pause/resume
 and session logging capabilities.
 """
 
-from typing import Optional
+from __future__ import annotations
+
+from typing import Any
 
 from textual.app import App, ComposeResult
 from textual.containers import Container, Vertical
@@ -30,7 +32,7 @@ class GradientBar(Static):
     }
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         """Initialize the gradient bar.
 
         Args:
@@ -74,7 +76,7 @@ class GradientBar(Static):
 
         self.update("".join(segments))
 
-    def _interpolate_color(self, pct: float, palette: list) -> str:
+    def _interpolate_color(self, pct: float, palette: list[tuple[float, str]]) -> str:
         """Interpolate color from palette based on percentage.
 
         Args:
@@ -117,7 +119,7 @@ class GradientBar(Static):
         return f"#{r:02x}{g:02x}{b:02x}"
 
 
-class SessionCompleteModal(ModalScreen):
+class SessionCompleteModal(ModalScreen):  # type: ignore[type-arg]
     """Modal dialog for logging a completed focus session."""
 
     CSS = """
@@ -169,10 +171,10 @@ class SessionCompleteModal(ModalScreen):
         self,
         minutes: int,
         default_content: str,
-        tags: Optional[list] = None,
-        project: Optional[str] = None,
-        **kwargs,
-    ):
+        tags: list[Any] | None = None,
+        project: str | None = None,
+        **kwargs: Any,
+    ) -> None:
         """Initialize the session complete modal.
 
         Args:
@@ -187,7 +189,7 @@ class SessionCompleteModal(ModalScreen):
         self.default_content = default_content
         self.tags = tags or []
         self.project = project
-        self.result: Optional[str] = None
+        self.result: str | None = None
 
     def compose(self) -> ComposeResult:
         """Compose the modal UI."""
@@ -221,7 +223,7 @@ class SessionCompleteModal(ModalScreen):
         self.result = None
         self.dismiss(None)
 
-    def on_button_pressed(self, event) -> None:
+    def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button presses."""
         if event.button.id == "save-btn":
             self.action_save()
@@ -229,7 +231,7 @@ class SessionCompleteModal(ModalScreen):
             self.action_cancel()
 
 
-class FocusTimerApp(App):
+class FocusTimerApp(App):  # type: ignore[type-arg]
     """Interactive focus timer application.
 
     Provides a real-time Pomodoro timer with pause/resume capability.
@@ -317,13 +319,13 @@ class FocusTimerApp(App):
 
     def __init__(
         self,
-        db,
-        console,
+        db: Any,
+        console: Any,
         minutes: int = 25,
-        tags: Optional[list] = None,
-        project: Optional[str] = None,
-        **kwargs,
-    ):
+        tags: list[Any] | None = None,
+        project: str | None = None,
+        **kwargs: Any,
+    ) -> None:
         """Initialize the focus timer application.
 
         Args:
@@ -344,7 +346,7 @@ class FocusTimerApp(App):
         self._is_finished = False
         self.tags = tags or []
         self.project = project
-        self._timer_handle: Optional[int] = None
+        self._timer_handle: Any = None
 
     @property
     def is_running(self) -> bool:
@@ -466,7 +468,7 @@ class FocusTimerApp(App):
         completed_minutes = self.initial_minutes
         default_content = f"Completed {completed_minutes}m focus session"
 
-        def on_dismiss(result: Optional[str]) -> None:
+        def on_dismiss(result: str | None) -> None:
             if result:
                 try:
                     entry = self.db.add_entry(
@@ -496,7 +498,7 @@ class FocusTimerApp(App):
     def _show_quit_confirmation(self) -> None:
         """Show quit confirmation modal."""
 
-        class ConfirmQuitModal(ModalScreen):
+        class ConfirmQuitModal(ModalScreen):  # type: ignore[type-arg]
             """Confirmation dialog for quitting."""
 
             CSS = """
@@ -545,7 +547,7 @@ class FocusTimerApp(App):
             def action_cancel(self) -> None:
                 self.dismiss(False)
 
-            def on_button_pressed(self, event) -> None:
+            def on_button_pressed(self, event: Button.Pressed) -> None:
                 if event.button.id == "yes-btn":
                     self.action_confirm()
                 elif event.button.id == "no-btn":
@@ -556,7 +558,7 @@ class FocusTimerApp(App):
                 self.notify("Session not logged", timeout=1.5)
                 self.exit()
 
-        self.push_screen(ConfirmQuitModal(), on_dismiss)
+        self.push_screen(ConfirmQuitModal(), on_dismiss)  # type: ignore[arg-type]
 
     def action_toggle_pause(self) -> None:
         """Toggle timer pause/resume."""
@@ -603,7 +605,7 @@ class FocusTimerApp(App):
         self._stop_timer()
         self._timer_finished()
 
-    def action_quit(self) -> None:
+    def action_quit(self) -> None:  # type: ignore[override]
         """Quit the timer with confirmation."""
         if self.is_finished:
             self.exit()

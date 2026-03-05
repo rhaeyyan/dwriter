@@ -6,7 +6,7 @@ journal entries using SQLAlchemy 2.0.
 
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from sqlalchemy import (
     DateTime,
@@ -132,10 +132,10 @@ class Database:
 
         Args:
             db_path: Optional path to the database file. If not provided,
-                uses the default location at ~/.day-writer/entries.db.
+                uses the default location at ~/.dwriter/entries.db.
         """
         if db_path is None:
-            data_dir = Path.home() / ".day-writer"
+            data_dir = Path.home() / ".dwriter"
             data_dir.mkdir(parents=True, exist_ok=True)
             db_path = data_dir / "entries.db"
 
@@ -143,7 +143,7 @@ class Database:
         Base.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine)
 
-    def connection(self):
+    def connection(self) -> Any:
         """Return a raw SQLite connection for low-level operations.
 
         Returns:
@@ -325,7 +325,7 @@ class Database:
             stmt = delete(Entry).where(Entry.created_at < before_date)
             result = session.execute(stmt)
             session.commit()
-            return result.rowcount or 0
+            return int(result.rowcount) if result.rowcount is not None else 0  # type: ignore[attr-defined]
 
     def get_all_entries_count(self) -> int:
         """Get the total count of all entries.
@@ -334,7 +334,7 @@ class Database:
             The total number of entries in the database.
         """
         with self.Session() as session:
-            return session.scalar(select(func.count(Entry.id)))
+            return session.scalar(select(func.count(Entry.id))) or 0
 
     def get_entries_with_streaks(self) -> List[datetime]:
         """Get dates with entries for streak calculation.
@@ -466,7 +466,7 @@ class Database:
                 .order_by(func.count(Tag.id).desc())
             )
             results = session.execute(stmt).all()
-            return {name: count for name, count in results}
+            return {row[0]: row[1] for row in results}
 
     def add_todo(
         self,

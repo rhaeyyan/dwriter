@@ -3,7 +3,6 @@
 from click.testing import CliRunner
 
 from dwriter.cli import main
-from dwriter.database import Database
 
 
 def test_cli_help():
@@ -12,7 +11,7 @@ def test_cli_help():
     result = runner.invoke(main, ["--help"])
 
     assert result.exit_code == 0
-    assert "Day Writer" in result.output
+    assert "Dwriter" in result.output
     assert "add" in result.output
     assert "standup" in result.output
 

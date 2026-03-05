@@ -363,7 +363,7 @@ Interactive Search Workflow
 
 @click.command()
 @click.pass_obj
-def examples(ctx: AppContext):
+def examples(ctx: AppContext) -> None:
     """Show usage examples and workflows.
 
     Displays comprehensive examples of all dwriter commands

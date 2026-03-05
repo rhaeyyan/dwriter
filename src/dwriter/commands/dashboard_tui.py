@@ -4,16 +4,22 @@ This module provides a visual dashboard with streak calendar,
 weekly charts, and logging statistics.
 """
 
+from __future__ import annotations
+
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple
+from typing import Any
 
 from textual import work
 from textual.app import App, ComposeResult
-from textual.containers import Container, Grid, Horizontal, ScrollableContainer, Vertical
+from textual.containers import (
+    Container,
+    Horizontal,
+    ScrollableContainer,
+    Vertical,
+)
 from textual.screen import Screen
 from textual.widgets import (
     DataTable,
-    Digits,
     Footer,
     Header,
     Label,
@@ -47,7 +53,9 @@ class KPICard(Static):
     }
     """
 
-    def __init__(self, title: str, value: str, color: str = "$primary", **kwargs):
+    def __init__(
+        self, title: str, value: str, color: str = "$primary", **kwargs: Any
+    ) -> None:
         super().__init__(**kwargs)
         self.title = title
         self.value = value
@@ -70,7 +78,7 @@ class KPICard(Static):
         )
 
 
-class EntryDetailScreen(Screen):
+class EntryDetailScreen(Screen):  # type: ignore[type-arg]
     """Screen showing entries for a selected project or tag."""
 
     CSS = """
@@ -98,10 +106,10 @@ class EntryDetailScreen(Screen):
 
     def __init__(
         self,
-        db,
+        db: Any,
         title: str,
-        entries: List[Entry],
-        **kwargs,
+        entries: list[Entry],
+        **kwargs: Any,
     ):
         super().__init__(**kwargs)
         self.db = db
@@ -113,14 +121,19 @@ class EntryDetailScreen(Screen):
         yield Header(show_clock=True)
         with ScrollableContainer(id="entry-container"):
             yield Static(
-                f"[bold]📋 {self.title}[/bold]\n[dim]Press Escape or 'q' to go back[/dim]",
+                f"[bold]📋 {self.title}[/bold]\n"
+                f"[dim]Press Escape or 'q' to go back[/dim]",
                 id="entry-header",
             )
-            table = DataTable(id="entry-table")
+            table: DataTable[str] = DataTable(id="entry-table")
             table.add_columns("Date", "Content", "Project", "Tags")
             for entry in self.entries:
                 date_str = entry.created_at.strftime("%Y-%m-%d %H:%M")
-                content = entry.content[:60] + "..." if len(entry.content) > 60 else entry.content
+                content = (
+                    entry.content[:60] + "..."
+                    if len(entry.content) > 60
+                    else entry.content
+                )
                 project = entry.project or "-"
                 tags = ", ".join(entry.tag_names) if entry.tag_names else "-"
                 table.add_row(date_str, content, project, tags)
@@ -174,10 +187,10 @@ class StreakCalendar(Static):
     }
     """
 
-    def __init__(self, db, **kwargs):
+    def __init__(self, db: Any, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.db = db
-        self.entries_by_date: Dict[str, int] = {}
+        self.entries_by_date: dict[str, int] = {}
         self.current_streak = 0
         self.longest_streak = 0
 
@@ -199,7 +212,7 @@ class StreakCalendar(Static):
         # Calculate streaks
         self.current_streak, self.longest_streak = self._calculate_streaks()
 
-    def _calculate_streaks(self) -> Tuple[int, int]:
+    def _calculate_streaks(self) -> tuple[int, int]:
         """Calculate current and longest streaks.
 
         Returns:
@@ -268,14 +281,14 @@ class StreakCalendar(Static):
         start_date = start_date - timedelta(days=start_date.weekday())
 
         # Build calendar data - organize by weeks (columns)
-        weeks = []
-        current_week = []
+        weeks: list[list[tuple[datetime, int] | None]] = []
+        current_week: list[tuple[datetime, int] | None] = []
 
         current_date = start_date
         while current_date <= today:
             date_str = current_date.strftime("%Y-%m-%d")
             count = self.entries_by_date.get(date_str, 0)
-            current_week.append((current_date, count))
+            current_week.append((current_date, count))  # type: ignore[arg-type]
 
             if len(current_week) == 7:
                 weeks.append(current_week)
@@ -317,12 +330,19 @@ class StreakCalendar(Static):
         day_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
         # Color mapping for activity levels (light to dark blue)
         bg_colors = ["#D1F8EF", "#A1E3F9", "#578FCA", "#3674B5", "#155E95"]
-        
+
         for day_idx in range(7):
             line = f"[bold]{day_names[day_idx]}[/bold] "
             for week in weeks:
-                if day_idx < len(week) and week[day_idx] is not None:
-                    _, count = week[day_idx]
+                if not week:
+                    line += "   "
+                    continue
+                # Ensure week has enough elements
+                while len(week) <= day_idx:
+                    week.append(None)
+                cell = week[day_idx]
+                if cell:
+                    _, count = cell
                     level = self._get_level(count)
                     if level == 0:
                         line += " · "  # Light dot for no activity
@@ -356,7 +376,7 @@ class ActivitySparkline(Static):
     }
     """
 
-    def __init__(self, db, **kwargs):
+    def __init__(self, db: Any, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.db = db
 
@@ -396,19 +416,23 @@ class ActivitySparkline(Static):
 
         # Get top projects (last 30 days)
         all_entries = self.db.get_all_entries()
-        project_counts: Dict[str, int] = {}
-        tag_counts: Dict[str, int] = {}
+        project_counts: dict[str, int] = {}
+        tag_counts: dict[str, int] = {}
 
         for entry in all_entries:
             entry_date = entry.created_at.date()
             if start_date <= entry_date <= today:
                 if entry.project:
-                    project_counts[entry.project] = project_counts.get(entry.project, 0) + 1
+                    project_counts[entry.project] = (
+                        project_counts.get(entry.project, 0) + 1
+                    )
                 for tag in entry.tag_names:
                     tag_counts[tag] = tag_counts.get(tag, 0) + 1
 
         # Top 3 projects
-        top_projects = sorted(project_counts.items(), key=lambda x: x[1], reverse=True)[:3]
+        top_projects = sorted(
+            project_counts.items(), key=lambda x: x[1], reverse=True
+        )[:3]
         # Top 5 tags
         top_tags = sorted(tag_counts.items(), key=lambda x: x[1], reverse=True)[:5]
 
@@ -416,10 +440,10 @@ class ActivitySparkline(Static):
         if top_projects or top_tags:
             max_rows = max(len(top_projects), len(top_tags))
             # Header
-            content.append(f"\n[purple]Projects:[/purple] ")
+            content.append("\n[purple]Projects:[/purple] ")
             content.append(" " * 6)
-            content.append(f"[yellow]Tags:[/yellow]\n")
-            
+            content.append("[yellow]Tags:[/yellow]\n")
+
             # Data rows (compact)
             for i in range(max_rows):
                 if i < len(top_projects):
@@ -437,7 +461,7 @@ class ActivitySparkline(Static):
         self.update("".join(content))
 
 
-class DashboardApp(App):
+class DashboardApp(App):  # type: ignore[type-arg]
     """Interactive dashboard application.
 
     Provides a visual overview of logging activity with:
@@ -523,7 +547,7 @@ class DashboardApp(App):
         ("d", "drill_down", "Drill Down"),
     ]
 
-    def __init__(self, db, console, **kwargs):
+    def __init__(self, db: Any, console: Any, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.db = db
         self.console = console
@@ -536,8 +560,8 @@ class DashboardApp(App):
         self.consistency_pct = 0.0
 
         # Table data
-        self.project_stats: Dict[str, int] = {}
-        self.tag_stats: Dict[str, int] = {}
+        self.project_stats: dict[str, int] = {}
+        self.tag_stats: dict[str, int] = {}
 
     def compose(self) -> ComposeResult:
         """Compose the dashboard layout."""
@@ -550,9 +574,15 @@ class DashboardApp(App):
             # Row 1: KPI Cards
             with Horizontal(id="kpi-row"):
                 yield KPICard("Total Entries", "0", color="$primary", id="kpi-total")
-                yield KPICard("Current Streak", "0 days", color="$success", id="kpi-streak")
-                yield KPICard("Longest Streak", "0 days", color="$warning", id="kpi-longest")
-                yield KPICard("Consistency", "0%", color="$info", id="kpi-consistency")
+                yield KPICard(
+                    "Current Streak", "0 days", color="$success", id="kpi-streak"
+                )
+                yield KPICard(
+                    "Longest Streak", "0 days", color="$warning", id="kpi-longest"
+                )
+                yield KPICard(
+                    "Consistency", "0%", color="$info", id="kpi-consistency"
+                )
 
             # Row 2: Charts
             with Horizontal(id="charts-row"):
@@ -564,12 +594,12 @@ class DashboardApp(App):
             # Row 3: Interactive Tables
             with Horizontal(id="tables-row"):
                 with Vertical(id="tables-left"):
-                    projects_table = DataTable(id="projects-table")
+                    projects_table: DataTable[str] = DataTable(id="projects-table")
                     projects_table.add_columns("Project        ", "   Entries")
                     projects_table.cursor_type = "row"
                     yield projects_table
                 with Vertical(id="tables-right"):
-                    tags_table = DataTable(id="tags-table")
+                    tags_table: DataTable[str] = DataTable(id="tags-table")
                     tags_table.add_columns("Tag            ", "   Entries")
                     tags_table.cursor_type = "row"
                     yield tags_table
@@ -592,12 +622,14 @@ class DashboardApp(App):
         self.total_entries = len(all_entries)
 
         # Calculate streaks
-        entries_by_date: Dict[str, int] = {}
+        entries_by_date: dict[str, int] = {}
         for entry in all_entries:
             date_str = entry.created_at.strftime("%Y-%m-%d")
             entries_by_date[date_str] = entries_by_date.get(date_str, 0) + 1
 
-        self.current_streak, self.longest_streak = self._calculate_streaks(entries_by_date)
+        self.current_streak, self.longest_streak = self._calculate_streaks(
+            entries_by_date
+        )
 
         # Calculate consistency (entries in last 30 days / 30)
         today = datetime.now().date()
@@ -617,7 +649,7 @@ class DashboardApp(App):
         self.call_from_thread(self._update_tables)
         self.call_from_thread(self._hide_loading)
 
-    def _calculate_streaks(self, entries_by_date: Dict[str, int]) -> Tuple[int, int]:
+    def _calculate_streaks(self, entries_by_date: dict[str, int]) -> tuple[int, int]:
         """Calculate current and longest streaks."""
         if not entries_by_date:
             return 0, 0
@@ -666,15 +698,19 @@ class DashboardApp(App):
     def _update_tables(self) -> None:
         """Update DataTables with loaded data."""
         # Projects table
-        projects_table = self.query_one("#projects-table", DataTable)
+        projects_table = self.query_one("#projects-table", DataTable[str])
         projects_table.clear()
-        for project, count in sorted(self.project_stats.items(), key=lambda x: x[1], reverse=True)[:15]:
+        for project, count in sorted(
+            self.project_stats.items(), key=lambda x: x[1], reverse=True
+        )[:15]:
             projects_table.add_row(project, f"     {count}")
 
         # Tags table
-        tags_table = self.query_one("#tags-table", DataTable)
+        tags_table = self.query_one("#tags-table", DataTable[str])
         tags_table.clear()
-        for tag, count in sorted(self.tag_stats.items(), key=lambda x: x[1], reverse=True)[:15]:
+        for tag, count in sorted(
+            self.tag_stats.items(), key=lambda x: x[1], reverse=True
+        )[:15]:
             tags_table.add_row(tag, f"     {count}")
 
     def _hide_loading(self) -> None:
@@ -683,7 +719,7 @@ class DashboardApp(App):
         loading.remove()
         self.data_loaded = True
 
-    def action_quit(self) -> None:
+    def action_quit(self) -> None:  # type: ignore[override]
         """Quit the dashboard."""
         self.exit()
 
@@ -710,7 +746,7 @@ class DashboardApp(App):
         else:
             self.notify("Focus on a project or tag table first", timeout=1)
 
-    def _drill_down_project(self, table: DataTable) -> None:
+    def _drill_down_project(self, table: DataTable[str]) -> None:
         """Open drill-down screen for selected project."""
         row_key = table.cursor_row
         if row_key is None:
@@ -737,7 +773,7 @@ class DashboardApp(App):
             else:
                 self.notify("No entries found for this project", timeout=1)
 
-    def _drill_down_tag(self, table: DataTable) -> None:
+    def _drill_down_tag(self, table: DataTable[str]) -> None:
         """Open drill-down screen for selected tag."""
         row_key = table.cursor_row
         if row_key is None:

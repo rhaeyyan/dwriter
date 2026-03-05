@@ -8,7 +8,7 @@ import pytest
 from click.testing import CliRunner
 
 from dwriter.cli import main
-from dwriter.database import Database, Todo, TodoTag
+from dwriter.database import Database
 
 
 @pytest.fixture

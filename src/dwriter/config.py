@@ -6,10 +6,14 @@ stored in TOML format.
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import tomlkit
-import tomllib
+
+try:
+    import tomllib  # type: ignore[import-not-found,unused-ignore]
+except ImportError:
+    import tomli as tomllib  # type: ignore[import-not-found]
 
 
 @dataclass
@@ -100,10 +104,10 @@ class ConfigManager:
 
         Args:
             config_path: Optional path to the config file. If not provided,
-                uses the default location at ~/.day-writer/config.toml.
+                uses the default location at ~/.dwriter/config.toml.
         """
         if config_path is None:
-            data_dir = Path.home() / ".day-writer"
+            data_dir = Path.home() / ".dwriter"
             data_dir.mkdir(parents=True, exist_ok=True)
             config_path = data_dir / "config.toml"
 
@@ -126,7 +130,7 @@ class ConfigManager:
 
         try:
             with open(self.config_path, "rb") as f:
-                data = tomllib.load(f)
+                data: Dict[str, Any] = tomllib.load(f)
         except tomllib.TOMLDecodeError:
             self._config = Config()
             self.save()
@@ -173,24 +177,28 @@ class ConfigManager:
 
         doc = tomlkit.document()
 
-        doc.add("standup", tomlkit.table())
-        doc["standup"]["format"] = self._config.standup.format
-        doc["standup"]["copy_to_clipboard"] = self._config.standup.copy_to_clipboard
+        standup_table = tomlkit.table()
+        standup_table["format"] = self._config.standup.format
+        standup_table["copy_to_clipboard"] = self._config.standup.copy_to_clipboard
+        doc.add("standup", standup_table)
 
-        doc.add("review", tomlkit.table())
-        doc["review"]["default_days"] = self._config.review.default_days
-        doc["review"]["format"] = self._config.review.format
+        review_table = tomlkit.table()
+        review_table["default_days"] = self._config.review.default_days
+        review_table["format"] = self._config.review.format
+        doc.add("review", review_table)
 
-        doc.add("display", tomlkit.table())
-        doc["display"]["show_confirmation"] = self._config.display.show_confirmation
-        doc["display"]["show_id"] = self._config.display.show_id
-        doc["display"]["colors"] = self._config.display.colors
+        display_table = tomlkit.table()
+        display_table["show_confirmation"] = self._config.display.show_confirmation
+        display_table["show_id"] = self._config.display.show_id
+        display_table["colors"] = self._config.display.colors
+        doc.add("display", display_table)
 
-        doc.add("defaults", tomlkit.table())
+        defaults_table = tomlkit.table()
         if self._config.defaults.tags:
-            doc["defaults"]["tags"] = self._config.defaults.tags
+            defaults_table["tags"] = self._config.defaults.tags
         if self._config.defaults.project:
-            doc["defaults"]["project"] = self._config.defaults.project
+            defaults_table["project"] = self._config.defaults.project
+        doc.add("defaults", defaults_table)
 
         with open(self.config_path, "w") as f:
             f.write(tomlkit.dumps(doc))
@@ -213,7 +221,7 @@ class ConfigManager:
         """
         return self.config_path
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> Dict[str, Any]:
         """Convert configuration to dictionary.
 
         Returns:

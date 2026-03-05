@@ -44,6 +44,9 @@ dev = [
     "pytest-cov>=4.0",
     "black>=23.0",
     "ruff>=0.1",
+    "mypy>=1.0",
+    "types-pyperclip>=1.6",
+    "tomli>=2.0; python_version<'3.11'",
 ]
 
 [project.scripts]
@@ -62,14 +65,33 @@ target-version = ["py38"]
 
 [tool.ruff]
 line-length = 88
+src = ["src"]
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "N", "D", "UP"]
+select = ["E", "F", "W", "I", "N", "D", "B", "C4", "UP"]
 ignore = ["D100", "D104"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
+[tool.ruff.lint.per-file-ignores]
+# Relax docstring requirements for TUI components (verbose UI code)
+"src/dwriter/commands/*_tui.py" = ["D102", "D107"]
+# Tests don't need docstrings
+"tests/**/*.py" = ["D100", "D101", "D102", "D103", "D107"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-v --cov=dwriter"
+
+[tool.mypy]
+python_version = "3.9"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+check_untyped_defs = true
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false

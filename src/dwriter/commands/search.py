@@ -1,6 +1,8 @@
 """Search command for finding past entries and future to-dos."""
 
-from typing import Optional
+from __future__ import annotations
+
+from typing import Any
 
 import click
 
@@ -53,12 +55,12 @@ def format_score(score: float) -> str:
 @click.pass_obj
 def search(
     ctx: AppContext,
-    query: Optional[str],
-    project: str,
-    tags: tuple,
+    query: str | None,
+    project: str | None,
+    tags: tuple[Any, ...],
     search_type: str,
     limit: int,
-):
+) -> None:
     """Fuzzy search your journal entries and tasks.
 
     Uses typo-tolerant fuzzy matching to find relevant entries and todos.

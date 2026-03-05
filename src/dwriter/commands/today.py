@@ -1,5 +1,7 @@
 """Today command to view today's entries."""
 
+from __future__ import annotations
+
 from datetime import datetime
 
 import click
@@ -10,7 +12,7 @@ from ..ui_utils import display_entry
 
 @click.command()
 @click.pass_obj
-def today(ctx: AppContext):
+def today(ctx: AppContext) -> None:
     """Show today's entries.
 
     Displays all log entries created today, ordered by time.

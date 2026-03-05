@@ -1,5 +1,7 @@
 """Config command for managing Day Writer configuration."""
 
+from __future__ import annotations
+
 import os
 import subprocess
 
@@ -9,10 +11,10 @@ from ..cli import AppContext
 
 
 @click.group()
-def config():
+def config() -> None:
     """View and edit configuration.
 
-    dwriter stores configuration in ~/.day-writer/config.toml
+    dwriter stores configuration in ~/.dwriter/config.toml
 
     Use 'dwriter config show' to view current settings,
     'dwriter config edit' to modify them.
@@ -28,7 +30,7 @@ def config():
 
 @config.command("show")
 @click.pass_obj
-def config_show(ctx: AppContext):
+def config_show(ctx: AppContext) -> None:
     """View current configuration.
 
     Displays all current settings including defaults, standup,
@@ -92,7 +94,7 @@ def config_show(ctx: AppContext):
 
 @config.command("edit")
 @click.pass_obj
-def config_edit(ctx: AppContext):
+def config_edit(ctx: AppContext) -> None:
     """Edit configuration file.
 
     Opens the config file in your default editor ($EDITOR or nano).
@@ -128,7 +130,7 @@ def config_edit(ctx: AppContext):
 
 @config.command("reset")
 @click.pass_obj
-def config_reset(ctx: AppContext):
+def config_reset(ctx: AppContext) -> None:
     """Reset configuration to defaults.
 
     Restores all settings to their default values. Requires confirmation.
@@ -145,7 +147,7 @@ def config_reset(ctx: AppContext):
 
 @config.command("path")
 @click.pass_obj
-def config_path(ctx: AppContext):
+def config_path(ctx: AppContext) -> None:
     """Show configuration file path.
 
     Displays the full path to the configuration file.
