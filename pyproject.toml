@@ -35,6 +35,7 @@ dependencies = [
     "sqlalchemy>=2.0",
     "rich>=13.0",
     "rapidfuzz>=3.0",
+    "textual>=0.44.0",
 ]
 
 [project.optional-dependencies]

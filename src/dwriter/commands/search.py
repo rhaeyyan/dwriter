@@ -1,5 +1,7 @@
 """Search command for finding past entries and future to-dos."""
 
+from typing import Optional
+
 import click
 
 from ..cli import AppContext
@@ -18,7 +20,7 @@ def format_score(score: float) -> str:
 
 
 @click.command()
-@click.argument("query")
+@click.argument("query", required=False, default=None)
 @click.option(
     "-p",
     "--project",
@@ -48,28 +50,51 @@ def format_score(score: float) -> str:
     default=10,
     help="Maximum number of results to show per category",
 )
+@click.option(
+    "--tui",
+    "use_tui",
+    is_flag=True,
+    help="Always use interactive TUI mode",
+)
 @click.pass_obj
 def search(
     ctx: AppContext,
-    query: str,
+    query: Optional[str],
     project: str,
     tags: tuple,
     search_type: str,
     limit: int,
+    use_tui: bool,
 ):
     """Fuzzy search your journal entries and tasks.
 
     QUERY: The text to search for (forgiving of typos).
+    If omitted, launches interactive search mode.
 
     Examples:
+        dwriter search
+
         dwriter search "auth bug"
 
         dwriter search "refactor" -p Mainframe_Mayhem
 
-        dwriter search "cache" --type todo
-
-        dwriter search "meeting" -t work -t notes
+        dwriter search --tui
     """
+    # Launch TUI if no query provided or --tui flag is set
+    if query is None or use_tui:
+        from .search_tui import SearchApp
+
+        tag_list = list(tags) if tags else None
+        app = SearchApp(
+            db=ctx.db,
+            console=ctx.console,
+            project=project,
+            tags=tag_list,
+        )
+        app.run()
+        return
+
+    # Original static search behavior
     tag_list = list(tags) if tags else None
 
     # Search Entries
@@ -96,9 +121,13 @@ def search(
             tags_str = ""
             if entry.tag_names:
                 tags_str = " ".join(f"[#ffae00]#[/]{t}" for t in entry.tag_names)
-            project_str = f" [purple]Project:[/purple] {entry.project}" if entry.project else ""
+            if entry.project:
+                project_str = f" [purple]Project:[/purple] {entry.project}"
+            else:
+                project_str = ""
             ctx.console.print(
-                f"[magenta][{entry.id}][/magenta] {date_str} | [#23c76b]{time_str}[/#23c76b]: {entry.content}"
+                f"[magenta][{entry.id}][/magenta] {date_str} | "
+                f"[#23c76b]{time_str}[/#23c76b]: {entry.content}"
             )
             if tags_str:
                 ctx.console.print(f"    [#ffae00]Tags:[/#ffae00] {tags_str}")
