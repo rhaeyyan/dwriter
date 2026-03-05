@@ -1,6 +1,6 @@
-# Day Writer 📝
+# dwriter 📝
 
-**Day Writer** is a low-friction terminal journaling tool designed for people who live in their command line. It helps you track daily tasks and automatically generate summaries for morning standups or weekly reviews.
+**dwriter** is a low-friction terminal journaling tool designed for people who live in their command line. It helps you track daily tasks and automatically generate summaries for morning standups or weekly reviews.
 
 [🛠️ Command Reference](#️-command-reference)                                                                                                                                    │
 [⚙️ Configuration](#️-configuration)                                                                                                                                            │
@@ -24,41 +24,111 @@
 
 ## 🚀 Quick Start (Installation)
 
-### 1. Prerequisites
+Follow the steps below for your operating system.
 
-Make sure you have **Python 3.8 or higher** and **pip** installed on your system.
+---
 
-### 2. Install from Source
+### 🪟 Windows 11
 
-Run these commands in your terminal to set up Day Writer:
+**Step 1: Open PowerShell**
+- Press `Win + X` and select **Terminal** or **PowerShell**
 
+**Step 2: Navigate to the dwriter folder**
+```powershell
+cd dwriter
+```
+
+**Step 3: Create a virtual environment**
+```powershell
+python -m venv .venv
+```
+
+**Step 4: Activate the virtual environment**
+```powershell
+.venv\Scripts\Activate
+```
+
+**Step 5: Install dwriter**
+```powershell
+pip install -e .
+```
+
+**Done!** You can now use dwriter by typing `dwriter` in your terminal.
+
+---
+
+### 🐧 Linux (Ubuntu / Mint)
+
+**Step 1: Open Terminal**
+- Press `Ctrl + Alt + T` or search for "Terminal" in your applications
+
+**Step 2: Navigate to the dwriter folder**
 ```bash
 cd dwriter
-
 ```
 
+**Step 3: Create a virtual environment**
 ```bash
 python3 -m venv .venv
-
 ```
 
+**Step 4: Activate the virtual environment**
 ```bash
 source .venv/bin/activate
-
 ```
 
-> On Windows:
-> ```bash
-> .venv\Scripts\activate
-> 
-> ```
-> 
-> 
-
+**Step 5: Install dwriter**
 ```bash
 pip install -e .
-
 ```
+
+**Done!** You can now use dwriter by typing `dwriter` in your terminal.
+
+> **Note:** On Linux, you may need `xclip` or `xsel` for clipboard features:
+> ```bash
+> sudo apt install xclip
+> ```
+
+---
+
+### 🍎 macOS (MacBook)
+
+**Step 1: Open Terminal**
+- Press `Cmd + Space`, type "Terminal", and press `Enter`
+
+**Step 2: Navigate to the dwriter folder**
+```bash
+cd dwriter
+```
+
+**Step 3: Create a virtual environment**
+```bash
+python3 -m venv .venv
+```
+
+**Step 4: Activate the virtual environment**
+```bash
+source .venv/bin/activate
+```
+
+**Step 5: Install dwriter**
+```bash
+pip install -e .
+```
+
+**Done!** You can now use dwriter by typing `dwriter` in your terminal.
+
+---
+
+### ✅ Verify Installation
+
+After installation, verify dwriter is working:
+
+```bash
+dwriter --help
+```
+
+You should see a list of available commands.
 
 ---
 
