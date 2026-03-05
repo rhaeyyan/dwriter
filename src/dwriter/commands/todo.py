@@ -38,7 +38,11 @@ def todo(ctx, content: tuple, tags: tuple, project: str, priority: str):
     Add, review, and complete tasks. When a task is marked as done,
     it automatically generates a daily log entry for your standup.
 
+    If invoked without arguments, launches the interactive todo board.
+
     Examples:
+        dwriter todo
+
         dwriter todo "Draft new relic ideas" -p Mainframe_Mayhem
 
         dwriter todo "Fix card draw bug" --priority urgent -t bug
@@ -82,11 +86,19 @@ def todo(ctx, content: tuple, tags: tuple, project: str, priority: str):
 
         if app_ctx.config.display.show_confirmation:
             app_ctx.console.print(
-                f"[green]Added Task [{task.id}]:[/green] [{color}]{task.content}[/{color}]"
+                f"[green]Added Task [{task.id}]:[/green] "
+                f"[{color}]{task.content}[/{color}]"
             )
     else:
-        # No content - show list
-        ctx.invoke(todo_list)
+        # No content - launch interactive TUI
+        from .todo_tui import TodoApp
+
+        app = TodoApp(
+            db=app_ctx.db,
+            console=app_ctx.console,
+            show_all=False,
+        )
+        app.run()
 
 
 @todo.command("list")
@@ -96,13 +108,31 @@ def todo(ctx, content: tuple, tags: tuple, project: str, priority: str):
     is_flag=True,
     help="Show all tasks, including completed ones",
 )
+@click.option(
+    "--tui",
+    "use_tui",
+    is_flag=True,
+    help="Launch interactive TUI mode",
+)
 @click.pass_obj
-def todo_list(ctx: AppContext, show_all: bool):
+def todo_list(ctx: AppContext, show_all: bool, use_tui: bool):
     """List pending tasks.
 
     Displays your tasks in a formatted table. By default, only
     pending tasks are shown.
     """
+    # Launch TUI if requested
+    if use_tui:
+        from .todo_tui import TodoApp
+
+        app = TodoApp(
+            db=ctx.db,
+            console=ctx.console,
+            show_all=show_all,
+        )
+        app.run()
+        return
+
     status_filter = None if show_all else "pending"
     tasks = ctx.db.get_todos(status=status_filter)
 
@@ -155,7 +185,7 @@ def todo_list(ctx: AppContext, show_all: bool):
 def todo_rm(ctx: AppContext, task_id: int):
     """Delete a task entirely."""
     try:
-        task = ctx.db.get_todo(task_id)
+        ctx.db.get_todo(task_id)
     except ValueError:
         ctx.console.print(f"[red]![/red] Task {task_id} not found.")
         return

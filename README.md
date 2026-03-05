@@ -2,10 +2,7 @@
 
 **dwriter** is a low-friction terminal journaling tool designed for people who live in their command line. It helps you track daily tasks and automatically generate summaries for morning standups or weekly reviews.
 
-[🛠️ Command Reference](#️-command-reference)                                                                                                                                    │
-[⚙️ Configuration](#️-configuration)                                                                                                                                            │
-[💻 Developer Commands](#-developer-commands)                                                                                                                                  │
-[❓ Troubleshooting](#-troubleshooting)  
+[🛠️ Command Reference](#️-command-reference) | [🎨 Interactive TUI](#-interactive-tui) | [⚙️ Configuration](#️-configuration) | [💻 Developer Commands](#-developer-commands) | [❓ Troubleshooting](#-troubleshooting)
 
 ---
 
@@ -17,6 +14,7 @@
 * **🏷️ Smart Organization:** Categorize entries with #tags and [projects].
 * **🔥 Streak Tracking:** Keep your momentum high with a built-in logging streak counter.
 * **🔍 Fuzzy Search:** Find past entries and tasks with typo-tolerant fuzzy matching.
+* **🎨 Interactive TUI:** Real-time search and todo management with keyboard navigation.
 * **⏱️ Focus Timer:** Built-in Pomodoro timer that auto-logs completed sessions.
 * **✅ Todo Management:** Track pending tasks with priorities and auto-log when completed.
 
@@ -234,17 +232,24 @@ Manage future tasks and to-dos. When a task is marked as done, it automatically 
 
 | Command | Description |
 | --- | --- |
+| `dwriter todo` | Launch interactive todo board TUI |
 | `dwriter todo "task"` | Add a new pending task |
 | `dwriter todo "task" -t TAG` | Add a task with tags |
 | `dwriter todo "task" -p PROJECT` | Add a task with a project |
 | `dwriter todo "task" --priority LEVEL` | Set task priority (low, normal, high, urgent) |
-| `dwriter todo list` | List all pending tasks |
+| `dwriter todo list` | List all pending tasks (static table) |
 | `dwriter todo list --all` | Show all tasks, including completed ones |
+| `dwriter todo list --tui` | Launch interactive TUI |
 | `dwriter done ID` | Mark a task as complete and log it to today's entries |
 | `dwriter todo rm ID` | Delete a task entirely |
 | `dwriter todo edit ID` | Edit a task's content interactively |
 
 #### Examples:
+
+```bash
+dwriter todo
+
+```
 
 ```bash
 dwriter todo "Draft new relic ideas" -p my_project
@@ -305,13 +310,20 @@ Fuzzy search your journal entries and to-do tasks. Forgiving of typos and partia
 
 | Command | Description |
 | --- | --- |
-| `dwriter search "query"` | Fuzzy search entries and todos |
+| `dwriter search` | Launch interactive search TUI |
+| `dwriter search "query"` | Fuzzy search entries and todos (static output) |
 | `dwriter search "query" -p PROJECT` | Filter by project before searching |
 | `dwriter search "query" -t TAG` | Filter by tags before searching (can use multiple `-t`) |
 | `dwriter search "query" --type TYPE` | Restrict search to `entry`, `todo`, or `all` |
 | `dwriter search "query" -n LIMIT` | Limit number of results per category |
+| `dwriter search --tui` | Force interactive TUI mode |
 
 #### Examples:
+
+```bash
+dwriter search
+
+```
 
 ```bash
 dwriter search "auth bug"
@@ -333,10 +345,69 @@ dwriter search "meeting" -t work -t notes
 
 ```
 
+```bash
+dwriter search --tui
+
+```
+
 **Match Scores:**
 - 🟢 **90%+** (green): Excellent match
 - 🟡 **75%+** (yellow): Good match
 - ⚪ **60%+** (dim): Partial match
+
+---
+
+## 🎨 Interactive TUI
+
+dwriter now includes interactive TUI (Text User Interface) modes for enhanced workflow. These modes provide real-time, keyboard-driven interfaces for common tasks.
+
+### 🔍 Interactive Search (`dwriter search`)
+
+Launch with `dwriter search` (no arguments) or `dwriter search --tui`.
+
+**Features:**
+- Real-time fuzzy filtering as you type
+- Color-coded match scores
+- Browse entries and todos in a scrollable list
+
+**Keybindings:**
+
+| Key | Action |
+| --- | --- |
+| `j` / `k` | Navigate down / up |
+| `Enter` | Select item (copy content to clipboard) |
+| `/` | Focus search input |
+| `Ctrl+N` | Toggle search type (All / Entries / Todos) |
+| `q` / `Esc` | Quit |
+
+### 📋 Interactive Todo Board (`dwriter todo`)
+
+Launch with `dwriter todo` (no arguments) or `dwriter todo list --tui`.
+
+**Features:**
+- View all pending tasks with priority colors
+- Mark tasks complete with automatic journal logging
+- Edit and delete tasks inline
+- Toast notifications for actions
+
+**Keybindings:**
+
+| Key | Action |
+| --- | --- |
+| `j` / `k` | Navigate down / up |
+| `Space` / `Enter` | Mark task complete (auto-logs to journal) |
+| `e` | Edit task content |
+| `d` | Delete task (with confirmation) |
+| `r` | Refresh list |
+| `q` / `Esc` | Quit |
+
+**Priority Colors:**
+- 🔴 **URGENT** (red)
+- 🟡 **HIGH** (yellow)
+- ⚪ **NORMAL** (white)
+- ⚫ **LOW** (dim)
+
+> **Hybrid CLI/TUI Design:** Quick operations remain CLI-based (`dwriter add`, `dwriter todo "task"`) for frictionless use. TUI modes launch only when needed for interactive workflows.
 
 ---
 
@@ -429,6 +500,9 @@ Add to your `~/.zshrc` for persistent completions.
 
 * **Command not found?** Ensure your virtual environment is active.
 * **Clipboard issues?** On Linux, make sure you have `xclip` or `xsel` installed.
+* **TUI not displaying correctly?** Ensure your terminal supports UTF-8 and has a minimum size of 80x24.
+* **TUI appears garbled?** Try resizing your terminal window or using a different terminal emulator.
+* **Keyboard input not working in TUI?** Make sure no terminal multiplexer (tmux/screen) is intercepting keys.
 
 ---
 
