@@ -393,6 +393,10 @@ Launch with `dwriter todo` (no arguments) or `dwriter todo list --tui`.
 | `Space` / `Enter` | Mark task complete (auto-logs to journal) |
 | `e` | Edit task content |
 | `d` | Delete task (with confirmation) |
+| `+` | Increase priority (e.g., normal → high) |
+| `-` | Decrease priority (e.g., high → normal) |
+| `t` | Edit tags (comma-separated) |
+| `p` | Edit project name |
 | `r` | Refresh list |
 | `q` / `Esc` | Quit |
 
