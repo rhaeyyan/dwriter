@@ -10,7 +10,9 @@ from datetime import datetime
 from typing import Any, Callable
 
 from textual.app import App, ComposeResult
+from textual.binding import Binding
 from textual.containers import Container, Vertical
+from textual.reactive import reactive
 from textual.screen import ModalScreen
 from textual.widgets import (
     Button,
@@ -20,6 +22,8 @@ from textual.widgets import (
     Label,
     ListItem,
     ListView,
+    TabbedContent,
+    TabPane,
 )
 
 from ..database import Todo
@@ -337,6 +341,7 @@ class TodoListView(ListView):
         """
         super().__init__(**kwargs)
         self._todos = todos or []
+        self._loaded = False  # Track if this view has been populated
 
     def update_todos(self, todos: list[Todo]) -> None:
         """Update the displayed todos.
@@ -345,6 +350,7 @@ class TodoListView(ListView):
             todos: List of Todo objects to display.
         """
         self._todos = todos
+        self._loaded = True
         self.clear()
         for todo in todos:
             self.append_item(todo)
@@ -414,8 +420,8 @@ class TodoApp(App):  # type: ignore[type-arg]
         d: Delete selected task
         Enter: Toggle complete status
         Escape/q: Quit
-        /: Focus search/filter (future)
-        r: Refresh list
+        1/2/3: Switch tabs (Pending/Completed/All)
+        Tab: Cycle through tabs
     """
 
     CSS = """
@@ -477,6 +483,14 @@ class TodoApp(App):  # type: ignore[type-arg]
     .completed-count {
         color: $success;
     }
+
+    TabbedContent {
+        height: 1fr;
+    }
+
+    TabbedContent > TabPane {
+        padding: 0;
+    }
     """
 
     BINDINGS = [
@@ -493,7 +507,15 @@ class TodoApp(App):  # type: ignore[type-arg]
         ("-", "decrease_priority", "Priority -"),
         ("t", "edit_tags", "Tags"),
         ("p", "edit_project", "Project"),
+        # Tab navigation
+        Binding("1", "switch_tab_pending", "Pending", show=False),
+        Binding("2", "switch_tab_completed", "Completed", show=False),
+        Binding("3", "switch_tab_all", "All", show=False),
+        Binding("tab", "next_tab", "Next Tab", show=False),
     ]
+
+    # Reactive filter status - triggers UI update when changed
+    filter_status = reactive("pending")
 
     def __init__(
         self,
@@ -515,6 +537,9 @@ class TodoApp(App):  # type: ignore[type-arg]
         self.console = console
         self.show_all = show_all
         self._all_todos: list[Todo] = []
+        # Set initial filter based on show_all flag
+        if show_all:
+            self.filter_status = "all"
 
     def compose(self) -> ComposeResult:
         """Compose the todo UI layout."""
@@ -524,108 +549,166 @@ class TodoApp(App):  # type: ignore[type-arg]
                 yield Label("📋 Todo Board", id="title")
                 yield Label(
                     "Space: Complete | e: Edit | +/-: Priority | "
-                    "t: Tags | p: Project | d: Delete | q: Quit",
+                    "t: Tags | p: Project | d: Delete | 1/2/3: Tabs | q: Quit",
                     id="subtitle",
                 )
-            with Container(id="list-container"):
-                yield TodoListView(id="todos")
+            # Use TabbedContent for filter switching
+            with TabbedContent(initial="pending-pane"):
+                with TabPane("⏳ Pending", id="pending-pane"):
+                    yield TodoListView(id="todos")
+                with TabPane("✓ Completed", id="completed-pane"):
+                    yield TodoListView(id="todos-completed")
+                with TabPane("📋 All", id="all-pane"):
+                    yield TodoListView(id="todos-all")
         yield Label("", id="status-bar")
         yield Footer()
 
     def on_mount(self) -> None:
         """Load data and focus the list on mount."""
+        # Set initial tab based on show_all flag
+        tabbed = self.query_one(TabbedContent)
+        if self.show_all:
+            tabbed.active = "all-pane"
+        else:
+            tabbed.active = "pending-pane"
         self._load_todos()
-        self.query_one(TodoListView).focus()
+        self._get_active_list_view().focus()
+
+    def watch_filter_status(self, status: str) -> None:
+        """Reactively update the todo list when filter changes."""
+        # Map filter status to tab ID
+        tab_map = {
+            "pending": "pending-pane",
+            "completed": "completed-pane",
+            "all": "all-pane",
+        }
+        tabbed = self.query_one(TabbedContent)
+        if tabbed.active != tab_map.get(status, "pending-pane"):
+            tabbed.active = tab_map.get(status, "pending-pane")
+        self._load_todos()
+        self._update_status_bar()
+
+    def _get_active_list_view(self) -> TodoListView:
+        """Get the TodoListView for the currently active tab."""
+        tabbed = self.query_one(TabbedContent)
+        if tabbed.active == "pending-pane":
+            return self.query_one("#todos", TodoListView)
+        elif tabbed.active == "completed-pane":
+            return self.query_one("#todos-completed", TodoListView)
+        else:
+            return self.query_one("#todos-all", TodoListView)
+
+    def _get_status_for_active_tab(self) -> str | None:
+        """Get the status filter for the active tab."""
+        tabbed = self.query_one(TabbedContent)
+        if tabbed.active == "pending-pane":
+            return "pending"
+        elif tabbed.active == "completed-pane":
+            return "completed"
+        else:
+            return None  # Show all
 
     def _load_todos(self) -> None:
-        """Load todos from the database."""
-        status_filter = None if self.show_all else "pending"
+        """Load todos from the database based on active tab filter."""
+        status_filter = self._get_status_for_active_tab()
         self._all_todos = self.db.get_todos(status=status_filter)
         self._update_list()
         self._update_status_bar()
 
     def _update_list(self) -> None:
-        """Update the todo list view."""
-        list_view = self.query_one(TodoListView)
+        """Update the active todo list view."""
+        list_view = self._get_active_list_view()
         list_view.update_todos(self._all_todos)
 
     def _update_status_bar(self) -> None:
         """Update the status bar with counts."""
-        pending_count = sum(1 for t in self._all_todos if t.status == "pending")
-        completed_count = sum(1 for t in self._all_todos if t.status == "completed")
-        total = len(self._all_todos)
+        tabbed = self.query_one(TabbedContent)
+
+        # Get total counts from database
+        all_todos = self.db.get_all_todos()
+        total_pending = sum(1 for t in all_todos if t.status == "pending")
+        total_completed = sum(1 for t in all_todos if t.status == "completed")
 
         status_bar = self.query_one("#status-bar", Label)
-        if self.show_all:
+
+        if tabbed.active == "pending-pane":
             status_bar.update(
-                f"Showing {total} tasks | "
-                f"[class=pending-count]{pending_count} pending[/] | "
-                f"[class=completed-count]{completed_count} completed[/] | "
+                f"⏳ Pending: {len(self._all_todos)} ({total_pending} total) | "
+                f"✓ Completed: {total_completed} | "
                 "j/k: Navigate | space: Complete | +/-: Priority | "
-                "e: Edit | t: Tags | p: Project | d: Delete | r: Refresh | q: Quit"
+                "e: Edit | t: Tags | p: Project | d: Delete | 1/2/3: Tabs | q: Quit"
             )
-        else:
+        elif tabbed.active == "completed-pane":
             status_bar.update(
-                f"Showing {pending_count} pending tasks | "
+                f"✓ Completed: {len(self._all_todos)} ({total_completed} total) | "
+                f"⏳ Pending: {total_pending} | "
+                "j/k: Navigate | +/-: Priority | "
+                "e: Edit | t: Tags | p: Project | d: Delete | 1/2/3: Tabs | q: Quit"
+            )
+        else:  # all-pane
+            status_bar.update(
+                f"📋 All: {len(self._all_todos)} "
+                f"({total_pending} pending, {total_completed} completed) | "
                 "j/k: Navigate | space: Complete | +/-: Priority | "
-                "e: Edit | t: Tags | p: Project | d: Delete | r: Refresh | q: Quit"
+                "e: Edit | t: Tags | p: Project | d: Delete | 1/2/3: Tabs | q: Quit"
             )
 
     def action_cursor_down(self) -> None:
         """Move cursor down in todo list."""
-        list_view = self.query_one(TodoListView)
+        list_view = self._get_active_list_view()
         list_view.action_cursor_down()
 
     def action_cursor_up(self) -> None:
         """Move cursor up in todo list."""
-        list_view = self.query_one(TodoListView)
+        list_view = self._get_active_list_view()
         list_view.action_cursor_up()
 
     def action_toggle_complete(self) -> None:
-        """Mark the selected todo as complete."""
-        list_view = self.query_one(TodoListView)
+        """Mark the selected todo as complete or incomplete."""
+        list_view = self._get_active_list_view()
         todo = list_view.selected_todo
 
         if todo is None:
             self.notify("No task selected", severity="warning", timeout=1.5)
             return
 
-        if todo.status == "completed":
-            self.notify(
-                "Task is already completed",
-                severity="information",
-                timeout=1.5,
-            )
-            return
-
         try:
-            # Mark as complete
-            self.db.update_todo(
-                todo.id,
-                status="completed",
-                completed_at=datetime.now(),
-            )
+            if todo.status == "completed":
+                # Mark as incomplete
+                self.db.update_todo(
+                    todo.id,
+                    status="pending",
+                    completed_at=None,
+                )
+                self.notify(f"⏳ Task #{todo.id} marked as pending", timeout=1.5)
+            else:
+                # Mark as complete
+                self.db.update_todo(
+                    todo.id,
+                    status="completed",
+                    completed_at=datetime.now(),
+                )
 
-            # Auto-log to journal
-            entry_content = f"Completed: {todo.content}"
-            self.db.add_entry(
-                content=entry_content,
-                tags=todo.tag_names,
-                project=todo.project,
-                created_at=datetime.now(),
-            )
+                # Auto-log to journal
+                entry_content = f"Completed: {todo.content}"
+                self.db.add_entry(
+                    content=entry_content,
+                    tags=todo.tag_names,
+                    project=todo.project,
+                    created_at=datetime.now(),
+                )
 
-            self.notify(f"✅ Task #{todo.id} completed & logged!", timeout=2)
+                self.notify(f"✅ Task #{todo.id} completed & logged!", timeout=2)
 
             # Refresh the list
             self._load_todos()
 
         except Exception as e:
-            self.notify(f"Error completing task: {e}", severity="error", timeout=3)
+            self.notify(f"Error: {e}", severity="error", timeout=3)
 
     def action_edit(self) -> None:
         """Edit the selected todo."""
-        list_view = self.query_one(TodoListView)
+        list_view = self._get_active_list_view()
         todo = list_view.selected_todo
 
         if todo is None:
@@ -649,7 +732,7 @@ class TodoApp(App):  # type: ignore[type-arg]
 
     def action_increase_priority(self) -> None:
         """Increase the priority of the selected todo."""
-        list_view = self.query_one(TodoListView)
+        list_view = self._get_active_list_view()
         todo = list_view.selected_todo
 
         if todo is None:
@@ -690,7 +773,7 @@ class TodoApp(App):  # type: ignore[type-arg]
 
     def action_decrease_priority(self) -> None:
         """Decrease the priority of the selected todo."""
-        list_view = self.query_one(TodoListView)
+        list_view = self._get_active_list_view()
         todo = list_view.selected_todo
 
         if todo is None:
@@ -731,7 +814,7 @@ class TodoApp(App):  # type: ignore[type-arg]
 
     def action_edit_tags(self) -> None:
         """Edit the selected todo's tags."""
-        list_view = self.query_one(TodoListView)
+        list_view = self._get_active_list_view()
         todo = list_view.selected_todo
 
         if todo is None:
@@ -755,7 +838,7 @@ class TodoApp(App):  # type: ignore[type-arg]
 
     def action_edit_project(self) -> None:
         """Edit the selected todo's project."""
-        list_view = self.query_one(TodoListView)
+        list_view = self._get_active_list_view()
         todo = list_view.selected_todo
 
         if todo is None:
@@ -779,7 +862,7 @@ class TodoApp(App):  # type: ignore[type-arg]
 
     def action_delete(self) -> None:
         """Delete the selected todo."""
-        list_view = self.query_one(TodoListView)
+        list_view = self._get_active_list_view()
         todo = list_view.selected_todo
 
         if todo is None:
@@ -874,6 +957,38 @@ class TodoApp(App):  # type: ignore[type-arg]
         """Refresh the todo list."""
         self._load_todos()
         self.notify("List refreshed", timeout=1)
+
+    def action_next_tab(self) -> None:
+        """Cycle to the next tab."""
+        tabbed = self.query_one(TabbedContent)
+        tabs = ["pending-pane", "completed-pane", "all-pane"]
+        current_idx = tabs.index(tabbed.active)
+        next_idx = (current_idx + 1) % len(tabs)
+        tabbed.active = tabs[next_idx]
+        status_map = {
+            "pending-pane": "pending",
+            "completed-pane": "completed",
+            "all-pane": "all",
+        }
+        self.filter_status = status_map[tabs[next_idx]]
+
+    def action_switch_tab_pending(self) -> None:
+        """Switch to the Pending tab."""
+        tabbed = self.query_one(TabbedContent)
+        tabbed.active = "pending-pane"
+        self.filter_status = "pending"
+
+    def action_switch_tab_completed(self) -> None:
+        """Switch to the Completed tab."""
+        tabbed = self.query_one(TabbedContent)
+        tabbed.active = "completed-pane"
+        self.filter_status = "completed"
+
+    def action_switch_tab_all(self) -> None:
+        """Switch to the All tab."""
+        tabbed = self.query_one(TabbedContent)
+        tabbed.active = "all-pane"
+        self.filter_status = "all"
 
     def action_quit(self) -> None:  # type: ignore[override]
         """Quit the todo application."""

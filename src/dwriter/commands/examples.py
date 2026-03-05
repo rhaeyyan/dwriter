@@ -4,7 +4,7 @@ import click
 
 from ..cli import AppContext
 
-EXAMPLES = """
+EXAMPLES_TEXT = """
 dwriter - Usage Examples
 ═══════════════════════════════════════════════════════════════
 
@@ -362,11 +362,22 @@ Interactive Search Workflow
 
 
 @click.command()
+@click.option(
+    "--plain",
+    is_flag=True,
+    help="Show plain text output (for piping/grep)",
+)
 @click.pass_obj
-def examples(ctx: AppContext) -> None:
+def examples(ctx: AppContext, plain: bool) -> None:
     """Show usage examples and workflows.
 
-    Displays comprehensive examples of all dwriter commands
-    and common workflows.
+    Launches an interactive TUI browser by default.
+    Use --plain for text output (suitable for piping to grep/less).
     """
-    ctx.console.print(EXAMPLES)
+    if plain:
+        ctx.console.print(EXAMPLES_TEXT)
+    else:
+        from .examples_tui import ExamplesApp
+
+        app = ExamplesApp()
+        app.run()

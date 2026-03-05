@@ -78,6 +78,9 @@ convention = "google"
 "src/dwriter/commands/*_tui.py" = ["D102", "D107"]
 # Tests don't need docstrings
 "tests/**/*.py" = ["D100", "D101", "D102", "D103", "D107"]
+# Allow long lines and whitespace in CSS/data strings for TUI files
+"src/dwriter/commands/examples_tui.py" = ["E501", "W293"]
+"src/dwriter/commands/help_tui.py" = ["E501", "W293"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
