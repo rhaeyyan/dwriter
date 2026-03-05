@@ -238,6 +238,42 @@ dwriter --help
 
 You should see a list of available commands.
 
+> **⚠️ Troubleshooting: "ModuleNotFoundError" or missing dependencies?**
+>
+> If you see an error like `ModuleNotFoundError: No module named 'rapidfuzz'` (or any other module), it means the global installation is missing some dependencies. This can happen if you installed dwriter before certain dependencies were added.
+>
+> **Quick Fix:** Use `uv run` to ensure all dependencies are available:
+>
+> ```bash
+> uv run dwriter --help
+> ```
+>
+> This runs dwriter inside the project's virtual environment where all dependencies are properly installed.
+>
+> **Permanent Fix:** Reinstall dwriter with all dependencies:
+>
+> ```bash
+> pip install --upgrade -e ".[dev]"
+> ```
+>
+> After reinstalling, `dwriter --help` should work directly.
+
+---
+
+**💡 Recommended Usage:**
+
+For the most reliable experience, we recommend always using `uv run dwriter` instead of installing globally. This ensures:
+- ✅ All dependencies are available
+- ✅ No conflicts with other Python packages
+- ✅ Easy to update or remove later
+
+Example:
+```bash
+uv run dwriter add "my task"
+uv run dwriter standup
+uv run dwriter search
+```
+
 ---
 
 ## 🛠️ Command Reference
