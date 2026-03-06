@@ -64,6 +64,13 @@ def parse_natural_date(date_str: str) -> datetime:
         date = datetime.now() - timedelta(weeks=weeks)
         return date.replace(hour=0, minute=0, second=0, microsecond=0)
 
+    # Handle "-Nd" shorthand pattern (e.g., "-3d", "-5d", "-10d")
+    shorthand_match = re.match(r"^-(\d+)d$", date_str)
+    if shorthand_match:
+        days = int(shorthand_match.group(1))
+        date = datetime.now() - timedelta(days=days)
+        return date.replace(hour=0, minute=0, second=0, microsecond=0)
+
     # Handle "last <weekday>" pattern (e.g., "last Friday", "last Monday")
     weekdays = {
         "monday": 0,
@@ -131,7 +138,8 @@ def parse_natural_date(date_str: str) -> datetime:
     raise ValueError(
         f"Unable to parse date: '{date_str}'. "
         "Supported formats: 'today', 'yesterday', 'tomorrow', "
-        "'N days ago', 'N weeks ago', 'last <weekday>', '<weekday>', "
+        "'N days ago', 'N weeks ago', '-Nd' (e.g., '-3d'), "
+        "'last <weekday>', '<weekday>', "
         "or standard dates (YYYY-MM-DD, MM/DD/YYYY, etc.)"
     )
 

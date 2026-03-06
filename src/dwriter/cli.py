@@ -78,7 +78,7 @@ def main(ctx: click.Context) -> None:
       dwriter search    - Fuzzy search with live filtering
       dwriter todo      - Interactive todo board
       dwriter edit      - Edit today's entries
-      dwriter focus     - Pomodoro timer
+      dwriter timer     - Pomodoro-style timer
       dwriter stats     - Dashboard with calendar & charts
 
     Common Commands:
@@ -88,7 +88,7 @@ def main(ctx: click.Context) -> None:
       standup   - Generate yesterday's summary
       review    - Review last N days
       search    - Fuzzy search entries/todos
-      focus     - Start focus timer
+      timer     - Start pomodoro-style timer
       stats     - View statistics dashboard
       edit      - Edit entries
       config    - Manage settings
@@ -115,7 +115,7 @@ def _register_commands() -> None:
         done,
         edit,
         examples,
-        focus,
+        timer,
         help_cmd,
         review,
         search,
@@ -133,7 +133,7 @@ def _register_commands() -> None:
         done,
         edit,
         examples,
-        focus,
+        timer,
         help_cmd,
         review,
         search,

@@ -158,18 +158,18 @@ dwriter - Usage Examples
   $ dwriter todo edit 2
 
 
-9. FOCUS TIMER (POMODORO)
+9. TIMER (POMODORO-STYLE)
 ───────────────────────────────────────────────────────────────
 
   # Start default 25-minute timer
-  $ dwriter focus
+  $ dwriter timer
 
   # Custom duration
-  $ dwriter focus 30
-  $ dwriter focus 45
+  $ dwriter timer 30
+  $ dwriter timer 45
 
   # With tags and project
-  $ dwriter focus 45 -t deepwork -p backend
+  $ dwriter timer 45 -t deepwork -p backend
 
 
 10. SEARCH
@@ -247,9 +247,9 @@ INTERACTIVE TUI MODES
     q/Esc     Quit
 
 
-⏱️ Focus Timer (dwriter focus)
+⏱️ Timer (dwriter timer)
 ───────────────────────────────────────────────────────────────
-  Launch: dwriter focus [MINUTES]
+  Launch: dwriter timer [MINUTES]
 
   Keybindings:
     Space     Pause/Resume
@@ -338,14 +338,14 @@ Set Default Project Workflow
   # Automatically tagged with project "myapp" and tag "work"
 
 
-Focus Session Workflow
+Timer Session Workflow
 ───────────────────────────────────────────────────────────────
 
-  # Start a Pomodoro session
-  $ dwriter focus
+  # Start a timer session
+  $ dwriter timer
 
   # Or custom duration with tags
-  $ dwriter focus 45 -t deepwork -p backend
+  $ dwriter timer 45 -t deepwork -p backend
 
   # Session auto-logs when complete
 

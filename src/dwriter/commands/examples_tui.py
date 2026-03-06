@@ -8,6 +8,8 @@ from textual.binding import Binding
 from textual.screen import Screen
 from textual.widgets import Footer, Header, MarkdownViewer, TabbedContent, TabPane
 
+from ..ui_utils import HelpOverlay
+
 
 class ExamplesScreen(Screen[Any]):
     """The main interactive examples browser screen."""
@@ -15,6 +17,7 @@ class ExamplesScreen(Screen[Any]):
     BINDINGS = [
         Binding("q,escape", "app.quit", "Quit", show=True),
         Binding("t", "toggle_toc", "ToC", show=True),
+        Binding("?", "show_help", "Help", show=True),
         Binding("1", "switch_tab(0)", "1st", show=False),
         Binding("2", "switch_tab(1)", "2nd", show=False),
         Binding("3", "switch_tab(2)", "3rd", show=False),
@@ -43,7 +46,7 @@ class ExamplesScreen(Screen[Any]):
                 ("📊 Review", "review"),
                 ("✏️ Editing", "editing"),
                 ("✅ Todos", "todos"),
-                ("⏱️ Focus", "focus"),
+                ("⏱️ Timer", "timer"),
                 ("🔍 Search", "search"),
                 ("📈 Stats", "stats"),
                 ("⚙️ Config", "config"),
@@ -77,7 +80,7 @@ class ExamplesScreen(Screen[Any]):
             "review": self._get_review_examples,
             "editing": self._get_editing_examples,
             "todos": self._get_todos_examples,
-            "focus": self._get_focus_examples,
+            "timer": self._get_timer_examples,
             "search": self._get_search_examples,
             "stats": self._get_stats_examples,
             "config": self._get_config_examples,
@@ -102,7 +105,7 @@ class ExamplesScreen(Screen[Any]):
         """Switch to tab by index."""
         tabbed = self.query_one(TabbedContent)
         tabs = ["logging", "viewing", "standup", "review", "editing",
-                "todos", "focus", "search", "stats", "config"]
+                "todos", "timer", "search", "stats", "config"]
         if 0 <= index < len(tabs):
             tabbed.active = tabs[index]
 
@@ -110,7 +113,7 @@ class ExamplesScreen(Screen[Any]):
         """Cycle to the next tab."""
         tabbed = self.query_one(TabbedContent)
         tabs = ["logging", "viewing", "standup", "review", "editing",
-                "todos", "focus", "search", "stats", "config"]
+                "todos", "timer", "search", "stats", "config"]
         current_idx = tabs.index(tabbed.active)
         next_idx = (current_idx + 1) % len(tabs)
         tabbed.active = tabs[next_idx]
@@ -168,11 +171,11 @@ class ExamplesScreen(Screen[Any]):
             ("Complete Task", "```bash\ndwriter done 5\n```", "dwriter done 5"),
         ]
 
-    def _get_focus_examples(self) -> list[tuple[str, str, str]]:
+    def _get_timer_examples(self) -> list[tuple[str, str, str]]:
         return [
-            ("Focus Timer (Pomodoro)", "Start a 25-minute timer:\n\n```bash\ndwriter focus\n```", "dwriter focus"),
-            ("Custom Duration", "```bash\ndwriter focus 30\ndwriter focus 45\n```", "dwriter focus 30"),
-            ("With Tags & Project", "```bash\ndwriter focus 45 -t deepwork -p backend\n```", "dwriter focus 45 -t deepwork -p backend"),
+            ("Timer (Pomodoro-style)", "Start a 25-minute timer:\n\n```bash\ndwriter timer\n```", "dwriter timer"),
+            ("Custom Duration", "```bash\ndwriter timer 30\ndwriter timer 45\n```", "dwriter timer 30"),
+            ("With Tags & Project", "```bash\ndwriter timer 45 -t deepwork -p backend\n```", "dwriter timer 45 -t deepwork -p backend"),
         ]
 
     def _get_search_examples(self) -> list[tuple[str, str, str]]:
@@ -207,6 +210,136 @@ class ExamplesScreen(Screen[Any]):
         tabbed = self.query_one(TabbedContent)
         viewer = self.query_one(f"#{tabbed.active}-viewer", MarkdownViewer)
         viewer.show_table_of_contents = not viewer.show_table_of_contents
+
+    def action_show_help(self) -> None:
+        """Show contextual help overlay."""
+        tab_help = {
+            "logging": (
+                "Logging Examples",
+                [
+                    ("j/k", "cursor_down/up", "Navigate examples"),
+                    ("c", "copy_command", "Copy command"),
+                    ("t", "toggle_toc", "Toggle ToC"),
+                ],
+                [
+                    "Quick start: dwriter add \"task\"",
+                    "Tags: -t bug -t backend (multiple allowed)",
+                    "Projects: -p myapp",
+                    "Dates: --date yesterday, --date 'last Monday'",
+                ],
+            ),
+            "viewing": (
+                "Viewing Examples",
+                [
+                    ("j/k", "cursor_down/up", "Navigate examples"),
+                    ("c", "copy_command", "Copy command"),
+                ],
+                [
+                    "dwriter today: Show only today's entries",
+                    "dwriter (no args): Show all entries",
+                ],
+            ),
+            "standup": (
+                "Standup Examples",
+                [
+                    ("j/k", "cursor_down/up", "Navigate examples"),
+                    ("c", "copy_command", "Copy command"),
+                ],
+                [
+                    "Generates yesterday's summary automatically",
+                    "Formats: slack, jira, markdown, bullets",
+                    "Auto-copies to clipboard (use --no-copy to disable)",
+                ],
+            ),
+            "review": (
+                "Review Examples",
+                [
+                    ("j/k", "cursor_down/up", "Navigate examples"),
+                    ("c", "copy_command", "Copy command"),
+                ],
+                [
+                    "Default: Last 5 days",
+                    "Use --days N for custom periods",
+                    "Great for weekly retrospectives/timesheets",
+                ],
+            ),
+            "editing": (
+                "Editing Examples",
+                [
+                    ("j/k", "cursor_down/up", "Navigate examples"),
+                    ("c", "copy_command", "Copy command"),
+                ],
+                [
+                    "Edit TUI: Clean table view for today's entries",
+                    "Undo: Quick delete of last entry",
+                    "Delete --before: Bulk cleanup of old entries",
+                ],
+            ),
+            "todos": (
+                "Todo Examples",
+                [
+                    ("j/k", "cursor_down/up", "Navigate examples"),
+                    ("c", "copy_command", "Copy command"),
+                ],
+                [
+                    "dwriter todo: Interactive board",
+                    "dwriter done ID: Mark complete (auto-logs)",
+                    "Priority levels: low, normal, high, urgent",
+                ],
+            ),
+            "timer": (
+                "Timer Examples",
+                [
+                    ("j/k", "cursor_down/up", "Navigate examples"),
+                    ("c", "copy_command", "Copy command"),
+                ],
+                [
+                    "Default: 25-minute timer (pomodoro-style)",
+                    "Custom: dwriter timer 45",
+                    "Auto-logs completed sessions to journal",
+                ],
+            ),
+            "search": (
+                "Search Examples",
+                [
+                    ("j/k", "cursor_down/up", "Navigate examples"),
+                    ("c", "copy_command", "Copy command"),
+                ],
+                [
+                    "Fuzzy search forgives typos",
+                    "Filter: -p project -t tag before searching",
+                    "Types: entry, todo, or all",
+                ],
+            ),
+            "stats": (
+                "Statistics Examples",
+                [
+                    ("j/k", "cursor_down/up", "Navigate examples"),
+                    ("c", "copy_command", "Copy command"),
+                ],
+                [
+                    "GitHub-style contribution calendar",
+                    "Tracks current & longest streaks",
+                    "Shows top tags and projects",
+                ],
+            ),
+            "config": (
+                "Configuration Examples",
+                [
+                    ("j/k", "cursor_down/up", "Navigate examples"),
+                    ("c", "copy_command", "Copy command"),
+                ],
+                [
+                    "Config location: ~/.dwriter/config.toml",
+                    "Set defaults for project, tags, formats",
+                    "Use 'config edit' for manual changes",
+                ],
+            ),
+        }
+
+        tab_id = self.query_one(TabbedContent).active
+        title, bindings, tips = tab_help.get(tab_id, ("Help", [], []))
+        self.push_screen(HelpOverlay(title=title, bindings=bindings, tips=tips))  # type: ignore[attr-defined]
 
 
 class ExamplesApp(App[None]):
