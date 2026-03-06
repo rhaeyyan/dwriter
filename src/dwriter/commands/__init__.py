@@ -5,7 +5,7 @@ from .config import config
 from .delete import delete
 from .edit import edit
 from .examples import examples
-from .focus import focus
+from .timer import timer
 from .help import help_cmd
 from .review import review
 from .search import search
@@ -22,7 +22,7 @@ __all__ = [
     "done",
     "edit",
     "examples",
-    "focus",
+    "timer",
     "help_cmd",
     "review",
     "search",

@@ -11,9 +11,9 @@ from typing import Any, Dict, List, Optional
 import tomlkit
 
 try:
-    import tomllib  # type: ignore[import-not-found,unused-ignore]
+    import tomllib
 except ImportError:
-    import tomli as tomllib  # type: ignore[import-not-found]
+    import tomli as tomllib
 
 
 @dataclass

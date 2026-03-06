@@ -1,6 +1,6 @@
-"""Interactive focus timer TUI using Textual.
+"""Interactive timer TUI using Textual.
 
-This module provides a real-time Pomodoro timer with pause/resume
+This module provides a real-time pomodoro-style timer with pause/resume
 and session logging capabilities.
 """
 
@@ -19,108 +19,109 @@ from textual.widgets import (
     Label,
     Static,
 )
+from rich.text import Text
+
+from ..ui_utils import HelpOverlay
 
 
-class GradientBar(Static):
-    """A custom gradient progress bar using colored block characters."""
+class TomatoProgressBar(Static):
+    """A clean tomato-themed progress bar with filled/empty blocks."""
 
     DEFAULT_CSS = """
-    GradientBar {
-        height: 1;
-        margin: 2 0;
-        background: $surface;
+    TomatoProgressBar {
+        height: auto;
+        margin: 1 0;
+        padding: 0;
+        background: transparent;
+    }
+
+    TomatoProgressBar .timer-display {
+        text-align: center;
+        text-style: bold;
+        padding: 1 0;
+    }
+
+    TomatoProgressBar .progress-bar {
+        text-align: center;
+        padding: 0 0;
+    }
+
+    TomatoProgressBar .progress-label {
+        text-align: center;
+        color: $text-muted;
+        padding: 0 0 1 0;
     }
     """
 
     def __init__(self, **kwargs: Any) -> None:
-        """Initialize the gradient bar.
+        """Initialize the tomato progress bar.
 
         Args:
             **kwargs: Additional arguments passed to Static.
         """
         super().__init__("", **kwargs)
         self.progress_pct = 0.0
+        self.remaining_seconds = 0
+        self.total_seconds = 0
 
-    def set_progress(self, pct: float) -> None:
-        """Set the progress percentage (0.0 to 1.0).
+    def set_progress(self, pct: float, remaining: int, total: int) -> None:
+        """Set the progress percentage and time info.
 
         Args:
-            pct: Progress percentage.
+            pct: Progress percentage (0.0 to 1.0).
+            remaining: Remaining seconds.
+            total: Total seconds.
         """
         self.progress_pct = max(0.0, min(1.0, pct))
+        self.remaining_seconds = remaining
+        self.total_seconds = total
         self._update_bar()
 
+    def _format_time(self, seconds: int) -> str:
+        """Format seconds as MM:SS.
+
+        Args:
+            seconds: Time in seconds.
+
+        Returns:
+            Formatted time string.
+        """
+        mins = seconds // 60
+        secs = seconds % 60
+        return f"{mins:02d}:{secs:02d}"
+
     def _update_bar(self) -> None:
-        """Update the bar display with gradient colors."""
-        bar_width = 50
-        filled_width = int(self.progress_pct * bar_width)
+        """Update the progress bar display."""
+        bar_width = 20  # Total width for the bar portion
 
-        # Custom gradient palette: green → yellow-green → yellow → orange → red
-        palette = [
-            (0.0, "#44ce1b"),    # Green
-            (0.25, "#bbdb44"),   # Yellow-green
-            (0.5, "#f7e379"),    # Yellow
-            (0.75, "#f2a134"),   # Orange
-            (1.0, "#e51f1f"),    # Red
-        ]
+        filled = int(self.progress_pct * bar_width)
+        empty = bar_width - filled
 
-        segments = []
-        for i in range(bar_width):
-            if i < filled_width:
-                pct = i / bar_width
-                # Find the color for this position
-                color = self._interpolate_color(pct, palette)
-                segments.append(f"[{color}]▃[/{color}]")
-            else:
-                segments.append("[dim]─[/dim]")
+        # Calculate percentage for display
+        pct_display = int(self.progress_pct * 100)
 
-        self.update("".join(segments))
+        # Build the bar: filled blocks + tomato + empty blocks
+        # Use red filled blocks for completed portion
+        filled_part = "[red]▮[/red]" * filled if filled > 0 else ""
 
-    def _interpolate_color(self, pct: float, palette: list[tuple[float, str]]) -> str:
-        """Interpolate color from palette based on percentage.
+        # Add tomato emoji at the progress point (if not at end)
+        tomato = ""
+        if filled < bar_width:
+            tomato = "🍅"
+            empty -= 1  # Account for tomato width
 
-        Args:
-            pct: Position from 0.0 to 1.0.
-            palette: List of (position, hex_color) tuples.
+        # Empty blocks for remaining portion
+        empty_part = "[dim]▯[/dim]" * empty if empty > 0 else ""
 
-        Returns:
-            Hex color string.
-        """
-        # Find the two colors to interpolate between
-        for i in range(len(palette) - 1):
-            pos1, color1 = palette[i]
-            pos2, color2 = palette[i + 1]
-            if pos1 <= pct <= pos2:
-                if pos2 == pos1:
-                    return color1
-                # Linear interpolation
-                t = (pct - pos1) / (pos2 - pos1)
-                return self._blend_colors(color1, color2, t)
-        return palette[-1][1]
+        # Combine all parts
+        bar_text = f"{filled_part}{tomato}{empty_part}"
 
-    def _blend_colors(self, color1: str, color2: str, t: float) -> str:
-        """Blend two hex colors.
-
-        Args:
-            color1: First hex color (e.g., "#44ce1b").
-            color2: Second hex color.
-            t: Blend factor (0.0 = color1, 1.0 = color2).
-
-        Returns:
-            Blended hex color string.
-        """
-        r1, g1, b1 = int(color1[1:3], 16), int(color1[3:5], 16), int(color1[5:7], 16)
-        r2, g2, b2 = int(color2[1:3], 16), int(color2[3:5], 16), int(color2[5:7], 16)
-
-        r = int(r1 + (r2 - r1) * t)
-        g = int(g1 + (g2 - g1) * t)
-        b = int(b1 + (b2 - b1) * t)
-
-        return f"#{r:02x}{g:02x}{b:02x}"
+        # Display: [ bar ] percentage
+        self.update(f"[ {bar_text} ] {pct_display}%")
 
 
 class SessionCompleteModal(ModalScreen):  # type: ignore[type-arg]
-    """Modal dialog for logging a completed focus session."""
+    """Modal dialog for logging a completed session."""
 
     CSS = """
     SessionCompleteModal {
@@ -194,7 +195,7 @@ class SessionCompleteModal(ModalScreen):  # type: ignore[type-arg]
     def compose(self) -> ComposeResult:
         """Compose the modal UI."""
         with Container(id="modal-container"):
-            yield Label("✅ Focus Session Complete!", id="modal-title")
+            yield Label("✅ Session Complete!", id="modal-title")
             yield Label(
                 f"Completed {self.minutes} minutes of focused work",
                 id="session-info",
@@ -231,10 +232,10 @@ class SessionCompleteModal(ModalScreen):  # type: ignore[type-arg]
             self.action_cancel()
 
 
-class FocusTimerApp(App):  # type: ignore[type-arg]
-    """Interactive focus timer application.
+class TimerApp(App):  # type: ignore[type-arg]
+    """Interactive timer application.
 
-    Provides a real-time Pomodoro timer with pause/resume capability.
+    Provides a real-time pomodoro-style timer with pause/resume capability.
 
     Key bindings:
         Space: Pause/Resume timer
@@ -248,51 +249,61 @@ class FocusTimerApp(App):  # type: ignore[type-arg]
         background: $surface;
     }
 
-    #timer-container {
+    #main-container {
         height: 1fr;
         align: center middle;
+        padding: 1 2;
     }
 
-    #timer-display {
-        width: 100%;
+    #top-controls {
         height: auto;
-        content-align: center middle;
-        text-style: bold;
-    }
-
-    #timer-label {
-        width: 100%;
-        height: auto;
-        content-align: center middle;
-        color: $text-muted;
+        align: center middle;
         padding: 1 0;
+    }
+
+    #time-display {
+        width: auto;
+        height: auto;
+        text-style: bold;
+        padding: 0 2;
     }
 
     #status-label {
-        width: 100%;
+        width: auto;
         height: auto;
-        content-align: center middle;
         text-style: bold;
-        padding: 1 0;
+        padding: 0 2;
+    }
+
+    #button-left, #button-right {
+        height: auto;
+        align: center middle;
+    }
+
+    #button-left Button, #button-right Button {
+        margin: 0 1;
+        min-width: 6;
     }
 
     #progress-container {
-        width: 100%;
-        height: auto;
-        padding: 1 4;
+        height: 1fr;
+        align: center middle;
+        padding: 1 0;
     }
 
-    #gradient-progress {
-        height: 1;
-        margin: 2 0;
+    #progress-bar {
+        width: auto;
+        height: auto;
+        text-align: center;
+        text-style: bold;
     }
 
     #session-info {
         dock: bottom;
-        height: auto;
+        height: 1;
         background: $panel;
         content-align: center middle;
-        padding: 1 0;
+        padding: 0 2;
     }
 
     .paused {
@@ -310,11 +321,12 @@ class FocusTimerApp(App):  # type: ignore[type-arg]
 
     BINDINGS = [
         ("space", "toggle_pause", "Pause/Resume"),
-        ("+", "add_time", "+5 min"),
-        ("-", "subtract_time", "-5 min"),
+        ("+", "add_5_min", "+5 min"),
+        ("-", "subtract_5_min", "-5 min"),
         ("enter", "finish", "Finish"),
         ("q", "quit", "Quit"),
         ("escape", "quit", "Quit"),
+        ("?", "show_help", "Help"),
     ]
 
     def __init__(
@@ -326,7 +338,7 @@ class FocusTimerApp(App):  # type: ignore[type-arg]
         project: str | None = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize the focus timer application.
+        """Initialize the timer application.
 
         Args:
             db: Database instance for logging sessions.
@@ -360,26 +372,135 @@ class FocusTimerApp(App):  # type: ignore[type-arg]
 
     def compose(self) -> ComposeResult:
         """Compose the timer UI layout."""
+        from textual.widgets import Button
+        from textual.containers import Horizontal
+        
         yield Header()
-        with Vertical():
-            with Container(id="timer-container"):
-                yield Label(
-                    self._format_time(self.remaining_seconds),
-                    id="timer-display",
-                )
-                yield Label("Focus Timer", id="timer-label")
+        with Container(id="main-container"):
+            # Top row: [+5] [+1] [Status] [-1] [+5]
+            with Horizontal(id="top-controls"):
+                # Left buttons (green, add time) - order: +5, +1
+                with Horizontal(id="button-left"):
+                    yield Button("+5", id="btn-plus-5", variant="success")
+                    yield Button("+1", id="btn-plus-1", variant="success")
+                
+                # Status in center
                 yield Label(
                     "▶ Running" if self.is_running else "⏸ Paused",
                     id="status-label",
                     classes="running" if self.is_running else "paused",
                 )
+                
+                # Right buttons (red, subtract time) - order: -1, -5
+                with Horizontal(id="button-right"):
+                    yield Button("-1", id="btn-minus-1", variant="error")
+                    yield Button("-5", id="btn-minus-5", variant="error")
+            
+            # Progress bar centered at bottom: mm:ss [ ▮▮🍅▯▯ ] 40%
             with Container(id="progress-container"):
-                yield GradientBar(id="gradient-progress")
+                yield Label(
+                    self._format_progress_line(),
+                    id="progress-bar",
+                )
+        
+        # Clean footer with minimal info
         yield Label(
-            "Space: Pause/Resume | +/-: Adjust Time | Enter: Finish | q: Quit",
+            "Space: Pause/Resume  •  Enter: Finish  •  ?: Help  •  q: Quit",
             id="session-info",
         )
         yield Footer()
+
+    def _format_progress_line(self) -> Text:
+        """Format the progress line: mm:ss [ bar ] percentage"""
+        elapsed = self.total_seconds - self.remaining_seconds
+        progress_pct = elapsed / self.total_seconds if self.total_seconds > 0 else 0
+        
+        bar_width = 20
+        filled = int(progress_pct * bar_width)
+        empty = bar_width - filled
+        
+        # Gradient color palette: green → yellow-green → yellow → orange → red
+        gradient_colors = [
+            "#44ce1b",    # Green
+            "#bbdb44",    # Yellow-green
+            "#f7e379",    # Yellow
+            "#f2a134",    # Orange
+            "#e51f1f",    # Red
+        ]
+        
+        # Build the progress line using Rich Text for proper styling
+        time_str = self._format_time(self.remaining_seconds)
+        pct_display = int(progress_pct * 100)
+        
+        # Create styled text
+        text = Text()
+        text.append(f"{time_str}  [ ", style="bold")
+        
+        # Filled blocks with gradient based on position in bar (not filled count)
+        for i in range(filled):
+            # Calculate position in gradient based on block's position in the full bar
+            # This ensures gradient flows left-to-right across the entire bar
+            gradient_pos = i / (bar_width - 1) if bar_width > 1 else 0
+            color = self._get_gradient_color(gradient_pos, gradient_colors)
+            text.append("▮", style=color)
+        
+        # Tomato emoji (shows current position)
+        if filled < bar_width:
+            text.append("🍅")
+            empty -= 1
+        
+        # Dim empty blocks
+        for _ in range(empty):
+            text.append("▯", style="dim")
+        
+        text.append(f" ] {pct_display}%", style="bold")
+        
+        return text
+    
+    def _get_gradient_color(self, pos: float, colors: list[str]) -> str:
+        """Get interpolated color from gradient palette.
+        
+        Args:
+            pos: Position in gradient (0.0 to 1.0).
+            colors: List of hex color strings.
+        
+        Returns:
+            Interpolated hex color string.
+        """
+        if pos <= 0:
+            return colors[0]
+        if pos >= 1:
+            return colors[-1]
+        
+        # Find the two colors to interpolate between
+        num_segments = len(colors) - 1
+        segment = min(int(pos * num_segments), num_segments - 1)
+        segment_pos = (pos * num_segments) - segment
+        
+        color1 = colors[segment]
+        color2 = colors[segment + 1]
+        
+        return self._blend_colors(color1, color2, segment_pos)
+    
+    def _blend_colors(self, color1: str, color2: str, t: float) -> str:
+        """Blend two hex colors.
+        
+        Args:
+            color1: First hex color (e.g., "#44ce1b").
+            color2: Second hex color.
+            t: Blend factor (0.0 = color1, 1.0 = color2).
+        
+        Returns:
+            Blended hex color string.
+        """
+        r1, g1, b1 = int(color1[1:3], 16), int(color1[3:5], 16), int(color1[5:7], 16)
+        r2, g2, b2 = int(color2[1:3], 16), int(color2[3:5], 16), int(color2[5:7], 16)
+        
+        r = int(r1 + (r2 - r1) * t)
+        g = int(g1 + (g2 - g1) * t)
+        b = int(b1 + (b2 - b1) * t)
+        
+        return f"#{r:02x}{g:02x}{b:02x}"
 
     def on_mount(self) -> None:
         """Start the timer on mount."""
@@ -406,11 +527,11 @@ class FocusTimerApp(App):  # type: ignore[type-arg]
 
     def _update_display(self) -> None:
         """Update the timer display."""
-        timer_display = self.query_one("#timer-display", Label)
+        progress_label = self.query_one("#progress-bar", Label)
         status_label = self.query_one("#status-label", Label)
-        gradient_bar = self.query_one("#gradient-progress", GradientBar)
 
-        timer_display.update(self._format_time(self.remaining_seconds))
+        # Update the progress line (time + bar + percentage)
+        progress_label.update(self._format_progress_line())
 
         if self.is_finished:
             status_label.update("✅ Complete!")
@@ -428,27 +549,22 @@ class FocusTimerApp(App):  # type: ignore[type-arg]
             status_label.remove_class("finished")
             status_label.add_class("paused")
 
-        # Update gradient bar based on progress
-        elapsed = self.total_seconds - self.remaining_seconds
-        progress_pct = elapsed / self.total_seconds if self.total_seconds > 0 else 0
-        gradient_bar.set_progress(progress_pct)
-
     def _start_timer(self) -> None:
         """Start the timer countdown."""
         self._is_running = True
         self._update_display()
-        self._call_next_tick()
+        self._schedule_tick()
 
-    def _call_next_tick(self) -> None:
-        """Schedule the next tick."""
+    def _schedule_tick(self) -> None:
+        """Schedule the next tick in 1 second."""
         if self._is_running and not self._is_finished:
-            self.call_later(self._tick_and_schedule)
+            self._timer_handle = self.set_timer(1.0, self._tick_and_schedule)
 
     def _tick_and_schedule(self) -> None:
         """Tick and schedule next tick."""
         self._tick()
         if self._is_running and not self._is_finished:
-            self.call_later(self._call_next_tick)
+            self._schedule_tick()
 
     def _stop_timer(self) -> None:
         """Stop the timer countdown."""
@@ -471,13 +587,13 @@ class FocusTimerApp(App):  # type: ignore[type-arg]
         """Handle timer completion."""
         self._stop_timer()
         self._is_finished = True
-        self.notify("Focus session complete!", timeout=2)
+        self.notify("Session complete!", timeout=2)
         self._show_session_complete()
 
     def _show_session_complete(self) -> None:
         """Show the session complete modal."""
         completed_minutes = self.initial_minutes
-        default_content = f"Completed {completed_minutes}m focus session"
+        default_content = f"Completed {completed_minutes}m timer session"
 
         def on_dismiss(result: str | None) -> None:
             if result:
@@ -571,6 +687,44 @@ class FocusTimerApp(App):  # type: ignore[type-arg]
 
         self.push_screen(ConfirmQuitModal(), on_dismiss)  # type: ignore[arg-type]
 
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Handle button presses for time adjustment."""
+        if event.button.id == "btn-plus-1":
+            self._adjust_time(1)
+        elif event.button.id == "btn-plus-5":
+            self._adjust_time(5)
+        elif event.button.id == "btn-minus-1":
+            self._adjust_time(-1)
+        elif event.button.id == "btn-minus-5":
+            self._adjust_time(-5)
+
+    def _adjust_time(self, minutes: int) -> None:
+        """Adjust timer by specified minutes.
+        
+        Args:
+            minutes: Minutes to add (positive) or subtract (negative).
+        """
+        if self.is_finished:
+            return
+        
+        seconds_to_adjust = minutes * 60
+        new_total = self.remaining_seconds + seconds_to_adjust
+        
+        if new_total < 60:
+            self.notify("Minimum 1 minute required", severity="warning", timeout=1.5)
+            return
+        
+        self.remaining_seconds = new_total
+        self.total_seconds = new_total
+        self.initial_minutes = self.remaining_seconds // 60
+        
+        if minutes > 0:
+            self.notify(f"Added {minutes} minute{'s' if minutes > 1 else ''}", timeout=1)
+        else:
+            self.notify(f"Subtracted {abs(minutes)} minute{'s' if abs(minutes) > 1 else ''}", timeout=1)
+        
+        self._update_display()
+
     def action_toggle_pause(self) -> None:
         """Toggle timer pause/resume."""
         if self.is_finished:
@@ -583,30 +737,13 @@ class FocusTimerApp(App):  # type: ignore[type-arg]
             self._start_timer()
             self.notify("Timer resumed", timeout=1)
 
-    def action_add_time(self) -> None:
+    def action_add_5_min(self) -> None:
         """Add 5 minutes to the timer."""
-        if self.is_finished:
-            return
+        self._adjust_time(5)
 
-        self.remaining_seconds += 5 * 60
-        self.total_seconds += 5 * 60
-        self.initial_minutes += 5
-        self._update_display()
-        self.notify("Added 5 minutes", timeout=1)
-
-    def action_subtract_time(self) -> None:
-        """Subtract 5 minutes from the timer (minimum 1 minute)."""
-        if self.is_finished:
-            return
-
-        if self.remaining_seconds > 5 * 60:
-            self.remaining_seconds -= 5 * 60
-            self.total_seconds -= 5 * 60
-            self.initial_minutes -= 5
-            self._update_display()
-            self.notify("Subtracted 5 minutes", timeout=1)
-        else:
-            self.notify("Minimum 1 minute required", severity="warning", timeout=1.5)
+    def action_subtract_5_min(self) -> None:
+        """Subtract 5 minutes from the timer."""
+        self._adjust_time(-5)
 
     def action_finish(self) -> None:
         """Finish the session early."""
@@ -625,3 +762,23 @@ class FocusTimerApp(App):  # type: ignore[type-arg]
             self.exit()
         else:
             self._show_quit_confirmation()
+
+    def action_show_help(self) -> None:
+        """Show contextual help overlay."""
+        self.push_screen(
+            HelpOverlay(
+                title="⏱️ Timer",
+                bindings=[
+                    ("space", "toggle_pause", "Pause/Resume timer"),
+                    ("+", "add_5_min", "Add 5 minutes"),
+                    ("-", "subtract_5_min", "Subtract 5 minutes"),
+                    ("enter", "finish", "Finish session early"),
+                ],
+                tips=[
+                    "Default session: 25 minutes (Pomodoro technique)",
+                    "Completed sessions auto-log to your journal",
+                    "Green buttons (+) add time, red buttons (-) subtract time",
+                    "Progress: mm:ss [ ▮▮🍅▯▯ ] percentage",
+                ],
+            )
+        )

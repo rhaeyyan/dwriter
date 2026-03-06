@@ -17,13 +17,13 @@
   - [Generation and Summaries](#generation-and-summaries)
   - [Management and Configuration](#management-and-configuration)
   - [Task Management (Todo)](#task-management-todo)
-  - [Focus Timer (Pomodoro)](#focus-timer-pomodoro)
+  - [Timer (Pomodoro-style)](#timer-pomodoro-style)
   - [Search](#search)
 - [🎨 Interactive TUI](#-interactive-tui)
   - [🔍 Interactive Search](#-interactive-search-dwriter-search)
   - [📋 Interactive Todo Board](#-interactive-todo-board-dwriter-todo)
   - [✏️ Edit Entries](#️-edit-entries-dwriter-edit)
-  - [⏱️ Focus Timer](#️-focus-timer-dwriter-focus)
+  - [⏱️ Timer](#️-timer-dwriter-timer)
   - [📊 Dashboard](#-dashboard-dwriter-stats)
 - [⚙️ Configuration](#️-configuration)
 - [💻 Developer Commands](#-developer-commands)
@@ -45,7 +45,7 @@
 * **🔍 Fuzzy Search:** Find past entries and tasks with typo-tolerant fuzzy matching.
 * **🎨 Interactive TUI:** Real-time search, todo boards, and tabbed navigation with keyboard shortcuts.
 * **📑 Tabbed Interfaces:** Organized views for help, examples, and dashboard with lazy-loading for performance.
-* **⏱️ Focus Timer:** Built-in Pomodoro timer that auto-logs completed sessions.
+* **⏱️ Timer:** Pomodoro-style timer that auto-logs completed sessions.
 * **✅ Todo Management:** Track pending tasks with priorities and auto-log when completed.
 
 ---
@@ -432,31 +432,31 @@ dwriter done 5
 > dwriter todo --priority urgent -t bug "Fix card draw bug"  # Also works
 > ```
 
-### Focus Timer (Pomodoro)
+### Timer (Pomodoro-style)
 
-Run a focus timer and log the result when finished. Launches an interactive TUI with pause/resume capability.
+Run a timer and log the result when finished. Launches an interactive TUI with pause/resume capability.
 
 | Command | Description |
 | --- | --- |
-| `dwriter focus` | Start a 25-minute focus timer (interactive TUI) |
-| `dwriter focus MINUTES` | Start a custom duration timer |
-| `dwriter focus MINUTES -t TAG` | Add tags to the resulting entry |
-| `dwriter focus MINUTES -p PROJECT` | Add project to the resulting entry |
+| `dwriter timer` | Start a 25-minute timer (interactive TUI) |
+| `dwriter timer MINUTES` | Start a custom duration timer |
+| `dwriter timer MINUTES -t TAG` | Add tags to the resulting entry |
+| `dwriter timer MINUTES -p PROJECT` | Add project to the resulting entry |
 
 #### Examples:
 
 ```bash
-dwriter focus
+dwriter timer
 
 ```
 
 ```bash
-dwriter focus 30
+dwriter timer 30
 
 ```
 
 ```bash
-dwriter focus 45 -t deepwork -p backend
+dwriter timer 45 -t deepwork -p backend
 
 ```
 
@@ -600,9 +600,9 @@ Launch with `dwriter edit` (no arguments).
 | `r` | Refresh list |
 | `q` / `Esc` | Quit |
 
-### ⏱️ Focus Timer (`dwriter focus`)
+### ⏱️ Timer (`dwriter timer`)
 
-Launch with `dwriter focus [MINUTES]`.
+Launch with `dwriter timer [MINUTES]`.
 
 **Features:**
 - Large digital countdown timer
@@ -821,7 +821,7 @@ The script creates a project with:
 | **Python Versions** | 3.9 - 3.12 |
 | **Dependencies** | 7 (click, tomlkit, pyperclip, sqlalchemy, rich, rapidfuzz, textual) |
 | **Dev Dependencies** | 6 (pytest, pytest-cov, ruff, mypy, types-pyperclip, tomli) |
-| **TUI Components** | 7 (todo, search, help, examples, dashboard, edit, focus) |
+| **TUI Components** | 7 (todo, search, help, examples, dashboard, edit, timer) |
 | **Tabbed Views** | 4 (todo, help, examples, dashboard) |
 
 ---

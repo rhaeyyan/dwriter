@@ -26,6 +26,8 @@ from textual.widgets import (
     TabPane,
 )
 
+from ..ui_utils import HelpOverlay
+
 from ..database import Todo
 
 
@@ -507,6 +509,7 @@ class TodoApp(App):  # type: ignore[type-arg]
         ("-", "decrease_priority", "Priority -"),
         ("t", "edit_tags", "Tags"),
         ("p", "edit_project", "Project"),
+        ("?", "show_help", "Help"),
         # Tab navigation
         Binding("1", "switch_tab_pending", "Pending", show=False),
         Binding("2", "switch_tab_completed", "Completed", show=False),
@@ -989,6 +992,30 @@ class TodoApp(App):  # type: ignore[type-arg]
         tabbed = self.query_one(TabbedContent)
         tabbed.active = "all-pane"
         self.filter_status = "all"
+
+    def action_show_help(self) -> None:
+        """Show contextual help overlay."""
+        self.push_screen(
+            HelpOverlay(
+                title="📋 Interactive Todo Board",
+                bindings=[
+                    ("j/k", "cursor_down/up", "Navigate down/up"),
+                    ("Space/Enter", "toggle_complete", "Mark task complete"),
+                    ("e", "edit", "Edit task content"),
+                    ("d", "delete", "Delete task"),
+                    ("+/-", "change_priority", "Increase/decrease priority"),
+                    ("t", "edit_tags", "Edit tags"),
+                    ("p", "edit_project", "Edit project"),
+                    ("1/2/3", "switch_tab", "Switch tabs"),
+                ],
+                tips=[
+                    "Completed tasks automatically log to your journal",
+                    "Priority levels: urgent > high > normal > low",
+                    "Use tags for categorization (#bug, #feature)",
+                    "Projects help organize work by application/component",
+                ],
+            )
+        )
 
     def action_quit(self) -> None:  # type: ignore[override]
         """Quit the todo application."""

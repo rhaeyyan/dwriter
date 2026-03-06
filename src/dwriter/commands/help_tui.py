@@ -15,6 +15,8 @@ from textual.widgets import (
     TabPane,
 )
 
+from ..ui_utils import HelpOverlay
+
 
 class CommandInfo:
     """Holds metadata about a Click command."""
@@ -80,7 +82,7 @@ class ClickIntrospector:
             "Reports": ["standup", "review", "stats"],
             "Editing": ["edit", "delete"],
             "Search": ["search"],
-            "Focus": ["focus"],
+            "Timer": ["timer"],
             "Config": ["config"],
             "Help": ["examples", "help"],
         }
@@ -107,6 +109,7 @@ class HelpScreen(Screen[Any]):
     BINDINGS = [
         Binding("q,escape", "app.quit", "Quit", show=True),
         Binding("t", "toggle_toc", "ToC", show=True),
+        Binding("?", "show_help", "Help", show=True),
         Binding("1", "switch_tab(0)", "1st", show=False),
         Binding("2", "switch_tab(1)", "2nd", show=False),
         Binding("3", "switch_tab(2)", "3rd", show=False),
@@ -136,7 +139,7 @@ class HelpScreen(Screen[Any]):
                 "Reports": "reports",
                 "Editing": "editing",
                 "Search": "search",
-                "Focus": "focus",
+                "Timer": "timer",
                 "Config": "config",
                 "Help": "help",
             }
@@ -169,7 +172,7 @@ class HelpScreen(Screen[Any]):
         
         # Get commands for this tab
         category_name = {"logging": "Logging", "todos": "Todos", "reports": "Reports",
-                        "editing": "Editing", "search": "Search", "focus": "Focus",
+                        "editing": "Editing", "search": "Search", "timer": "Timer",
                         "config": "Config", "help": "Help"}[tab_id]
         
         cmd_names = self.categories_data.get(category_name, [])
@@ -191,14 +194,14 @@ class HelpScreen(Screen[Any]):
     def action_switch_tab(self, index: int) -> None:
         """Switch to tab by index."""
         tabbed = self.query_one(TabbedContent)
-        tabs = ["logging", "todos", "reports", "editing", "search", "focus", "config", "help"]
+        tabs = ["logging", "todos", "reports", "editing", "search", "timer", "config", "help"]
         if 0 <= index < len(tabs):
             tabbed.active = tabs[index]
 
     def action_next_tab(self) -> None:
         """Cycle to the next tab."""
         tabbed = self.query_one(TabbedContent)
-        tabs = ["logging", "todos", "reports", "editing", "search", "focus", "config", "help"]
+        tabs = ["logging", "todos", "reports", "editing", "search", "timer", "config", "help"]
         current_idx = tabs.index(tabbed.active)
         next_idx = (current_idx + 1) % len(tabs)
         tabbed.active = tabs[next_idx]
@@ -208,6 +211,116 @@ class HelpScreen(Screen[Any]):
         tabbed = self.query_one(TabbedContent)
         viewer = self.query_one(f"#{tabbed.active}-viewer", MarkdownViewer)
         viewer.show_table_of_contents = not viewer.show_table_of_contents
+
+    def action_show_help(self) -> None:
+        """Show contextual help overlay."""
+        tab_help = {
+            "logging": (
+                "Logging Commands",
+                [
+                    ("j/k", "cursor_down/up", "Navigate entries"),
+                    ("Enter", "select", "Select item"),
+                    ("/", "focus_search", "Focus search"),
+                ],
+                [
+                    "Use 'dwriter add' for quick logging without TUI",
+                    "Tags use -t flag, projects use -p flag",
+                    "Dates support natural language (yesterday, last Monday)",
+                ],
+            ),
+            "todos": (
+                "Todo Commands",
+                [
+                    ("j/k", "cursor_down/up", "Navigate tasks"),
+                    ("Space", "toggle_complete", "Mark complete"),
+                    ("e", "edit", "Edit task"),
+                    ("+/-", "change_priority", "Change priority"),
+                ],
+                [
+                    "Completed tasks auto-log to journal",
+                    "Priority: urgent > high > normal > low",
+                ],
+            ),
+            "reports": (
+                "Reports & Summaries",
+                [
+                    ("j/k", "cursor_down/up", "Navigate sections"),
+                    ("t", "toggle_toc", "Toggle ToC"),
+                ],
+                [
+                    "standup: Yesterday's work summary",
+                    "review: Multi-day period review",
+                    "Use --format for Slack/Jira/Markdown output",
+                ],
+            ),
+            "editing": (
+                "Editing Commands",
+                [
+                    ("j/k", "cursor_down/up", "Navigate entries"),
+                    ("e/Enter", "edit_content", "Edit content"),
+                    ("t", "edit_tags", "Edit tags"),
+                    ("p", "edit_project", "Edit project"),
+                    ("d", "delete", "Delete entry"),
+                ],
+                [
+                    "Use 'dwriter undo' for quick last-entry deletion",
+                    "Edit TUI shows only today's entries by default",
+                ],
+            ),
+            "search": (
+                "Search",
+                [
+                    ("j/k", "cursor_down/up", "Navigate results"),
+                    ("Enter", "select", "Copy to clipboard"),
+                    ("/", "focus_search", "Focus search"),
+                    ("Ctrl+N", "toggle_type", "Toggle search type"),
+                ],
+                [
+                    "Fuzzy matching forgives typos",
+                    "Filter by project/tag before searching",
+                    "Match scores: 🟢90%+ 🟡75%+ ⚪60%+",
+                ],
+            ),
+            "timer": (
+                "Timer",
+                [
+                    ("space", "toggle_pause", "Pause/Resume"),
+                    ("+", "add_time", "Adjust time (+5min)"),
+                    ("-", "subtract_time", "Adjust time (-5min)"),
+                    ("enter", "finish", "Finish early"),
+                ],
+                [
+                    "Default session: 25 minutes",
+                    "Completed sessions auto-log to journal",
+                ],
+            ),
+            "config": (
+                "Configuration",
+                [
+                    ("j/k", "cursor_down/up", "Navigate options"),
+                ],
+                [
+                    "Config stored in ~/.dwriter/config.toml",
+                    "Set defaults for project, tags, formats",
+                    "Use 'dwriter config edit' for manual editing",
+                ],
+            ),
+            "help": (
+                "Help & Documentation",
+                [
+                    ("j/k", "cursor_down/up", "Navigate sections"),
+                    ("t", "toggle_toc", "Toggle ToC"),
+                ],
+                [
+                    "Use 'dwriter examples' for workflow examples",
+                    "Press ? in any TUI for contextual help",
+                ],
+            ),
+        }
+
+        tab_id = self.query_one(TabbedContent).active
+        title, bindings, tips = tab_help.get(tab_id, ("Help", [], []))
+        self.push_screen(HelpOverlay(title=title, bindings=bindings, tips=tips))  # type: ignore[attr-defined]
 
 
 class HelpApp(App[None]):

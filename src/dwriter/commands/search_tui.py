@@ -23,6 +23,8 @@ from textual.widgets import (
     Static,
 )
 
+from ..ui_utils import HelpOverlay
+
 from ..database import Entry, Todo
 from ..search_utils import search_items
 
@@ -546,6 +548,7 @@ class SearchApp(App):  # type: ignore[type-arg]
         ("p", "edit_project", "Project"),
         ("+", "increase_priority", "Priority +"),
         ("-", "decrease_priority", "Priority -"),
+        ("?", "show_help", "Help"),
     ]
 
     search_type = reactive("all")
@@ -956,6 +959,30 @@ class SearchApp(App):  # type: ignore[type-arg]
         # Re-run search with new type
         search_input = self.query_one("#search-input", Input)
         self._perform_search(search_input.value)
+
+    def action_show_help(self) -> None:
+        """Show contextual help overlay."""
+        self.push_screen(
+            HelpOverlay(
+                title="🔍 Interactive Search",
+                bindings=[
+                    ("j/k", "cursor_down/up", "Navigate down/up"),
+                    ("Enter", "select", "Select item (copy content)"),
+                    ("/", "focus_search", "Focus search input"),
+                    ("Ctrl+N", "toggle_type", "Toggle search type"),
+                    ("e", "edit_content", "Edit content"),
+                    ("t", "edit_tags", "Edit tags"),
+                    ("p", "edit_project", "Edit project"),
+                    ("+/-", "change_priority", "Change priority"),
+                ],
+                tips=[
+                    "Fuzzy matching forgives typos and partial matches",
+                    "Filter by project/tag before searching for better results",
+                    "Match scores: 🟢90%+ 🟡75%+ ⚪60%+",
+                    "Results update in real-time as you type",
+                ],
+            )
+        )
 
     def watch_search_type(self, value: str) -> None:
         """Handle search type changes.
