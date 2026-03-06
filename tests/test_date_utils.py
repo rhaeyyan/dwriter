@@ -250,3 +250,87 @@ class TestParseDateOrDefault:
             hour=0, minute=0, second=0, microsecond=0
         )
         assert result == expected
+
+
+class TestFutureDates:
+    """Tests for future date parsing."""
+
+    def test_tomorrow_explicit(self):
+        """Test parsing 'tomorrow'."""
+        result = parse_natural_date("tomorrow")
+        expected = (datetime.now() + timedelta(days=1)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        assert result == expected
+
+    def test_plus_days_shorthand(self):
+        """Test parsing '+5d' shorthand."""
+        result = parse_natural_date("+5d")
+        expected = (datetime.now() + timedelta(days=5)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        assert result == expected
+
+    def test_plus_days_shorthand_singular(self):
+        """Test parsing '+1d' shorthand."""
+        result = parse_natural_date("+1d")
+        expected = (datetime.now() + timedelta(days=1)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        assert result == expected
+
+    def test_plus_weeks_shorthand(self):
+        """Test parsing '+2w' shorthand."""
+        result = parse_natural_date("+2w")
+        expected = (datetime.now() + timedelta(weeks=2)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        assert result == expected
+
+    def test_plus_weeks_shorthand_singular(self):
+        """Test parsing '+1w' shorthand."""
+        result = parse_natural_date("+1w")
+        expected = (datetime.now() + timedelta(weeks=1)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        assert result == expected
+
+    def test_plus_months_shorthand(self):
+        """Test parsing '+3m' shorthand (approximate 30-day months)."""
+        result = parse_natural_date("+3m")
+        expected = (datetime.now() + timedelta(days=90)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        assert result == expected
+
+    def test_future_days_explicit(self):
+        """Test parsing '3 days'."""
+        result = parse_natural_date("3 days")
+        expected = (datetime.now() + timedelta(days=3)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        assert result == expected
+
+    def test_future_days_explicit_singular(self):
+        """Test parsing '1 day'."""
+        result = parse_natural_date("1 day")
+        expected = (datetime.now() + timedelta(days=1)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        assert result == expected
+
+    def test_future_weeks_explicit(self):
+        """Test parsing '2 weeks'."""
+        result = parse_natural_date("2 weeks")
+        expected = (datetime.now() + timedelta(weeks=2)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        assert result == expected
+
+    def test_future_weeks_explicit_singular(self):
+        """Test parsing '1 week'."""
+        result = parse_natural_date("1 week")
+        expected = (datetime.now() + timedelta(weeks=1)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        assert result == expected

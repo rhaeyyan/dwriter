@@ -35,7 +35,7 @@ class HelpScreen(Screen[Any]):
     """The main interactive help browser screen."""
 
     BINDINGS = [
-        Binding("q,escape", "app.quit", "Quit", show=True),
+        Binding("q,escape", "close", "Close", show=True),
         Binding("t", "toggle_toc", "ToC", show=True),
         Binding("1", "switch_tab(0)", "1st", show=False),
         Binding("2", "switch_tab(1)", "2nd", show=False),
@@ -47,6 +47,10 @@ class HelpScreen(Screen[Any]):
         Binding("8", "switch_tab(7)", "8th", show=False),
         Binding("tab", "next_tab", "Next Tab", show=False),
     ]
+
+    def action_close(self) -> None:
+        """Close the help screen and return to the previous screen."""
+        self.app.pop_screen()
 
     # Command categories with their sub-tabs
     CATEGORY_CONFIG = [
@@ -87,6 +91,10 @@ class HelpScreen(Screen[Any]):
                                         show_table_of_contents=False
                                     )
         yield Footer()
+
+    def action_close(self) -> None:
+        """Close the help screen and return to the previous screen."""
+        self.app.pop_screen()
 
     def on_mount(self) -> None:
         """Load the first tab's content on mount."""
@@ -272,6 +280,10 @@ Manage todo tasks interactively.
 ```bash
 dwriter todo [OPTIONS]
 dwriter todo <content> [OPTIONS]
+dwriter todo add <content> [OPTIONS]
+dwriter todo list [OPTIONS]
+dwriter todo rm <ID>
+dwriter todo edit <ID>
 ```
 
 ## Options
@@ -279,8 +291,33 @@ dwriter todo <content> [OPTIONS]
 | Option | Description |
 |--------|-------------|
 | `--priority <LEVEL>` | Set priority: `low`, `normal`, `high`, `urgent` |
+| `--due <DATE>` | Set due date (e.g., `tomorrow`, `+5d`, `+1w`, `2024-01-15`) |
 | `-t, --tag <TAG>` | Add a tag (can be used multiple times) |
 | `-p, --project <PROJECT>` | Assign to a project |
+
+## Due Date Formats
+
+| Format | Example | Description |
+|--------|---------|-------------|
+| Relative | `tomorrow` | Tomorrow |
+| Days shorthand | `+5d` | 5 days from now |
+| Weeks shorthand | `+2w` | 2 weeks from now |
+| Months shorthand | `+1m` | 1 month from now (approx. 30 days) |
+| Explicit days | `3 days` | 3 days from now |
+| Explicit weeks | `2 weeks` | 2 weeks from now |
+| Weekday | `last Friday` | Most recent Friday |
+| Standard date | `2024-01-15` | Specific date |
+
+## Due Date Display
+
+| Display | Meaning | Color |
+|---------|---------|-------|
+| `TODAY` | Due today | Bold Yellow |
+| `TOMORROW` | Due tomorrow | Yellow |
+| `13d` | 13 days until due | Cyan |
+| `2m` | 2 months until due | Dim Cyan |
+| `-5d` | 5 days overdue | Red |
+| `–` | No due date set | Dim |
 
 ## Examples
 
@@ -289,9 +326,15 @@ dwriter todo <content> [OPTIONS]
 dwriter todo
 ```
 
-### Add a new task
+### Add a new task (direct)
 ```bash
 dwriter todo "write unit tests"
+```
+
+### Add task with due date
+```bash
+dwriter todo "write documentation" --due tomorrow
+dwriter todo "review PR" --due +5d -t code
 ```
 
 ### With priority
@@ -304,18 +347,35 @@ dwriter todo "fix critical bug" --priority urgent
 dwriter todo "fix card draw bug" --priority urgent -t bug -p backend
 ```
 
+### Using explicit `add` subcommand (recommended)
+```bash
+dwriter todo add "Complete report" -p Project -t writing --due +3d
+dwriter todo add "Schedule meeting" --due tomorrow --priority high
+```
+
+### List tasks
+```bash
+dwriter todo list
+dwriter todo list --all
+dwriter todo list --tui
+```
+
 ## Keybindings (Interactive Mode)
 
 | Key | Action |
 |-----|--------|
+| `a` | Add new task |
 | `j/k` | Navigate down/up |
 | `Space` | Mark task complete (auto-logs to journal) |
-| `e` | Edit task content |
+| `e` | Edit task (content, due date, tags, project) |
 | `d` | Delete task |
 | `+/-` | Change priority |
-| `t` | Edit tags |
-| `p` | Edit project |
+| `1/2/3` | Switch tabs (Pending/Completed/All) |
+| `Tab` | Cycle tabs |
 | `q/Esc` | Quit |
+| `?` | Help (press q/Esc to return) |
+
+> **Note:** Tags and projects can be edited via the `e` (Edit) dialog using comma-separated input.
 
 ## Tips
 
@@ -323,10 +383,25 @@ dwriter todo "fix card draw bug" --priority urgent -t bug -p backend
 
 💡 **Priority colors**: 🔴 Urgent | 🟡 High | ⚪ Normal | ⚫ Low
 
-💡 **Options first**: You can put options before content:
+💡 **Due dates**: Tasks show days until due (e.g., `13d`) or `TODAY`/`TOMORROW`
+
+💡 **Smart sorting**: Tasks are sorted by:
+  1. Priority (urgent → high → normal → low)
+  2. Due date urgency (overdue → today → tomorrow → other)
+  3. Creation date (newest first)
+
+💡 **Options first**: When using `dwriter todo` directly, put options before content:
 ```bash
 dwriter todo --priority high -t feature "implement new API"
+dwriter todo --due tomorrow "write tests"
 ```
+
+💡 **Use `todo add`**: For clarity, use the explicit subcommand:
+```bash
+dwriter todo add "implement new API" --priority high -t feature
+```
+
+💡 **Edit everything with `e`**: Press `e` to edit content, due date, tags, and project in one dialog
 """
 
     def _get_done_content(self) -> str:
