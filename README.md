@@ -46,7 +46,7 @@
 * **🎨 Interactive TUI:** Real-time search, todo boards, and tabbed navigation with keyboard shortcuts.
 * **📑 Tabbed Interfaces:** Organized views for help, examples, and dashboard with lazy-loading for performance.
 * **⏱️ Timer:** Pomodoro-style timer that auto-logs completed sessions.
-* **✅ Todo Management:** Track pending tasks with priorities and auto-log when completed.
+* **✅ Todo Management:** Track pending tasks with priorities, due dates, and auto-log when completed.
 
 ---
 
@@ -393,6 +393,12 @@ Manage future tasks and to-dos. When a task is marked as done, it automatically 
 | `dwriter todo "task" -t TAG` | Add a task with tags |
 | `dwriter todo "task" -p PROJECT` | Add a task with a project |
 | `dwriter todo "task" --priority LEVEL` | Set task priority (low, normal, high, urgent) |
+| `dwriter todo "task" --due DATE` | Set task due date |
+| `dwriter todo add "task"` | Add a new pending task (explicit subcommand) |
+| `dwriter todo add "task" -t TAG` | Add a task with tags (explicit subcommand) |
+| `dwriter todo add "task" -p PROJECT` | Add a task with a project (explicit subcommand) |
+| `dwriter todo add "task" --priority LEVEL` | Set task priority (explicit subcommand) |
+| `dwriter todo add "task" --due DATE` | Set task due date (explicit subcommand) |
 | `dwriter todo list` | List all pending tasks (static table) |
 | `dwriter todo list --all` | Show all tasks, including completed ones |
 | `dwriter todo list --tui` | Launch interactive TUI |
@@ -418,6 +424,21 @@ dwriter todo "Fix card draw bug" --priority urgent -t bug
 ```
 
 ```bash
+dwriter todo "Write documentation" --due tomorrow
+
+```
+
+```bash
+dwriter todo "Review PR" --due +5d -t code -p backend
+
+```
+
+```bash
+dwriter todo add "Complete the report" -p Project -t writing --due +3d
+
+```
+
+```bash
 dwriter todo list
 
 ```
@@ -427,10 +448,22 @@ dwriter done 5
 
 ```
 
-> **Note:** Options must come **before** the task content:
+> **Note:** Options must come **before** the task content when using `dwriter todo` directly:
 > ```bash
-> dwriter todo --priority urgent -t bug "Fix card draw bug"  # Also works
+> dwriter todo --priority urgent -t bug "Fix card draw bug"  # Works
+> dwriter todo "Fix card draw bug" --priority urgent -t bug  # May not work (flags treated as content)
 > ```
+> 
+> **Recommended:** Use the explicit `todo add` subcommand for clarity:
+> ```bash
+> dwriter todo add "Fix card draw bug" --priority urgent -t bug  # Always works
+> ```
+
+**Due Date Formats:**
+- Relative: `tomorrow`, `+5d`, `+1w`, `+1m`
+- Days/weeks: `3 days`, `2 weeks`
+- Last weekday: `last Monday`, `last Friday`
+- Standard dates: `2024-01-15`, `01/15/2024`, `January 15, 2024`
 
 ### Timer (Pomodoro-style)
 
@@ -537,7 +570,8 @@ Launch with `dwriter search` (no arguments).
 | `Enter` | Select item (copy content to clipboard) |
 | `/` | Focus search input |
 | `Ctrl+N` | Toggle search type (All / Entries / Todos) |
-| `q` / `Esc` | Quit
+| `q` / `Esc` | Quit |
+| `?` | Help (press `q`/`Esc` to return) |
 
 **Visual Features:**
 - 📝 **Entries section** - Journal entries with date/time stamps
@@ -559,24 +593,38 @@ Launch with `dwriter todo` (no arguments) or `dwriter todo list --tui`.
 
 | Key | Action |
 | --- | --- |
+| `a` | Add new task |
 | `j` / `k` | Navigate down / up |
 | `Space` / `Enter` | Mark task complete (auto-logs to journal) |
-| `e` | Edit task content |
+| `e` | Edit task (content, due date, tags, project) |
 | `d` | Delete task (with confirmation) |
-| `+` | Increase priority (e.g., normal → high) |
-| `-` | Decrease priority (e.g., high → normal) |
-| `t` | Edit tags (comma-separated) |
-| `p` | Edit project name |
-| `r` | Refresh list |
+| `+` / `-` | Change priority |
 | `1` / `2` / `3` | Switch tabs (Pending / Completed / All) |
 | `Tab` | Cycle through tabs |
 | `q` / `Esc` | Quit |
+| `?` | Help (press `q`/`Esc` to return) |
+
+> **Note:** Tags and projects can be edited via the `e` (Edit) dialog using comma-separated input.
 
 **Priority Colors:**
 - 🔴 **URGENT** (red)
 - 🟡 **HIGH** (yellow)
 - ⚪ **NORMAL** (white)
 - ⚫ **LOW** (dim)
+
+**Due Date Display:**
+- `TODAY` - Due today (bold yellow)
+- `TOMORROW` - Due tomorrow (yellow)
+- `13d` - 13 days until due (cyan)
+- `2m` - 2 months until due (dim cyan)
+- `-5d` - 5 days overdue (red)
+- `–` - No due date set
+
+**Smart Sorting:**
+Tasks are automatically sorted by:
+1. Priority (urgent → high → normal → low)
+2. Due date urgency (overdue → today → tomorrow → other)
+3. Creation date (newest first)
 
 ### ✏️ Edit Entries (`dwriter edit`)
 
@@ -599,6 +647,7 @@ Launch with `dwriter edit` (no arguments).
 | `d` | Delete entry (with confirmation) |
 | `r` | Refresh list |
 | `q` / `Esc` | Quit |
+| `?` | Help (press `q`/`Esc` to return) |
 
 ### ⏱️ Timer (`dwriter timer`)
 
@@ -620,6 +669,7 @@ Launch with `dwriter timer [MINUTES]`.
 | `-` | Subtract 5 minutes |
 | `Enter` | Finish session early |
 | `q` / `Esc` | Quit (with confirmation) |
+| `?` | Help (press `q`/`Esc` to return) |
 
 > **Hybrid CLI/TUI Design:** Quick operations remain CLI-based (`dwriter add`, `dwriter todo "task"`) for frictionless use. TUI modes launch only when needed for interactive workflows.
 
@@ -643,6 +693,7 @@ Launch with `dwriter stats`.
 | `Tab` | Cycle through tabs |
 | `d` | Drill down into selected project/tag |
 | `q` / `Esc` | Quit |
+| `?` | Help (press `q`/`Esc` to return) |
 
 **Visual Elements:**
 - **Contribution Calendar** - Shows your logging activity over the past year with color-coded squares (darker = more entries)

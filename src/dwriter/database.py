@@ -4,7 +4,7 @@ This module handles all SQLite database operations for storing and retrieving
 journal entries using SQLAlchemy 2.0.
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -99,6 +99,7 @@ class Todo(Base):
     project: Mapped[Optional[str]] = mapped_column(String)
     priority: Mapped[str] = mapped_column(String, default="normal")
     status: Mapped[str] = mapped_column(String, default="pending")
+    due_date: Mapped[Optional[datetime]] = mapped_column(DateTime)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=func.now(), index=True
@@ -142,6 +143,29 @@ class Database:
         self.engine = create_engine(f"sqlite:///{db_path}")
         Base.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine)
+        
+        # Run migrations to add new columns if needed
+        self._migrate()
+
+    def _migrate(self) -> None:
+        """Run database migrations to add new columns if they don't exist."""
+        # Check and add due_date column to todos table if missing
+        with self.engine.connect() as conn:
+            # Use raw SQLite connection to check schema
+            import sqlite3
+            
+            db_path = str(self.engine.url.database)
+            with sqlite3.connect(db_path) as sqlite_conn:
+                cursor = sqlite_conn.execute(
+                    "PRAGMA table_info(todos)"
+                )
+                columns = [row[1] for row in cursor.fetchall()]
+                
+                if "due_date" not in columns:
+                    sqlite_conn.execute(
+                        "ALTER TABLE todos ADD COLUMN due_date DATETIME"
+                    )
+                    sqlite_conn.commit()
 
     def connection(self) -> Any:
         """Return a raw SQLite connection for low-level operations.
@@ -487,10 +511,11 @@ class Database:
         priority: str = "normal",
         project: Optional[str] = None,
         tags: Optional[List[str]] = None,
+        due_date: Optional[datetime] = None,
     ) -> Todo:
         """Add a new prospective task."""
         with self.Session() as session:
-            todo = Todo(content=content, priority=priority, project=project)
+            todo = Todo(content=content, priority=priority, project=project, due_date=due_date)
             if tags:
                 todo.tags = [TodoTag(name=t) for t in tags]
 
@@ -514,8 +539,10 @@ class Database:
     def get_todos(self, status: Optional[str] = "pending") -> List[Todo]:
         """Retrieve tasks, optionally filtered by status.
 
-        Results are ordered by priority (urgent > high > normal > low)
-        and then by creation date (newest first).
+        Results are ordered by:
+        1. Priority (urgent > high > normal > low)
+        2. Due date urgency (overdue < today < tomorrow < other days)
+        3. Creation date (newest first)
         """
         with self.Session() as session:
             stmt = select(Todo)
@@ -523,7 +550,7 @@ class Database:
             if status:
                 stmt = stmt.where(Todo.status == status)
 
-            # Order by priority (urgent=1, high=2, normal=3, low=4) then by date
+            # Order by priority (urgent=1, high=2, normal=3, low=4)
             priority_order = case(
                 (Todo.priority == "urgent", 1),
                 (Todo.priority == "high", 2),
@@ -531,7 +558,25 @@ class Database:
                 (Todo.priority == "low", 4),
                 else_=5,
             )
-            stmt = stmt.order_by(priority_order, Todo.created_at.desc())
+            
+            # Order by due date urgency
+            # Overdue tasks first, then today, then tomorrow, then others
+            today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+            tomorrow = today + timedelta(days=1)
+            
+            due_date_order = case(
+                # Overdue tasks (due_date < today)
+                (Todo.due_date < today, 0),
+                # Due today
+                (Todo.due_date == today, 1),
+                # Due tomorrow
+                (Todo.due_date == tomorrow, 2),
+                # All other due dates (including no due date)
+                else_=3,
+            )
+            
+            # Sort by priority first, then due date urgency, then creation date
+            stmt = stmt.order_by(priority_order, due_date_order, Todo.created_at.desc())
 
             return list(session.scalars(stmt).all())
 
@@ -544,6 +589,7 @@ class Database:
         project: Optional[str] = None,
         tags: Optional[List[str]] = None,
         completed_at: Optional[datetime] = None,
+        due_date: Optional[datetime] = None,
     ) -> Todo:
         """Update an existing task.
 
@@ -565,6 +611,8 @@ class Database:
                 todo.project = project
             if completed_at is not None:
                 todo.completed_at = completed_at
+            if due_date is not None:
+                todo.due_date = due_date
             if tags is not None:
                 # Replace existing tags
                 todo.tags = [TodoTag(name=t) for t in tags]

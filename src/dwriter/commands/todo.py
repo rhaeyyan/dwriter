@@ -9,6 +9,7 @@ import click
 from rich.table import Table
 
 from ..cli import AppContext
+from ..date_utils import parse_natural_date
 from ..search_utils import find_multiple_matches
 
 
@@ -34,6 +35,12 @@ from ..search_utils import find_multiple_matches
     default="normal",
     help="Set task priority",
 )
+@click.option(
+    "--due",
+    "due_date_str",
+    default=None,
+    help="Set due date (e.g., 'tomorrow', '+5d', '+1w', '+1m', '2024-01-15')",
+)
 @click.pass_context
 def todo(
     ctx: click.Context,
@@ -41,6 +48,7 @@ def todo(
     tags: tuple[Any, ...],
     project: str | None,
     priority: str,
+    due_date_str: str | None,
 ) -> None:
     """Manage future tasks and to-dos.
 
@@ -56,11 +64,20 @@ def todo(
       - high: Yellow highlight for important tasks
       - urgent: Red highlight for critical tasks
 
+    Due Date Formats:
+      - Relative: tomorrow, +5d, +1w, +1m
+      - Days/weeks: 3 days, 2 weeks
+      - Weekday: last Monday, Friday
+      - Standard: 2024-01-15, 01/15/2024
+
     Examples:
       dwriter todo                         # Launch interactive TUI
       dwriter todo "Draft new relic ideas" -p Mainframe_Mayhem
       dwriter todo "Fix card draw bug" --priority urgent -t bug
       dwriter todo --priority urgent -t bug "Fix card draw bug"
+      dwriter todo "Write tests" --due tomorrow
+      dwriter todo "Review PR" --due +5d -t code
+      dwriter todo add "Task" -p Project -t tag --due +3d  # Explicit subcommand
       dwriter todo list                    # Show pending tasks
       dwriter todo list --all              # Include completed
       dwriter todo list --tui              # Interactive mode
@@ -81,6 +98,15 @@ def todo(
     content_str = " ".join(content) if content else None
 
     if content_str is not None:
+        # Parse due date if provided
+        due_date = None
+        if due_date_str is not None:
+            try:
+                due_date = parse_natural_date(due_date_str)
+            except ValueError as e:
+                app_ctx.console.print(f"[red]Error:[/red] {e}")
+                return
+
         all_tags = list(app_ctx.config.defaults.tags) + list(tags)
         if project is None and app_ctx.config.defaults.project:
             project = app_ctx.config.defaults.project
@@ -90,6 +116,7 @@ def todo(
             priority=priority,
             project=project,
             tags=all_tags,
+            due_date=due_date,
         )
 
         priority_colors = {
@@ -101,9 +128,12 @@ def todo(
         color = priority_colors.get(priority, "white")
 
         if app_ctx.config.display.show_confirmation:
+            due_str = ""
+            if due_date:
+                due_str = f" [dim](due: {due_date.strftime('%Y-%m-%d')})[/dim]"
             app_ctx.console.print(
                 f"[green]Added Task [{task.id}]:[/green] "
-                f"[{color}]{task.content}[/{color}]"
+                f"[{color}]{task.content}[/{color}]{due_str}"
             )
     else:
         # No content - launch interactive TUI
@@ -115,6 +145,107 @@ def todo(
             show_all=False,
         )
         app.run()
+
+
+@todo.command("add")
+@click.argument("content", required=True, nargs=-1)
+@click.option(
+    "-t",
+    "--tag",
+    "tags",
+    multiple=True,
+    help="Add a tag to the task (can be used multiple times)",
+)
+@click.option(
+    "-p",
+    "--project",
+    "project",
+    default=None,
+    help="Set project name",
+)
+@click.option(
+    "--priority",
+    type=click.Choice(["low", "normal", "high", "urgent"]),
+    default="normal",
+    help="Set task priority",
+)
+@click.option(
+    "--due",
+    "due_date_str",
+    default=None,
+    help="Set due date (e.g., 'tomorrow', '+5d', '+1w', '+1m', '2024-01-15')",
+)
+@click.pass_obj
+def todo_add(
+    ctx: AppContext,
+    content: tuple[Any, ...],
+    tags: tuple[Any, ...],
+    project: str | None,
+    priority: str,
+    due_date_str: str | None,
+) -> None:
+    """Add a new task to your todo list.
+
+    Creates a new prospective task with optional priority, project, tags,
+    and due date.
+
+    CONTENT: The task description (can contain multiple words).
+
+    Options:
+      -t, --tag: Add a tag (can be used multiple times)
+      -p, --project: Set project name
+      --priority: Set priority (low, normal, high, urgent)
+      --due: Set due date using natural language
+
+    Due Date Formats:
+      tomorrow, +5d, +1w, +1m, 3 days, 2 weeks,
+      last Friday, 2024-01-15, etc.
+
+    Examples:
+      dwriter todo add "Write unit tests" -t testing --priority high
+      dwriter todo add "Review PR" -p Mainframe -t code --due tomorrow
+      dwriter todo add "Draft documentation" --due +5d -t docs
+    """
+    content_str = " ".join(content)
+
+    # Parse due date if provided
+    due_date = None
+    if due_date_str is not None:
+        try:
+            due_date = parse_natural_date(due_date_str)
+        except ValueError as e:
+            ctx.console.print(f"[red]Error:[/red] {e}")
+            return
+
+    # Get default tags and project from config
+    all_tags = list(ctx.config.defaults.tags) + list(tags)
+    if project is None and ctx.config.defaults.project:
+        project = ctx.config.defaults.project
+
+    task = ctx.db.add_todo(
+        content=content_str,
+        priority=priority,
+        project=project,
+        tags=all_tags,
+        due_date=due_date,
+    )
+
+    priority_colors = {
+        "urgent": "bold red",
+        "high": "yellow",
+        "normal": "white",
+        "low": "dim",
+    }
+    color = priority_colors.get(priority, "white")
+
+    if ctx.config.display.show_confirmation:
+        due_str = ""
+        if due_date:
+            due_str = f" [dim](due: {due_date.strftime('%Y-%m-%d')})[/dim]"
+        ctx.console.print(
+            f"[green]Added Task [{task.id}]:[/green] "
+            f"[{color}]{task.content}[/{color}]{due_str}"
+        )
 
 
 @todo.command("list")
@@ -171,8 +302,9 @@ def todo_list(ctx: AppContext, show_all: bool, use_tui: bool) -> None:
     table.add_column("ID", justify="right", style="magenta", no_wrap=True)
     table.add_column("Priority", justify="center")
     table.add_column("Task")
-    table.add_column("Project", style="purple")
-    table.add_column("Tags", style="#ffae00")
+    table.add_column("Project", style="#ff00ff")
+    table.add_column("Tags", style="#00ff00")
+    table.add_column("Due", style="cyan", justify="center")
 
     priority_styles = {
         "urgent": ("[bold red]URGENT[/bold red]", "bold red"),
@@ -192,6 +324,25 @@ def todo_list(ctx: AppContext, show_all: bool, use_tui: bool) -> None:
 
         tags_str = ", ".join(task.tag_names) if task.tag_names else ""
         project_str = task.project or ""
+        
+        # Format due date
+        due_str = ""
+        if task.due_date:
+            due_date = task.due_date
+            today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+            due_date_only = due_date.replace(hour=0, minute=0, second=0, microsecond=0)
+            days_until = (due_date_only - today).days
+            
+            if days_until < 0:
+                due_str = f"[red]{due_date.strftime('%Y-%m-%d')}[/red]"
+            elif days_until == 0:
+                due_str = "[bold yellow]TODAY[/bold yellow]"
+            elif days_until == 1:
+                due_str = "[yellow]Tomorrow[/yellow]"
+            elif days_until <= 7:
+                due_str = f"[cyan]{days_until}d[/cyan]"
+            else:
+                due_str = due_date.strftime('%Y-%m-%d')
 
         table.add_row(
             str(task.id),
@@ -199,6 +350,7 @@ def todo_list(ctx: AppContext, show_all: bool, use_tui: bool) -> None:
             content_str,
             project_str,
             tags_str,
+            due_str,
         )
 
     ctx.console.print(table)
