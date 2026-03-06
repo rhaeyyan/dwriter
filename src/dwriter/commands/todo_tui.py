@@ -26,8 +26,6 @@ from textual.widgets import (
     TabPane,
 )
 
-from ..ui_utils import HelpOverlay
-
 from ..database import Todo
 
 
@@ -496,20 +494,20 @@ class TodoApp(App):  # type: ignore[type-arg]
     """
 
     BINDINGS = [
-        ("j", "cursor_down", "Down"),
-        ("k", "cursor_up", "Up"),
-        ("space", "toggle_complete", "Complete"),
-        ("e", "edit", "Edit"),
-        ("d", "delete", "Delete"),
-        ("enter", "toggle_complete", "Toggle"),
-        ("q", "quit", "Quit"),
-        ("escape", "quit", "Quit"),
-        ("r", "refresh", "Refresh"),
-        ("+", "increase_priority", "Priority +"),
-        ("-", "decrease_priority", "Priority -"),
-        ("t", "edit_tags", "Tags"),
-        ("p", "edit_project", "Project"),
-        ("?", "show_help", "Help"),
+        Binding("j", "cursor_down", "Down"),
+        Binding("k", "cursor_up", "Up"),
+        Binding("space", "toggle_complete", "Complete"),
+        Binding("e", "edit", "Edit"),
+        Binding("d", "delete", "Delete"),
+        Binding("enter", "toggle_complete", "Toggle"),
+        Binding("q", "quit", "Quit"),
+        Binding("escape", "quit", "Quit"),
+        Binding("r", "refresh", "Refresh"),
+        Binding("+", "increase_priority", "Priority +"),
+        Binding("-", "decrease_priority", "Priority -"),
+        Binding("t", "edit_tags", "Tags"),
+        Binding("p", "edit_project", "Project"),
+        Binding("?", "goto_help", "Help", show=True),
         # Tab navigation
         Binding("1", "switch_tab_pending", "Pending", show=False),
         Binding("2", "switch_tab_completed", "Completed", show=False),
@@ -993,29 +991,10 @@ class TodoApp(App):  # type: ignore[type-arg]
         tabbed.active = "all-pane"
         self.filter_status = "all"
 
-    def action_show_help(self) -> None:
-        """Show contextual help overlay."""
-        self.push_screen(
-            HelpOverlay(
-                title="📋 Interactive Todo Board",
-                bindings=[
-                    ("j/k", "cursor_down/up", "Navigate down/up"),
-                    ("Space/Enter", "toggle_complete", "Mark task complete"),
-                    ("e", "edit", "Edit task content"),
-                    ("d", "delete", "Delete task"),
-                    ("+/-", "change_priority", "Increase/decrease priority"),
-                    ("t", "edit_tags", "Edit tags"),
-                    ("p", "edit_project", "Edit project"),
-                    ("1/2/3", "switch_tab", "Switch tabs"),
-                ],
-                tips=[
-                    "Completed tasks automatically log to your journal",
-                    "Priority levels: urgent > high > normal > low",
-                    "Use tags for categorization (#bug, #feature)",
-                    "Projects help organize work by application/component",
-                ],
-            )
-        )
+    def action_goto_help(self) -> None:
+        """Navigate to the help TUI."""
+        from .help_tui import HelpScreen
+        self.app.push_screen(HelpScreen())
 
     def action_quit(self) -> None:  # type: ignore[override]
         """Quit the todo application."""

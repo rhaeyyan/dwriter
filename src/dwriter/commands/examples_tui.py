@@ -8,8 +8,6 @@ from textual.binding import Binding
 from textual.screen import Screen
 from textual.widgets import Footer, Header, MarkdownViewer, TabbedContent, TabPane
 
-from ..ui_utils import HelpOverlay
-
 
 class ExamplesScreen(Screen[Any]):
     """The main interactive examples browser screen."""
@@ -17,7 +15,7 @@ class ExamplesScreen(Screen[Any]):
     BINDINGS = [
         Binding("q,escape", "app.quit", "Quit", show=True),
         Binding("t", "toggle_toc", "ToC", show=True),
-        Binding("?", "show_help", "Help", show=True),
+        Binding("?", "goto_help", "Help", show=True),
         Binding("1", "switch_tab(0)", "1st", show=False),
         Binding("2", "switch_tab(1)", "2nd", show=False),
         Binding("3", "switch_tab(2)", "3rd", show=False),
@@ -33,73 +31,170 @@ class ExamplesScreen(Screen[Any]):
 
     def __init__(self) -> None:
         super().__init__()
-        self._loaded_tabs: set[str] = set()
+        self._loaded_subtabs: set[str] = set()
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
         with TabbedContent(initial="logging"):
-            # Create tabs for each category
-            categories = [
-                ("📝 Logging", "logging"),
-                ("📋 Viewing", "viewing"),
-                ("🤖 Standup", "standup"),
-                ("📊 Review", "review"),
-                ("✏️ Editing", "editing"),
-                ("✅ Todos", "todos"),
-                ("⏱️ Timer", "timer"),
-                ("🔍 Search", "search"),
-                ("📈 Stats", "stats"),
-                ("⚙️ Config", "config"),
+            category_config = [
+                ("📝 Logging", "logging", ["basic", "tags", "project", "combined", "date"]),
+                ("📋 Viewing", "viewing", ["today", "all"]),
+                ("🤖 Standup", "standup", ["generate", "formats", "options"]),
+                ("📊 Review", "review", ["default", "custom", "formats"]),
+                ("✏️ Editing", "editing", ["interactive", "specific", "undo", "bulk"]),
+                ("✅ Todos", "todos", ["board", "add", "priority", "list", "complete"]),
+                ("⏱️ Timer", "timer", ["default", "custom", "tagged"]),
+                ("🔍 Search", "search", ["tui", "fuzzy", "filter_project", "filter_tag", "type"]),
+                ("📈 Stats", "stats", ["dashboard"]),
+                ("⚙️ Config", "config", ["show", "edit", "reset", "path"]),
             ]
-            for category, tab_id in categories:
-                with TabPane(category, id=tab_id):
-                    yield MarkdownViewer(id=f"{tab_id}-viewer", show_table_of_contents=True)
+            for label, tab_id, subtabs in category_config:
+                with TabPane(label, id=tab_id):
+                    if len(subtabs) == 1:
+                        # Single sub-tab - just show MarkdownViewer directly
+                        yield MarkdownViewer(id=f"{tab_id}-{subtabs[0]}-viewer", show_table_of_contents=False)
+                    else:
+                        # Multiple sub-tabs - use nested tabs with unique IDs
+                        nested_id = f"{tab_id}-nested"
+                        with TabbedContent(initial=f"{tab_id}-{subtabs[0]}", id=nested_id):
+                            for subtab_id in subtabs:
+                                pane_id = f"{tab_id}-{subtab_id}"
+                                display_name = subtab_id.replace("_", " ").title()
+                                with TabPane(display_name, id=pane_id):
+                                    yield MarkdownViewer(id=f"{pane_id}-viewer", show_table_of_contents=False)
         yield Footer()
 
     def on_mount(self) -> None:
         """Load the first tab's content on mount."""
-        self._load_tab_content("logging")
+        self._load_subtab_content("logging", "basic")
 
     def on_tabbed_content_tab_activated(self, event: TabbedContent.TabActivated) -> None:
         """Lazy-load markdown content when tab is activated."""
-        if event.pane.id:
-            self._load_tab_content(event.pane.id)
+        if not event.pane.id:
+            return
+        
+        # Only handle sub-tab activations (they have format: {category}-{subtab})
+        # Outer tabs are single words like "logging", "todos", etc.
+        parts = event.pane.id.split("-")
+        if len(parts) < 2:
+            return  # This is an outer tab, not a sub-tab
+        
+        # Extract category (first part) and subtab (rest joined)
+        category = parts[0]
+        subtab = "-".join(parts[1:])
+        
+        # Validate this is a known category
+        valid_categories = ["logging", "viewing", "standup", "review", "editing",
+                           "todos", "timer", "search", "stats", "config"]
+        if category not in valid_categories:
+            return
+            
+        self._load_subtab_content(category, subtab)
 
-    def _load_tab_content(self, tab_id: str) -> None:
-        """Load markdown content for a tab if not already loaded."""
-        if tab_id in self._loaded_tabs:
+    def _load_subtab_content(self, category: str, subtab: str) -> None:
+        """Load markdown content for a sub-tab if not already loaded."""
+        subtab_id = f"{category}-{subtab}"
+        if subtab_id in self._loaded_subtabs:
             return
-        
-        viewer = self.query_one(f"#{tab_id}-viewer", MarkdownViewer)
-        
-        # Get examples for this category
-        category_map = {
-            "logging": self._get_logging_examples,
-            "viewing": self._get_viewing_examples,
-            "standup": self._get_standup_examples,
-            "review": self._get_review_examples,
-            "editing": self._get_editing_examples,
-            "todos": self._get_todos_examples,
-            "timer": self._get_timer_examples,
-            "search": self._get_search_examples,
-            "stats": self._get_stats_examples,
-            "config": self._get_config_examples,
+
+        viewer = self.query_one(f"#{subtab_id}-viewer", MarkdownViewer)
+
+        example_map = {
+            "logging": {
+                "basic": ("Basic Logging", 'dwriter add "fixed a bug"', "Add a simple entry:"),
+                "tags": ("With Tags", 'dwriter add "bug fix" -t bug -t backend', "Add entries with tags:"),
+                "project": ("With Project", 'dwriter add "refactored auth" -p backend', "Add entries with a project:"),
+                "combined": ("Multiple Tags & Project", 'dwriter add "refactored database" -t refactor -t backend -p myapp', "Combine tags and projects:"),
+                "date": ("With Date", 'dwriter add "Finished report" --date yesterday', "Add entries for a specific date:"),
+            },
+            "viewing": {
+                "today": ("Today's Entries", "dwriter today", "Show all entries logged today:"),
+                "all": ("All Entries", "dwriter", "Show all entries (default view):"),
+            },
+            "standup": {
+                "generate": ("Generate Standup", "dwriter standup", "Create yesterday's summary (copies to clipboard):"),
+                "formats": ("Formats", "dwriter standup --format slack", "Different output formats (slack, jira, markdown):"),
+                "options": ("Options", "dwriter standup --with-todos", "Include pending tasks with --with-todos:"),
+            },
+            "review": {
+                "default": ("Default Review", "dwriter review", "Review last 5 days:"),
+                "custom": ("Custom Period", "dwriter review --days 7", "Review last 7 days:"),
+                "formats": ("Output Formats", "dwriter review --format markdown", "Different output formats:"),
+            },
+            "editing": {
+                "interactive": ("Interactive Edit", "dwriter edit", "Launch interactive edit TUI:"),
+                "specific": ("Edit by ID", "dwriter edit --id 42", "Edit specific entry:"),
+                "undo": ("Undo Last", "dwriter undo", "Delete last entry:"),
+                "bulk": ("Bulk Delete", "dwriter delete --before 2025-01-01", "Bulk delete old entries:"),
+            },
+            "todos": {
+                "board": ("Todo Board", "dwriter todo", "Launch interactive todo board:"),
+                "add": ("Add Task", 'dwriter todo "write tests"', "Add a new task:"),
+                "priority": ("With Priority", 'dwriter todo "fix bug" --priority urgent', "Add task with priority:"),
+                "list": ("List Tasks", "dwriter todo list", "List pending tasks:"),
+                "complete": ("Complete Task", "dwriter done 5", "Mark task complete (auto-logs):"),
+            },
+            "timer": {
+                "default": ("Default Timer", "dwriter timer", "Start 25-minute timer (Pomodoro):"),
+                "custom": ("Custom Duration", "dwriter timer 30", "Start custom duration timer:"),
+                "tagged": ("With Tags", "dwriter timer 45 -t deepwork", "Timer with tags and project:"),
+            },
+            "search": {
+                "tui": ("Search TUI", "dwriter search", "Launch interactive search:"),
+                "fuzzy": ("Fuzzy Search", 'dwriter search "auth bug"', "Fuzzy search entries and todos:"),
+                "filter_project": ("Filter by Project", 'dwriter search "refactor" -p my_project', "Filter by project:"),
+                "filter_tag": ("Filter by Tag", 'dwriter search "cache" -t backend', "Filter by tag:"),
+                "type": ("Search Type", 'dwriter search "cache" --type todo', "Search only todos:"),
+            },
+            "stats": {
+                "dashboard": ("Dashboard", "dwriter stats", "Interactive dashboard with calendar, charts, and statistics:"),
+            },
+            "config": {
+                "show": ("Show Config", "dwriter config show", "View current configuration:"),
+                "edit": ("Edit Config", "dwriter config edit", "Edit configuration file:"),
+                "reset": ("Reset Config", "dwriter config reset", "Reset to defaults:"),
+                "path": ("Config Path", "dwriter config path", "Show configuration file path:"),
+            },
         }
-        
-        get_examples = category_map.get(tab_id)
-        if not get_examples:
+
+        category_examples = example_map.get(category, {})
+        example_data = category_examples.get(subtab)
+        if not example_data:
             return
-        
-        examples = get_examples()
-        
-        # Build markdown
-        md_lines = [f"# {tab_id.title()} Examples\n\n"]
-        for title, markdown, _ in examples:
-            md_lines.append(f"## {title}\n\n")
-            md_lines.append(f"{markdown}\n\n")
-        
+
+        title, command, description = example_data
+        header_title = f"{category.title()} - {title}"
+        md_lines = [
+            f"# {header_title}\n",
+            "=" * len(header_title) + "\n\n",
+            f"{description}\n\n",
+            "## Command\n",
+            f"```bash\n{command}\n```\n\n",
+        ]
+
+        # Add additional examples for context
+        additional_examples = {
+            "logging": {
+                "tags": "\n## More Examples\n\n```bash\ndwriter add \"feature complete\" -t feature -t backend\ndwriter add \"meeting notes\" -t meeting\n```",
+                "project": "\n## More Examples\n\n```bash\ndwriter add \"deployed to prod\" -p backend\ndwriter add \"design review\" -p frontend\n```",
+                "date": "\n## More Examples\n\n```bash\ndwriter add \"sprint planning\" --date \"last Monday\"\ndwriter add \"code review\" --date \"3 days ago\"\n```",
+            },
+            "standup": {
+                "formats": "\n## Available Formats\n\n```bash\ndwriter standup --format slack\ndwriter standup --format jira\ndwriter standup --format markdown\n```",
+            },
+            "review": {
+                "formats": "\n## Available Formats\n\n```bash\ndwriter review --format markdown\ndwriter review --format plain\ndwriter review --format slack\n```",
+            },
+            "todos": {
+                "priority": "\n## Priority Levels\n\n```bash\ndwriter todo \"urgent fix\" --priority urgent\ndwriter todo \"normal task\" --priority normal\ndwriter todo \"low priority\" --priority low\n```",
+            },
+        }
+
+        if category in additional_examples and subtab in additional_examples[category]:
+            md_lines.append(additional_examples[category][subtab] + "\n")
+
         viewer.document.update("".join(md_lines))
-        self._loaded_tabs.add(tab_id)
+        self._loaded_subtabs.add(subtab_id)
 
     def action_switch_tab(self, index: int) -> None:
         """Switch to tab by index."""
@@ -118,228 +213,31 @@ class ExamplesScreen(Screen[Any]):
         next_idx = (current_idx + 1) % len(tabs)
         tabbed.active = tabs[next_idx]
 
-    def _get_logging_examples(self) -> list[tuple[str, str, str]]:
-        return [
-            ("Basic Logging", "Add a simple entry:", 'dwriter add "fixed a bug"'),
-            ("With Tags", "Add entries with tags using `-t`:\n\n```bash\ndwriter add \"bug fix\" -t bug -t backend\n```", 'dwriter add "bug fix" -t bug -t backend'),
-            ("With Project", "Add entries with a project using `-p`:\n\n```bash\ndwriter add \"refactored auth\" -p backend\n```", 'dwriter add "refactored auth" -p backend'),
-            ("Multiple Tags & Project", "Combine tags and projects:\n\n```bash\ndwriter add \"refactored database\" -t refactor -t backend -p myapp\n```", 'dwriter add "refactored database" -t refactor -t backend -p myapp'),
-            ("With Date", "Add entries for a specific date:\n\n```bash\ndwriter add \"Finished report\" --date yesterday\ndwriter add \"Meeting notes\" --date \"last Friday\"\n```", 'dwriter add "Finished report" --date yesterday'),
-        ]
-
-    def _get_viewing_examples(self) -> list[tuple[str, str, str]]:
-        return [
-            ("Today's Entries", "Show all entries logged today:\n\n```bash\ndwriter today\n```", "dwriter today"),
-            ("All Entries", "Show all entries (default view):\n\n```bash\ndwriter\n```", "dwriter"),
-        ]
-
-    def _get_standup_examples(self) -> list[tuple[str, str, str]]:
-        return [
-            ("Generate Standup", "Create yesterday's summary (copies to clipboard):\n\n```bash\ndwriter standup\n```", "dwriter standup"),
-            ("Slack Format", "```bash\ndwriter standup --format slack\n```", "dwriter standup --format slack"),
-            ("Jira Format", "```bash\ndwriter standup --format jira\n```", "dwriter standup --format jira"),
-            ("Markdown Format", "```bash\ndwriter standup --format markdown\n```", "dwriter standup --format markdown"),
-            ("No Copy", "```bash\ndwriter standup --no-copy\n```", "dwriter standup --no-copy"),
-            ("Include Pending Tasks", "```bash\ndwriter standup --with-todos\n```", "dwriter standup --with-todos"),
-        ]
-
-    def _get_review_examples(self) -> list[tuple[str, str, str]]:
-        return [
-            ("Review Last 5 Days", "```bash\ndwriter review\n```", "dwriter review"),
-            ("Review Last 7 Days", "```bash\ndwriter review --days 7\n```", "dwriter review --days 7"),
-            ("Markdown Format", "```bash\ndwriter review --format markdown\n```", "dwriter review --format markdown"),
-            ("Plain Format", "```bash\ndwriter review --format plain\n```", "dwriter review --format plain"),
-            ("Slack Format", "```bash\ndwriter review --format slack\n```", "dwriter review --format slack"),
-        ]
-
-    def _get_editing_examples(self) -> list[tuple[str, str, str]]:
-        return [
-            ("Edit Entries", "Launch interactive edit TUI:\n\n```bash\ndwriter edit\n```", "dwriter edit"),
-            ("Edit Specific Entry", "```bash\ndwriter edit --id 42\n```", "dwriter edit --id 42"),
-            ("Search and Edit", "```bash\ndwriter edit --search \"redis cache\"\n```", 'dwriter edit --search "redis cache"'),
-            ("Undo Last Entry", "```bash\ndwriter undo\n```", "dwriter undo"),
-            ("Bulk Delete", "```bash\ndwriter delete --before 2025-01-01\n```", "dwriter delete --before 2025-01-01"),
-        ]
-
-    def _get_todos_examples(self) -> list[tuple[str, str, str]]:
-        return [
-            ("Interactive Todo Board", "```bash\ndwriter todo\n```", "dwriter todo"),
-            ("Add Task", "```bash\ndwriter todo \"write tests\"\n```", 'dwriter todo "write tests"'),
-            ("With Priority", "```bash\ndwriter todo \"fix bug\" --priority urgent\n```", 'dwriter todo "fix bug" --priority urgent'),
-            ("With Tags & Project", "```bash\ndwriter todo \"fix bug\" --priority urgent -t bug -p backend\n```", 'dwriter todo "fix bug" --priority urgent -t bug -p backend'),
-            ("List Tasks", "```bash\ndwriter todo list\n```", "dwriter todo list"),
-            ("Complete Task", "```bash\ndwriter done 5\n```", "dwriter done 5"),
-        ]
-
-    def _get_timer_examples(self) -> list[tuple[str, str, str]]:
-        return [
-            ("Timer (Pomodoro-style)", "Start a 25-minute timer:\n\n```bash\ndwriter timer\n```", "dwriter timer"),
-            ("Custom Duration", "```bash\ndwriter timer 30\ndwriter timer 45\n```", "dwriter timer 30"),
-            ("With Tags & Project", "```bash\ndwriter timer 45 -t deepwork -p backend\n```", "dwriter timer 45 -t deepwork -p backend"),
-        ]
-
-    def _get_search_examples(self) -> list[tuple[str, str, str]]:
-        return [
-            ("Interactive Search TUI", "```bash\ndwriter search\n```", "dwriter search"),
-            ("Fuzzy Search", "```bash\ndwriter search \"auth bug\"\n```", 'dwriter search "auth bug"'),
-            ("Filter by Project", "```bash\ndwriter search \"refactor\" -p my_project\n```", 'dwriter search "refactor" -p my_project'),
-            ("Filter by Tags", "```bash\ndwriter search \"cache\" -t backend\n```", 'dwriter search "cache" -t backend'),
-            ("Search Type", "```bash\ndwriter search \"cache\" --type todo\n```", 'dwriter search "cache" --type todo'),
-        ]
-
-    def _get_stats_examples(self) -> list[tuple[str, str, str]]:
-        return [
-            ("Statistics Dashboard", "Interactive dashboard with:\n- GitHub-style contribution calendar\n- Weekly activity chart\n- Statistics summary\n- Top tags\n\n```bash\ndwriter stats\n```", "dwriter stats"),
-        ]
-
-    def _get_config_examples(self) -> list[tuple[str, str, str]]:
-        return [
-            ("Show Configuration", "```bash\ndwriter config show\n```", "dwriter config show"),
-            ("Edit Configuration", "```bash\ndwriter config edit\n```", "dwriter config edit"),
-            ("Reset Configuration", "```bash\ndwriter config reset\n```", "dwriter config reset"),
-            ("Configuration Path", "```bash\ndwriter config path\n```", "dwriter config path"),
-        ]
+    def action_goto_help(self) -> None:
+        """Navigate to the help TUI."""
+        from .help_tui import HelpScreen
+        self.app.push_screen(HelpScreen())
 
     def action_copy_command(self) -> None:
         """Copy the current code block to clipboard."""
-        # MarkdownViewer handles code block copying natively via Ctrl+Shift+C
         self.notify("Select a code block and use Ctrl+Shift+C to copy", timeout=3)
 
     def action_toggle_toc(self) -> None:
         """Toggle the Table of Contents sidebar."""
         tabbed = self.query_one(TabbedContent)
-        viewer = self.query_one(f"#{tabbed.active}-viewer", MarkdownViewer)
-        viewer.show_table_of_contents = not viewer.show_table_of_contents
-
-    def action_show_help(self) -> None:
-        """Show contextual help overlay."""
-        tab_help = {
-            "logging": (
-                "Logging Examples",
-                [
-                    ("j/k", "cursor_down/up", "Navigate examples"),
-                    ("c", "copy_command", "Copy command"),
-                    ("t", "toggle_toc", "Toggle ToC"),
-                ],
-                [
-                    "Quick start: dwriter add \"task\"",
-                    "Tags: -t bug -t backend (multiple allowed)",
-                    "Projects: -p myapp",
-                    "Dates: --date yesterday, --date 'last Monday'",
-                ],
-            ),
-            "viewing": (
-                "Viewing Examples",
-                [
-                    ("j/k", "cursor_down/up", "Navigate examples"),
-                    ("c", "copy_command", "Copy command"),
-                ],
-                [
-                    "dwriter today: Show only today's entries",
-                    "dwriter (no args): Show all entries",
-                ],
-            ),
-            "standup": (
-                "Standup Examples",
-                [
-                    ("j/k", "cursor_down/up", "Navigate examples"),
-                    ("c", "copy_command", "Copy command"),
-                ],
-                [
-                    "Generates yesterday's summary automatically",
-                    "Formats: slack, jira, markdown, bullets",
-                    "Auto-copies to clipboard (use --no-copy to disable)",
-                ],
-            ),
-            "review": (
-                "Review Examples",
-                [
-                    ("j/k", "cursor_down/up", "Navigate examples"),
-                    ("c", "copy_command", "Copy command"),
-                ],
-                [
-                    "Default: Last 5 days",
-                    "Use --days N for custom periods",
-                    "Great for weekly retrospectives/timesheets",
-                ],
-            ),
-            "editing": (
-                "Editing Examples",
-                [
-                    ("j/k", "cursor_down/up", "Navigate examples"),
-                    ("c", "copy_command", "Copy command"),
-                ],
-                [
-                    "Edit TUI: Clean table view for today's entries",
-                    "Undo: Quick delete of last entry",
-                    "Delete --before: Bulk cleanup of old entries",
-                ],
-            ),
-            "todos": (
-                "Todo Examples",
-                [
-                    ("j/k", "cursor_down/up", "Navigate examples"),
-                    ("c", "copy_command", "Copy command"),
-                ],
-                [
-                    "dwriter todo: Interactive board",
-                    "dwriter done ID: Mark complete (auto-logs)",
-                    "Priority levels: low, normal, high, urgent",
-                ],
-            ),
-            "timer": (
-                "Timer Examples",
-                [
-                    ("j/k", "cursor_down/up", "Navigate examples"),
-                    ("c", "copy_command", "Copy command"),
-                ],
-                [
-                    "Default: 25-minute timer (pomodoro-style)",
-                    "Custom: dwriter timer 45",
-                    "Auto-logs completed sessions to journal",
-                ],
-            ),
-            "search": (
-                "Search Examples",
-                [
-                    ("j/k", "cursor_down/up", "Navigate examples"),
-                    ("c", "copy_command", "Copy command"),
-                ],
-                [
-                    "Fuzzy search forgives typos",
-                    "Filter: -p project -t tag before searching",
-                    "Types: entry, todo, or all",
-                ],
-            ),
-            "stats": (
-                "Statistics Examples",
-                [
-                    ("j/k", "cursor_down/up", "Navigate examples"),
-                    ("c", "copy_command", "Copy command"),
-                ],
-                [
-                    "GitHub-style contribution calendar",
-                    "Tracks current & longest streaks",
-                    "Shows top tags and projects",
-                ],
-            ),
-            "config": (
-                "Configuration Examples",
-                [
-                    ("j/k", "cursor_down/up", "Navigate examples"),
-                    ("c", "copy_command", "Copy command"),
-                ],
-                [
-                    "Config location: ~/.dwriter/config.toml",
-                    "Set defaults for project, tags, formats",
-                    "Use 'config edit' for manual changes",
-                ],
-            ),
+        # Find active sub-tab viewer
+        active_category = tabbed.active
+        subtab_map = {
+            "logging": "basic", "viewing": "today", "standup": "generate",
+            "review": "default", "editing": "interactive", "todos": "board",
+            "timer": "default", "search": "tui", "stats": "dashboard", "config": "show",
         }
-
-        tab_id = self.query_one(TabbedContent).active
-        title, bindings, tips = tab_help.get(tab_id, ("Help", [], []))
-        self.push_screen(HelpOverlay(title=title, bindings=bindings, tips=tips))  # type: ignore[attr-defined]
+        subtab = subtab_map.get(active_category, "basic")
+        try:
+            viewer = self.query_one(f"#{active_category}-{subtab}-viewer", MarkdownViewer)
+            viewer.show_table_of_contents = not viewer.show_table_of_contents
+        except Exception:
+            pass
 
 
 class ExamplesApp(App[None]):

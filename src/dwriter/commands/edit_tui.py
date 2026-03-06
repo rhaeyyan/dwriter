@@ -10,6 +10,7 @@ from datetime import datetime
 from typing import Any, Callable
 
 from textual.app import App, ComposeResult
+from textual.binding import Binding
 from textual.containers import Container, Vertical
 from textual.screen import ModalScreen
 from textual.widgets import (
@@ -22,8 +23,6 @@ from textual.widgets import (
     ListView,
     TextArea,
 )
-
-from ..ui_utils import HelpOverlay
 
 from ..database import Entry
 
@@ -468,17 +467,17 @@ class EditApp(App):  # type: ignore[type-arg]
     """
 
     BINDINGS = [
-        ("j", "cursor_down", "Down"),
-        ("k", "cursor_up", "Up"),
-        ("e", "edit_content", "Edit"),
-        ("t", "edit_tags", "Tags"),
-        ("p", "edit_project", "Project"),
-        ("d", "delete", "Delete"),
-        ("enter", "edit_content", "Edit"),
-        ("q", "quit", "Quit"),
-        ("escape", "quit", "Quit"),
-        ("r", "refresh", "Refresh"),
-        ("?", "show_help", "Help"),
+        Binding("j", "cursor_down", "Down"),
+        Binding("k", "cursor_up", "Up"),
+        Binding("e", "edit_content", "Edit"),
+        Binding("t", "edit_tags", "Tags"),
+        Binding("p", "edit_project", "Project"),
+        Binding("d", "delete", "Delete"),
+        Binding("enter", "edit_content", "Edit"),
+        Binding("q", "quit", "Quit"),
+        Binding("escape", "quit", "Quit"),
+        Binding("r", "refresh", "Refresh"),
+        Binding("?", "goto_help", "Help", show=True),
     ]
 
     def __init__(
@@ -736,27 +735,10 @@ class EditApp(App):  # type: ignore[type-arg]
         self._load_entries()
         self.notify("List refreshed", timeout=1)
 
-    def action_show_help(self) -> None:
-        """Show contextual help overlay."""
-        self.push_screen(
-            HelpOverlay(
-                title="✏️ Edit Entries",
-                bindings=[
-                    ("j/k", "cursor_down/up", "Navigate down/up"),
-                    ("e/Enter", "edit_content", "Edit entry content"),
-                    ("t", "edit_tags", "Edit tags"),
-                    ("p", "edit_project", "Edit project"),
-                    ("d", "delete", "Delete entry"),
-                    ("r", "refresh", "Refresh list"),
-                ],
-                tips=[
-                    "Edit TUI shows only today's entries by default",
-                    "Use 'dwriter edit --date YYYY-MM-DD' for specific dates",
-                    "Tags are stored without the # symbol internally",
-                    "Use 'dwriter undo' for quick deletion of last entry",
-                ],
-            )
-        )
+    def action_goto_help(self) -> None:
+        """Navigate to the help TUI."""
+        from .help_tui import HelpScreen
+        self.app.push_screen(HelpScreen())
 
     def action_quit(self) -> None:  # type: ignore[override]
         """Quit the edit application."""

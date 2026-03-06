@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import Any
 
 from textual.app import App, ComposeResult
+from textual.binding import Binding
 from textual.containers import Container, Vertical
 from textual.reactive import reactive
 from textual.screen import ModalScreen
@@ -22,8 +23,6 @@ from textual.widgets import (
     ListView,
     Static,
 )
-
-from ..ui_utils import HelpOverlay
 
 from ..database import Entry, Todo
 from ..search_utils import search_items
@@ -536,19 +535,19 @@ class SearchApp(App):  # type: ignore[type-arg]
     """
 
     BINDINGS = [
-        ("j", "cursor_down", "Down"),
-        ("k", "cursor_up", "Up"),
-        ("enter", "select", "Select"),
-        ("q", "quit", "Quit"),
-        ("escape", "quit", "Quit"),
-        ("/", "focus_search", "Search"),
-        ("ctrl+n", "toggle_type", "Toggle Type"),
-        ("e", "edit_content", "Edit"),
-        ("t", "edit_tags", "Tags"),
-        ("p", "edit_project", "Project"),
-        ("+", "increase_priority", "Priority +"),
-        ("-", "decrease_priority", "Priority -"),
-        ("?", "show_help", "Help"),
+        Binding("j", "cursor_down", "Down"),
+        Binding("k", "cursor_up", "Up"),
+        Binding("enter", "select", "Select"),
+        Binding("q", "quit", "Quit"),
+        Binding("escape", "quit", "Quit"),
+        Binding("/", "focus_search", "Search"),
+        Binding("ctrl+n", "toggle_type", "Toggle Type"),
+        Binding("e", "edit_content", "Edit"),
+        Binding("t", "edit_tags", "Tags"),
+        Binding("p", "edit_project", "Project"),
+        Binding("+", "increase_priority", "Priority +"),
+        Binding("-", "decrease_priority", "Priority -"),
+        Binding("?", "goto_help", "Help", show=True),
     ]
 
     search_type = reactive("all")
@@ -960,29 +959,10 @@ class SearchApp(App):  # type: ignore[type-arg]
         search_input = self.query_one("#search-input", Input)
         self._perform_search(search_input.value)
 
-    def action_show_help(self) -> None:
-        """Show contextual help overlay."""
-        self.push_screen(
-            HelpOverlay(
-                title="🔍 Interactive Search",
-                bindings=[
-                    ("j/k", "cursor_down/up", "Navigate down/up"),
-                    ("Enter", "select", "Select item (copy content)"),
-                    ("/", "focus_search", "Focus search input"),
-                    ("Ctrl+N", "toggle_type", "Toggle search type"),
-                    ("e", "edit_content", "Edit content"),
-                    ("t", "edit_tags", "Edit tags"),
-                    ("p", "edit_project", "Edit project"),
-                    ("+/-", "change_priority", "Change priority"),
-                ],
-                tips=[
-                    "Fuzzy matching forgives typos and partial matches",
-                    "Filter by project/tag before searching for better results",
-                    "Match scores: 🟢90%+ 🟡75%+ ⚪60%+",
-                    "Results update in real-time as you type",
-                ],
-            )
-        )
+    def action_goto_help(self) -> None:
+        """Navigate to the help TUI."""
+        from .help_tui import HelpScreen
+        self.app.push_screen(HelpScreen())
 
     def watch_search_type(self, value: str) -> None:
         """Handle search type changes.

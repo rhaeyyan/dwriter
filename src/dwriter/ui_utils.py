@@ -3,10 +3,9 @@
 from typing import TYPE_CHECKING, Any, Optional
 
 from textual.app import ComposeResult
-from textual.binding import Binding
 from textual.containers import Container, ScrollableContainer
 from textual.screen import ModalScreen
-from textual.widgets import Markdown, Static
+from textual.widgets import Static
 
 if TYPE_CHECKING:
     from rich.console import Console
@@ -110,6 +109,7 @@ class HelpOverlay(ModalScreen[None]):
         title: str = "Help",
         bindings: Optional[list[tuple[str, str, str]]] = None,
         tips: Optional[list[str]] = None,
+        commands: Optional[list[tuple[str, str]]] = None,
     ) -> None:
         """Initialize the help overlay.
 
@@ -117,27 +117,37 @@ class HelpOverlay(ModalScreen[None]):
             title: Title displayed at the top of the overlay.
             bindings: List of (key, action, description) tuples.
             tips: Optional list of contextual tips.
+            commands: Optional list of (command, description) tuples to display.
         """
         super().__init__()
         self.title = title
         self.bindings = bindings or []
         self.tips = tips or []
+        self.commands = commands or []
 
     def compose(self) -> ComposeResult:
+        """Compose the help overlay layout."""
         with Container():
             yield Static(f"❓ {self.title}", classes="help-title")
             yield Static("", classes="help-section")
 
             with ScrollableContainer(id="help-bindings"):
-                for key, action, desc in self.bindings:
+                for key, _action, desc in self.bindings:
                     yield Static(f"[bold cyan]{key:12}[/]  {desc}", classes="help-desc")
+
+            if self.commands:
+                yield Static("\n📝 Commands:", classes="help-section")
+                for cmd, desc in self.commands:
+                    yield Static(f"  [bold yellow]{cmd}[/]", classes="help-desc")
+                    yield Static(f"    {desc}", classes="help-tip")
 
             if self.tips:
                 yield Static("\n💡 Tips:", classes="help-section")
                 for tip in self.tips:
                     yield Static(f"  • {tip}", classes="help-tip")
 
-            yield Static("\nPress [bold]Esc[/] or [bold]Enter[/] to close", classes="help-close")
+            close_msg = "\nPress [bold]Esc[/] or [bold]Enter[/] to close"
+            yield Static(close_msg, classes="help-close")
 
     def on_mount(self) -> None:
         """Focus the overlay for immediate keyboard capture."""
