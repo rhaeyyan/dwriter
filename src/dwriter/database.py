@@ -173,7 +173,8 @@ class Database:
             tags: Optional list of tags to associate with the entry.
             project: Optional project name.
             created_at: Optional datetime for the entry. If not provided,
-                uses the current time.
+                uses the current time. If the date is in the past (different
+                from today), the time component is ignored and set to midnight.
 
         Returns:
             The created Entry object.
@@ -183,7 +184,20 @@ class Database:
             if tags:
                 entry.tags = [Tag(name=t) for t in tags]
             if created_at is not None:
-                entry.created_at = created_at
+                # If the date is in the past (not today), ignore the time component
+                today = datetime.now().replace(
+                    hour=0, minute=0, second=0, microsecond=0
+                )
+                entry_date = created_at.replace(
+                    hour=0, minute=0, second=0, microsecond=0
+                )
+
+                if entry_date < today:
+                    # For past dates, store at midnight to ignore time component
+                    entry.created_at = entry_date
+                else:
+                    # For today or future dates, use the provided time
+                    entry.created_at = created_at
             session.add(entry)
             session.commit()
             session.refresh(entry)
@@ -217,12 +231,11 @@ class Database:
             A list of Entry objects for the specified date.
         """
         with self.Session() as session:
-            # Convert UTC to local time before comparing dates
-            # SQLite stores datetimes in UTC, so we use 'localtime' modifier
+            # Entries are stored in local time, so we compare dates directly
             date_str = date.strftime("%Y-%m-%d")
             stmt = (
                 select(Entry)
-                .where(func.date(Entry.created_at, "localtime") == date_str)
+                .where(func.date(Entry.created_at) == date_str)
                 .order_by(Entry.created_at)
             )
             return list(session.scalars(stmt).all())

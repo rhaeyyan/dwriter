@@ -8,9 +8,10 @@ from __future__ import annotations
 
 from typing import Any
 
+from rich.text import Text
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Container, Vertical
+from textual.containers import Container
 from textual.screen import ModalScreen
 from textual.widgets import (
     Button,
@@ -20,7 +21,6 @@ from textual.widgets import (
     Label,
     Static,
 )
-from rich.text import Text
 
 
 class TomatoProgressBar(Static):
@@ -371,9 +371,9 @@ class TimerApp(App):  # type: ignore[type-arg]
 
     def compose(self) -> ComposeResult:
         """Compose the timer UI layout."""
-        from textual.widgets import Button
         from textual.containers import Horizontal
-        
+        from textual.widgets import Button
+
         yield Header()
         with Container(id="main-container"):
             # Top row: [+5] [+1] [Status] [-1] [+5]
@@ -382,26 +382,26 @@ class TimerApp(App):  # type: ignore[type-arg]
                 with Horizontal(id="button-left"):
                     yield Button("+5", id="btn-plus-5", variant="success")
                     yield Button("+1", id="btn-plus-1", variant="success")
-                
+
                 # Status in center
                 yield Label(
                     "▶ Running" if self.is_running else "⏸ Paused",
                     id="status-label",
                     classes="running" if self.is_running else "paused",
                 )
-                
+
                 # Right buttons (red, subtract time) - order: -1, -5
                 with Horizontal(id="button-right"):
                     yield Button("-1", id="btn-minus-1", variant="error")
                     yield Button("-5", id="btn-minus-5", variant="error")
-            
+
             # Progress bar centered at bottom: mm:ss [ ▮▮🍅▯▯ ] 40%
             with Container(id="progress-container"):
                 yield Label(
                     self._format_progress_line(),
                     id="progress-bar",
                 )
-        
+
         # Clean footer with minimal info
         yield Label(
             "Space: Pause/Resume  •  Enter: Finish  •  ?: Help  •  q: Quit",
@@ -410,14 +410,14 @@ class TimerApp(App):  # type: ignore[type-arg]
         yield Footer()
 
     def _format_progress_line(self) -> Text:
-        """Format the progress line: mm:ss [ bar ] percentage"""
+        """Format the progress line: mm:ss [ bar ] percentage."""
         elapsed = self.total_seconds - self.remaining_seconds
         progress_pct = elapsed / self.total_seconds if self.total_seconds > 0 else 0
-        
+
         bar_width = 20
         filled = int(progress_pct * bar_width)
         empty = bar_width - filled
-        
+
         # Gradient color palette: green → yellow-green → yellow → orange → red
         gradient_colors = [
             "#44ce1b",    # Green
@@ -426,15 +426,15 @@ class TimerApp(App):  # type: ignore[type-arg]
             "#f2a134",    # Orange
             "#e51f1f",    # Red
         ]
-        
+
         # Build the progress line using Rich Text for proper styling
         time_str = self._format_time(self.remaining_seconds)
         pct_display = int(progress_pct * 100)
-        
+
         # Create styled text
         text = Text()
         text.append(f"{time_str}  [ ", style="bold")
-        
+
         # Filled blocks with gradient based on position in bar (not filled count)
         for i in range(filled):
             # Calculate position in gradient based on block's position in the full bar
@@ -442,27 +442,27 @@ class TimerApp(App):  # type: ignore[type-arg]
             gradient_pos = i / (bar_width - 1) if bar_width > 1 else 0
             color = self._get_gradient_color(gradient_pos, gradient_colors)
             text.append("▮", style=color)
-        
+
         # Tomato emoji (shows current position)
         if filled < bar_width:
             text.append("🍅")
             empty -= 1
-        
+
         # Dim empty blocks
         for _ in range(empty):
             text.append("▯", style="dim")
-        
+
         text.append(f" ] {pct_display}%", style="bold")
-        
+
         return text
-    
+
     def _get_gradient_color(self, pos: float, colors: list[str]) -> str:
         """Get interpolated color from gradient palette.
-        
+
         Args:
             pos: Position in gradient (0.0 to 1.0).
             colors: List of hex color strings.
-        
+
         Returns:
             Interpolated hex color string.
         """
@@ -470,35 +470,35 @@ class TimerApp(App):  # type: ignore[type-arg]
             return colors[0]
         if pos >= 1:
             return colors[-1]
-        
+
         # Find the two colors to interpolate between
         num_segments = len(colors) - 1
         segment = min(int(pos * num_segments), num_segments - 1)
         segment_pos = (pos * num_segments) - segment
-        
+
         color1 = colors[segment]
         color2 = colors[segment + 1]
-        
+
         return self._blend_colors(color1, color2, segment_pos)
-    
+
     def _blend_colors(self, color1: str, color2: str, t: float) -> str:
         """Blend two hex colors.
-        
+
         Args:
             color1: First hex color (e.g., "#44ce1b").
             color2: Second hex color.
             t: Blend factor (0.0 = color1, 1.0 = color2).
-        
+
         Returns:
             Blended hex color string.
         """
         r1, g1, b1 = int(color1[1:3], 16), int(color1[3:5], 16), int(color1[5:7], 16)
         r2, g2, b2 = int(color2[1:3], 16), int(color2[3:5], 16), int(color2[5:7], 16)
-        
+
         r = int(r1 + (r2 - r1) * t)
         g = int(g1 + (g2 - g1) * t)
         b = int(b1 + (b2 - b1) * t)
-        
+
         return f"#{r:02x}{g:02x}{b:02x}"
 
     def on_mount(self) -> None:
@@ -597,10 +597,13 @@ class TimerApp(App):  # type: ignore[type-arg]
         def on_dismiss(result: str | None) -> None:
             if result:
                 try:
+                    # Use datetime.now() to store local time for the completion
+                    from datetime import datetime
                     entry = self.db.add_entry(
                         content=result,
                         tags=self.tags,
                         project=self.project,
+                        created_at=datetime.now(),
                     )
                     self.notify(f"Entry logged: {entry.content}", timeout=2)
                 except Exception as e:
@@ -699,29 +702,32 @@ class TimerApp(App):  # type: ignore[type-arg]
 
     def _adjust_time(self, minutes: int) -> None:
         """Adjust timer by specified minutes.
-        
+
         Args:
             minutes: Minutes to add (positive) or subtract (negative).
         """
         if self.is_finished:
             return
-        
+
         seconds_to_adjust = minutes * 60
         new_total = self.remaining_seconds + seconds_to_adjust
-        
+
         if new_total < 60:
             self.notify("Minimum 1 minute required", severity="warning", timeout=1.5)
             return
-        
+
         self.remaining_seconds = new_total
         self.total_seconds = new_total
         self.initial_minutes = self.remaining_seconds // 60
-        
+
         if minutes > 0:
-            self.notify(f"Added {minutes} minute{'s' if minutes > 1 else ''}", timeout=1)
+            msg = f"Added {minutes} minute{'s' if minutes > 1 else ''}"
+            self.notify(msg, timeout=1)
         else:
-            self.notify(f"Subtracted {abs(minutes)} minute{'s' if abs(minutes) > 1 else ''}", timeout=1)
-        
+            msg = f"Subtracted {abs(minutes)} minute"
+            msg += 's' if abs(minutes) > 1 else ''
+            self.notify(msg, timeout=1)
+
         self._update_display()
 
     def action_toggle_pause(self) -> None:

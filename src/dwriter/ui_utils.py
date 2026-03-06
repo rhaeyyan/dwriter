@@ -1,5 +1,6 @@
 """UI utilities for consistent output formatting."""
 
+from datetime import datetime
 from typing import TYPE_CHECKING, Any, Optional
 
 from textual.app import ComposeResult
@@ -14,11 +15,51 @@ if TYPE_CHECKING:
     from .database import Entry
 
 
+def _is_past_date(entry_date: datetime) -> bool:
+    """Check if an entry date is before today.
+
+    Args:
+        entry_date: The datetime to check.
+
+    Returns:
+        True if the date is before today, False otherwise.
+    """
+    today = datetime.now().replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+    entry_date_only = entry_date.replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+    return entry_date_only < today
+
+
+def format_entry_datetime(entry: "Entry") -> tuple[str, Optional[str]]:
+    """Format an entry's date and time for display.
+
+    For past dates (before today), returns only the date without time.
+    For today's entries, returns both date and time.
+
+    Args:
+        entry: The Entry object to format.
+
+    Returns:
+        A tuple of (date_str, time_str). time_str is None for past dates.
+    """
+    date_str = entry.created_at.strftime("%Y-%m-%d")
+
+    if _is_past_date(entry.created_at):
+        return date_str, None
+
+    time_str = entry.created_at.strftime("%I:%M %p")
+    return date_str, time_str
+
+
 def display_entry(console: "Console", entry: "Entry", config: "Config") -> None:
     """Display a journal entry to the console.
 
     Formats and prints a single journal entry with consistent styling,
     including ID (if enabled), date/time, content, tags, and project.
+    For past dates (before today), the time component is hidden.
 
     Args:
         console: The Rich console instance for output.
@@ -28,14 +69,28 @@ def display_entry(console: "Console", entry: "Entry", config: "Config") -> None:
     Returns:
         None
     """
-    date_str = entry.created_at.strftime("%Y-%m-%d")
-    time_str = entry.created_at.strftime("%I:%M %p")
+    date_str, time_str = format_entry_datetime(entry)
 
-    if config.display.show_id:
-        id_display = f"[magenta][{entry.id}][/magenta] {date_str}"
-        console.print(f"{id_display} | [#23c76b]{time_str}[/#23c76b]: {entry.content}")
+    # Only show time for today's entries
+    if time_str is None:
+        # Past date - no time shown
+        if config.display.show_id:
+            console.print(
+                f"[magenta][{entry.id}][/magenta] {date_str}: {entry.content}"
+            )
+        else:
+            console.print(f"{date_str}: {entry.content}")
     else:
-        console.print(f"{date_str} | [#23c76b]{time_str}[/#23c76b]: {entry.content}")
+        # Today's entry - show time
+        if config.display.show_id:
+            id_display = f"[magenta][{entry.id}][/magenta] {date_str}"
+            console.print(
+                f"{id_display} | [#23c76b]{time_str}[/#23c76b]: {entry.content}"
+            )
+        else:
+            console.print(
+                f"{date_str} | [#23c76b]{time_str}[/#23c76b]: {entry.content}"
+            )
 
     if entry.tag_names:
         tags_str = " ".join(f"[#ffae00]#[/]{t}" for t in entry.tag_names)
