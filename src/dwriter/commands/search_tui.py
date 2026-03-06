@@ -330,20 +330,29 @@ class EntryResultsView(ListView):
         Returns:
             Formatted string with markup.
         """
-        date_str = entry.created_at.strftime("%Y-%m-%d")
-        time_str = entry.created_at.strftime("%I:%M %p")
+        from ..ui_utils import format_entry_datetime
+        date_str, time_str = format_entry_datetime(entry)
         score_color = self._get_score_color(score)
         tags_str = ""
         if entry.tag_names:
             tags_str = f" [yellow]#{' #'.join(entry.tag_names)}[/yellow]"
         project_str = f" [purple]{entry.project}[/purple]" if entry.project else ""
 
-        return (
-            f"[magenta][{entry.id}][/magenta] "
-            f"[dim]{date_str} {time_str}[/dim] | "
-            f"{entry.content}{tags_str}{project_str} "
-            f"[{score_color}]({int(score)}%)[/{score_color}]"
-        )
+        # Display with or without time based on whether it's a past date
+        if time_str is None:
+            return (
+                f"[magenta][{entry.id}][/magenta] "
+                f"[dim]{date_str}[/dim] | "
+                f"{entry.content}{tags_str}{project_str} "
+                f"[{score_color}]({int(score)}%)[/{score_color}]"
+            )
+        else:
+            return (
+                f"[magenta][{entry.id}][/magenta] "
+                f"[dim]{date_str} {time_str}[/dim] | "
+                f"{entry.content}{tags_str}{project_str} "
+                f"[{score_color}]({int(score)}%)[/{score_color}]"
+            )
 
     def _get_score_color(self, score: float) -> str:
         """Get the color for a match score.

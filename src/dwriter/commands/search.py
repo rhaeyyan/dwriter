@@ -113,8 +113,8 @@ def search(
     if matched_entries:
         ctx.console.print("[bold magenta][ENTRIES][/bold magenta]")
         for entry, score in matched_entries:
-            date_str = entry.created_at.strftime("%Y-%m-%d")
-            time_str = entry.created_at.strftime("%I:%M %p")
+            from ..ui_utils import format_entry_datetime
+            date_str, time_str = format_entry_datetime(entry)
             score_str = format_score(score)
             tags_str = ""
             if entry.tag_names:
@@ -123,10 +123,17 @@ def search(
                 project_str = f" [purple]Project:[/purple] {entry.project}"
             else:
                 project_str = ""
-            ctx.console.print(
-                f"[magenta][{entry.id}][/magenta] {date_str} | "
-                f"[#23c76b]{time_str}[/#23c76b]: {entry.content}"
-            )
+
+            # Display with or without time based on whether it's a past date
+            if time_str is None:
+                ctx.console.print(
+                    f"[magenta][{entry.id}][/magenta] {date_str}: {entry.content}"
+                )
+            else:
+                ctx.console.print(
+                    f"[magenta][{entry.id}][/magenta] {date_str} | "
+                    f"[#23c76b]{time_str}[/#23c76b]: {entry.content}"
+                )
             if tags_str:
                 ctx.console.print(f"    [#ffae00]Tags:[/#ffae00] {tags_str}")
             if project_str:

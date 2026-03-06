@@ -63,9 +63,18 @@ def delete(ctx: AppContext, before_date: str) -> None:
     ctx.console.print()
 
     for entry in entries[:10]:  # Show first 10
-        date_str = entry.created_at.strftime("%Y-%m-%d")
-        time_str = entry.created_at.strftime("%I:%M [bold]%p[/bold]")
-        ctx.console.print(f"  [{entry.id}] {date_str} | {time_str}: `{entry.content}`")
+        from ..ui_utils import format_entry_datetime
+
+        date_str, time_str = format_entry_datetime(entry)
+
+        # Display with or without time based on whether it's a past date
+        if time_str is None:
+            ctx.console.print(f"  [{entry.id}] {date_str}: `{entry.content}`")
+        else:
+            time_str = f"[bold]{time_str}[/bold]"
+            ctx.console.print(
+                f"  [{entry.id}] {date_str} | {time_str}: `{entry.content}`"
+            )
 
     if len(entries) > 10:
         ctx.console.print(f"  ... and {len(entries) - 10} more")
