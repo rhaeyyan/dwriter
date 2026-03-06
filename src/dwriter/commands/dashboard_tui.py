@@ -30,8 +30,6 @@ from textual.widgets import (
     TabPane,
 )
 
-from ..ui_utils import HelpOverlay
-
 from ..database import Entry
 
 
@@ -558,7 +556,7 @@ class DashboardApp(App):  # type: ignore[type-arg]
         Binding("q", "quit", "Quit"),
         Binding("r", "refresh", "Refresh"),
         Binding("d", "drill_down", "Drill Down"),
-        Binding("?", "show_help", "Help"),
+        Binding("?", "goto_help", "Help", show=True),
         Binding("1", "switch_tab(0)", "Overview", show=False),
         Binding("2", "switch_tab(1)", "Activity", show=False),
         Binding("tab", "next_tab", "Next Tab", show=False),
@@ -897,23 +895,7 @@ class DashboardApp(App):  # type: ignore[type-arg]
             else:
                 self.notify("No entries found for this tag", timeout=1)
 
-    def action_show_help(self) -> None:
-        """Show contextual help overlay."""
-        self.push_screen(
-            HelpOverlay(
-                title="📊 Dashboard",
-                bindings=[
-                    ("r", "refresh", "Refresh all data"),
-                    ("d", "drill_down", "Drill down into selected item"),
-                    ("1/2", "switch_tab", "Switch tabs"),
-                    ("tab", "next_tab", "Cycle through tabs"),
-                ],
-                tips=[
-                    "Overview tab: KPIs + GitHub-style contribution calendar",
-                    "Activity tab: 30-day trends + top projects/tags tables",
-                    "Calendar shows logging streaks (current & longest)",
-                    "Press 'd' on a project/tag to see related entries",
-                    "Consistency % = entries in last 30 days / 30",
-                ],
-            )
-        )
+    def action_goto_help(self) -> None:
+        """Navigate to the help TUI."""
+        from .help_tui import HelpScreen
+        self.app.push_screen(HelpScreen())

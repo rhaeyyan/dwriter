@@ -1,4 +1,4 @@
-"""Interactive help TUI using Textual with dynamic Click introspection."""
+"""Interactive help TUI using Textual with comprehensive command documentation."""
 from __future__ import annotations
 
 from typing import Any
@@ -14,78 +14,6 @@ from textual.widgets import (
     TabbedContent,
     TabPane,
 )
-
-from ..ui_utils import HelpOverlay
-
-
-class CommandInfo:
-    """Holds metadata about a Click command."""
-
-    def __init__(
-        self,
-        name: str,
-        short_help: str,
-        full_help: str,
-        usage: str,
-    ) -> None:
-        self.name = name
-        self.short_help = short_help
-        self.full_help = full_help
-        self.usage = usage
-
-
-class ClickIntrospector:
-    """Extract command metadata from Click app for TUI display."""
-
-    def __init__(self, cli_group: click.Group) -> None:
-        self.cli = cli_group
-
-    def get_commands(self) -> dict[str, CommandInfo]:
-        """Extract all commands with their help text."""
-        ctx = click.Context(self.cli)
-        commands = {}
-
-        for cmd_name in self.cli.list_commands(ctx):
-            cmd = self.cli.get_command(ctx, cmd_name)
-            if cmd is None:
-                continue
-
-            short_help = cmd.short_help or ""
-            full_help = cmd.get_help(ctx)
-
-            usage_parts = [f"dwriter {cmd_name}"]
-            for param in cmd.params:
-                if isinstance(param, click.Argument):
-                    usage_parts.append(f"<{param.name}>")
-                elif isinstance(param, click.Option):
-                    opt = "/".join(param.opts)
-                    if param.metavar:
-                        opt += f" <{param.metavar}>"
-                    usage_parts.append(f"[{opt}]")
-
-            usage = " ".join(usage_parts)
-
-            commands[cmd_name] = CommandInfo(
-                name=cmd_name,
-                short_help=short_help,
-                full_help=full_help,
-                usage=usage,
-            )
-
-        return commands
-
-    def get_command_categories(self) -> dict[str, list[str]]:
-        """Group commands by category."""
-        return {
-            "Logging": ["add", "today", "undo"],
-            "Todos": ["todo", "done"],
-            "Reports": ["standup", "review", "stats"],
-            "Editing": ["edit", "delete"],
-            "Search": ["search"],
-            "Timer": ["timer"],
-            "Config": ["config"],
-            "Help": ["examples", "help"],
-        }
 
 
 def _get_cli_app() -> click.Group:
@@ -109,7 +37,6 @@ class HelpScreen(Screen[Any]):
     BINDINGS = [
         Binding("q,escape", "app.quit", "Quit", show=True),
         Binding("t", "toggle_toc", "ToC", show=True),
-        Binding("?", "show_help", "Help", show=True),
         Binding("1", "switch_tab(0)", "1st", show=False),
         Binding("2", "switch_tab(1)", "2nd", show=False),
         Binding("3", "switch_tab(2)", "3rd", show=False),
@@ -121,87 +48,980 @@ class HelpScreen(Screen[Any]):
         Binding("tab", "next_tab", "Next Tab", show=False),
     ]
 
+    # Command categories with their sub-tabs
+    CATEGORY_CONFIG = [
+        ("📝 Logging", "logging", ["add", "today"]),
+        ("✅ Todos", "todos", ["todo", "done"]),
+        ("📊 Reports", "reports", ["standup", "review", "stats"]),
+        ("✏️ Editing", "editing", ["edit", "delete", "undo"]),
+        ("🔍 Search", "search", ["search"]),
+        ("⏱️ Timer", "timer", ["timer"]),
+        ("⚙️ Config", "config", ["config"]),
+        ("❓ Help", "help", ["help"]),
+    ]
+
     def __init__(self) -> None:
         super().__init__()
         self.cli_app = _get_cli_app()
-        self.introspector = ClickIntrospector(self.cli_app)
-        self.commands_data = self.introspector.get_commands()
-        self.categories_data = self.introspector.get_command_categories()
-        self._loaded_tabs: set[str] = set()
+        self._loaded_subtabs: set[str] = set()
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
         with TabbedContent(initial="logging"):
-            # Create a tab for each category
-            category_ids = {
-                "Logging": "logging",
-                "Todos": "todos",
-                "Reports": "reports",
-                "Editing": "editing",
-                "Search": "search",
-                "Timer": "timer",
-                "Config": "config",
-                "Help": "help",
-            }
-            for category, tab_id in category_ids.items():
-                if category in self.categories_data:
-                    with TabPane(f"📋 {category}" if category != "Help" else "❓ Help", id=tab_id):
-                        # Lazy-load: MarkdownViewer starts empty
-                        yield MarkdownViewer(id=f"{tab_id}-viewer", show_table_of_contents=True)
+            for label, tab_id, subtabs in self.CATEGORY_CONFIG:
+                with TabPane(label, id=tab_id):
+                    if len(subtabs) == 1:
+                        yield MarkdownViewer(
+                            id=f"{tab_id}-{subtabs[0]}-viewer",
+                            show_table_of_contents=False
+                        )
+                    else:
+                        nested_id = f"{tab_id}-nested"
+                        with TabbedContent(initial=f"{tab_id}-{subtabs[0]}", id=nested_id):
+                            for subtab_id in subtabs:
+                                pane_id = f"{tab_id}-{subtab_id}"
+                                display_name = subtab_id.replace("_", " ").title()
+                                with TabPane(display_name, id=pane_id):
+                                    yield MarkdownViewer(
+                                        id=f"{pane_id}-viewer",
+                                        show_table_of_contents=False
+                                    )
         yield Footer()
 
     def on_mount(self) -> None:
         """Load the first tab's content on mount."""
-        # Load the initial tab's content
-        self._load_tab_content("logging")
+        self._load_subtab_content("logging", "add")
 
     def on_tabbed_content_tab_activated(self, event: TabbedContent.TabActivated) -> None:
         """Lazy-load markdown content when tab is activated."""
-        if event.pane.id:
-            self._load_tab_content(event.pane.id)
-
-    def _load_tab_content(self, tab_id: str) -> None:
-        """Load markdown content for a tab if not already loaded."""
-        if tab_id in self._loaded_tabs:
+        if not event.pane.id:
             return
-        
-        viewer = self.query_one(f"#{tab_id}-viewer", MarkdownViewer)
-        
-        # Build markdown for this category
-        md_lines = ["# dwriter Command Reference\n\n"]
-        
-        # Get commands for this tab
-        category_name = {"logging": "Logging", "todos": "Todos", "reports": "Reports",
-                        "editing": "Editing", "search": "Search", "timer": "Timer",
-                        "config": "Config", "help": "Help"}[tab_id]
-        
-        cmd_names = self.categories_data.get(category_name, [])
-        
-        for cmd_name in cmd_names:
-            if cmd_name in self.commands_data:
-                cmd = self.commands_data[cmd_name]
-                md_lines.append(f"## `{cmd.name}`\n")
-                md_lines.append(f"> {cmd.short_help}\n\n")
-                md_lines.append("**Usage:**\n")
-                md_lines.append(f"```bash\n{cmd.usage}\n```\n\n")
-                md_lines.append("**Details:**\n")
-                md_lines.append(f"{cmd.full_help}\n\n")
-                md_lines.append("---\n")
 
-        viewer.document.update("\n".join(md_lines))
-        self._loaded_tabs.add(tab_id)
+        # Check if this is an outer tab (single word like "search", "timer")
+        # or a sub-tab (format: {category}-{subtab})
+        parts = event.pane.id.split("-")
+        
+        if len(parts) == 1:
+            # This is an outer tab - load its first subtab
+            category = event.pane.id
+            for _label, tab_id, subtabs in self.CATEGORY_CONFIG:
+                if tab_id == category and subtabs:
+                    self._load_subtab_content(category, subtabs[0])
+                    break
+        elif len(parts) >= 2:
+            # This is a sub-tab
+            category = parts[0]
+            subtab = "-".join(parts[1:])
+            
+            valid_categories = ["logging", "todos", "reports", "editing",
+                               "search", "timer", "config", "help"]
+            if category not in valid_categories:
+                return
+
+            self._load_subtab_content(category, subtab)
+
+    def _load_subtab_content(self, category: str, subtab: str) -> None:
+        """Load markdown content for a sub-tab if not already loaded."""
+        subtab_id = f"{category}-{subtab}"
+        if subtab_id in self._loaded_subtabs:
+            return
+
+        viewer = self.query_one(f"#{subtab_id}-viewer", MarkdownViewer)
+        content = self._get_content(category, subtab)
+        if content:
+            viewer.document.update(content)
+            self._loaded_subtabs.add(subtab_id)
+
+    def _get_content(self, category: str, subtab: str) -> str:
+        """Get markdown content for a category and sub-tab."""
+        content_map = {
+            "logging": {
+                "add": self._get_add_content(),
+                "today": self._get_today_content(),
+            },
+            "todos": {
+                "todo": self._get_todo_content(),
+                "done": self._get_done_content(),
+            },
+            "reports": {
+                "standup": self._get_standup_content(),
+                "review": self._get_review_content(),
+                "stats": self._get_stats_content(),
+            },
+            "editing": {
+                "edit": self._get_edit_content(),
+                "delete": self._get_delete_content(),
+                "undo": self._get_undo_content(),
+            },
+            "search": {
+                "search": self._get_search_content(),
+            },
+            "timer": {
+                "timer": self._get_timer_content(),
+            },
+            "config": {
+                "config": self._get_config_content(),
+            },
+            "help": {
+                "help": self._get_help_content(),
+            },
+        }
+        return content_map.get(category, {}).get(subtab, "")
+
+    def _get_add_content(self) -> str:
+        return """# `dwriter add`
+
+Log a new journal entry.
+
+---
+
+## Usage
+
+```bash
+dwriter add <content> [OPTIONS]
+```
+
+## Options
+
+| Option | Description |
+|--------|-------------|
+| `-t, --tag <TAG>` | Add a tag (can be used multiple times) |
+| `-p, --project <PROJECT>` | Assign to a project |
+| `-d, --date <DATE>` | Log for a specific date (natural language supported) |
+
+## Examples
+
+### Basic logging
+```bash
+dwriter add "fixed the race condition in auth"
+```
+
+### With tags
+```bash
+dwriter add "fixed login bug" -t bug -t backend
+```
+
+### With project
+```bash
+dwriter add "implemented feature X" --project myapp
+```
+
+### Multiple tags and project
+```bash
+dwriter add "refactored database layer" -t refactor -t backend -p myapp
+```
+
+### With custom date
+```bash
+dwriter add "Finished report" --date yesterday
+dwriter add "Meeting notes" --date "last Friday"
+dwriter add "Completed sprint" --date "3 days ago"
+```
+
+## Tips
+
+💡 **Quick logging**: Just run `dwriter add "your task"` for simple entries
+
+💡 **Natural language dates**: Use `yesterday`, `last Monday`, `3 days ago`, etc.
+
+💡 **Multiple tags**: Use `-t` multiple times: `-t bug -t backend -t urgent`
+"""
+
+    def _get_today_content(self) -> str:
+        return """# `dwriter today`
+
+Show today's journal entries.
+
+---
+
+## Usage
+
+```bash
+dwriter today
+```
+
+## Description
+
+Displays all journal entries logged for the current day in chronological order.
+
+## Examples
+
+### View today's entries
+```bash
+dwriter today
+```
+
+## Tips
+
+💡 **Quick view**: Shows entries with timestamps, tags, and projects
+
+💡 **Empty output**: If no entries exist for today, the output will be empty
+
+💡 **Alternative**: Run `dwriter` (no arguments) to see all entries
+"""
+
+    def _get_todo_content(self) -> str:
+        return """# `dwriter todo`
+
+Manage todo tasks interactively.
+
+---
+
+## Usage
+
+```bash
+dwriter todo [OPTIONS]
+dwriter todo <content> [OPTIONS]
+```
+
+## Options
+
+| Option | Description |
+|--------|-------------|
+| `--priority <LEVEL>` | Set priority: `low`, `normal`, `high`, `urgent` |
+| `-t, --tag <TAG>` | Add a tag (can be used multiple times) |
+| `-p, --project <PROJECT>` | Assign to a project |
+
+## Examples
+
+### Launch interactive board
+```bash
+dwriter todo
+```
+
+### Add a new task
+```bash
+dwriter todo "write unit tests"
+```
+
+### With priority
+```bash
+dwriter todo "fix critical bug" --priority urgent
+```
+
+### With tags and project
+```bash
+dwriter todo "fix card draw bug" --priority urgent -t bug -p backend
+```
+
+## Keybindings (Interactive Mode)
+
+| Key | Action |
+|-----|--------|
+| `j/k` | Navigate down/up |
+| `Space` | Mark task complete (auto-logs to journal) |
+| `e` | Edit task content |
+| `d` | Delete task |
+| `+/-` | Change priority |
+| `t` | Edit tags |
+| `p` | Edit project |
+| `q/Esc` | Quit |
+
+## Tips
+
+💡 **Auto-logging**: Completed tasks automatically create journal entries
+
+💡 **Priority colors**: 🔴 Urgent | 🟡 High | ⚪ Normal | ⚫ Low
+
+💡 **Options first**: You can put options before content:
+```bash
+dwriter todo --priority high -t feature "implement new API"
+```
+"""
+
+    def _get_done_content(self) -> str:
+        return """# `dwriter done`
+
+Mark a task as complete.
+
+---
+
+## Usage
+
+```bash
+dwriter done <TASK_ID>
+dwriter done <SEARCH_QUERY> --search
+```
+
+## Options
+
+| Option | Description |
+|--------|-------------|
+| `--search` | Use fuzzy search to find the task |
+
+## Examples
+
+### Complete task by ID
+```bash
+dwriter done 5
+```
+
+### Complete task by searching
+```bash
+dwriter done "card draw bug" --search
+```
+
+## What Happens
+
+When you mark a task as done:
+
+1. ✅ Task is marked complete in the todo list
+2. 📝 A journal entry is automatically created: `"Completed: <task content>"`
+3. 🏷️ Tags and project are preserved in the journal entry
+
+## Tips
+
+💡 **Auto-logging**: This is the fastest way to log completed work
+
+💡 **Fuzzy search**: Use `--search` when you don't remember the task ID
+
+💡 **Standup ready**: Completed tasks appear in `dwriter standup` output
+"""
+
+    def _get_standup_content(self) -> str:
+        return """# `dwriter standup`
+
+Generate a standup summary from yesterday's entries.
+
+---
+
+## Usage
+
+```bash
+dwriter standup [OPTIONS]
+```
+
+## Options
+
+| Option | Description |
+|--------|-------------|
+| `--format <FORMAT>` | Output format: `slack` (default), `jira`, `markdown`, `plain` |
+| `--with-todos` | Include completed tasks in the summary |
+| `--no-copy` | Don't copy to clipboard |
+
+## Examples
+
+### Generate standup (default Slack format)
+```bash
+dwriter standup
+```
+
+### Different formats
+```bash
+dwriter standup --format slack
+dwriter standup --format jira
+dwriter standup --format markdown
+dwriter standup --format plain
+```
+
+### Include completed todos
+```bash
+dwriter standup --with-todos
+```
+
+### Don't copy to clipboard
+```bash
+dwriter standup --no-copy
+```
+
+## Output Formats
+
+### Slack (default)
+```
+*Yesterday's Progress:*
+• fixed the race condition in auth
+• implemented feature X
+• reviewed PR #123
+```
+
+### Markdown
+```markdown
+## Yesterday's Progress
+
+- fixed the race condition in auth
+- implemented feature X
+- reviewed PR #123
+```
+
+## Tips
+
+💡 **Auto-copy**: Output is automatically copied to clipboard (use `--no-copy` to disable)
+
+💡 **Yesterday only**: By default, shows entries from the previous day
+
+💡 **Format once**: Generate in markdown for documentation, Slack for chat
+"""
+
+    def _get_review_content(self) -> str:
+        return """# `dwriter review`
+
+Generate a multi-day period review.
+
+---
+
+## Usage
+
+```bash
+dwriter review [OPTIONS]
+```
+
+## Options
+
+| Option | Description |
+|--------|-------------|
+| `--days <N>` | Number of days to review (default: 5) |
+| `--format <FORMAT>` | Output format: `markdown`, `plain`, `slack` |
+
+## Examples
+
+### Review last 5 days (default)
+```bash
+dwriter review
+```
+
+### Review last 7 days
+```bash
+dwriter review --days 7
+```
+
+### Review last 14 days
+```bash
+dwriter review --days 14
+```
+
+### Markdown format
+```bash
+dwriter review --format markdown
+```
+
+### Plain text format
+```bash
+dwriter review --format plain
+```
+
+## Output Structure
+
+```
+## Period Review (Last N Days)
+
+### Summary
+- Total entries: X
+- Days active: Y/N
+- Top projects: ...
+
+### Entries by Day
+[Day-by-day breakdown]
+
+### Top Tags
+[tag usage statistics]
+```
+
+## Tips
+
+💡 **Weekly reviews**: Use `--days 7` for weekly retrospectives
+
+💡 **Timesheet prep**: Great for generating weekly timesheets
+
+💡 **Pattern spotting**: Review longer periods to spot work patterns
+"""
+
+    def _get_stats_content(self) -> str:
+        return """# `dwriter stats`
+
+Launch the interactive statistics dashboard.
+
+---
+
+## Usage
+
+```bash
+dwriter stats
+```
+
+## Dashboard Features
+
+### Overview Tab
+- **KPI Cards**: Total entries, current streak, longest streak, consistency %
+- **Contribution Calendar**: GitHub-style activity heatmap
+- **Streak Tracking**: Current and longest logging streaks
+
+### Activity Tab
+- **Weekly Chart**: Bar chart showing entries per day (last 30 days)
+- **Top Projects**: Table of most-used projects
+- **Top Tags**: Table of most-used tags
+
+## Keybindings
+
+| Key | Action |
+|-----|--------|
+| `Tab` | Navigate between sections |
+| `r` | Refresh data |
+| `q/Esc` | Quit |
+
+## Tips
+
+💡 **Motivation**: Watch your streak grow to stay consistent
+
+💡 **Insights**: Identify which projects/tags get the most attention
+
+💡 **Consistency**: Aim for daily entries to build the habit
+"""
+
+    def _get_edit_content(self) -> str:
+        return """# `dwriter edit`
+
+Edit journal entries interactively.
+
+---
+
+## Usage
+
+```bash
+dwriter edit [OPTIONS]
+```
+
+## Options
+
+| Option | Description |
+|--------|-------------|
+| `--id <ID>` | Edit a specific entry by ID |
+| `--search <QUERY>` | Search and edit an entry |
+| `--date <DATE>` | Edit entries from a specific date |
+
+## Examples
+
+### Launch interactive editor (today's entries)
+```bash
+dwriter edit
+```
+
+### Edit specific entry by ID
+```bash
+dwriter edit --id 42
+```
+
+### Search and edit
+```bash
+dwriter edit --search "redis cache"
+```
+
+### Edit entries from specific date
+```bash
+dwriter edit --date 2025-01-15
+```
+
+## Keybindings (Interactive Mode)
+
+| Key | Action |
+|-----|--------|
+| `j/k` | Navigate down/up |
+| `e/Enter` | Edit entry content |
+| `t` | Edit tags |
+| `p` | Edit project |
+| `d` | Delete entry |
+| `r` | Refresh list |
+| `q/Esc` | Quit |
+
+## Tips
+
+💡 **Today only**: Default view shows only today's entries
+
+💡 **Quick delete**: Use `dwriter undo` to quickly delete the last entry
+
+💡 **Bulk cleanup**: Use `dwriter delete --before <date>` for old entries
+"""
+
+    def _get_delete_content(self) -> str:
+        return """# `dwriter delete`
+
+Bulk delete old journal entries.
+
+---
+
+## Usage
+
+```bash
+dwriter delete [OPTIONS]
+```
+
+## Options
+
+| Option | Description |
+|--------|-------------|
+| `--before <DATE>` | Delete all entries before this date |
+| `--force` | Skip confirmation prompt |
+
+## Examples
+
+### Delete entries older than a date
+```bash
+dwriter delete --before 2025-01-01
+```
+
+### Delete with confirmation
+```bash
+dwriter delete --before 2024-06-01 --force
+```
+
+## ⚠️ Warning
+
+This action is **permanent** and cannot be undone. Always:
+
+1. Review what will be deleted first
+2. Consider exporting important entries
+3. Use `--force` only when certain
+
+## Tips
+
+💡 **Yearly cleanup**: Run annually to remove old entries
+
+💡 **Check first**: Run `dwriter` to review entries before deleting
+
+💡 **Backup**: Consider backing up your database before bulk operations
+"""
+
+    def _get_undo_content(self) -> str:
+        return """# `dwriter undo`
+
+Quickly delete the most recent entry.
+
+---
+
+## Usage
+
+```bash
+dwriter undo
+```
+
+## Description
+
+Instantly removes the last logged journal entry. This is a quick way to fix mistakes without going through the interactive editor.
+
+## Examples
+
+### Undo last entry
+```bash
+dwriter undo
+```
+
+## What Gets Deleted
+
+The most recently created entry, regardless of:
+- Date assigned
+- Tags
+- Project
+
+## ⚠️ Warning
+
+- **Single entry only**: Only deletes the very last entry
+- **No confirmation**: Deletes immediately
+- **Cannot be reversed**: Make sure this is what you want
+
+## Tips
+
+💡 **Quick fix**: Perfect for accidental double-entries
+
+💡 **Mistake recovery**: Use right after realizing an error
+
+💡 **Safer alternative**: Use `dwriter edit` for more control
+"""
+
+    def _get_search_content(self) -> str:
+        return """# `dwriter search`
+
+Fuzzy search through entries and todos.
+
+---
+
+## Usage
+
+```bash
+dwriter search [QUERY] [OPTIONS]
+```
+
+## Options
+
+| Option | Description |
+|--------|-------------|
+| `-p, --project <PROJECT>` | Filter by project |
+| `-t, --tag <TAG>` | Filter by tag |
+| `--type <TYPE>` | Search type: `all`, `entry`, `todo` |
+| `-n, --limit <N>` | Limit number of results |
+
+## Examples
+
+### Launch interactive search
+```bash
+dwriter search
+```
+
+### Fuzzy search
+```bash
+dwriter search "auth bug"
+```
+
+### Filter by project
+```bash
+dwriter search "refactor" -p my_project
+```
+
+### Filter by tag
+```bash
+dwriter search "cache" -t backend
+```
+
+### Search only todos
+```bash
+dwriter search "cache" --type todo
+```
+
+### Limit results
+```bash
+dwriter search "meeting" -n 5
+```
+
+## Keybindings (Interactive Mode)
+
+| Key | Action |
+|-----|--------|
+| `j/k` | Navigate down/up |
+| `Enter` | Select item (copy content) |
+| `/` | Focus search input |
+| `Ctrl+N` | Toggle search type |
+| `q/Esc` | Quit |
+
+## Match Scores
+
+- 🟢 **90%+**: Excellent match
+- 🟡 **75%+**: Good match
+- ⚪ **60%+**: Weak match
+
+## Tips
+
+💡 **Fuzzy matching**: Forgives typos and partial matches
+
+💡 **Filter first**: Use `-p` and `-t` to narrow results before searching
+
+💡 **Real-time**: Results update as you type in interactive mode
+"""
+
+    def _get_timer_content(self) -> str:
+        return """# `dwriter timer`
+
+Pomodoro-style focus timer.
+
+---
+
+## Usage
+
+```bash
+dwriter timer [MINUTES] [OPTIONS]
+```
+
+## Options
+
+| Option | Description |
+|--------|-------------|
+| `-t, --tag <TAG>` | Add tags to the session log |
+| `-p, --project <PROJECT>` | Assign session to a project |
+
+## Examples
+
+### Start default 25-minute timer
+```bash
+dwriter timer
+```
+
+### Custom duration
+```bash
+dwriter timer 30
+dwriter timer 45
+```
+
+### With tags and project
+```bash
+dwriter timer 45 -t deepwork -p backend
+```
+
+## Keybindings
+
+| Key | Action |
+|-----|--------|
+| `Space` | Pause/Resume timer |
+| `+` | Add 5 minutes |
+| `-` | Subtract 5 minutes |
+| `Enter` | Finish session early |
+| `q/Esc` | Quit |
+
+## What Happens on Completion
+
+When the timer finishes:
+
+1. ⏱️ Session completes
+2. 📝 Journal entry is created: `"Completed X minute focus session"`
+3. 🏷️ Tags and project are preserved
+
+## Tips
+
+💡 **Pomodoro technique**: Default 25 minutes follows the classic method
+
+💡 **Auto-logging**: Completed sessions automatically log to your journal
+
+💡 **Adjust on the fly**: Use `+` and `-` to extend or shorten sessions
+"""
+
+    def _get_config_content(self) -> str:
+        return """# `dwriter config`
+
+View and manage configuration.
+
+---
+
+## Usage
+
+```bash
+dwriter config <COMMAND>
+```
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `show` | Display current configuration |
+| `edit` | Open config file in editor |
+| `reset` | Reset to default values |
+| `path` | Show config file location |
+
+## Examples
+
+### View current config
+```bash
+dwriter config show
+```
+
+### Edit configuration
+```bash
+dwriter config edit
+```
+
+### Reset to defaults
+```bash
+dwriter config reset
+```
+
+### Show config file path
+```bash
+dwriter config path
+```
+
+## Configuration File
+
+Location: `~/.dwriter/config.toml`
+
+### Example Configuration
+
+```toml
+[defaults]
+project = "myapp"
+tags = ["work"]
+
+[display]
+show_id = true
+show_time = true
+
+[standup]
+format = "slack"
+copy_to_clipboard = true
+```
+
+## Tips
+
+💡 **Set defaults**: Configure default project and tags to speed up logging
+
+💡 **Customize display**: Toggle ID and time display preferences
+
+💡 **Format preferences**: Set your preferred standup output format
+"""
+
+    def _get_help_content(self) -> str:
+        return """# `dwriter help`
+
+Access interactive help and documentation.
+
+---
+
+## Usage
+
+```bash
+dwriter help [OPTIONS]
+```
+
+## Options
+
+| Option | Description |
+|--------|-------------|
+| `--plain` | Show plain text help (for piping/grep) |
+
+## Examples
+
+### Launch interactive help browser
+```bash
+dwriter help
+```
+
+### Plain text help
+```bash
+dwriter help --plain
+```
+
+### Pipe to grep
+```bash
+dwriter help --plain | grep -i "tag"
+```
+
+## Interactive Features
+
+### Navigation
+- **Tabbed interface**: Browse by category
+- **Nested tabs**: Drill down to specific commands
+- **Keyboard shortcuts**: Quick navigation with number keys
+
+### Content
+- **Command reference**: Full documentation for each command
+- **Usage examples**: Practical examples for common tasks
+- **Tips and tricks**: Helpful hints for efficient usage
+
+## Keybindings
+
+| Key | Action |
+|-----|--------|
+| `1-8` | Switch to category tab |
+| `Tab` | Cycle through tabs |
+| `t` | Toggle table of contents |
+| `q/Esc` | Quit |
+
+## Tips
+
+💡 **Explore**: Browse all commands to discover features
+
+💡 **Search**: Use `--plain` with grep to find specific topics
+
+💡 **Quick reference**: Keep this handy when learning dwriter
+"""
 
     def action_switch_tab(self, index: int) -> None:
         """Switch to tab by index."""
         tabbed = self.query_one(TabbedContent)
-        tabs = ["logging", "todos", "reports", "editing", "search", "timer", "config", "help"]
+        tabs = ["logging", "todos", "reports", "editing",
+                "search", "timer", "config", "help"]
         if 0 <= index < len(tabs):
             tabbed.active = tabs[index]
 
     def action_next_tab(self) -> None:
         """Cycle to the next tab."""
         tabbed = self.query_one(TabbedContent)
-        tabs = ["logging", "todos", "reports", "editing", "search", "timer", "config", "help"]
+        tabs = ["logging", "todos", "reports", "editing",
+                "search", "timer", "config", "help"]
         current_idx = tabs.index(tabbed.active)
         next_idx = (current_idx + 1) % len(tabs)
         tabbed.active = tabs[next_idx]
@@ -209,118 +1029,18 @@ class HelpScreen(Screen[Any]):
     def action_toggle_toc(self) -> None:
         """Toggle the Table of Contents sidebar."""
         tabbed = self.query_one(TabbedContent)
-        viewer = self.query_one(f"#{tabbed.active}-viewer", MarkdownViewer)
-        viewer.show_table_of_contents = not viewer.show_table_of_contents
-
-    def action_show_help(self) -> None:
-        """Show contextual help overlay."""
-        tab_help = {
-            "logging": (
-                "Logging Commands",
-                [
-                    ("j/k", "cursor_down/up", "Navigate entries"),
-                    ("Enter", "select", "Select item"),
-                    ("/", "focus_search", "Focus search"),
-                ],
-                [
-                    "Use 'dwriter add' for quick logging without TUI",
-                    "Tags use -t flag, projects use -p flag",
-                    "Dates support natural language (yesterday, last Monday)",
-                ],
-            ),
-            "todos": (
-                "Todo Commands",
-                [
-                    ("j/k", "cursor_down/up", "Navigate tasks"),
-                    ("Space", "toggle_complete", "Mark complete"),
-                    ("e", "edit", "Edit task"),
-                    ("+/-", "change_priority", "Change priority"),
-                ],
-                [
-                    "Completed tasks auto-log to journal",
-                    "Priority: urgent > high > normal > low",
-                ],
-            ),
-            "reports": (
-                "Reports & Summaries",
-                [
-                    ("j/k", "cursor_down/up", "Navigate sections"),
-                    ("t", "toggle_toc", "Toggle ToC"),
-                ],
-                [
-                    "standup: Yesterday's work summary",
-                    "review: Multi-day period review",
-                    "Use --format for Slack/Jira/Markdown output",
-                ],
-            ),
-            "editing": (
-                "Editing Commands",
-                [
-                    ("j/k", "cursor_down/up", "Navigate entries"),
-                    ("e/Enter", "edit_content", "Edit content"),
-                    ("t", "edit_tags", "Edit tags"),
-                    ("p", "edit_project", "Edit project"),
-                    ("d", "delete", "Delete entry"),
-                ],
-                [
-                    "Use 'dwriter undo' for quick last-entry deletion",
-                    "Edit TUI shows only today's entries by default",
-                ],
-            ),
-            "search": (
-                "Search",
-                [
-                    ("j/k", "cursor_down/up", "Navigate results"),
-                    ("Enter", "select", "Copy to clipboard"),
-                    ("/", "focus_search", "Focus search"),
-                    ("Ctrl+N", "toggle_type", "Toggle search type"),
-                ],
-                [
-                    "Fuzzy matching forgives typos",
-                    "Filter by project/tag before searching",
-                    "Match scores: 🟢90%+ 🟡75%+ ⚪60%+",
-                ],
-            ),
-            "timer": (
-                "Timer",
-                [
-                    ("space", "toggle_pause", "Pause/Resume"),
-                    ("+", "add_time", "Adjust time (+5min)"),
-                    ("-", "subtract_time", "Adjust time (-5min)"),
-                    ("enter", "finish", "Finish early"),
-                ],
-                [
-                    "Default session: 25 minutes",
-                    "Completed sessions auto-log to journal",
-                ],
-            ),
-            "config": (
-                "Configuration",
-                [
-                    ("j/k", "cursor_down/up", "Navigate options"),
-                ],
-                [
-                    "Config stored in ~/.dwriter/config.toml",
-                    "Set defaults for project, tags, formats",
-                    "Use 'dwriter config edit' for manual editing",
-                ],
-            ),
-            "help": (
-                "Help & Documentation",
-                [
-                    ("j/k", "cursor_down/up", "Navigate sections"),
-                    ("t", "toggle_toc", "Toggle ToC"),
-                ],
-                [
-                    "Use 'dwriter examples' for workflow examples",
-                    "Press ? in any TUI for contextual help",
-                ],
-            ),
-        }
-
-        tab_id = self.query_one(TabbedContent).active
-        title, bindings, tips = tab_help.get(tab_id, ("Help", [], []))
-        self.push_screen(HelpOverlay(title=title, bindings=bindings, tips=tips))  # type: ignore[attr-defined]
+        active_category = tabbed.active
+        
+        # Find the first subtab for this category
+        for _label, tab_id, subtabs in self.CATEGORY_CONFIG:
+            if tab_id == active_category and subtabs:
+                subtab_id = f"{active_category}-{subtabs[0]}"
+                try:
+                    viewer = self.query_one(f"#{subtab_id}-viewer", MarkdownViewer)
+                    viewer.show_table_of_contents = not viewer.show_table_of_contents
+                except Exception:
+                    pass
+                break
 
 
 class HelpApp(App[None]):

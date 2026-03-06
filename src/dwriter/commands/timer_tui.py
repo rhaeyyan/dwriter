@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import Any
 
 from textual.app import App, ComposeResult
+from textual.binding import Binding
 from textual.containers import Container, Vertical
 from textual.screen import ModalScreen
 from textual.widgets import (
@@ -20,8 +21,6 @@ from textual.widgets import (
     Static,
 )
 from rich.text import Text
-
-from ..ui_utils import HelpOverlay
 
 
 class TomatoProgressBar(Static):
@@ -320,13 +319,13 @@ class TimerApp(App):  # type: ignore[type-arg]
     """
 
     BINDINGS = [
-        ("space", "toggle_pause", "Pause/Resume"),
-        ("+", "add_5_min", "+5 min"),
-        ("-", "subtract_5_min", "-5 min"),
-        ("enter", "finish", "Finish"),
-        ("q", "quit", "Quit"),
-        ("escape", "quit", "Quit"),
-        ("?", "show_help", "Help"),
+        Binding("space", "toggle_pause", "Pause/Resume"),
+        Binding("+", "add_5_min", "+5 min"),
+        Binding("-", "subtract_5_min", "-5 min"),
+        Binding("enter", "finish", "Finish"),
+        Binding("q", "quit", "Quit"),
+        Binding("escape", "quit", "Quit"),
+        Binding("?", "goto_help", "Help", show=True),
     ]
 
     def __init__(
@@ -763,22 +762,7 @@ class TimerApp(App):  # type: ignore[type-arg]
         else:
             self._show_quit_confirmation()
 
-    def action_show_help(self) -> None:
-        """Show contextual help overlay."""
-        self.push_screen(
-            HelpOverlay(
-                title="⏱️ Timer",
-                bindings=[
-                    ("space", "toggle_pause", "Pause/Resume timer"),
-                    ("+", "add_5_min", "Add 5 minutes"),
-                    ("-", "subtract_5_min", "Subtract 5 minutes"),
-                    ("enter", "finish", "Finish session early"),
-                ],
-                tips=[
-                    "Default session: 25 minutes (Pomodoro technique)",
-                    "Completed sessions auto-log to your journal",
-                    "Green buttons (+) add time, red buttons (-) subtract time",
-                    "Progress: mm:ss [ ▮▮🍅▯▯ ] percentage",
-                ],
-            )
-        )
+    def action_goto_help(self) -> None:
+        """Navigate to the help TUI."""
+        from .help_tui import HelpScreen
+        self.app.push_screen(HelpScreen())
