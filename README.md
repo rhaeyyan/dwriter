@@ -51,10 +51,10 @@ git clone https://github.com/yourusername/dwriter.git && cd dwriter
 *   **macOS / Linux (Debian/Mint)**:
     Open your terminal and run:
     ```bash
-    # (Debian/Mint users: sudo apt install xclip if clipboard fails)
     uv venv && source .venv/bin/activate
     uv pip install -e ".[dev]"
     ```
+Debian/Mint users: `sudo apt install xclip` if clipboard fails)
 
 ---
 
