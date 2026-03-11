@@ -8,7 +8,7 @@ dwriter is for anyone who wants a quiet, distraction-free space to track their t
 dwriter was built for people who are tired of bloated web apps and endless clicking:
 
 - 🎨 Freelancers & Creatives: Writers, designers, and consultants who need to effortlessly log billable hours and pull a summary of what they actually worked on this week.
-- 📚 Students: Run Pomodoro study sessions, manage assignment to-dos, and track exactly how much time you're dedicating to different subjects.
+- 📚 Students: Run focus timer study sessions, manage assignment to-dos, and track exactly how much time you're dedicating to different subjects.
 - ✍️ Journalers & Reflectors: Use the standup and review features to easily recall what you did yesterday, making evening journaling or habit tracking a breeze.
 - 🌱 Hobbyists & Makers: Whether you're tracking the daily growth of your garden, building furniture, or learning a language, log your milestones in seconds without leaving your keyboard.
 
@@ -29,13 +29,13 @@ If you want a minimalist, beautiful productivity suite that gets out of your way
   - [Generation and Summaries](#generation-and-summaries)
   - [Management and Configuration](#management-and-configuration)
   - [Task Management (Todo)](#task-management-todo)
-  - [Focus Timer (Pomodoro)](#focus-timer-pomodoro)
+  - [Timer](#timer)
   - [Search](#search)
 - [🎨 Interactive TUI](#-interactive-tui)
   - [🔍 Interactive Search](#-interactive-search-dwriter-search)
   - [📋 Interactive Todo Board](#-interactive-todo-board-dwriter-todo)
   - [✏️ Edit Entries](#-edit-entries-dwriter-edit)
-  - [⏱️ Focus Timer](#-focus-timer-dwriter-focus)
+  - [⏱️ Timer](#-timer-dwriter-timer)
   - [📊 Dashboard](#-dashboard-dwriter-stats)
 - [⚙️ Configuration](#-configuration)
 - [💻 Developer Commands](#-developer-commands)
@@ -54,7 +54,7 @@ If you want a minimalist, beautiful productivity suite that gets out of your way
 * **🔥 Streak Tracking:** Keep your momentum high with a built-in logging streak counter.
 * **🔍 Fuzzy Search:** Find past entries and tasks with typo-tolerant fuzzy matching.
 * **🎨 Interactive TUI:** Real-time search and todo management with keyboard navigation.
-* **⏱️ Focus Timer:** Built-in Pomodoro timer that auto-logs completed sessions.
+* **⏱️ Timer:** Built-in focus timer that auto-logs completed sessions.
 * **✅ Todo Management:** Track pending tasks with priorities and auto-log when completed.
 
 ---
@@ -413,31 +413,31 @@ dwriter done 5
 > dwriter todo --priority urgent -t bug "Fix card draw bug"  # Also works
 > ```
 
-### Focus Timer (Pomodoro)
+### Timer
 
-Run a focus timer and log the result when finished. Launches an interactive TUI with pause/resume capability.
+Run a timer and log the result when finished. Launches an interactive TUI with pause/resume capability.
 
 | Command | Description |
 | --- | --- |
-| `dwriter focus` | Start a 25-minute focus timer (interactive TUI) |
-| `dwriter focus MINUTES` | Start a custom duration timer |
-| `dwriter focus MINUTES -t TAG` | Add tags to the resulting entry |
-| `dwriter focus MINUTES -p PROJECT` | Add project to the resulting entry |
+| `dwriter timer` | Start a 25-minute timer (interactive TUI) |
+| `dwriter timer MINUTES` | Start a custom duration timer |
+| `dwriter timer MINUTES -t TAG` | Add tags to the resulting entry |
+| `dwriter timer MINUTES -p PROJECT` | Add project to the resulting entry |
 
 #### Examples:
 
 ```bash
-dwriter focus
+dwriter timer
 
 ```
 
 ```bash
-dwriter focus 30
+dwriter timer 30
 
 ```
 
 ```bash
-dwriter focus 45 -t deepwork -p backend
+dwriter timer 45 -t deepwork -p backend
 
 ```
 
@@ -570,9 +570,9 @@ Launch with `dwriter edit` (no arguments).
 | `r` | Refresh list |
 | `q` / `Esc` | Quit |
 
-### ⏱️ Focus Timer (`dwriter focus`)
+### ⏱️ Timer (`dwriter timer`)
 
-Launch with `dwriter focus [MINUTES]`.
+Launch with `dwriter timer [MINUTES]`.
 
 **Features:**
 - Large digital countdown timer
