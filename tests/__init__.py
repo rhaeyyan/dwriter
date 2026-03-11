@@ -1,1 +1,1 @@
-"""Tests for Day Writer."""
+"""Tests for dwriter."""

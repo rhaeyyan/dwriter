@@ -1,4 +1,4 @@
-"""Config command for managing Day Writer configuration."""
+"""Config command for managing dwriter configuration."""
 
 from __future__ import annotations
 

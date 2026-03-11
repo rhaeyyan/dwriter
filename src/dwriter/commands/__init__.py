@@ -1,4 +1,4 @@
-"""CLI commands for Day Writer."""
+"""CLI commands for dwriter."""
 
 from .add import add
 from .config import config

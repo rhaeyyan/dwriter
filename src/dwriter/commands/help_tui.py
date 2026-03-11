@@ -913,7 +913,7 @@ dwriter search "meeting" -n 5
 
 ## Match Scores
 
-- 🟢 **90%+**: Excellent match (green)
+- 🟢 **90%+**: Excellent match (success)
 - 🟡 **75%+**: Good match (yellow)
 - ⚪ **60%+**: Weak match (dim)
 
@@ -989,16 +989,9 @@ When the timer finishes:
 ```
 15:00  [ ▮▮▮▮▮🥭▯▯▯▯▯▯▯▯▯▯▯▯▯▯▯ ]  40%
  ↑      ↑                    ↑    ↑
-time   green pips         dim   percentage
+time   pips                 dim   percentage
        mango at 40%
 ```
-
-### Color Gradient
-- 🟢 **Green** (0-25%): Fresh start
-- 🟡 **Yellow-Green** (25-50%): Getting going
-- 🟡 **Yellow** (50-75%): Halfway there
-- 🟠 **Orange** (75-85%): Almost done
-- 🔴 **Red** (85-100%): Final stretch
 
 ## Tips
 

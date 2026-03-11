@@ -1,4 +1,4 @@
-"""Configuration management for Day Writer.
+"""Configuration management for dwriter.
 
 This module handles loading, saving, and managing user configuration
 stored in TOML format.
@@ -123,7 +123,7 @@ class Config:
 
 
 class ConfigManager:
-    """Manages Day Writer configuration.
+    """Manages dwriter configuration.
 
     This class handles loading, saving, and accessing user configuration
     from the TOML config file.

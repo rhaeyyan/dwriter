@@ -72,7 +72,7 @@ class DWriterApp(App[None]):
     """
 
     TITLE = "dwriter"
-    SUB_TITLE = "Daily Writer"
+    SUB_TITLE = "dwriter"
 
     # Theme colors defined as class variables for use in CSS
     # Cyberpunk btop-inspired palette

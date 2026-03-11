@@ -144,33 +144,33 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
 
 [dim]A low-friction terminal journaling tool for developers.[/dim]
 
-[bold cyan]Quick Start:[/bold cyan]
+[bold #cba6f7]Quick Start:[/bold #cba6f7]
   [cyan]dwriter[/cyan]                    → Launch TUI
   [cyan]dwriter add "message"[/cyan]       → Quick log entry
   [cyan]dwriter todo "task"[/cyan]         → Add a todo
   [cyan]dwriter search "query"[/cyan]      → Fuzzy search
   [cyan]dwriter standup[/cyan]             → Yesterday's summary
-  [cyan]dwriter timer 25[/cyan]            → Start 25min timer
+  [cyan]dwriter timer [#89dceb]25[/#89dceb][/cyan]            → Start [#89dceb]25[/#89dceb]min timer
   [cyan]dwriter stats[/cyan]               → View dashboard
   [cyan]dwriter edit[/cyan]                → Edit entries
   [cyan]dwriter help[/cyan]                → This help screen
 
-[bold cyan]Omnibox Syntax (press / to focus):[/bold cyan]
-  [green]#tag[/green]               → Add tags (e.g., [green]#bug[/green], [green]#feature[/green])
+[bold #cba6f7]Omnibox Syntax (press / to focus):[/bold #cba6f7]
+  [yellow]#tag[/yellow]               → Add tags (e.g., [yellow]#bug[/yellow], [yellow]#feature[/yellow])
   [magenta]&project[/magenta]           → Add project (e.g., [magenta]&backend[/magenta])
-  [yellow]15[/yellow]                → Timer minutes (e.g., [yellow]25[/yellow])
+  [#89dceb]15[/#89dceb]                → Timer minutes (e.g., [#89dceb]25[/#89dceb])
 
-[bold cyan]Examples:[/bold cyan]
-  [green]#bug[/green] [magenta]&backend[/magenta] Fixed login issue
-  [green]#work[/green] [magenta]&frontend[/magenta] Implement new feature
-  [green]#deepwork[/green] [magenta]&research[/magenta] [yellow]25[/yellow] (25min timer)
-  [green]#meeting[/green] [magenta]&team[/magenta] Weekly standup notes
+[bold #cba6f7]Examples:[/bold #cba6f7]
+  [yellow]#bug[/yellow] [magenta]&backend[/magenta] Fixed login issue
+  [yellow]#work[/yellow] [magenta]&frontend[/magenta] Implement new feature
+  [yellow]#deepwork[/yellow] [magenta]&research[/magenta] [#89dceb]25[/#89dceb] (25min timer)
+  [yellow]#meeting[/yellow] [magenta]&team[/magenta] Weekly standup notes
 
-[bold cyan]TUI Screens:[/bold cyan]
-  [cyan]1[/cyan] → Dashboard (stats, calendar, activity)
-  [cyan]2[/cyan] → Logs (journal entries)
-  [cyan]3[/cyan] → Todo Board (task management)
-  [cyan]4[/cyan] → Timer (timer sessions)
+[bold #cba6f7]TUI Screens:[/bold #cba6f7]
+  [#89dceb]1[/#89dceb] → Dashboard (stats, calendar, activity)
+  [#89dceb]2[/#89dceb] → Logs (journal entries)
+  [#89dceb]3[/#89dceb] → Todo Board (task management)
+  [#89dceb]4[/#89dceb] → Timer (timer sessions)
 
 [dim]Press Tab to navigate between help topics[/dim]
 [dim]Press q or Esc to close[/dim]
@@ -181,34 +181,34 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
         return """
 [bold]TUI Navigation 🧭[/bold]
 
-[bold cyan]Global Keys (work everywhere):[/bold cyan]
+[bold #cba6f7]Global Keys (work everywhere):[/bold #cba6f7]
   [cyan]/[/cyan]              → Focus omnibox (quick-add bar at top)
   [cyan]Ctrl+P[/cyan]         → Open command palette
   [cyan]q[/cyan] or [cyan]Esc[/cyan]     → Quit current screen / Close modal
   [cyan]?[/cyan]              → Open this help screen
-  [cyan]1-4[/cyan]            → Switch between main screens
+  [#89dceb]1-4[/#89dceb]            → Switch between main screens
 
-[bold cyan]Screen Navigation:[/bold cyan]
-  [cyan]1[/cyan]              → 🏠 Dashboard (statistics & calendar)
-  [cyan]2[/cyan]              → 📓 Logs (journal entries view)
-  [cyan]3[/cyan]              → 📋 Todo Board (task management)
-  [cyan]4[/cyan]              → ⏱️ Timer (timer sessions)
+[bold #cba6f7]Screen Navigation:[/bold #cba6f7]
+  [#89dceb]1[/#89dceb]              → 🏠 Dashboard (statistics & calendar)
+  [#89dceb]2[/#89dceb]              → 📓 Logs (journal entries view)
+  [#89dceb]3[/#89dceb]              → 📋 Todo Board (task management)
+  [#89dceb]4[/#89dceb]              → ⏱️ Timer (timer sessions)
 
   [cyan]Tab[/cyan]            → Cycle to next tab (in tabbed views)
   [cyan]Shift+Tab[/cyan]      → Cycle to previous tab
 
-[bold cyan]List Navigation (within screens):[/bold cyan]
+[bold #cba6f7]List Navigation (within screens):[/bold #cba6f7]
   [cyan]j[/cyan] or [cyan]↓[/cyan]         → Move down in list
   [cyan]k[/cyan] or [cyan]↑[/cyan]         → Move up in list
   [cyan]Enter[/cyan]          → Select / Activate item
   [cyan]Home[/cyan] / [cyan]End[/cyan]    → Jump to start / end
 
-[bold cyan]Modal Dialogs:[/bold cyan]
+[bold #cba6f7]Modal Dialogs:[/bold #cba6f7]
   [cyan]Enter[/cyan]          → Confirm action (Save, OK, Yes)
   [cyan]Esc[/cyan]            → Cancel / Close modal
   [cyan]Tab[/cyan]            → Move to next input/button
 
-[bold cyan]Sidebar Navigation (if visible):[/bold cyan]
+[bold #cba6f7]Sidebar Navigation (if visible):[/bold #cba6f7]
   Click or use [cyan]j/k[/cyan] to navigate sidebar items
   Press [cyan]Enter[/cyan] to select highlighted option
 
@@ -224,37 +224,37 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
 [dim]The omnibox is the input bar at TOP of the screen.[/dim]
 [dim]Press [cyan]/[/cyan] to focus it.[/dim]
 
-[bold cyan]Log Entry (default on Dashboard/Logs screens):[/bold cyan]
-  Format: [green]#tag[/green] [magenta]&project[/magenta] Your entry text
-  Example: [green]#bug[/green] [magenta]&backend[/magenta] Fixed race condition
+[bold #cba6f7]Log Entry (default on Dashboard/Logs screens):[/bold #cba6f7]
+  Format: [yellow]#tag[/yellow] [magenta]&project[/magenta] Your entry text
+  Example: [yellow]#bug[/yellow] [magenta]&backend[/magenta] Fixed race condition
 
-[bold cyan]Add Todo (on Todo screen - multi-step workflow):[/bold cyan]
+[bold #cba6f7]Add Todo (on Todo screen - multi-step workflow):[/bold #cba6f7]
   Step 1: Enter task with optional tags/project
-    [green]#tag[/green] [magenta]&project[/magenta] Task description
+    [yellow]#tag[/yellow] [magenta]&project[/magenta] Task description
   Step 2: Add more tags/project (or press Enter to skip)
   Step 3: Set priority: [cyan]L[/cyan]=Low, [cyan]N[/cyan]=Normal
     [cyan]H[/cyan]=High, [cyan]U[/cyan]=Urgent
-  Step 4: Set due date: [cyan]tomorrow[/cyan], [cyan]+5d[/cyan], [cyan]2024-03-15[/cyan]
+  Step 4: Set due date: [cyan]tomorrow[/cyan], [#89dceb]+5d[/#89dceb], [#89dceb]2024-03-15[/#89dceb]
 
-[bold cyan]Start Timer (works from ANY screen):[/bold cyan]
-  Format: [green]#tag[/green] [magenta]&project[/magenta] [yellow]MINUTES[/yellow]
-  Example: [green]#deepwork[/green] [magenta]&research[/magenta] [yellow]25[/yellow]
-  Example: [green]#meeting[/green] [yellow]30[/yellow] (30-minute meeting)
+[bold #cba6f7]Start Timer (works from ANY screen):[/bold #cba6f7]
+  Format: [yellow]#tag[/yellow] [magenta]&project[/magenta] [#89dceb]MINUTES[/#89dceb]
+  Example: [yellow]#deepwork[/yellow] [magenta]&research[/magenta] [#89dceb]25[/#89dceb]
+  Example: [yellow]#meeting[/yellow] [#89dceb]30[/#89dceb] (30-minute meeting)
 
-[bold cyan]Special Syntax:[/bold cyan]
-  [green]#tag[/green] → Add tags (multiple: [green]#bug #urgent[/green])
+[bold #cba6f7]Special Syntax:[/bold #cba6f7]
+  [yellow]#tag[/yellow] → Add tags (multiple: [yellow]#bug #urgent[/yellow])
   [magenta]&project[/magenta] → Add project (use [magenta]&[/magenta] prefix)
   [cyan]YYYY-MM-DD[/cyan] → Log entry for specific date
-  [yellow]NUMBER[/yellow] → Timer minutes (on Timer screen)
+  [#89dceb]NUMBER[/#89dceb] → Timer minutes (on Timer screen)
 
-[bold cyan]Due Date Formats (for todos):[/bold cyan]
+[bold #cba6f7]Due Date Formats (for todos):[/bold #cba6f7]
   [cyan]tomorrow[/cyan], [cyan]today[/cyan], [cyan]yesterday[/cyan]
-  [cyan]+5d[/cyan] (5 days), [cyan]+1w[/cyan] (1 week), [cyan]+1m[/cyan] (1 month)
-  [cyan]3 days[/cyan], [cyan]2 weeks[/cyan]
+  [#89dceb]+5d[/#89dceb] (5 days), [#89dceb]+1w[/#89dceb] (1 week), [#89dceb]+1m[/#89dceb] (1 month)
+  [#89dceb]3 days[/#89dceb], [#89dceb]2 weeks[/#89dceb]
   [cyan]next Monday[/cyan], [cyan]last Friday[/cyan]
-  [cyan]2024-03-15[/cyan], [cyan]03/15/2024[/cyan]
+  [#89dceb]2024-03-15[/#89dceb], [#89dceb]03/15/2024[/#89dceb]
 
-[bold cyan]Priority Shortcuts:[/bold cyan]
+[bold #cba6f7]Priority Shortcuts:[/bold #cba6f7]
   [cyan]L[/cyan] → Low (dim display)
   [cyan]N[/cyan] → Normal (white display)
   [cyan]H[/cyan] → High (yellow display)
@@ -272,45 +272,45 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
 
 [dim]Your activity overview with behavioral insights and visualizations.[/dim]
 
-[bold cyan]Key Performance Indicators (KPIs):[/bold cyan]
+[bold #cba6f7]Key Performance Indicators (KPIs):[/bold #cba6f7]
   → [bold]Total Entries:[/bold] All-time count of journal entries.
   → [bold]Current Streak:[/bold] Consecutive days logged (up to today).
   → [bold]Longest Streak:[/bold] Your all-time record for consecutive logging.
-  → [bold]Consistency:[/bold] % of active days over the last 30 days. [dim](Aim for >80%)[/dim]
+  → [bold]Consistency:[/bold] % of active days over the last [#89dceb]30[/#89dceb] days. [dim](Aim for >[#89dceb]80%[/#89dceb])[/dim]
 
-[bold cyan]Behavioral Insights (Interpretation):[/bold cyan]
+[bold #cba6f7]Behavioral Insights (Interpretation):[/bold #cba6f7]
 
 [bold]🔄 Context Switches (Cognitive Load):[/bold]
   [dim]Measures the average number of unique projects you touch per day.[/dim]
-  → [green]Low (0-2):[/green] Deep focus. You are staying in the zone on few topics.
-  → [yellow]Med (3-4):[/yellow] Moderate load. Typical for multi-tasking days.
-  → [red]High (5+):[/red] Fragmentation. Frequent switching kills productivity.
+  → [#a6e3a1]Low[/#a6e3a1] [#89dceb](0-2)[/#89dceb]: Deep focus. You are staying in the zone on few topics.
+  → [yellow]Med[/yellow] [#89dceb](3-4)[/#89dceb]: Moderate load. Typical for multi-tasking days.
+  → [red]High[/red] [#89dceb](5+)[/#89dceb]: Fragmentation. Frequent switching kills productivity.
 
 [bold]⚙️ Friction Ratio (Project ROI):[/bold]
   [dim]Calculated as: (Journal Entries) / (Completed Tasks) per project.[/dim]
-  → [green]Avg Activity (<= 2.0):[/green] Lean execution. Logs align with results.
-  → [yellow]Prioritized (2.1 - 3.5):[/yellow] High documentation or complex tasks.
-  → [red]Time Hog (> 3.5):[/red] High friction. You are logging a lot but not finishing tasks. 
+  → [#a6e3a1]Avg Activity[/#a6e3a1] [#89dceb](<= 2.0)[/#89dceb]: Lean execution. Logs align with results.
+  → [yellow]Prioritized[/yellow] [#89dceb](2.1 - 3.5)[/#89dceb]: High documentation or complex tasks.
+  → [red]Time Hog[/red] [#89dceb](> 3.5)[/#89dceb]: High friction. You are logging a lot but not finishing tasks. 
     [dim]Tip: Break these tasks down into smaller, manageable pieces.[/dim]
 
 [bold]📋 To-do Health (Staleness):[/bold]
-  → [green]Fresh:[/green] Tasks added within the last 3 days.
-  → [yellow]Stale:[/yellow] Tasks sitting for 4-14 days.
-  → [red]Stuck:[/red] Tasks older than 2 weeks. [dim](Review or delete these!)[/dim]
+  → [#a6e3a1]Fresh[/#a6e3a1]: Tasks added within the last [#89dceb]3[/#89dceb] days.
+  → [yellow]Stale[/yellow]: Tasks sitting for [#89dceb]4-14[/#89dceb] days.
+  → [red]Stuck[/red]: Tasks older than [#89dceb]2[/#89dceb] weeks. [dim](Review or delete these!)[/dim]
 
 [bold]⚡ Workload & Throughput:[/bold]
   → [bold]Backlog:[/bold] The difference between tasks added vs. done this week.
   → [bold]Completion:[/bold] Your "Say-Do" ratio percentage.
   → [bold]Throughput:[/bold] Average tasks completed per day.
 
-[bold cyan]Visualizations:[/bold cyan]
-  → [bold]📅 History:[/bold] 365-day activity heatmap. Darker colors = more logs.
-  → [bold]📈 Trends:[/bold] 30-day sparkline showing daily activity volume.
-  → [bold]🏷️ Top Tags:[/bold] Your most active topics over the last 30 days.
+[bold #cba6f7]Visualizations:[/bold #cba6f7]
+  → [bold]📅 History:[/bold] [#89dceb]365[/#89dceb]-day activity heatmap. Darker colors = more logs.
+  → [bold]📈 Trends:[/bold] [#89dceb]30[/#89dceb]-day sparkline showing daily activity volume.
+  → [bold]🏷️ Top Tags:[/bold] Your most active topics over the last [#89dceb]30[/#89dceb] days.
 
-[bold cyan]Navigation:[/bold cyan]
+[bold #cba6f7]Navigation:[/bold #cba6f7]
   [cyan]r[/cyan]              → Refresh all analytics
-  [cyan]1 / 2[/cyan]          → Switch between [Overview] and [Activity Trends]
+  [#89dceb]1 / 2[/#89dceb]          → Switch between [Overview] and [Activity Trends]
   [cyan]Tab[/cyan]            → Cycle focus between charts
 """
         # fmt: on
@@ -323,13 +323,13 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
 
 [dim]Task management with priorities, due dates, and auto-logging.[/dim]
 
-[bold cyan]Adding Todos:[/bold cyan]
+[bold #cba6f7]Adding Todos:[/bold #cba6f7]
   Via omnibox (on Todo screen):
     Press [cyan]/[/cyan] → Type task → Enter multi-step workflow
   Via CLI:
     [cyan]dwriter todo "task" --priority high --due tomorrow[/cyan]
 
-[bold cyan]Key Bindings:[/bold cyan]
+[bold #cba6f7]Key Bindings:[/bold #cba6f7]
   [cyan]j/k[/cyan]            → Navigate up/down
   [cyan]Space[/cyan] / [cyan]Enter[/cyan]   → Mark complete (auto-logs to journal!)
   [cyan]e[/cyan]              → Edit task (content, due, tags, project)
@@ -338,37 +338,37 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
   [cyan]a[/cyan]              → Add new task (modal dialog)
   [cyan]1/2/3[/cyan]          → Switch tabs
 
-[bold cyan]Tabs:[/bold cyan]
+[bold #cba6f7]Tabs:[/bold #cba6f7]
   [cyan]⏳ Pending (X)[/cyan]    → All pending tasks (shows count)
-  [cyan]📅 Upcoming (Y)[/cyan]   → Due today, tomorrow, next 2 days
+  [cyan]📅 Upcoming (Y)[/cyan]   → Due today, tomorrow, next [#89dceb]2[/#89dceb] days
   [cyan]✓ Completed (Z)[/cyan]   → Completed tasks with completion date
 
-[bold cyan]Display Format:[/bold cyan]
-  [cyan]\\[5d\\][/cyan] [yellow]\\[H\\][/yellow] Task description [yellow]#tag1 #tag2[/yellow] [magenta]: Project[/magenta]
+[bold #cba6f7]Display Format:[/bold #cba6f7]
+  [#89dceb]\\[5d\\][/#89dceb] [yellow]\\[H\\][/yellow] Task description [yellow]#tag1 #tag2[/yellow] [magenta]: Project[/magenta]
   ↑      ↑            ↑                    ↑
   Due    Priority   Content            Tags & Project
 
-[bold cyan]Priority Colors:[/bold cyan]
+[bold #cba6f7]Priority Colors:[/bold #cba6f7]
   [red]\\[U\\][/red] Urgent    → Critical tasks
   [yellow]\\[H\\][/yellow] High      → Important tasks
   [white]\\[N\\][/white] Normal    → Regular tasks
   [dim]\\[L\\][/dim] Low       → When time permits
 
-[bold cyan]Due Date Display:[/bold cyan]
+[bold #cba6f7]Due Date Display:[/bold #cba6f7]
   [red]\\[OVD\\][/red]       → Overdue (past due, appears FIRST!)
   [bold yellow]\\[TDY\\][/bold yellow]     → Due today
   [yellow]\\[TMR\\][/yellow]       → Due tomorrow
-  [cyan]\\[5d\\][/cyan] / [cyan]\\[2m\\][/cyan]   → Days/months until due
+  [#89dceb]\\[5d\\][/#89dceb] / [#89dceb]\\[2m\\][/#89dceb]   → Days/months until due
   [dim]\\[---\\][/dim]       → No due date set
 
-[bold cyan]Edit Dialog (press e):[/bold cyan]
+[bold #cba6f7]Edit Dialog (press e):[/bold #cba6f7]
   → Content: Task description
-  → Due Date: YYYY-MM-DD, tomorrow, +5d, +1w, etc.
+  → Due Date: YYYY-MM-DD, tomorrow, [#89dceb]+5d[/#89dceb], [#89dceb]+1w[/#89dceb], etc.
   → Tags: Comma-separated (e.g., work, urgent)
   → Project: Single project name
 
 [dim]Tip: Completing a task auto-logs to your journal![/dim]
-[dim]Format: "✓ Task content #tag : project"[/dim]
+[dim]Format: "✓ Task content [yellow]#tag[/yellow] : project"[/dim]
 """
         # fmt: on
 
@@ -380,36 +380,28 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
 
 [dim]Timer-style focused work sessions with automatic logging.[/dim]
 
-[bold cyan]Starting a Timer:[/bold cyan]
-  Via omnibox (any screen): [green]#tag[/green] [magenta]&project[/magenta] [yellow]25[/yellow]
-  Via CLI: [cyan]dwriter timer 25 -t tag -p project[/cyan]
+[bold #cba6f7]Starting a Timer:[/bold #cba6f7]
+  Via omnibox (any screen): [yellow]#tag[/yellow] [magenta]&project[/magenta] [#89dceb]25[/#89dceb]
+  Via CLI: [cyan]dwriter timer [#89dceb]25[/#89dceb] -t tag -p project[/cyan]
   Via TUI: Navigate → Adjust time → Start
 
-[bold cyan]Controls:[/bold cyan]
+[bold #cba6f7]Controls:[/bold #cba6f7]
   [cyan]Space[/cyan]          → Start / Pause timer
-  [cyan]+/-[/cyan]            → Add / Subtract 5 minutes
+  [cyan]+/-[/cyan]            → Add / Subtract [#89dceb]5[/#89dceb] minutes
   [cyan]Enter[/cyan]          → Finish session early
   [cyan]q/Esc[/cyan]          → Quit (prompts to log)
 
-[bold cyan]When Timer Completes:[/bold cyan]
+[bold #cba6f7]When Timer Completes:[/bold #cba6f7]
   → Modal prompts for session log entry
   → Tags & project auto-inherited
   → Entry logged with timestamp
 
-[bold cyan]Display Format:[/bold cyan]
-  [cyan]mm:ss[/cyan]  [ ▮▮▮🥭▯▯▯ ]  [cyan]40%[/cyan]
+[bold #cba6f7]Display Format:[/bold #cba6f7]
+  [cyan]mm:ss[/cyan]  [ ▮▮▮🥭▯▯▯ ]  [#89dceb]40%[/#89dceb]
   ↑ Time    ↑ Progress bar  ↑ Percentage
 
-  Session: [green]#tag1[/green] [green]#tag2[/green] | [magenta]project[/magenta]
+  Session: [yellow]#tag1[/yellow] [yellow]#tag2[/yellow] | [magenta]project[/magenta]
   ↑ Shows below pause button
-
-[bold cyan]Progress Bar Colors:[/bold cyan]
-  [green]▮[/green] Green (0-25%)    → Fresh start
-  [lime]▮[/lime] Lime (25-50%)    → Getting going
-  [yellow]▮[/yellow] Yellow (50-75%)  → Halfway there
-  [orange]▮[/orange] Orange (75-85%) → Almost done
-  [red]▮[/red] Red (85-100%)     → Final stretch
-  [magenta]🥭[/magenta] Mango = Current position
 
 [dim]Tip: Timer commands work from ANY screen via omnibox![/dim]
 """
@@ -422,7 +414,7 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
 
 [dim]Fuzzy search across entries and todos, plus logs view.[/dim]
 
-[bold cyan]Search Screen:[/bold cyan]
+[bold #cba6f7]Search Screen:[/bold #cba6f7]
 
 [bold]Starting Search:[/bold]
   Via CLI: [cyan]dwriter search "query"[/cyan]
@@ -444,11 +436,11 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
   [cyan]meeting[/cyan]       → Matches "team meeting notes"
 
 [bold]Match Scores:[/bold]
-  [green]90%+[/green]   → Excellent match (green)
+  [#a6e3a1]90%+[/#a6e3a1]   → Excellent match (light green)
   [yellow]75%+[/yellow]   → Good match (yellow)
   [dim]60%+[/dim]   → Partial match (dim)
 
-[bold cyan]Logs Screen:[/bold cyan]
+[bold #cba6f7]Logs Screen:[/bold #cba6f7]
 
 [bold]View Entries:[/bold]
   → Chronological list of all journal entries
@@ -467,8 +459,8 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
 
 [bold]Edit Entry Modal:[/bold]
   → Content: Entry text
-  → Date: YYYY-MM-DD, yesterday, 2 days ago, last Friday
-  → Time: HH:MM AM/PM or 24-hour format (or leave blank)
+  → Date: YYYY-MM-DD, yesterday, [#89dceb]2[/#89dceb] days ago, last Friday
+  → Time: HH:MM AM/PM or [#89dceb]24[/#89dceb]-hour format (or leave blank)
   → Tags: Comma-separated
   → Project: Single project name
 
@@ -481,23 +473,23 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
         return """
 [bold]Keyboard Shortcuts Reference ⌨️[/bold]
 
-[bold cyan]Global (All Screens):[/bold cyan]
+[bold #cba6f7]Global (All Screens):[/bold #cba6f7]
   [cyan]/[/cyan]              → Focus omnibox
   [cyan]Ctrl+P[/cyan]         → Command palette
   [cyan]q[/cyan] / [cyan]Esc[/cyan]       → Quit / Close
   [cyan]?[/cyan]              → Open help
-  [cyan]1[/cyan]              → Dashboard
-  [cyan]2[/cyan]              → Logs
-  [cyan]3[/cyan]              → Todo Board
-  [cyan]4[/cyan]              → Timer
+  [#89dceb]1[/#89dceb]              → Dashboard
+  [#89dceb]2[/#89dceb]              → Logs
+  [#89dceb]3[/#89dceb]              → Todo Board
+  [#89dceb]4[/#89dceb]              → Timer
 
-[bold cyan]Dashboard:[/bold cyan]
+[bold #cba6f7]Dashboard:[/bold #cba6f7]
   [cyan]r[/cyan]              → Refresh data
-  [cyan]1/2[/cyan]            → Switch tabs (Overview/Activity)
+  [#89dceb]1/2[/#89dceb]            → Switch tabs (Overview/Activity)
   [cyan]Tab[/cyan]            → Navigate sections
   [cyan]d[/cyan]              → Drill down (tag/project)
 
-[bold cyan]Logs:[/bold cyan]
+[bold #cba6f7]Logs:[/bold #cba6f7]
   [cyan]j/k[/cyan]            → Navigate entries
   [cyan]e/Enter[/cyan]        → Edit entry
   [cyan]t[/cyan]              → Edit tags
@@ -506,33 +498,33 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
   [cyan]r[/cyan]              → Refresh
   [cyan]/[/cyan]              → Focus search
 
-[bold cyan]Todo Board:[/bold cyan]
+[bold #cba6f7]Todo Board:[/bold #cba6f7]
   [cyan]a[/cyan]              → Add task
   [cyan]j/k[/cyan]            → Navigate tasks
   [cyan]Space/Enter[/cyan]    → Complete task (auto-logs!)
   [cyan]e[/cyan]              → Edit task
   [cyan]d[/cyan]              → Delete task
   [cyan]+/-[/cyan]            → Change priority
-  [cyan]1/2/3[/cyan]          → Switch tabs
+  [#89dceb]1/2/3[/#89dceb]          → Switch tabs
 
-[bold cyan]Timer:[/bold cyan]
+[bold #cba6f7]Timer:[/bold #cba6f7]
   [cyan]Space[/cyan]          → Start/Pause
-  [cyan]+/-[/cyan]            → Adjust time (±5 min)
+  [cyan]+/-[/cyan]            → Adjust time (±[#89dceb]5[/#89dceb] min)
   [cyan]Enter[/cyan]          → Finish early
   [cyan]q/Esc[/cyan]          → Quit (with prompt)
 
-[bold cyan]Search:[/bold cyan]
+[bold #cba6f7]Search:[/bold #cba6f7]
   [cyan]j/k[/cyan]            → Navigate results
   [cyan]Enter[/cyan]          → Select (copy)
   [cyan]/[/cyan]              → Focus search
   [cyan]Ctrl+N[/cyan]         → Toggle type
 
-[bold cyan]Omnibox:[/bold cyan]
+[bold #cba6f7]Omnibox:[/bold #cba6f7]
   [cyan]Enter[/cyan]          → Submit command
   [cyan]Esc[/cyan]            → Unfocus / Cancel
   [cyan]q[/cyan] (in workflow) → Cancel multi-step
 
-[bold cyan]Modal Dialogs:[/bold cyan]
+[bold #cba6f7]Modal Dialogs:[/bold #cba6f7]
   [cyan]Enter[/cyan]          → Confirm (Save/OK/Yes)
   [cyan]Esc[/cyan]            → Cancel / Close
   [cyan]Tab[/cyan]            → Next field/button
