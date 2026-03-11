@@ -14,33 +14,44 @@ A powerful, low-friction terminal journaling and task-tracking application built
 
 ### Setup
 
-Clone the repository and install dependencies:
+#### 1. Install `uv` (Recommended)
+`uv` is an extremely fast Python package manager that handles environments automatically.
 
+*   **Windows (PowerShell)**: `powershell -c "irm https://astral.sh/uv/install.ps1 | iex"`
+*   **macOS / Linux**: `curl -LsSf https://astral.sh/uv/install.sh | sh`
+
+#### 2. Clone and Enter
 ```bash
-# 1. Clone and enter the repository
 git clone https://github.com/yourusername/dwriter.git && cd dwriter
-
-# 2. Set up environment and install
-python -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev]"
 ```
 
-*Alternatively, with `uv`:*
-```bash
-uv venv && source .venv/bin/activate && uv pip install -e ".[dev]"
-```
+#### 3. Platform-Specific Installation
 
-### Launching the App
-Simply run the command to start the interactive TUI:
-```bash
-dwriter
-```
+*   **Windows 11**:
+    Open Terminal (PowerShell) and run:
+    ```powershell
+    uv venv && .\ .venv\Scripts\activate
+    uv pip install -e ".[dev]"
+    ```
+*   **macOS / Linux (Debian/Mint)**:
+    Open your terminal and run:
+    ```bash
+    # (Debian/Mint users: sudo apt install xclip if clipboard fails)
+    uv venv && source .venv/bin/activate
+    uv pip install -e ".[dev]"
+    ```
 
 ---
 
 ## 🖥️ The Unified TUI: Interactive Experience
 
 The `dwriter` TUI is a comprehensive command center for your daily workflow. It features a responsive, keyboard-optimized interface designed to minimize friction while providing deep insights into your productivity.
+
+### Launching the App
+Simply run this command to start the interactive TUI:
+```bash
+uv run dwriter
+```
 
 ### 🧩 Core Components
 
@@ -76,31 +87,31 @@ The `dwriter` TUI is a comprehensive command center for your daily workflow. It 
 ### 🪵 Quick Logging
 Log entries directly with tags and projects:
 ```bash
-dwriter add "Implemented user authentication" -t security -p myapp
-dwriter today  # List today's entries
+uv run dwriter add "Implemented user authentication" -t security -p myapp
+uv run dwriter today  # List today's entries
 ```
 
 ### 📋 Task Management
 Manage your todos without leaving your shell:
 ```bash
-dwriter todo add "Write unit tests" --priority high --due tomorrow
-dwriter todo list            # Show pending tasks in a formatted table
-dwriter done 42              # Mark task ID 42 as complete (logs it automatically!)
-dwriter done "fix bug" -s    # Fuzzy search for a task and mark as done
+uv run dwriter todo add "Write unit tests" --priority high --due tomorrow
+uv run dwriter todo list            # Show pending tasks in a formatted table
+uv run dwriter done 42              # Mark task ID 42 as complete (logs it automatically!)
+uv run dwriter done "fix bug" -s    # Fuzzy search for a task and mark as done
 ```
 
 ### 📊 Reports & Insights
 Generate standup summaries or view stats instantly:
 ```bash
-dwriter standup --format slack --with-todos  # Copies a formatted summary to clipboard
-dwriter review --days 7                      # Review everything from the last week
-dwriter stats                                # View quick productivity metrics
+uv run dwriter standup --format slack --with-todos  # Copies a formatted summary to clipboard
+uv run dwriter review --days 7                      # Review everything from the last week
+uv run dwriter stats                                # View quick productivity metrics
 ```
 
 ### ⏱️ Timers
 Start a timer session that logs to your database when finished:
 ```bash
-dwriter timer 25 -t deep-work -p project-x
+uv run dwriter timer 25 -t deep-work -p project-x
 ```
 
 ---
