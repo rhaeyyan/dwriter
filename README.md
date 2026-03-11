@@ -1,8 +1,8 @@
 # Day Writer (dwriter) ✍️
 
-**Version 3.0.0**
+**Version 3.0.1**
 
-A powerful, low-friction terminal journaling and task-tracking application built with Python, Textual, and SQLAlchemy. `dwriter` is designed for developers and power users who want an efficient keyboard-driven interface to manage their daily standups, pomodoro sessions, and to-do lists without leaving the terminal.
+A powerful, low-friction terminal journaling and task-tracking application built with Python, Textual, and SQLAlchemy. `dwriter` is designed for developers and power users who want an efficient keyboard-driven interface to manage their daily standups, productivity and break tracking timer sessions, and to-do lists without leaving the terminal.
 
 ---
 
@@ -53,7 +53,7 @@ The `dwriter` TUI is a comprehensive command center for your daily workflow. It 
     -   **Multi-step Creation**: Adding a task via the Omnibox triggers a guided workflow for tags, project, priority, and due date.
     -   **Priority Highlighting**: Tasks are color-coded (Red for Urgent, Yellow for High, White for Normal, Dim for Low).
     -   **Smart Filtering**: Quickly see what's pending, overdue, or upcoming.
-4.  **⏱️ Pomodoro Timer**: Stay focused with integrated work and break cycles.
+4.  **⏱️ Productivity & Break Timer**: Stay focused with integrated work and break cycles.
     -   **Session Logging**: Completed sessions are automatically logged with associated tags and projects.
     -   **Visual Feedback**: The navigation tab flashes when the timer is active.
 
@@ -62,7 +62,7 @@ The `dwriter` TUI is a comprehensive command center for your daily workflow. It 
 *   **Global Omnibox (`/`)**: The green bar at the top is the "Omnibox". Use it to log anything instantly without switching screens.
     -   *Journaling*: `Fixed the race condition #bug &auth`
     -   *Backdating*: `Wrote documentation 2024-03-10 #docs`
-    -   *Timer*: `#dev &website 25` (Starts a 25-minute pomodoro session)
+    -   *Timer*: `#dev &website 25` (Starts a 25-minute timer session)
 *   **Command Palette (`Ctrl+P`)**: Search for any command or switch screens by name.
 *   **Quick Switch (`1` - `4`)**: Jump between Dashboard, Logs, To-Do, and Timer instantly.
 *   **Search (`Ctrl+S`)**: Fuzzy search through all your entries and tasks.
@@ -98,7 +98,7 @@ dwriter stats                                # View quick productivity metrics
 ```
 
 ### ⏱️ Timers
-Start a pomodoro session that logs to your database when finished:
+Start a timer session that logs to your database when finished:
 ```bash
 dwriter timer 25 -t deep-work -p project-x
 ```
@@ -142,7 +142,7 @@ To contribute, please ensure your code passes all checks and includes relevant t
 
 ## ❓ Troubleshooting
 
-- **Terminal Size**: The TUI is optimized for **82x42** characters. If the UI looks cramped, try enlarging your terminal window. The app will attempt to auto-resize on supported terminals.
+- **Terminal Size**: The TUI is optimized for **88x42** characters. If the UI looks cramped, try enlarging your terminal window. The app will attempt to auto-resize on supported terminals.
 - **Database Location**: Data is stored in `~/.local/share/dwriter/` (Linux) or platform equivalents. If you experience database locks, ensure no other instance of `dwriter` is running.
 - **Dependencies**: If `pyperclip` fails to copy to clipboard (common on Linux), ensure you have `xclip` or `xsel` installed: `sudo apt install xclip`.
 - **Colors & Themes**: If colors look weird, ensure your terminal supports **True Color (24-bit)**. Set `export COLORTERM=truecolor` in your shell profile if necessary.

@@ -49,7 +49,7 @@ class StreakCalendar(Static):
     StreakCalendar {
         border: round $primary;
         background: $panel;
-        padding: 1 2;
+        padding: 1 3;
         margin: 0 1 1 1;
         height: auto;
     }
@@ -209,7 +209,7 @@ class ActivitySparkline(Static):
     ActivitySparkline {
         border: round $primary;
         background: $panel;
-        padding: 0 2;
+        padding: 1 3;
         margin: 0 1 0 1;
         height: auto;
     }
@@ -348,7 +348,7 @@ class ContextSwitchCard(Static):
 class ContextFrictionCard(Static):
     """Combined Context Switches and Friction Ratio card."""
 
-    DEFAULT_CSS = "ContextFrictionCard { border: round $primary; background: $panel; padding: 0 2; height: 13; }"
+    DEFAULT_CSS = "ContextFrictionCard { border: round $primary; background: $panel; padding: 0 3; height: 13; }"
 
     def _draw_bar(self, value: float, max_val: float, width: int = 17) -> str:
         """Draws a pip bar with gradient coloring based on value: light green → yellow → orange → red."""
@@ -369,7 +369,7 @@ class ContextFrictionCard(Static):
         else:
             color = "#f38ba8"  # red - very high friction
 
-        return f"[{color}]{'￭' * filled}[/][#313244]{'･' * empty}[/]"
+        return f" [{color}]{'￭' * filled}[/][#313244]{'･' * empty}[/] "
 
     def _get_status_display(self, ratio: float) -> tuple[str, str]:
         """Get status label and color based on friction ratio.
@@ -428,7 +428,7 @@ class ContextFrictionCard(Static):
 class TodoHealthCard(Static):
     """Combined To-do Health and Workload card."""
 
-    DEFAULT_CSS = "TodoHealthCard { border: round $error; background: $panel; padding: 0 2; height: 13; }"
+    DEFAULT_CSS = "TodoHealthCard { border: round $error; background: $panel; padding: 0 3; height: 13; }"
 
     def _draw_bar(
         self, value: int, max_val: int, width: int = 15, color: str = "white"

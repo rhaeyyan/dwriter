@@ -1,4 +1,4 @@
-"""Timer command for running a pomodoro-style timer."""
+"""Timer command for running a timer-style timer."""
 
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ def timer(
 ) -> None:
     """Start a timer and log the result.
 
-    Pomodoro-style timer with interactive TUI. When the timer
+    Timer-style timer with interactive TUI. When the timer
     completes, you're prompted to log the session as a journal entry.
 
     Timer Controls:

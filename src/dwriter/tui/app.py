@@ -60,7 +60,7 @@ class DWriterApp(App[None]):
     This app provides a single interface for all dwriter functionality:
     - Dashboard with statistics and calendar
     - Todo board for task management
-    - Timer for pomodoro-style sessions
+    - Timer for timer-style sessions
     - Search for fuzzy finding entries and tasks
     - Global omnibox for quick entry logging
 
@@ -396,7 +396,7 @@ class DWriterApp(App[None]):
 
     def _set_default_size(self) -> None:
         """Set the default terminal size."""
-        self.set_size(82, 42)
+        self.set_size(88, 42)
 
     def action_command_palette(self) -> None:
         """Open the command palette with dwriter commands."""

@@ -931,7 +931,7 @@ dwriter search "meeting" -n 5
     def _get_timer_content(self) -> str:
         return """# `dwriter timer`
 
-Pomodoro-style focus timer.
+Timer-style focus timer.
 
 ---
 
@@ -1002,7 +1002,7 @@ time   green pips         dim   percentage
 
 ## Tips
 
-💡 **Pomodoro technique**: Default 25 minutes follows the classic method
+💡 **Timer technique**: Default 25 minutes follows the classic method
 
 💡 **Auto-logging**: Completed sessions automatically log to your journal
 

@@ -170,7 +170,7 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
   [cyan]1[/cyan] → Dashboard (stats, calendar, activity)
   [cyan]2[/cyan] → Logs (journal entries)
   [cyan]3[/cyan] → Todo Board (task management)
-  [cyan]4[/cyan] → Timer (pomodoro sessions)
+  [cyan]4[/cyan] → Timer (timer sessions)
 
 [dim]Press Tab to navigate between help topics[/dim]
 [dim]Press q or Esc to close[/dim]
@@ -192,7 +192,7 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
   [cyan]1[/cyan]              → 🏠 Dashboard (statistics & calendar)
   [cyan]2[/cyan]              → 📓 Logs (journal entries view)
   [cyan]3[/cyan]              → 📋 Todo Board (task management)
-  [cyan]4[/cyan]              → ⏱️ Timer (pomodoro sessions)
+  [cyan]4[/cyan]              → ⏱️ Timer (timer sessions)
 
   [cyan]Tab[/cyan]            → Cycle to next tab (in tabbed views)
   [cyan]Shift+Tab[/cyan]      → Cycle to previous tab
@@ -378,7 +378,7 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
         return """
 [bold]Timer Screen ⏱️[/bold]
 
-[dim]Pomodoro-style focused work sessions with automatic logging.[/dim]
+[dim]Timer-style focused work sessions with automatic logging.[/dim]
 
 [bold cyan]Starting a Timer:[/bold cyan]
   Via omnibox (any screen): [green]#tag[/green] [magenta]&project[/magenta] [yellow]25[/yellow]

@@ -13,7 +13,7 @@ from typing import Any
 
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Container, Vertical
+from textual.containers import Container, Horizontal, Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Button, Header, Input, Label, ListItem, ListView
 
@@ -45,14 +45,29 @@ class EditEntryModal(ModalScreen):  # type: ignore[type-arg]
         padding: 1 0;
     }
 
-    #edit-content-label, #edit-date-label, #edit-time-label, #edit-tags-label, #edit-project-label {
+    #edit-content-label, #edit-tags-label, #edit-project-label, #edit-datetime-label {
         text-style: bold;
         padding: 1 0 0 0;
     }
 
-    #edit-input, #date-input, #time-input, #tags-input, #project-input {
+    #edit-input, #tags-input, #project-input {
         width: 100%;
         margin: 0 0 1 0;
+    }
+
+    .datetime-container {
+        height: auto;
+        width: 100%;
+        margin: 0 0 1 0;
+    }
+
+    #date-input {
+        width: 60%;
+        margin-right: 1;
+    }
+
+    #time-input {
+        width: 1fr;
     }
 
     #help-text {
@@ -120,37 +135,6 @@ class EditEntryModal(ModalScreen):  # type: ignore[type-arg]
                 placeholder="Entry content...",
             )
 
-            # Date field (separate)
-            yield Label("Date:", id="edit-date-label")
-            date_str = (
-                self.entry.created_at.strftime("%Y-%m-%d")
-                if self.entry.created_at
-                else ""
-            )
-            yield Input(
-                value=date_str,
-                id="date-input",
-                placeholder="YYYY-MM-DD",
-            )
-
-            # Time field (separate, 12-hour format)
-            # Handle blank time if hour/min/sec are all 0 (midnight)
-            yield Label("Time:", id="edit-time-label")
-            dt = self.entry.created_at
-            if dt and dt.hour == 0 and dt.minute == 0 and dt.second == 0:
-                time_str = ""  # Leave blank for midnight times
-            else:
-                time_str = dt.strftime("%I:%M %p") if dt else ""
-            yield Input(
-                value=time_str,
-                id="time-input",
-                placeholder="HH:MM AM/PM (e.g., 02:30 PM) or leave blank",
-            )
-            yield Label(
-                "Date: yesterday, 2 days ago, last Friday | Time: 2:30 PM, 14:30 (or leave blank)",
-                id="help-text",
-            )
-
             # Tags field
             yield Label("Tags:", id="edit-tags-label")
             tags_str = ", ".join(self.entry.tag_names) if self.entry.tag_names else ""
@@ -168,8 +152,37 @@ class EditEntryModal(ModalScreen):  # type: ignore[type-arg]
                 placeholder="Project name (optional)",
             )
 
+            # Date and Time fields on the same line
+            yield Label("Date and Time:", id="edit-datetime-label")
+            with Horizontal(classes="datetime-container"):
+                date_str = (
+                    self.entry.created_at.strftime("%Y-%m-%d")
+                    if self.entry.created_at
+                    else ""
+                )
+                yield Input(
+                    value=date_str,
+                    id="date-input",
+                    placeholder="YYYY-MM-DD",
+                )
+
+                dt = self.entry.created_at
+                if dt and dt.hour == 0 and dt.minute == 0 and dt.second == 0:
+                    time_str = ""  # Leave blank for midnight times
+                else:
+                    time_str = dt.strftime("%I:%M %p") if dt else ""
+                yield Input(
+                    value=time_str,
+                    id="time-input",
+                    placeholder="HH:MM AM/PM",
+                )
+
+            yield Label(
+                "Date: yesterday, 2 days ago, last Friday | Time: 2:30 PM, 14:30 (or leave blank)",
+                id="help-text",
+            )
+
             with Container(id="edit-buttons"):
-                yield Button("Save", id="save-btn", variant="primary")
                 yield Button("Cancel", id="cancel-btn", variant="default")
 
     def on_mount(self) -> None:
@@ -365,23 +378,26 @@ class DeleteConfirmModal(ModalScreen):  # type: ignore[type-arg]
     }
 
     #delete-modal-container {
-        width: 70;
+        width: 50;
         height: auto;
+        min-height: 8;
         background: $surface;
         border: thick $error;
-        padding: 1 3;
+        padding: 0 2;
     }
 
     #delete-modal-title {
         text-align: center;
         text-style: bold;
         color: $error;
-        padding: 1 0;
+        padding: 0;
+        margin-top: 1;
     }
 
     #delete-modal-content {
         text-align: center;
-        padding: 0 0 1 0;
+        padding: 0;
+        margin: 1 0;
         color: $text-muted;
     }
 

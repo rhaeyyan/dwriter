@@ -688,7 +688,7 @@ class EditApp(App):  # type: ignore[type-arg]
             }
 
             #confirm-container {
-                width: 60;
+                width: 40;
                 height: auto;
                 background: $surface;
                 border: thick $error;

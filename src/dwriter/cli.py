@@ -79,7 +79,7 @@ def main(ctx: click.Context) -> None:
       Run 'dwriter' without arguments to launch the unified TUI with:
       - Dashboard with statistics and calendar
       - Todo board for task management
-      - Timer for pomodoro sessions
+      - Timer for timer sessions
       - Search for fuzzy finding entries
       - Global quick-add bar (press / to focus)
       - Command palette (press Ctrl+P)
@@ -91,7 +91,7 @@ def main(ctx: click.Context) -> None:
       standup   - Generate yesterday's summary
       review    - Review last N days
       search    - Fuzzy search entries/todos (or use TUI)
-      timer     - Start pomodoro-style timer (or use TUI)
+      timer     - Start timer-style timer (or use TUI)
       stats     - View statistics dashboard (or use TUI)
       edit      - Edit entries
       config    - Manage settings
@@ -106,10 +106,10 @@ def main(ctx: click.Context) -> None:
     if ctx.invoked_subcommand is None:
         import sys
 
-        # Force terminal resize to exactly 42 rows by 82 columns (default size)
+        # Force terminal resize to exactly 42 rows by 88 columns (default size)
         # ANSI escape sequence: \x1b[8;{height};{width}t
         # Works on MacOS Terminal, iTerm2, Alacritty, and most X11 Linux terminals
-        sys.stdout.write("\x1b[8;42;82t")
+        sys.stdout.write("\x1b[8;42;88t")
         sys.stdout.flush()
 
         # Launch the unified TUI

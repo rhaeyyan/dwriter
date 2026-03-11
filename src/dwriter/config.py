@@ -84,7 +84,7 @@ class DefaultsConfig:
 
 @dataclass
 class TimerConfig:
-    """Timer (Pomodoro) configuration.
+    """Timer (Timer) configuration.
 
     Attributes:
         work_duration: Work session duration in minutes.
@@ -112,7 +112,7 @@ class Config:
         review: Review-related settings.
         display: Display-related settings.
         defaults: Default values for entries.
-        timer: Timer (Pomodoro) settings.
+        timer: Timer (Timer) settings.
     """
 
     standup: StandupConfig = field(default_factory=StandupConfig)
