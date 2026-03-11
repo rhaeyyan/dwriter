@@ -23,7 +23,7 @@ If you want a minimalist, beautiful productivity suite that gets out of your way
   - [🪟 Windows 11](#-windows-11)
   - [🐧 Linux (Ubuntu / Mint)](#-linux-ubuntu--mint)
   - [🍎 macOS (MacBook)](#-macos-macbook)
-  - [✅ Verify Installation](#-verify-installation)
+  - [✅ Verify Installation & Launch](#-verify-installation-&-launch)
 - [🛠️ Command Reference](#️-command-reference)
   - [Logging and Viewing](#logging-and-viewing)
   - [Generation and Summaries](#generation-and-summaries)
@@ -89,8 +89,11 @@ uv sync --extra dev
 
 **Step 5: Run dwriter**
 ```powershell
-uv run dwriter help
+uv run dwriter
 ```
+> ```bash
+> uv run dwriter help
+> ```
 
 #### Option 2: Using pip (Traditional - Not Recommended)
 
@@ -248,7 +251,7 @@ pip install -e ".[dev]"
 
 ### ✅ Verify Installation & Launch
 
-After installation, verify dwriter is working:
+After installation, you can launch dwriter by entering:
 
 ```bash
 uv run dwriter
