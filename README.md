@@ -6,6 +6,21 @@ A powerful, low-friction terminal journaling and task-tracking application built
 
 ---
 
+## 🎯 Who is this for?
+
+`dwriter` is for anyone who wants a quiet, distraction-free space to track their time, tasks, and daily progress. You don't need to be a software engineer to use it—you just need to value your focus.
+
+We built this for people who are tired of bloated web apps and endless clicking:
+
+*   **🎨 Freelancers & Creatives**: Writers, designers, and consultants who need to effortlessly log billable hours and pull a summary of what they actually worked on this week.
+*   **📚 Students**: Run Pomodoro study sessions, manage assignment to-dos, and track exactly how much time you're dedicating to different subjects.
+*   **✍️ Journalers & Reflectors**: Use the standup and review features to easily recall what you did yesterday, making evening journaling or habit tracking a breeze.
+*   **🌱 Hobbyists & Makers**: Whether you're tracking the daily growth of your garden, building furniture, or learning a language, log your milestones in seconds without leaving your keyboard.
+
+If you want a minimalist, beautiful productivity suite that gets out of your way, `dwriter` is for you.
+
+---
+
 ## 🚀 Quick Installation
 
 ### Requirements
