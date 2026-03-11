@@ -371,6 +371,7 @@ class EntryListView(ListView):
             Formatted string with markup.
         """
         from ..ui_utils import format_entry_datetime
+
         date_str, time_str = format_entry_datetime(entry)
         tags_str = ""
         if entry.tag_names:
@@ -431,7 +432,7 @@ class EditApp(App):  # type: ignore[type-arg]
 
     #title {
         text-style: bold;
-        color: $text;
+        color: $foreground;
     }
 
     #subtitle {
@@ -747,6 +748,7 @@ class EditApp(App):  # type: ignore[type-arg]
     def action_goto_help(self) -> None:
         """Navigate to the help TUI."""
         from .help_tui import HelpScreen
+
         self.app.push_screen(HelpScreen())
 
     def action_quit(self) -> None:  # type: ignore[override]

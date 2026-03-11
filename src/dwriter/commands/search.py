@@ -108,12 +108,13 @@ def search(
         matched_todos = search_items(query, todos, limit=limit, threshold=60)
 
     # Display results
-    ctx.console.print(f"[bold blue]🔍 Search Results for \"{query}\"[/bold blue]\n")
+    ctx.console.print(f'[bold blue]🔍 Search Results for "{query}"[/bold blue]\n')
 
     if matched_entries:
         ctx.console.print("[bold magenta][ENTRIES][/bold magenta]")
         for entry, score in matched_entries:
             from ..ui_utils import format_entry_datetime
+
             date_str, time_str = format_entry_datetime(entry)
             score_str = format_score(score)
             tags_str = ""

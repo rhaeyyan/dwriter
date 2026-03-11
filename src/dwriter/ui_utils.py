@@ -15,42 +15,26 @@ if TYPE_CHECKING:
     from .database import Entry
 
 
-def _is_past_date(entry_date: datetime) -> bool:
-    """Check if an entry date is before today.
-
-    Args:
-        entry_date: The datetime to check.
-
-    Returns:
-        True if the date is before today, False otherwise.
-    """
-    today = datetime.now().replace(
-        hour=0, minute=0, second=0, microsecond=0
-    )
-    entry_date_only = entry_date.replace(
-        hour=0, minute=0, second=0, microsecond=0
-    )
-    return entry_date_only < today
-
-
 def format_entry_datetime(entry: "Entry") -> tuple[str, Optional[str]]:
     """Format an entry's date and time for display.
 
-    For past dates (before today), returns only the date without time.
-    For today's entries, returns both date and time.
+    If the time is exactly 00:00 (midnight), it is treated as a date-only
+    entry and time_str will be None.
 
     Args:
         entry: The Entry object to format.
 
     Returns:
-        A tuple of (date_str, time_str). time_str is None for past dates.
+        A tuple of (date_str, time_str). time_str is None for midnight entries.
     """
     date_str = entry.created_at.strftime("%Y-%m-%d")
-
-    if _is_past_date(entry.created_at):
+    
+    # Check if time is exactly midnight (00:00:00)
+    dt = entry.created_at
+    if dt.hour == 0 and dt.minute == 0 and dt.second == 0:
         return date_str, None
-
-    time_str = entry.created_at.strftime("%I:%M %p")
+        
+    time_str = dt.strftime("%I:%M %p")
     return date_str, time_str
 
 
@@ -59,7 +43,6 @@ def display_entry(console: "Console", entry: "Entry", config: "Config") -> None:
 
     Formats and prints a single journal entry with consistent styling,
     including ID (if enabled), date/time, content, tags, and project.
-    For past dates (before today), the time component is hidden.
 
     Args:
         console: The Rich console instance for output.
@@ -71,9 +54,8 @@ def display_entry(console: "Console", entry: "Entry", config: "Config") -> None:
     """
     date_str, time_str = format_entry_datetime(entry)
 
-    # Only show time for today's entries
+    # Only show time if provided (non-midnight)
     if time_str is None:
-        # Past date - no time shown
         if config.display.show_id:
             console.print(
                 f"[magenta][{entry.id}][/magenta] {date_str}: {entry.content}"
@@ -144,7 +126,7 @@ class HelpOverlay(ModalScreen[None]):
     }
 
     HelpOverlay .help-desc {
-        color: $text;
+        color: $foreground;
     }
 
     HelpOverlay .help-tip {

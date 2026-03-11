@@ -23,6 +23,7 @@ def examples(ctx: AppContext, plain: bool) -> None:
     if plain:
         # Show plain text help from main CLI
         from ..cli import main
+
         click.echo(main.get_help(click.Context(main)))
     else:
         # Launch unified help TUI

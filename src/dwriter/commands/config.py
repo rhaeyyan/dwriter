@@ -47,7 +47,7 @@ def config_show(ctx: AppContext) -> None:
 
     # Standup settings
     ctx.console.print("[bold][standup][/bold]")
-    ctx.console.print(f"  format = \"{config_dict['standup']['format']}\"")
+    ctx.console.print(f'  format = "{config_dict["standup"]["format"]}"')
     ctx.console.print(
         "  copy_to_clipboard = "
         f"{str(config_dict['standup']['copy_to_clipboard']).lower()}"
@@ -57,7 +57,7 @@ def config_show(ctx: AppContext) -> None:
     # Review settings
     ctx.console.print("[bold][review][/bold]")
     ctx.console.print(f"  default_days = {config_dict['review']['default_days']}")
-    ctx.console.print(f"  format = \"{config_dict['review']['format']}\"")
+    ctx.console.print(f'  format = "{config_dict["review"]["format"]}"')
     ctx.console.print()
 
     # Display settings
@@ -66,13 +66,8 @@ def config_show(ctx: AppContext) -> None:
         "  show_confirmation = "
         f"{str(config_dict['display']['show_confirmation']).lower()}"
     )
-    ctx.console.print(
-        "  show_id = "
-        f"{str(config_dict['display']['show_id']).lower()}"
-    )
-    ctx.console.print(
-        "  colors = " f"{str(config_dict['display']['colors']).lower()}"
-    )
+    ctx.console.print(f"  show_id = {str(config_dict['display']['show_id']).lower()}")
+    ctx.console.print(f"  colors = {str(config_dict['display']['colors']).lower()}")
     ctx.console.print()
 
     # Defaults
@@ -84,7 +79,7 @@ def config_show(ctx: AppContext) -> None:
         ctx.console.print("  tags = []")
 
     if config_dict["defaults"]["project"]:
-        ctx.console.print(f"  project = \"{config_dict['defaults']['project']}\"")
+        ctx.console.print(f'  project = "{config_dict["defaults"]["project"]}"')
     else:
         ctx.console.print("  project = null")
 

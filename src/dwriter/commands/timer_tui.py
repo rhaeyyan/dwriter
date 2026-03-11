@@ -1,122 +1,125 @@
 """Interactive timer TUI using Textual.
 
-This module provides a real-time pomodoro-style timer with pause/resume
+This module provides a real-time timer with pause/resume
 and session logging capabilities.
 """
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 
-from rich.text import Text
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Container
+from textual.containers import Container, Horizontal
+from textual.reactive import reactive
 from textual.screen import ModalScreen
-from textual.widgets import (
-    Button,
-    Footer,
-    Header,
-    Input,
-    Label,
-    Static,
-)
+from textual.widgets import Button, Footer, Header, Input, Label, Static
 
 
-class TomatoProgressBar(Static):
-    """A clean tomato-themed progress bar with filled/empty blocks."""
+class TimerProgressBar(Static):
+    """Custom progress bar with gradient pips and tomato indicator."""
 
     DEFAULT_CSS = """
-    TomatoProgressBar {
-        height: auto;
+    TimerProgressBar {
+        height: 3;
         margin: 1 0;
-        padding: 0;
-        background: transparent;
+        content-align: center middle;
     }
 
-    TomatoProgressBar .timer-display {
-        text-align: center;
+    .progress-label {
         text-style: bold;
-        padding: 1 0;
     }
 
-    TomatoProgressBar .progress-bar {
-        text-align: center;
-        padding: 0 0;
-    }
-
-    TomatoProgressBar .progress-label {
-        text-align: center;
-        color: $text-muted;
-        padding: 0 0 1 0;
+    .progress-gradient {
+        padding: 0 1;
     }
     """
 
-    def __init__(self, **kwargs: Any) -> None:
-        """Initialize the tomato progress bar.
+    def __init__(self, total_seconds: int = 25 * 60, **kwargs: Any) -> None:
+        """Initialize the progress bar.
 
         Args:
+            total_seconds: Total duration in seconds.
             **kwargs: Additional arguments passed to Static.
         """
-        super().__init__("", **kwargs)
-        self.progress_pct = 0.0
-        self.remaining_seconds = 0
-        self.total_seconds = 0
+        super().__init__(**kwargs)
+        self.total_seconds = total_seconds
+        self.remaining_seconds = total_seconds
 
-    def set_progress(self, pct: float, remaining: int, total: int) -> None:
-        """Set the progress percentage and time info.
+    def update_progress(self, remaining: int, total: int) -> None:
+        """Update the progress bar.
 
         Args:
-            pct: Progress percentage (0.0 to 1.0).
             remaining: Remaining seconds.
             total: Total seconds.
         """
-        self.progress_pct = max(0.0, min(1.0, pct))
         self.remaining_seconds = remaining
         self.total_seconds = total
-        self._update_bar()
+        self._render_bar()
 
-    def _format_time(self, seconds: int) -> str:
-        """Format seconds as MM:SS.
+    def _get_gradient_color(self, position: float) -> str:
+        """Get color for a pip based on its position in the bar.
 
         Args:
-            seconds: Time in seconds.
+            position: Position from 0.0 (left) to 1.0 (right).
 
         Returns:
-            Formatted time string.
+            Hex color string (green → yellow → orange → red).
         """
-        mins = seconds // 60
-        secs = seconds % 60
-        return f"{mins:02d}:{secs:02d}"
+        if position < 0.25:
+            return "#00ff00"  # Green
+        elif position < 0.5:
+            return "#7fff00"  # Green-yellow
+        elif position < 0.75:
+            return "#ffff00"  # Yellow
+        elif position < 0.85:
+            return "#ffa500"  # Orange
+        else:
+            return "#ff0000"  # Red
 
-    def _update_bar(self) -> None:
-        """Update the progress bar display."""
-        bar_width = 20  # Total width for the bar portion
+    def _render_bar(self) -> None:
+        """Render the progress bar with gradient pips and mango indicator."""
+        if self.total_seconds <= 0:
+            self.update("[dim]No time set[/dim]")
+            return
 
-        filled = int(self.progress_pct * bar_width)
-        empty = bar_width - filled
+        progress = 1.0 - (self.remaining_seconds / self.total_seconds)
+        int(progress * 100)
 
-        # Calculate percentage for display
-        pct_display = int(self.progress_pct * 100)
+        self._render_bar()
 
-        # Build the bar: filled blocks + tomato + empty blocks
-        # Use red filled blocks for completed portion
-        filled_part = "[red]▮[/red]" * filled if filled > 0 else ""
+    def _render_bar(self) -> None:
+        """Render the progress bar with gradient pips and mango indicator."""
+        if self.total_seconds <= 0:
+            self.update("No time set")
+            return
 
-        # Add tomato emoji at the progress point (if not at end)
-        tomato = ""
-        if filled < bar_width:
-            tomato = "🍅"
-            empty -= 1  # Account for tomato width
+        progress = 1.0 - (self.remaining_seconds / self.total_seconds)
+        percentage = int(progress * 100)
 
-        # Empty blocks for remaining portion
-        empty_part = "[dim]▯[/dim]" * empty if empty > 0 else ""
+        # Build progress bar
+        bar_width = 30
+        filled = int(bar_width * progress)
 
-        # Combine all parts
-        bar_text = f"{filled_part}{tomato}{empty_part}"
+        # Build the bar - use plain text without markup
+        bar_parts = []
+        for i in range(bar_width):
+            if i < filled:
+                bar_parts.append("▮")
+            elif i == filled:
+                bar_parts.append("🥭")
+            else:
+                bar_parts.append("▯")
 
-        # Display: [ bar ] percentage
-        self.update(f"[ {bar_text} ] {pct_display}%")
+        bar_str = "".join(bar_parts)
+
+        # Format time display
+        mins = self.remaining_seconds // 60
+        secs = self.remaining_seconds % 60
+        time_str = f"{mins:02d}:{secs:02d}"
+
+        self.update(f"{time_str}  [ {bar_str} ]  {percentage}%")
 
 
 class SessionCompleteModal(ModalScreen):  # type: ignore[type-arg]
@@ -150,6 +153,12 @@ class SessionCompleteModal(ModalScreen):  # type: ignore[type-arg]
     #edit-input {
         width: 100%;
         margin: 1 0;
+    }
+
+    #session-meta {
+        text-align: center;
+        color: $text-muted;
+        padding: 0 0 1 0;
     }
 
     #edit-buttons {
@@ -204,6 +213,21 @@ class SessionCompleteModal(ModalScreen):  # type: ignore[type-arg]
                 id="edit-input",
                 placeholder="What did you accomplish?",
             )
+
+            # Show tags and project if provided
+            if self.tags or self.project:
+                meta_parts = []
+                if self.tags:
+                    tags_str = " ".join([f"#{tag}" for tag in self.tags])
+                    meta_parts.append(f"Session: {tags_str}")
+                if self.project:
+                    meta_parts.append(f"${self.project}")
+                yield Label(
+                    " | ".join(meta_parts),
+                    id="session-meta",
+                    classes="session-meta",
+                )
+
             with Container(id="edit-buttons"):
                 yield Button("Log Entry", id="save-btn", variant="success")
                 yield Button("Skip", id="cancel-btn", variant="default")
@@ -234,7 +258,8 @@ class SessionCompleteModal(ModalScreen):  # type: ignore[type-arg]
 class TimerApp(App):  # type: ignore[type-arg]
     """Interactive timer application.
 
-    Provides a real-time pomodoro-style timer with pause/resume capability.
+    Provides a real-time timer with pause/resume capability.
+    Timer starts automatically on mount.
 
     Key bindings:
         Space: Pause/Resume timer
@@ -249,52 +274,47 @@ class TimerApp(App):  # type: ignore[type-arg]
     }
 
     #main-container {
-        height: 1fr;
+        height: auto;
+        width: auto;
         align: center middle;
-        padding: 1 2;
+        padding: 2 4;
+        background: $panel;
+        border: solid $primary;
     }
 
-    #top-controls {
+    #timer-title {
+        text-align: center;
+        text-style: bold;
+        padding: 0 0 1 0;
+        color: $text-muted;
+    }
+
+    #timer-controls {
         height: auto;
         align: center middle;
         padding: 1 0;
     }
 
-    #time-display {
-        width: auto;
-        height: auto;
-        text-style: bold;
-        padding: 0 2;
+    #timer-control-button {
+        min-width: 15;
+        height: 3;
     }
 
-    #status-label {
-        width: auto;
-        height: auto;
-        text-style: bold;
-        padding: 0 2;
-    }
-
-    #button-left, #button-right {
+    #timer-adjust-buttons {
         height: auto;
         align: center middle;
+        padding: 1 0;
     }
 
-    #button-left Button, #button-right Button {
+    #timer-adjust-buttons Button {
         margin: 0 1;
         min-width: 6;
     }
 
-    #progress-container {
-        height: 1fr;
+    #timer-progress-container {
+        height: auto;
         align: center middle;
         padding: 1 0;
-    }
-
-    #progress-bar {
-        width: auto;
-        height: auto;
-        text-align: center;
-        text-style: bold;
     }
 
     #session-info {
@@ -305,16 +325,19 @@ class TimerApp(App):  # type: ignore[type-arg]
         padding: 0 2;
     }
 
-    .paused {
-        color: $warning;
+    .paused-button {
+        background: $warning;
+        color: $foreground;
     }
 
-    .running {
-        color: $success;
+    .running-button {
+        background: $success;
+        color: $foreground;
     }
 
-    .finished {
-        color: $accent;
+    .finished-button {
+        background: $accent;
+        color: $foreground;
     }
     """
 
@@ -327,6 +350,11 @@ class TimerApp(App):  # type: ignore[type-arg]
         Binding("escape", "quit", "Quit"),
         Binding("?", "goto_help", "Help", show=True),
     ]
+
+    # Reactive properties for timer state
+    remaining_seconds = reactive(25 * 60)
+    is_running = reactive(False)
+    is_finished = reactive(False)
 
     def __init__(
         self,
@@ -351,165 +379,74 @@ class TimerApp(App):  # type: ignore[type-arg]
         self.db = db
         self.console = console
         self.initial_minutes = minutes
-        self.remaining_seconds = minutes * 60
         self.total_seconds = minutes * 60
-        self._is_running = False
-        self._is_finished = False
+        self._timer_handle: Any = None
         self.tags = tags or []
         self.project = project
-        self._timer_handle: Any = None
-
-    @property
-    def is_running(self) -> bool:
-        """Check if timer is running."""
-        return self._is_running
-
-    @property
-    def is_finished(self) -> bool:
-        """Check if timer is finished."""
-        return self._is_finished
+        # Start in paused state - user must press Space or click to start
+        self.is_running = False
 
     def compose(self) -> ComposeResult:
         """Compose the timer UI layout."""
-        from textual.containers import Horizontal
-        from textual.widgets import Button
-
         yield Header()
         with Container(id="main-container"):
-            # Top row: [+5] [+1] [Status] [-1] [+5]
-            with Horizontal(id="top-controls"):
-                # Left buttons (green, add time) - order: +5, +1
-                with Horizontal(id="button-left"):
-                    yield Button("+5", id="btn-plus-5", variant="success")
-                    yield Button("+1", id="btn-plus-1", variant="success")
+            yield Label("⏱️ Timer", id="timer-title")
 
-                # Status in center
-                yield Label(
-                    "▶ Running" if self.is_running else "⏸ Paused",
-                    id="status-label",
-                    classes="running" if self.is_running else "paused",
+            # Control button (Start/Pause)
+            with Horizontal(id="timer-controls"):
+                yield Button(
+                    "⏸ Paused",
+                    id="timer-control-button",
+                    variant="warning",
                 )
 
-                # Right buttons (red, subtract time) - order: -1, -5
-                with Horizontal(id="button-right"):
-                    yield Button("-1", id="btn-minus-1", variant="error")
-                    yield Button("-5", id="btn-minus-5", variant="error")
-
-            # Progress bar centered at bottom: mm:ss [ ▮▮🍅▯▯ ] 40%
-            with Container(id="progress-container"):
-                yield Label(
-                    self._format_progress_line(),
-                    id="progress-bar",
+            # Progress bar
+            with Container(id="timer-progress-container"):
+                yield TimerProgressBar(
+                    total_seconds=self.total_seconds,
+                    id="timer-progress-bar",
                 )
 
-        # Clean footer with minimal info
+            # Adjust buttons
+            with Horizontal(id="timer-adjust-buttons"):
+                yield Button("+5", id="btn-plus-5", variant="success")
+                yield Button("+1", id="btn-plus-1", variant="success")
+                yield Button("-1", id="btn-minus-1", variant="error")
+                yield Button("-5", id="btn-minus-5", variant="error")
+
         yield Label(
-            "Space: Pause/Resume  •  Enter: Finish  •  ?: Help  •  q: Quit",
+            "Space: Start/Pause  •  Enter: Finish  •  ?: Help  •  q: Quit",
             id="session-info",
         )
         yield Footer()
 
-    def _format_progress_line(self) -> Text:
-        """Format the progress line: mm:ss [ bar ] percentage."""
-        elapsed = self.total_seconds - self.remaining_seconds
-        progress_pct = elapsed / self.total_seconds if self.total_seconds > 0 else 0
-
-        bar_width = 20
-        filled = int(progress_pct * bar_width)
-        empty = bar_width - filled
-
-        # Gradient color palette: green → yellow-green → yellow → orange → red
-        gradient_colors = [
-            "#44ce1b",    # Green
-            "#bbdb44",    # Yellow-green
-            "#f7e379",    # Yellow
-            "#f2a134",    # Orange
-            "#e51f1f",    # Red
-        ]
-
-        # Build the progress line using Rich Text for proper styling
-        time_str = self._format_time(self.remaining_seconds)
-        pct_display = int(progress_pct * 100)
-
-        # Create styled text
-        text = Text()
-        text.append(f"{time_str}  [ ", style="bold")
-
-        # Filled blocks with gradient based on position in bar (not filled count)
-        for i in range(filled):
-            # Calculate position in gradient based on block's position in the full bar
-            # This ensures gradient flows left-to-right across the entire bar
-            gradient_pos = i / (bar_width - 1) if bar_width > 1 else 0
-            color = self._get_gradient_color(gradient_pos, gradient_colors)
-            text.append("▮", style=color)
-
-        # Tomato emoji (shows current position)
-        if filled < bar_width:
-            text.append("🍅")
-            empty -= 1
-
-        # Dim empty blocks
-        for _ in range(empty):
-            text.append("▯", style="dim")
-
-        text.append(f" ] {pct_display}%", style="bold")
-
-        return text
-
-    def _get_gradient_color(self, pos: float, colors: list[str]) -> str:
-        """Get interpolated color from gradient palette.
-
-        Args:
-            pos: Position in gradient (0.0 to 1.0).
-            colors: List of hex color strings.
-
-        Returns:
-            Interpolated hex color string.
-        """
-        if pos <= 0:
-            return colors[0]
-        if pos >= 1:
-            return colors[-1]
-
-        # Find the two colors to interpolate between
-        num_segments = len(colors) - 1
-        segment = min(int(pos * num_segments), num_segments - 1)
-        segment_pos = (pos * num_segments) - segment
-
-        color1 = colors[segment]
-        color2 = colors[segment + 1]
-
-        return self._blend_colors(color1, color2, segment_pos)
-
-    def _blend_colors(self, color1: str, color2: str, t: float) -> str:
-        """Blend two hex colors.
-
-        Args:
-            color1: First hex color (e.g., "#44ce1b").
-            color2: Second hex color.
-            t: Blend factor (0.0 = color1, 1.0 = color2).
-
-        Returns:
-            Blended hex color string.
-        """
-        r1, g1, b1 = int(color1[1:3], 16), int(color1[3:5], 16), int(color1[5:7], 16)
-        r2, g2, b2 = int(color2[1:3], 16), int(color2[3:5], 16), int(color2[5:7], 16)
-
-        r = int(r1 + (r2 - r1) * t)
-        g = int(g1 + (g2 - g1) * t)
-        b = int(b1 + (b2 - b1) * t)
-
-        return f"#{r:02x}{g:02x}{b:02x}"
-
     def on_mount(self) -> None:
-        """Start the timer on mount."""
+        """Initialize the timer display on mount."""
         self._update_display()
-        self._start_timer()
 
     def on_unmount(self) -> None:
         """Clean up timer on unmount."""
         if self._timer_handle is not None:
-            self.set_timer(self._timer_handle, None)
+            self._timer_handle.stop()
+            self._timer_handle = None
+
+    def watch_remaining_seconds(self) -> None:
+        """Reactively update display when remaining seconds change."""
+        self._update_display()
+        # Update progress bar
+        try:
+            progress_bar = self.query_one("#timer-progress-bar", TimerProgressBar)
+            progress_bar.update_progress(self.remaining_seconds, self.total_seconds)
+        except Exception:
+            pass
+
+    def watch_is_running(self) -> None:
+        """Reactively update display when running state changes."""
+        self._update_display()
+
+    def watch_is_finished(self) -> None:
+        """Reactively update display when finished state changes."""
+        self._update_display()
 
     def _format_time(self, seconds: int) -> str:
         """Format seconds as MM:SS.
@@ -526,58 +463,62 @@ class TimerApp(App):  # type: ignore[type-arg]
 
     def _update_display(self) -> None:
         """Update the timer display."""
-        progress_label = self.query_one("#progress-bar", Label)
-        status_label = self.query_one("#status-label", Label)
+        try:
+            control_button = self.query_one("#timer-control-button", Button)
+            progress_bar = self.query_one("#timer-progress-bar", TimerProgressBar)
 
-        # Update the progress line (time + bar + percentage)
-        progress_label.update(self._format_progress_line())
+            # Update progress bar
+            progress_bar.update_progress(self.remaining_seconds, self.total_seconds)
 
-        if self.is_finished:
-            status_label.update("✅ Complete!")
-            status_label.remove_class("running")
-            status_label.remove_class("paused")
-            status_label.add_class("finished")
-        elif self.is_running:
-            status_label.update("▶ Running")
-            status_label.remove_class("paused")
-            status_label.remove_class("finished")
-            status_label.add_class("running")
-        else:
-            status_label.update("⏸ Paused")
-            status_label.remove_class("running")
-            status_label.remove_class("finished")
-            status_label.add_class("paused")
+            # Update control button
+            if self.is_finished:
+                control_button.label = "✅ Complete!"
+                control_button.variant = "success"
+                control_button.remove_class("paused-button")
+                control_button.remove_class("running-button")
+                control_button.add_class("finished-button")
+            elif self.is_running:
+                control_button.label = "▶ Running"
+                control_button.variant = "success"
+                control_button.remove_class("paused-button")
+                control_button.remove_class("finished-button")
+                control_button.add_class("running-button")
+            else:
+                control_button.label = "⏸ Paused"
+                control_button.variant = "warning"
+                control_button.remove_class("running-button")
+                control_button.remove_class("finished-button")
+                control_button.add_class("paused-button")
+        except Exception:
+            pass
 
     def _start_timer(self) -> None:
         """Start the timer countdown."""
-        self._is_running = True
-        self._update_display()
+        self.is_running = True
         self._schedule_tick()
 
     def _schedule_tick(self) -> None:
         """Schedule the next tick in 1 second."""
-        if self._is_running and not self._is_finished:
+        if self.is_running and not self.is_finished:
             self._timer_handle = self.set_timer(1.0, self._tick_and_schedule)
 
     def _tick_and_schedule(self) -> None:
         """Tick and schedule next tick."""
         self._tick()
-        if self._is_running and not self._is_finished:
+        if self.is_running and not self.is_finished:
             self._schedule_tick()
 
     def _stop_timer(self) -> None:
         """Stop the timer countdown."""
-        self._is_running = False
-        self._update_display()
+        self.is_running = False
         if self._timer_handle is not None:
-            self.set_timer(self._timer_handle, None)
+            self._timer_handle.stop()
             self._timer_handle = None
 
     def _tick(self) -> None:
         """Decrement the timer by one second."""
         if self.is_running and self.remaining_seconds > 0:
             self.remaining_seconds -= 1
-            self._update_display()
 
             if self.remaining_seconds == 0:
                 self._timer_finished()
@@ -585,20 +526,18 @@ class TimerApp(App):  # type: ignore[type-arg]
     def _timer_finished(self) -> None:
         """Handle timer completion."""
         self._stop_timer()
-        self._is_finished = True
+        self.is_finished = True
         self.notify("Session complete!", timeout=2)
         self._show_session_complete()
 
     def _show_session_complete(self) -> None:
-        """Show the session complete modal."""
+        """Show the session complete modal with tags and project."""
         completed_minutes = self.initial_minutes
         default_content = f"Completed {completed_minutes}m timer session"
 
         def on_dismiss(result: str | None) -> None:
             if result:
                 try:
-                    # Use datetime.now() to store local time for the completion
-                    from datetime import datetime
                     entry = self.db.add_entry(
                         content=result,
                         tags=self.tags,
@@ -624,74 +563,12 @@ class TimerApp(App):  # type: ignore[type-arg]
             on_dismiss,
         )
 
-    def _show_quit_confirmation(self) -> None:
-        """Show quit confirmation modal."""
-
-        class ConfirmQuitModal(ModalScreen):  # type: ignore[type-arg]
-            """Confirmation dialog for quitting."""
-
-            CSS = """
-            ConfirmQuitModal {
-                align: center middle;
-            }
-
-            #confirm-container {
-                width: 60;
-                height: auto;
-                background: $surface;
-                border: thick $warning;
-                padding: 1 3;
-            }
-
-            #confirm-message {
-                text-align: center;
-                padding: 1 0;
-            }
-
-            #confirm-buttons {
-                align: center middle;
-                padding: 1 0;
-            }
-            """
-
-            BINDINGS = [
-                ("y", "confirm", "Yes"),
-                ("n", "cancel", "No"),
-                ("escape", "cancel", "Cancel"),
-            ]
-
-            def compose(self) -> ComposeResult:
-                with Container(id="confirm-container"):
-                    yield Label(
-                        "Quit without logging this session?",
-                        id="confirm-message",
-                    )
-                    with Container(id="confirm-buttons"):
-                        yield Button("Quit", id="yes-btn", variant="warning")
-                        yield Button("Continue", id="no-btn", variant="default")
-
-            def action_confirm(self) -> None:
-                self.dismiss(True)
-
-            def action_cancel(self) -> None:
-                self.dismiss(False)
-
-            def on_button_pressed(self, event: Button.Pressed) -> None:
-                if event.button.id == "yes-btn":
-                    self.action_confirm()
-                elif event.button.id == "no-btn":
-                    self.action_cancel()
-
-        def on_dismiss(confirmed: bool) -> None:
-            if confirmed:
-                self.notify("Session not logged", timeout=1.5)
-                self.exit()
-
-        self.push_screen(ConfirmQuitModal(), on_dismiss)  # type: ignore[arg-type]
-
     def on_button_pressed(self, event: Button.Pressed) -> None:
-        """Handle button presses for time adjustment."""
-        if event.button.id == "btn-plus-1":
+        """Handle button presses for time adjustment and control."""
+        if event.button.id == "timer-control-button":
+            # Toggle pause/resume when clicking the control button
+            self.action_toggle_pause()
+        elif event.button.id == "btn-plus-1":
             self._adjust_time(1)
         elif event.button.id == "btn-plus-5":
             self._adjust_time(5)
@@ -725,7 +602,7 @@ class TimerApp(App):  # type: ignore[type-arg]
             self.notify(msg, timeout=1)
         else:
             msg = f"Subtracted {abs(minutes)} minute"
-            msg += 's' if abs(minutes) > 1 else ''
+            msg += "s" if abs(minutes) > 1 else ""
             self.notify(msg, timeout=1)
 
         self._update_display()
@@ -741,6 +618,7 @@ class TimerApp(App):  # type: ignore[type-arg]
         else:
             self._start_timer()
             self.notify("Timer resumed", timeout=1)
+        self._update_display()
 
     def action_add_5_min(self) -> None:
         """Add 5 minutes to the timer."""
@@ -766,9 +644,11 @@ class TimerApp(App):  # type: ignore[type-arg]
             # Timer hasn't started, quit without confirmation
             self.exit()
         else:
-            self._show_quit_confirmation()
+            self.notify("Session not logged", timeout=1.5)
+            self.exit()
 
     def action_goto_help(self) -> None:
         """Navigate to the help TUI."""
         from .help_tui import HelpScreen
-        self.app.push_screen(HelpScreen())
+
+        self.push_screen(HelpScreen())

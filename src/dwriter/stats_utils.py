@@ -1,10 +1,9 @@
 """Utility functions for stats calculations."""
 
 from datetime import datetime, timedelta
-from typing import List, Tuple
 
 
-def calculate_streak(dates: List[datetime]) -> Tuple[int, int]:
+def calculate_streak(dates: list[datetime]) -> tuple[int, int]:
     """Calculate current and longest streaks from a list of dates.
 
     Args:

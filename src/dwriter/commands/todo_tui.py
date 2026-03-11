@@ -90,7 +90,7 @@ class EditTodoModal(ModalScreen):  # type: ignore[type-arg]
     Button {
         margin: 0 1;
     }
-    
+
     #help-text {
         text-style: italic;
         color: $text-muted;
@@ -112,20 +112,25 @@ class EditTodoModal(ModalScreen):  # type: ignore[type-arg]
         """
         super().__init__(**kwargs)
         self.todo = todo
-        self.result: tuple[str | None, str | None, str | None, str | None] = (None, None, None, None)
+        self.result: tuple[str | None, str | None, list[str] | None, str | None] = (
+            None,
+            None,
+            None,
+            None,
+        )
 
     def compose(self) -> ComposeResult:
         """Compose the modal UI."""
         with Container(id="edit-modal-container"):
             yield Label(f"Edit Task #{self.todo.id}", id="edit-modal-title")
-            
+
             yield Label("Content:", id="edit-content-label")
             yield Input(
                 value=self.todo.content,
                 id="edit-input",
                 placeholder="Enter task content...",
             )
-            
+
             # Due date field
             yield Label("Due Date:", id="edit-due-label")
             due_date_str = ""
@@ -140,7 +145,7 @@ class EditTodoModal(ModalScreen):  # type: ignore[type-arg]
                 "Examples: 2024-01-15, tomorrow, +5d, +1w, +1m, 3 days",
                 id="help-text",
             )
-            
+
             # Tags field
             yield Label("Tags:", id="edit-tags-label")
             tags_str = ", ".join(self.todo.tag_names) if self.todo.tag_names else ""
@@ -149,7 +154,7 @@ class EditTodoModal(ModalScreen):  # type: ignore[type-arg]
                 id="tags-input",
                 placeholder="Comma-separated tags (e.g., work, urgent)",
             )
-            
+
             # Project field
             yield Label("Project:", id="edit-project-label")
             yield Input(
@@ -157,7 +162,7 @@ class EditTodoModal(ModalScreen):  # type: ignore[type-arg]
                 id="project-input",
                 placeholder="Project name (optional)",
             )
-            
+
             with Container(id="edit-buttons"):
                 from textual.widgets import Button
 
@@ -174,17 +179,17 @@ class EditTodoModal(ModalScreen):  # type: ignore[type-arg]
         due_widget = self.query_one("#due-input", Input)
         tags_widget = self.query_one("#tags-input", Input)
         project_widget = self.query_one("#project-input", Input)
-        
+
         content = content_widget.value.strip() or None
         due_date_str = due_widget.value.strip() or None
         tags_str = tags_widget.value.strip() or None
         project = project_widget.value.strip() or None
-        
+
         # Parse tags from comma-separated string
         tags = None
         if tags_str is not None:
             tags = [t.strip() for t in tags_str.split(",") if t.strip()]
-        
+
         self.result = (content, due_date_str, tags, project)
         self.dismiss(self.result)
 
@@ -538,7 +543,7 @@ class TodoListView(ListView):
             "low": "dim",
         }
         color = priority_colors.get(todo.priority, "white")
-        
+
         # Format due date (shown first) - standardized display
         due_str = ""
         if todo.due_date:
@@ -546,11 +551,11 @@ class TodoListView(ListView):
             today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
             due_date_only = due_date.replace(hour=0, minute=0, second=0, microsecond=0)
             days_until = (due_date_only - today).days
-            
+
             if days_until == 0:
-                due_str = f"[bold yellow]TODAY[/bold yellow] | "
+                due_str = "[bold yellow]TODAY[/bold yellow] | "
             elif days_until == 1:
-                due_str = f"[yellow]TOMORROW[/yellow] | "
+                due_str = "[yellow]TOMORROW[/yellow] | "
             elif days_until < 0:
                 # Overdue - show as negative days in red
                 due_str = f"[red]{days_until}d[/red] | "
@@ -563,18 +568,18 @@ class TodoListView(ListView):
                 due_str = f"[dim cyan]{months_until}m[/dim cyan] | "
         else:
             due_str = "     – | "  # Placeholder for tasks without due date
-        
+
         # Format tags with default terminal color (no special styling)
         tags_str = ""
         if todo.tag_names:
             tags_display = ", ".join(todo.tag_names)
             tags_str = f" #{tags_display}"
-        
+
         # Format projects with magenta/fuchsia color (#ff00ff)
         project_str = ""
         if todo.project:
             project_str = f" [#ff00ff]→ {todo.project}[/]"
-        
+
         # Format priority label
         priority_label = todo.priority.upper()
 
@@ -634,7 +639,7 @@ class TodoApp(App):  # type: ignore[type-arg]
 
     #title {
         text-style: bold;
-        color: $text;
+        color: $foreground;
     }
 
     #subtitle {
@@ -673,7 +678,7 @@ class TodoApp(App):  # type: ignore[type-arg]
     }
 
     .pending-count {
-        color: $text;
+        color: $foreground;
     }
 
     .completed-count {
@@ -816,20 +821,20 @@ class TodoApp(App):  # type: ignore[type-arg]
         all_todos = self.db.get_todos(status=None)
         pending_todos = [t for t in all_todos if t.status == "pending"]
         completed_todos = [t for t in all_todos if t.status == "completed"]
-        
+
         # Update each list view
         try:
             pending_list = self.query_one("#todos", TodoListView)
             pending_list.update_todos(pending_todos)
         except Exception:
             pass
-        
+
         try:
             completed_list = self.query_one("#todos-completed", TodoListView)
             completed_list.update_todos(completed_todos)
         except Exception:
             pass
-        
+
         try:
             all_list = self.query_one("#todos-all", TodoListView)
             all_list.update_todos(all_todos)
@@ -937,29 +942,29 @@ class TodoApp(App):  # type: ignore[type-arg]
             return
 
         def on_dismiss(
-            result: tuple[str | None, str | None, list[str] | None, str | None]
+            result: tuple[str | None, str | None, list[str] | None, str | None],
         ) -> None:
             content, due_date_str, tags, project = result
-            
+
             # Check if anything changed
             content_changed = content is not None and content != todo.content
             due_date_changed = due_date_str is not None
             tags_changed = tags is not None
             project_changed = project is not None and project != todo.project
-            
+
             # Handle cancel (all None)
             if result == (None, None, None, None):
                 return
-            
+
             try:
                 updates = {}
                 notifications = []
-                
+
                 # Handle content update
                 if content_changed:
                     updates["content"] = content
                     notifications.append("content updated")
-                
+
                 # Handle due date update
                 if due_date_changed:
                     if due_date_str is None or due_date_str.strip() == "":
@@ -969,10 +974,13 @@ class TodoApp(App):  # type: ignore[type-arg]
                     else:
                         # Parse and set new due date
                         from ..date_utils import parse_natural_date
+
                         try:
                             due_date = parse_natural_date(due_date_str)
                             updates["due_date"] = due_date
-                            notifications.append(f"due: {due_date.strftime('%Y-%m-%d')}")
+                            notifications.append(
+                                f"due: {due_date.strftime('%Y-%m-%d')}"
+                            )
                         except ValueError as e:
                             self.notify(
                                 f"Invalid date format: {e}",
@@ -980,7 +988,7 @@ class TodoApp(App):  # type: ignore[type-arg]
                                 timeout=3,
                             )
                             return
-                
+
                 # Handle tags update
                 if tags_changed:
                     updates["tags"] = tags
@@ -988,7 +996,7 @@ class TodoApp(App):  # type: ignore[type-arg]
                         notifications.append(f"tags: {', '.join(tags)}")
                     else:
                         notifications.append("tags cleared")
-                
+
                 # Handle project update
                 if project_changed:
                     updates["project"] = project if project else None
@@ -996,11 +1004,13 @@ class TodoApp(App):  # type: ignore[type-arg]
                         notifications.append(f"project: {project}")
                     else:
                         notifications.append("project cleared")
-                
+
                 # Apply updates if any
                 if updates:
                     self.db.update_todo(todo.id, **updates)
-                    self.notify(f"Task #{todo.id}: {'; '.join(notifications)}", timeout=2)
+                    self.notify(
+                        f"Task #{todo.id}: {'; '.join(notifications)}", timeout=2
+                    )
                     self._load_todos()
 
             except Exception as e:
@@ -1014,6 +1024,7 @@ class TodoApp(App):  # type: ignore[type-arg]
 
     def action_add(self) -> None:
         """Add a new todo task."""
+
         def on_dismiss(result: str | None) -> None:
             if result:
                 try:
@@ -1297,6 +1308,7 @@ class TodoApp(App):  # type: ignore[type-arg]
     def action_goto_help(self) -> None:
         """Navigate to the help TUI."""
         from .help_tui import HelpScreen
+
         self.app.push_screen(HelpScreen())
 
     def action_quit(self) -> None:  # type: ignore[override]

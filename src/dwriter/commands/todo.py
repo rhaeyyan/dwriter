@@ -324,7 +324,7 @@ def todo_list(ctx: AppContext, show_all: bool, use_tui: bool) -> None:
 
         tags_str = ", ".join(task.tag_names) if task.tag_names else ""
         project_str = task.project or ""
-        
+
         # Format due date
         due_str = ""
         if task.due_date:
@@ -332,7 +332,7 @@ def todo_list(ctx: AppContext, show_all: bool, use_tui: bool) -> None:
             today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
             due_date_only = due_date.replace(hour=0, minute=0, second=0, microsecond=0)
             days_until = (due_date_only - today).days
-            
+
             if days_until < 0:
                 due_str = f"[red]{due_date.strftime('%Y-%m-%d')}[/red]"
             elif days_until == 0:
@@ -342,7 +342,7 @@ def todo_list(ctx: AppContext, show_all: bool, use_tui: bool) -> None:
             elif days_until <= 7:
                 due_str = f"[cyan]{days_until}d[/cyan]"
             else:
-                due_str = due_date.strftime('%Y-%m-%d')
+                due_str = due_date.strftime("%Y-%m-%d")
 
         table.add_row(
             str(task.id),
@@ -409,9 +409,7 @@ def todo_edit(ctx: AppContext, task_id: int) -> None:
     edited_content = edited_content.strip()
 
     if not edited_content:
-        ctx.console.print(
-            "Task content cannot be empty. Use 'todo rm' to delete."
-        )
+        ctx.console.print("Task content cannot be empty. Use 'todo rm' to delete.")
         return
 
     if edited_content != task.content:
@@ -451,7 +449,7 @@ def done(ctx: AppContext, task_identifier: str, use_search: bool) -> None:
 
         if not matches:
             ctx.console.print(
-                f"[red]![/red] No tasks found matching \"{task_identifier}\"."
+                f'[red]![/red] No tasks found matching "{task_identifier}".'
             )
             return
 
@@ -466,7 +464,7 @@ def done(ctx: AppContext, task_identifier: str, use_search: bool) -> None:
         else:
             # Multiple matches - ask user to select
             ctx.console.print(
-                f"[yellow]Multiple matches found for \"{task_identifier}\":[/yellow]"
+                f'[yellow]Multiple matches found for "{task_identifier}":[/yellow]'
             )
             for i, (task, score) in enumerate(matches, 1):
                 ctx.console.print(
@@ -519,9 +517,7 @@ def done(ctx: AppContext, task_identifier: str, use_search: bool) -> None:
         )
 
         ctx.console.print(f"[bold green]✅ Task {task_id} completed![/bold green]")
-        ctx.console.print(
-            f"Logged to today's entries: [white]{entry.content}[/white]"
-        )
+        ctx.console.print(f"Logged to today's entries: [white]{entry.content}[/white]")
 
     except Exception as e:
         ctx.console.print(f"[red]Error completing task: {e}[/red]")

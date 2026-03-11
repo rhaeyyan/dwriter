@@ -205,27 +205,21 @@ class TestTodoCommands:
     def test_todo_add_with_priority(self):
         """Test adding a todo with priority."""
         runner = CliRunner()
-        result = runner.invoke(
-            main, ["todo", "Urgent task", "--priority", "urgent"]
-        )
+        result = runner.invoke(main, ["todo", "Urgent task", "--priority", "urgent"])
 
         assert result.exit_code == 0
 
     def test_todo_add_with_project(self):
         """Test adding a todo with project."""
         runner = CliRunner()
-        result = runner.invoke(
-            main, ["todo", "Task", "-p", "my-project"]
-        )
+        result = runner.invoke(main, ["todo", "Task", "-p", "my-project"])
 
         assert result.exit_code == 0
 
     def test_todo_add_with_tags(self):
         """Test adding a todo with tags."""
         runner = CliRunner()
-        result = runner.invoke(
-            main, ["todo", "Task", "-t", "bug", "-t", "urgent"]
-        )
+        result = runner.invoke(main, ["todo", "Task", "-t", "bug", "-t", "urgent"])
 
         assert result.exit_code == 0
 
@@ -233,9 +227,7 @@ class TestTodoCommands:
         """Test adding a todo with invalid priority."""
         runner = CliRunner()
         # Note: options must come BEFORE content with the new syntax
-        result = runner.invoke(
-            main, ["todo", "--priority", "invalid", "Task"]
-        )
+        result = runner.invoke(main, ["todo", "--priority", "invalid", "Task"])
 
         assert result.exit_code != 0
 
