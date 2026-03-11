@@ -1,6 +1,6 @@
 """Timer screen for dwriter TUI.
 
-This module provides a pomodoro-style timer for focused work sessions.
+This module provides a timer-style timer for focused work sessions.
 """
 
 from __future__ import annotations
@@ -153,7 +153,9 @@ class TimerProgressBar(Static):
     TimerProgressBar {
         height: 3;
         margin: 1 0;
+        padding: 0 2;
         content-align: center middle;
+        background: $panel;
     }
 
     .progress-label {
@@ -208,7 +210,7 @@ class TimerProgressBar(Static):
             return "#ff0000"  # Red
 
     def _render_bar(self) -> None:
-        """Render the progress bar with gradient pips and mango indicator."""
+        """Render the progress bar with single color pips."""
         if self.total_seconds <= 0:
             self.update("No time set")
             return
@@ -223,8 +225,8 @@ class TimerProgressBar(Static):
 
         text = Text()
 
-        # Colors for gradient: green to red
-        colors = ["#44ce1b", "#bbdb44", "#f7e379", "#f2a134", "#e51f1f"]
+        # Single color for the progress bar
+        bar_color = "#f2a134"
 
         mins = self.remaining_seconds // 60
         secs = self.remaining_seconds % 60
@@ -235,9 +237,7 @@ class TimerProgressBar(Static):
 
         for i in range(bar_width):
             if i < filled:
-                color_idx = int((i / bar_width) * len(colors))
-                color_idx = min(color_idx, len(colors) - 1)
-                text.append("▮", style=colors[color_idx])
+                text.append("▮", style=bar_color)
             elif i == filled:
                 text.append("🥭")
             else:
@@ -280,7 +280,8 @@ class TimerScreen(Container):
         height: 3;
         width: 100%;
         margin-bottom: 1;
-        padding: 0 1;
+        padding: 0 2;
+        background: $panel;
     }
 
     #timer-title {
@@ -292,9 +293,10 @@ class TimerScreen(Container):
     }
 
     #timer-break-mode-container {
-        height: 3;
+        height: auto;
         width: auto;
         align: right middle;
+        padding: 0 1;
     }
 
     #timer-break-label {
@@ -305,7 +307,7 @@ class TimerScreen(Container):
     }
 
     #timer-break-switch {
-        margin-top: 0;
+        margin: 0;
     }
 
     #timer-controls {
@@ -652,15 +654,31 @@ class TimerScreen(Container):
         )
 
     def _reset_timer(self) -> None:
-        """Reset timer to initial state for reuse."""
+        """Reset timer to initial state for reuse.
+        
+        Resets to configured work duration and toggles off break mode.
+        """
         self._stop_timer()
+        
+        # Always reset to work mode after a session is logged
+        self.is_break_mode = False
+        self.initial_minutes = self.work_duration
+        self.project = None
+            
         self.remaining_seconds = self.initial_minutes * 60
         self.total_seconds = self.initial_minutes * 60
+        
         self.is_finished = False
         self.is_running = False
-        # Clear tags and project from previous session
+        # Clear tags from previous session
         self.tags = []
-        self.project = None
+        
+        # Update switch state in UI
+        try:
+            self.query_one("#timer-break-switch", Switch).value = False
+        except Exception:
+            pass
+            
         self._update_display()
         self.update_session_meta()
 
@@ -798,19 +816,23 @@ class TimerScreen(Container):
         """Toggle between work mode and break mode.
 
         Work mode uses the configured work duration (default 25 min).
-        Break mode uses the configured short break duration (default 5 min).
+        Break mode uses the configured short break duration (default 5 min)
+        and sets the project to 'Break'.
         """
         self.is_break_mode = not self.is_break_mode
 
-        # Update timer duration based on mode
+        # Update timer duration and project based on mode
         if self.is_break_mode:
             new_duration = self.break_duration
+            self.project = "Break"
             self.notify(f"Break mode: {new_duration} minutes", timeout=1.5)
         else:
             new_duration = self.work_duration
+            self.project = None
             self.notify(f"Work mode: {new_duration} minutes", timeout=1.5)
 
         # Update timer
+        self.initial_minutes = new_duration
         self.total_seconds = new_duration * 60
         self.remaining_seconds = self.total_seconds
 

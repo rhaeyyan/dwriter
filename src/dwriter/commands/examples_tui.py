@@ -235,7 +235,7 @@ class ExamplesScreen(Screen[Any]):
                 "default": (
                     "Default Timer",
                     "dwriter timer",
-                    "Start 25-minute timer (Pomodoro):",
+                    "Start 25-minute timer (Timer):",
                 ),
                 "custom": (
                     "Custom Duration",
