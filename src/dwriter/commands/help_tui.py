@@ -1,4 +1,5 @@
 """Interactive help TUI using Textual with comprehensive command documentation."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -20,14 +21,17 @@ def _get_cli_app() -> click.Group:
     """Get the main CLI app."""
     try:
         from ..cli import main as cli_app
+
         return cli_app
     except ImportError:
         import sys
         from pathlib import Path
+
         src_path = str(Path(__file__).parent.parent.parent)
         if src_path not in sys.path:
             sys.path.insert(0, src_path)
         from dwriter.cli import main as cli_app
+
         return cli_app
 
 
@@ -77,30 +81,30 @@ class HelpScreen(Screen[Any]):
                     if len(subtabs) == 1:
                         yield MarkdownViewer(
                             id=f"{tab_id}-{subtabs[0]}-viewer",
-                            show_table_of_contents=False
+                            show_table_of_contents=False,
                         )
                     else:
                         nested_id = f"{tab_id}-nested"
-                        with TabbedContent(initial=f"{tab_id}-{subtabs[0]}", id=nested_id):
+                        with TabbedContent(
+                            initial=f"{tab_id}-{subtabs[0]}", id=nested_id
+                        ):
                             for subtab_id in subtabs:
                                 pane_id = f"{tab_id}-{subtab_id}"
                                 display_name = subtab_id.replace("_", " ").title()
                                 with TabPane(display_name, id=pane_id):
                                     yield MarkdownViewer(
                                         id=f"{pane_id}-viewer",
-                                        show_table_of_contents=False
+                                        show_table_of_contents=False,
                                     )
         yield Footer()
-
-    def action_close(self) -> None:
-        """Close the help screen and return to the previous screen."""
-        self.app.pop_screen()
 
     def on_mount(self) -> None:
         """Load the first tab's content on mount."""
         self._load_subtab_content("logging", "add")
 
-    def on_tabbed_content_tab_activated(self, event: TabbedContent.TabActivated) -> None:
+    def on_tabbed_content_tab_activated(
+        self, event: TabbedContent.TabActivated
+    ) -> None:
         """Lazy-load markdown content when tab is activated."""
         if not event.pane.id:
             return
@@ -108,7 +112,7 @@ class HelpScreen(Screen[Any]):
         # Check if this is an outer tab (single word like "search", "timer")
         # or a sub-tab (format: {category}-{subtab})
         parts = event.pane.id.split("-")
-        
+
         if len(parts) == 1:
             # This is an outer tab - load its first subtab
             category = event.pane.id
@@ -120,9 +124,17 @@ class HelpScreen(Screen[Any]):
             # This is a sub-tab
             category = parts[0]
             subtab = "-".join(parts[1:])
-            
-            valid_categories = ["logging", "todos", "reports", "editing",
-                               "search", "timer", "config", "help"]
+
+            valid_categories = [
+                "logging",
+                "todos",
+                "reports",
+                "editing",
+                "search",
+                "timer",
+                "config",
+                "help",
+            ]
             if category not in valid_categories:
                 return
 
@@ -179,7 +191,7 @@ class HelpScreen(Screen[Any]):
     def _get_add_content(self) -> str:
         return """# `dwriter add`
 
-Log a new journal entry.
+Log a new journal entry with tags and projects.
 
 ---
 
@@ -226,6 +238,17 @@ dwriter add "Meeting notes" --date "last Friday"
 dwriter add "Completed sprint" --date "3 days ago"
 ```
 
+## Supported Date Formats
+
+| Format | Example | Description |
+|--------|---------|-------------|
+| Relative | `today`, `yesterday`, `tomorrow` | Common relative dates |
+| Days ago | `3 days ago`, `5 days ago` | Specific days in past |
+| Last weekday | `last Monday`, `last Friday` | Most recent weekday |
+| Standard | `2024-01-15` | ISO format |
+| US format | `01/15/2024` | Month/Day/Year |
+| Named | `January 15, 2024` | Full date name |
+
 ## Tips
 
 💡 **Quick logging**: Just run `dwriter add "your task"` for simple entries
@@ -233,6 +256,8 @@ dwriter add "Completed sprint" --date "3 days ago"
 💡 **Natural language dates**: Use `yesterday`, `last Monday`, `3 days ago`, etc.
 
 💡 **Multiple tags**: Use `-t` multiple times: `-t bug -t backend -t urgent`
+
+💡 **Omnibox shortcut**: In TUI, press `/` and type `#tag &project Your entry`
 """
 
     def _get_today_content(self) -> str:
@@ -266,6 +291,8 @@ dwriter today
 💡 **Empty output**: If no entries exist for today, the output will be empty
 
 💡 **Alternative**: Run `dwriter` (no arguments) to see all entries
+
+💡 **TUI view**: Use the Logs screen (press `2` in TUI) for interactive view
 """
 
     def _get_todo_content(self) -> str:
@@ -312,11 +339,11 @@ dwriter todo edit <ID>
 
 | Display | Meaning | Color |
 |---------|---------|-------|
+| `OVERDUE` | Past due | Red (appears FIRST!) |
 | `TODAY` | Due today | Bold Yellow |
 | `TOMORROW` | Due tomorrow | Yellow |
 | `13d` | 13 days until due | Cyan |
 | `2m` | 2 months until due | Dim Cyan |
-| `-5d` | 5 days overdue | Red |
 | `–` | No due date set | Dim |
 
 ## Examples
@@ -360,7 +387,7 @@ dwriter todo list --all
 dwriter todo list --tui
 ```
 
-## Keybindings (Interactive Mode)
+## Keybindings (Interactive TUI Mode)
 
 | Key | Action |
 |-----|--------|
@@ -373,7 +400,6 @@ dwriter todo list --tui
 | `1/2/3` | Switch tabs (Pending/Completed/All) |
 | `Tab` | Cycle tabs |
 | `q/Esc` | Quit |
-| `?` | Help (press q/Esc to return) |
 
 > **Note:** Tags and projects can be edited via the `e` (Edit) dialog using comma-separated input.
 
@@ -387,13 +413,12 @@ dwriter todo list --tui
 
 💡 **Smart sorting**: Tasks are sorted by:
   1. Priority (urgent → high → normal → low)
-  2. Due date urgency (overdue → today → tomorrow → other)
+  2. Due date urgency (OVERDUE → TODAY → TOMORROW → other)
   3. Creation date (newest first)
 
 💡 **Options first**: When using `dwriter todo` directly, put options before content:
 ```bash
 dwriter todo --priority high -t feature "implement new API"
-dwriter todo --due tomorrow "write tests"
 ```
 
 💡 **Use `todo add`**: For clarity, use the explicit subcommand:
@@ -451,6 +476,8 @@ When you mark a task as done:
 💡 **Fuzzy search**: Use `--search` when you don't remember the task ID
 
 💡 **Standup ready**: Completed tasks appear in `dwriter standup` output
+
+💡 **TUI shortcut**: In Todo Board, press `Space` or `Enter` to complete tasks
 """
 
     def _get_standup_content(self) -> str:
@@ -518,6 +545,14 @@ dwriter standup --no-copy
 - reviewed PR #123
 ```
 
+### Jira
+```
+* Yesterday's Progress:
+** fixed the race condition in auth
+** implemented feature X
+** reviewed PR #123
+```
+
 ## Tips
 
 💡 **Auto-copy**: Output is automatically copied to clipboard (use `--no-copy` to disable)
@@ -525,6 +560,8 @@ dwriter standup --no-copy
 💡 **Yesterday only**: By default, shows entries from the previous day
 
 💡 **Format once**: Generate in markdown for documentation, Slack for chat
+
+💡 **Include todos**: Use `--with-todos` to include completed tasks in summary
 """
 
     def _get_review_content(self) -> str:
@@ -598,6 +635,8 @@ dwriter review --format plain
 💡 **Timesheet prep**: Great for generating weekly timesheets
 
 💡 **Pattern spotting**: Review longer periods to spot work patterns
+
+💡 **Sprint reports**: Use `--days 14` for bi-weekly sprint summaries
 """
 
     def _get_stats_content(self) -> str:
@@ -617,13 +656,14 @@ dwriter stats
 
 ### Overview Tab
 - **KPI Cards**: Total entries, current streak, longest streak, consistency %
-- **Contribution Calendar**: GitHub-style activity heatmap
+- **Contribution Calendar**: GitHub-style activity heatmap (365 days)
 - **Streak Tracking**: Current and longest logging streaks
+- **30-Day Sparkline**: Braille character visualization of recent activity
 
 ### Activity Tab
-- **Weekly Chart**: Bar chart showing entries per day (last 30 days)
-- **Top Projects**: Table of most-used projects
-- **Top Tags**: Table of most-used tags
+- **Weekly Chart**: Bar chart showing entries per week (last 8 weeks)
+- **Top Projects**: Table of most-used projects with counts
+- **Top Tags**: Table of most-used tags with visual usage bars
 
 ## Keybindings
 
@@ -631,6 +671,8 @@ dwriter stats
 |-----|--------|
 | `Tab` | Navigate between sections |
 | `r` | Refresh data |
+| `1/2` | Switch tabs (Overview / Activity) |
+| `d` | Drill down into selected project/tag |
 | `q/Esc` | Quit |
 
 ## Tips
@@ -640,6 +682,8 @@ dwriter stats
 💡 **Insights**: Identify which projects/tags get the most attention
 
 💡 **Consistency**: Aim for daily entries to build the habit
+
+💡 **Visual feedback**: The calendar heatmap shows your activity at a glance
 """
 
     def _get_edit_content(self) -> str:
@@ -691,9 +735,9 @@ dwriter edit --date 2025-01-15
 |-----|--------|
 | `j/k` | Navigate down/up |
 | `e/Enter` | Edit entry content |
-| `t` | Edit tags |
-| `p` | Edit project |
-| `d` | Delete entry |
+| `t` | Edit tags (comma-separated) |
+| `p` | Edit project name |
+| `d` | Delete entry (with confirmation) |
 | `r` | Refresh list |
 | `q/Esc` | Quit |
 
@@ -704,6 +748,8 @@ dwriter edit --date 2025-01-15
 💡 **Quick delete**: Use `dwriter undo` to quickly delete the last entry
 
 💡 **Bulk cleanup**: Use `dwriter delete --before <date>` for old entries
+
+💡 **TUI alternative**: Use the Logs screen (press `2` in TUI) for interactive editing
 """
 
     def _get_delete_content(self) -> str:
@@ -867,9 +913,9 @@ dwriter search "meeting" -n 5
 
 ## Match Scores
 
-- 🟢 **90%+**: Excellent match
-- 🟡 **75%+**: Good match
-- ⚪ **60%+**: Weak match
+- 🟢 **90%+**: Excellent match (green)
+- 🟡 **75%+**: Good match (yellow)
+- ⚪ **60%+**: Weak match (dim)
 
 ## Tips
 
@@ -878,6 +924,8 @@ dwriter search "meeting" -n 5
 💡 **Filter first**: Use `-p` and `-t` to narrow results before searching
 
 💡 **Real-time**: Results update as you type in interactive mode
+
+💡 **Copy to clipboard**: Press `Enter` on a result to copy its content
 """
 
     def _get_timer_content(self) -> str:
@@ -918,7 +966,7 @@ dwriter timer 45
 dwriter timer 45 -t deepwork -p backend
 ```
 
-## Keybindings
+## Keybindings (TUI Mode)
 
 | Key | Action |
 |-----|--------|
@@ -926,7 +974,7 @@ dwriter timer 45 -t deepwork -p backend
 | `+` | Add 5 minutes |
 | `-` | Subtract 5 minutes |
 | `Enter` | Finish session early |
-| `q/Esc` | Quit |
+| `q/Esc` | Quit (with confirmation) |
 
 ## What Happens on Completion
 
@@ -936,6 +984,22 @@ When the timer finishes:
 2. 📝 Journal entry is created: `"Completed X minute focus session"`
 3. 🏷️ Tags and project are preserved
 
+## Progress Bar Display
+
+```
+15:00  [ ▮▮▮▮▮🥭▯▯▯▯▯▯▯▯▯▯▯▯▯▯▯ ]  40%
+ ↑      ↑                    ↑    ↑
+time   green pips         dim   percentage
+       mango at 40%
+```
+
+### Color Gradient
+- 🟢 **Green** (0-25%): Fresh start
+- 🟡 **Yellow-Green** (25-50%): Getting going
+- 🟡 **Yellow** (50-75%): Halfway there
+- 🟠 **Orange** (75-85%): Almost done
+- 🔴 **Red** (85-100%): Final stretch
+
 ## Tips
 
 💡 **Pomodoro technique**: Default 25 minutes follows the classic method
@@ -943,6 +1007,8 @@ When the timer finishes:
 💡 **Auto-logging**: Completed sessions automatically log to your journal
 
 💡 **Adjust on the fly**: Use `+` and `-` to extend or shorten sessions
+
+💡 **Omnibox shortcut**: Type `#tag &project 15` in TUI to start a 15-minute timer
 """
 
     def _get_config_content(self) -> str:
@@ -1009,6 +1075,20 @@ format = "slack"
 copy_to_clipboard = true
 ```
 
+## Configuration Options
+
+| Section | Option | Description | Default |
+|---------|--------|-------------|---------|
+| `[defaults]` | `project` | Default project for new entries | `null` |
+| `[defaults]` | `tags` | Default tags for new entries | `[]` |
+| `[standup]` | `format` | Default standup format | `"bullets"` |
+| `[standup]` | `copy_to_clipboard` | Auto-copy standup to clipboard | `true` |
+| `[review]` | `default_days` | Default number of days to review | `5` |
+| `[review]` | `format` | Default review format | `"markdown"` |
+| `[display]` | `show_id` | Show entry IDs in output | `true` |
+| `[display]` | `show_time` | Show timestamps | `true` |
+| `[display]` | `colors` | Enable colored output | `true` |
+
 ## Tips
 
 💡 **Set defaults**: Configure default project and tags to speed up logging
@@ -1057,7 +1137,7 @@ dwriter help --plain | grep -i "tag"
 ## Interactive Features
 
 ### Navigation
-- **Tabbed interface**: Browse by category
+- **Tabbed interface**: Browse by category (8 tabs)
 - **Nested tabs**: Drill down to specific commands
 - **Keyboard shortcuts**: Quick navigation with number keys
 
@@ -1082,21 +1162,39 @@ dwriter help --plain | grep -i "tag"
 💡 **Search**: Use `--plain` with grep to find specific topics
 
 💡 **Quick reference**: Keep this handy when learning dwriter
+
+💡 **In-app help**: Press `?` in any TUI screen for context-sensitive help
 """
 
     def action_switch_tab(self, index: int) -> None:
         """Switch to tab by index."""
         tabbed = self.query_one(TabbedContent)
-        tabs = ["logging", "todos", "reports", "editing",
-                "search", "timer", "config", "help"]
+        tabs = [
+            "logging",
+            "todos",
+            "reports",
+            "editing",
+            "search",
+            "timer",
+            "config",
+            "help",
+        ]
         if 0 <= index < len(tabs):
             tabbed.active = tabs[index]
 
     def action_next_tab(self) -> None:
         """Cycle to the next tab."""
         tabbed = self.query_one(TabbedContent)
-        tabs = ["logging", "todos", "reports", "editing",
-                "search", "timer", "config", "help"]
+        tabs = [
+            "logging",
+            "todos",
+            "reports",
+            "editing",
+            "search",
+            "timer",
+            "config",
+            "help",
+        ]
         current_idx = tabs.index(tabbed.active)
         next_idx = (current_idx + 1) % len(tabs)
         tabbed.active = tabs[next_idx]
@@ -1105,7 +1203,7 @@ dwriter help --plain | grep -i "tag"
         """Toggle the Table of Contents sidebar."""
         tabbed = self.query_one(TabbedContent)
         active_category = tabbed.active
-        
+
         # Find the first subtab for this category
         for _label, tab_id, subtabs in self.CATEGORY_CONFIG:
             if tab_id == active_category and subtabs:

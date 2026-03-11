@@ -67,6 +67,7 @@ def main(ctx: click.Context) -> None:
     Track daily tasks and generate standup summaries with minimal effort.
 
     Quick Start:
+      dwriter                      # Launch unified TUI
       dwriter add "fixed the race condition in auth"
       dwriter add "implemented feature X" -t feature -p myapp
       dwriter todo "write unit tests" --priority high
@@ -74,22 +75,24 @@ def main(ctx: click.Context) -> None:
       dwriter standup
       dwriter review --days 7
 
-    Interactive TUI Modes:
-      dwriter search    - Fuzzy search with live filtering
-      dwriter todo      - Interactive todo board
-      dwriter edit      - Edit today's entries
-      dwriter timer     - Pomodoro-style timer
-      dwriter stats     - Dashboard with calendar & charts
+    Interactive TUI:
+      Run 'dwriter' without arguments to launch the unified TUI with:
+      - Dashboard with statistics and calendar
+      - Todo board for task management
+      - Timer for pomodoro sessions
+      - Search for fuzzy finding entries
+      - Global quick-add bar (press / to focus)
+      - Command palette (press Ctrl+P)
 
     Common Commands:
       add       - Log a new entry
-      todo      - Manage tasks
+      todo      - Manage tasks (or use TUI)
       done      - Complete a task
       standup   - Generate yesterday's summary
       review    - Review last N days
-      search    - Fuzzy search entries/todos
-      timer     - Start pomodoro-style timer
-      stats     - View statistics dashboard
+      search    - Fuzzy search entries/todos (or use TUI)
+      timer     - Start pomodoro-style timer (or use TUI)
+      stats     - View statistics dashboard (or use TUI)
       edit      - Edit entries
       config    - Manage settings
     """
@@ -101,9 +104,19 @@ def main(ctx: click.Context) -> None:
         ctx.exit(1)
 
     if ctx.invoked_subcommand is None:
-        from .commands import today
+        import sys
 
-        ctx.invoke(today)
+        # Force terminal resize to exactly 42 rows by 82 columns (default size)
+        # ANSI escape sequence: \x1b[8;{height};{width}t
+        # Works on MacOS Terminal, iTerm2, Alacritty, and most X11 Linux terminals
+        sys.stdout.write("\x1b[8;42;82t")
+        sys.stdout.flush()
+
+        # Launch the unified TUI
+        from .tui.app import DWriterApp
+
+        app = DWriterApp(ctx.obj)
+        app.run()
 
 
 def _register_commands() -> None:
@@ -115,12 +128,12 @@ def _register_commands() -> None:
         done,
         edit,
         examples,
-        timer,
         help_cmd,
         review,
         search,
         standup,
         stats,
+        timer,
         today,
         todo,
         undo,

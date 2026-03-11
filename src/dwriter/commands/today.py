@@ -27,7 +27,7 @@ def today(ctx: AppContext) -> None:
 
     if not entries:
         ctx.console.print(
-            'No entries for today. Start logging with:\n'
+            "No entries for today. Start logging with:\n"
             '  [bold]dwriter add "your task"[/bold]'
         )
         return

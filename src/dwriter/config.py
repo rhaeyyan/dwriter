@@ -6,7 +6,7 @@ stored in TOML format.
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import tomlkit
 
@@ -50,11 +50,19 @@ class DisplayConfig:
         show_confirmation: Whether to show confirmation after adding entries.
         show_id: Whether to show entry IDs in output.
         colors: Whether to use colors in output.
+        clock_24hr: Whether to use 24-hour clock format (vs 12-hour).
+        theme: Theme preset name (cyberpunk, light, dark, minimal).
+        ergonomic_mode: Whether to use spacious ergonomic layout.
+        date_format: Date display format string.
     """
 
     show_confirmation: bool = True
     show_id: bool = True
     colors: bool = True
+    clock_24hr: bool = True
+    theme: str = "cyberpunk"
+    ergonomic_mode: bool = False
+    date_format: str = "YYYY-MM-DD"
 
 
 @dataclass
@@ -64,10 +72,35 @@ class DefaultsConfig:
     Attributes:
         tags: Default tags to apply to all entries.
         project: Default project name.
+        default_priority: Default priority for new todos (normal/high/urgent).
+        default_due_days: Default days until due for new todos.
     """
 
-    tags: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
     project: Optional[str] = None
+    default_priority: str = "normal"
+    default_due_days: int = 1
+
+
+@dataclass
+class TimerConfig:
+    """Timer (Pomodoro) configuration.
+
+    Attributes:
+        work_duration: Work session duration in minutes.
+        break_duration: Short break duration in minutes.
+        long_break_duration: Long break duration in minutes.
+        sessions_before_long_break: Number of sessions before a long break.
+        auto_start_breaks: Whether to auto-start breaks.
+        sound_enabled: Whether to play sound notifications.
+    """
+
+    work_duration: int = 25
+    break_duration: int = 5
+    long_break_duration: int = 15
+    sessions_before_long_break: int = 4
+    auto_start_breaks: bool = False
+    sound_enabled: bool = True
 
 
 @dataclass
@@ -79,12 +112,14 @@ class Config:
         review: Review-related settings.
         display: Display-related settings.
         defaults: Default values for entries.
+        timer: Timer (Pomodoro) settings.
     """
 
     standup: StandupConfig = field(default_factory=StandupConfig)
     review: ReviewConfig = field(default_factory=ReviewConfig)
     display: DisplayConfig = field(default_factory=DisplayConfig)
     defaults: DefaultsConfig = field(default_factory=DefaultsConfig)
+    timer: TimerConfig = field(default_factory=TimerConfig)
 
 
 class ConfigManager:
@@ -130,11 +165,16 @@ class ConfigManager:
 
         try:
             with open(self.config_path, "rb") as f:
-                data: Dict[str, Any] = tomllib.load(f)
+                data: dict[str, Any] = tomllib.load(f)
         except tomllib.TOMLDecodeError:
             self._config = Config()
             self.save()
             return self._config
+
+        # Safe access with defaults for backward compatibility
+        display_data = data.get("display", {})
+        defaults_data = data.get("defaults", {})
+        timer_data = data.get("timer", {})  # May not exist in old configs
 
         self._config = Config(
             standup=StandupConfig(
@@ -148,15 +188,29 @@ class ConfigManager:
                 format=data.get("review", {}).get("format", "markdown"),
             ),
             display=DisplayConfig(
-                show_confirmation=data.get("display", {}).get(
-                    "show_confirmation", True
-                ),
-                show_id=data.get("display", {}).get("show_id", True),
-                colors=data.get("display", {}).get("colors", True),
+                show_confirmation=display_data.get("show_confirmation", True),
+                show_id=display_data.get("show_id", True),
+                colors=display_data.get("colors", True),
+                clock_24hr=display_data.get("clock_24hr", True),
+                theme=display_data.get("theme", "cyberpunk"),
+                ergonomic_mode=display_data.get("ergonomic_mode", False),
+                date_format=display_data.get("date_format", "YYYY-MM-DD"),
             ),
             defaults=DefaultsConfig(
-                tags=data.get("defaults", {}).get("tags", []),
-                project=data.get("defaults", {}).get("project"),
+                tags=defaults_data.get("tags", []),
+                project=defaults_data.get("project"),
+                default_priority=defaults_data.get("default_priority", "normal"),
+                default_due_days=defaults_data.get("default_due_days", 1),
+            ),
+            timer=TimerConfig(
+                work_duration=timer_data.get("work_duration", 25),
+                break_duration=timer_data.get("break_duration", 5),
+                long_break_duration=timer_data.get("long_break_duration", 15),
+                sessions_before_long_break=timer_data.get(
+                    "sessions_before_long_break", 4
+                ),
+                auto_start_breaks=timer_data.get("auto_start_breaks", False),
+                sound_enabled=timer_data.get("sound_enabled", True),
             ),
         )
 
@@ -191,6 +245,10 @@ class ConfigManager:
         display_table["show_confirmation"] = self._config.display.show_confirmation
         display_table["show_id"] = self._config.display.show_id
         display_table["colors"] = self._config.display.colors
+        display_table["clock_24hr"] = self._config.display.clock_24hr
+        display_table["theme"] = self._config.display.theme
+        display_table["ergonomic_mode"] = self._config.display.ergonomic_mode
+        display_table["date_format"] = self._config.display.date_format
         doc.add("display", display_table)
 
         defaults_table = tomlkit.table()
@@ -198,7 +256,20 @@ class ConfigManager:
             defaults_table["tags"] = self._config.defaults.tags
         if self._config.defaults.project:
             defaults_table["project"] = self._config.defaults.project
+        defaults_table["default_priority"] = self._config.defaults.default_priority
+        defaults_table["default_due_days"] = self._config.defaults.default_due_days
         doc.add("defaults", defaults_table)
+
+        timer_table = tomlkit.table()
+        timer_table["work_duration"] = self._config.timer.work_duration
+        timer_table["break_duration"] = self._config.timer.break_duration
+        timer_table["long_break_duration"] = self._config.timer.long_break_duration
+        timer_table["sessions_before_long_break"] = (
+            self._config.timer.sessions_before_long_break
+        )
+        timer_table["auto_start_breaks"] = self._config.timer.auto_start_breaks
+        timer_table["sound_enabled"] = self._config.timer.sound_enabled
+        doc.add("timer", timer_table)
 
         with open(self.config_path, "w") as f:
             f.write(tomlkit.dumps(doc))
@@ -221,7 +292,7 @@ class ConfigManager:
         """
         return self.config_path
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert configuration to dictionary.
 
         Returns:
@@ -241,9 +312,23 @@ class ConfigManager:
                 "show_confirmation": config.display.show_confirmation,
                 "show_id": config.display.show_id,
                 "colors": config.display.colors,
+                "clock_24hr": config.display.clock_24hr,
+                "theme": config.display.theme,
+                "ergonomic_mode": config.display.ergonomic_mode,
+                "date_format": config.display.date_format,
             },
             "defaults": {
                 "tags": config.defaults.tags,
                 "project": config.defaults.project,
+                "default_priority": config.defaults.default_priority,
+                "default_due_days": config.defaults.default_due_days,
+            },
+            "timer": {
+                "work_duration": config.timer.work_duration,
+                "break_duration": config.timer.break_duration,
+                "long_break_duration": config.timer.long_break_duration,
+                "sessions_before_long_break": config.timer.sessions_before_long_break,
+                "auto_start_breaks": config.timer.auto_start_breaks,
+                "sound_enabled": config.timer.sound_enabled,
             },
         }

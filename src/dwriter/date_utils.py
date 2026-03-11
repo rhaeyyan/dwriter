@@ -42,9 +42,7 @@ def parse_natural_date(date_str: str) -> datetime:
 
     # Handle "today"
     if date_str == "today":
-        return datetime.now().replace(
-            hour=0, minute=0, second=0, microsecond=0
-        )
+        return datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
 
     # Handle "yesterday"
     if date_str == "yesterday":

@@ -5,12 +5,12 @@ from .config import config
 from .delete import delete
 from .edit import edit
 from .examples import examples
-from .timer import timer
 from .help import help_cmd
 from .review import review
 from .search import search
 from .standup import standup
 from .stats import stats
+from .timer import timer
 from .today import today
 from .todo import done, todo
 from .undo import undo

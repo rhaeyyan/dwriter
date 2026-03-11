@@ -129,9 +129,12 @@ class EntryDetailScreen(Screen):  # type: ignore[type-arg]
                 id="entry-header",
             )
             table: DataTable[str] = DataTable(id="entry-table")
-            table.add_columns("Date", "Content", "Project", "Tags")
+            table.add_columns("Date", "Time", "Content", "Project", "Tags")
             for entry in self.entries:
-                date_str = entry.created_at.strftime("%Y-%m-%d %H:%M")
+                from ..ui_utils import format_entry_datetime
+
+                date_str, time_str = format_entry_datetime(entry)
+                time_display = time_str if time_str else "--:--"
                 content = (
                     entry.content[:60] + "..."
                     if len(entry.content) > 60
@@ -139,7 +142,7 @@ class EntryDetailScreen(Screen):  # type: ignore[type-arg]
                 )
                 project = entry.project or "-"
                 tags = ", ".join(entry.tag_names) if entry.tag_names else "-"
-                table.add_row(date_str, content, project, tags)
+                table.add_row(date_str, time_display, content, project, tags)
             yield table
         yield Footer()
 
@@ -208,9 +211,7 @@ class StreakCalendar(Static):
         self.entries_by_date = {}
         for entry in all_entries:
             date_str = entry.created_at.strftime("%Y-%m-%d")
-            self.entries_by_date[date_str] = (
-                self.entries_by_date.get(date_str, 0) + 1
-            )
+            self.entries_by_date[date_str] = self.entries_by_date.get(date_str, 0) + 1
 
         # Calculate streaks
         self.current_streak, self.longest_streak = self._calculate_streaks()
@@ -226,8 +227,7 @@ class StreakCalendar(Static):
 
         today = datetime.now().date()
         dates = sorted(
-            datetime.strptime(d, "%Y-%m-%d").date()
-            for d in self.entries_by_date.keys()
+            datetime.strptime(d, "%Y-%m-%d").date() for d in self.entries_by_date.keys()
         )
 
         # Calculate current streak
@@ -315,15 +315,27 @@ class StreakCalendar(Static):
         content.append(f"Longest: [yellow]{self.longest_streak}d[/yellow]\n")
 
         # Month labels - show month name at start of each month
-        months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        months = [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+        ]
         month_line = "    "
         last_month = -1
         for week in weeks:
             if week and week[0] is not None:
                 month = week[0][0].month
                 if month != last_month:
-                    month_line += f"{months[month-1]:<5}"
+                    month_line += f"{months[month - 1]:<5}"
                     last_month = month
                 else:
                     month_line += "     "
@@ -433,9 +445,9 @@ class ActivitySparkline(Static):
                     tag_counts[tag] = tag_counts.get(tag, 0) + 1
 
         # Top 3 projects
-        top_projects = sorted(
-            project_counts.items(), key=lambda x: x[1], reverse=True
-        )[:3]
+        top_projects = sorted(project_counts.items(), key=lambda x: x[1], reverse=True)[
+            :3
+        ]
         # Top 5 tags
         top_tags = sorted(tag_counts.items(), key=lambda x: x[1], reverse=True)[:5]
 
@@ -627,18 +639,12 @@ class DashboardApp(App):  # type: ignore[type-arg]
                             projects_table: DataTable[str] = DataTable(
                                 id="projects-table"
                             )
-                            projects_table.add_columns(
-                                "Project        ", "   Entries"
-                            )
+                            projects_table.add_columns("Project        ", "   Entries")
                             projects_table.cursor_type = "row"
                             yield projects_table
                         with Vertical(id="tables-right"):
-                            tags_table: DataTable[str] = DataTable(
-                                id="tags-table"
-                            )
-                            tags_table.add_columns(
-                                "Tag            ", "   Entries"
-                            )
+                            tags_table: DataTable[str] = DataTable(id="tags-table")
+                            tags_table.add_columns("Tag            ", "   Entries")
                             tags_table.cursor_type = "row"
                             yield tags_table
                 yield Label(
@@ -719,8 +725,7 @@ class DashboardApp(App):  # type: ignore[type-arg]
 
         today = datetime.now().date()
         dates = sorted(
-            datetime.strptime(d, "%Y-%m-%d").date()
-            for d in entries_by_date.keys()
+            datetime.strptime(d, "%Y-%m-%d").date() for d in entries_by_date.keys()
         )
 
         # Current streak
@@ -898,4 +903,5 @@ class DashboardApp(App):  # type: ignore[type-arg]
     def action_goto_help(self) -> None:
         """Navigate to the help TUI."""
         from .help_tui import HelpScreen
+
         self.app.push_screen(HelpScreen())

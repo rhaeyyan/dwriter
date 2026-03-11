@@ -1,6 +1,5 @@
 """Tests for the configuration module."""
 
-
 from dwriter.config import (
     Config,
     ConfigManager,

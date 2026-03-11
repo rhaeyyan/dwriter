@@ -331,6 +331,7 @@ class EntryResultsView(ListView):
             Formatted string with markup.
         """
         from ..ui_utils import format_entry_datetime
+
         date_str, time_str = format_entry_datetime(entry)
         score_color = self._get_score_color(score)
         tags_str = ""
@@ -663,9 +664,7 @@ class SearchApp(App):  # type: ignore[type-arg]
         # Search todos
         matched_todos = []
         if self.search_type in ["all", "todo"]:
-            matched_todos = search_items(
-                query, self._all_todos, limit=50, threshold=50
-            )
+            matched_todos = search_items(query, self._all_todos, limit=50, threshold=50)
             for todo, score in matched_todos:
                 todos_view.append_item(todo, score)
 
@@ -736,6 +735,7 @@ class SearchApp(App):  # type: ignore[type-arg]
             content = item_data["item"].content
             try:
                 import pyperclip
+
                 pyperclip.copy(content)
                 self.notify(f"Copied: {content[:50]}...", timeout=2)
             except Exception:
@@ -971,6 +971,7 @@ class SearchApp(App):  # type: ignore[type-arg]
     def action_goto_help(self) -> None:
         """Navigate to the help TUI."""
         from .help_tui import HelpScreen
+
         self.app.push_screen(HelpScreen())
 
     def watch_search_type(self, value: str) -> None:

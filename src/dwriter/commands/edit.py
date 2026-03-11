@@ -10,9 +10,7 @@ from ..cli import AppContext
 from ..search_utils import find_multiple_matches
 
 
-def _handle_search_edit(
-    ctx: AppContext, search_query: str
-) -> int | None:
+def _handle_search_edit(ctx: AppContext, search_query: str) -> int | None:
     """Handle search-based entry editing.
 
     Args:
@@ -26,9 +24,7 @@ def _handle_search_edit(
     matches = find_multiple_matches(search_query, entries, limit=5, threshold=60)
 
     if not matches:
-        ctx.console.print(
-            f'[red]![/red] No entries found matching "{search_query}".'
-        )
+        ctx.console.print(f'[red]![/red] No entries found matching "{search_query}".')
         return None
 
     if len(matches) == 1:
@@ -39,9 +35,7 @@ def _handle_search_edit(
         )
         return entry.id  # type: ignore[no-any-return]
 
-    ctx.console.print(
-        f'[yellow]Multiple matches found for "{search_query}":[/yellow]'
-    )
+    ctx.console.print(f'[yellow]Multiple matches found for "{search_query}":[/yellow]')
     for i, (entry, score) in enumerate(matches, 1):
         date_str = entry.created_at.strftime("%Y-%m-%d")
         ctx.console.print(
@@ -49,9 +43,7 @@ def _handle_search_edit(
             f"[dim]({int(score)}%)[/dim]"
         )
 
-    choice = click.prompt(
-        "Which entry do you want to edit? [1-5]", type=int, default=1
-    )
+    choice = click.prompt("Which entry do you want to edit? [1-5]", type=int, default=1)
     if choice < 1 or choice > len(matches):
         ctx.console.print("[red]Invalid selection.[/red]")
         return None

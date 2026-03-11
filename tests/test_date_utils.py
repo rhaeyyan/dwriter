@@ -13,9 +13,7 @@ class TestParseNaturalDate:
     def test_today(self):
         """Test parsing 'today'."""
         result = parse_natural_date("today")
-        expected = datetime.now().replace(
-            hour=0, minute=0, second=0, microsecond=0
-        )
+        expected = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
         assert result == expected
 
     def test_yesterday(self):
@@ -246,9 +244,7 @@ class TestParseDateOrDefault:
     def test_today_string(self):
         """Test parsing 'today'."""
         result = parse_date_or_default("today")
-        expected = datetime.now().replace(
-            hour=0, minute=0, second=0, microsecond=0
-        )
+        expected = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
         assert result == expected
 
 
