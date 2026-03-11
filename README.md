@@ -92,7 +92,7 @@ uv sync --extra dev
 uv run dwriter help
 ```
 
-#### Option 2: Using pip (Traditional)
+#### Option 2: Using pip (Traditional - Not Recommended)
 
 **Step 1: Open PowerShell**
 - Press `Win + X` and select **Terminal** or **PowerShell**
@@ -145,10 +145,14 @@ uv sync --extra dev
 
 **Step 5: Run dwriter**
 ```bash
-uv run dwriter help
+uv run dwriter
 ```
+> Use `help` command to see all commands and features
+> ```bash
+> uv run dwriter help
+> ```
 
-#### Option 2: Using pip (Traditional)
+#### Option 2: Using pip (Traditional - Not Recommended)
 
 **Step 1: Open Terminal**
 - Press `Ctrl + Alt + T` or search for "Terminal" in your applications
@@ -206,10 +210,14 @@ uv sync --extra dev
 
 **Step 5: Run dwriter**
 ```bash
-uv run dwriter help
+uv run dwriter
 ```
+> Use `help` command to see all commands and features
+> ```bash
+> uv run dwriter help
+> ```
 
-#### Option 2: Using pip (Traditional)
+#### Option 2: Using pip (Traditional - Not Recommended)
 
 **Step 1: Open Terminal**
 - Press `Cmd + Space`, type "Terminal", and press `Enter`
@@ -238,13 +246,17 @@ pip install -e ".[dev]"
 
 ---
 
-### ✅ Verify Installation
+### ✅ Verify Installation & Launch
 
 After installation, verify dwriter is working:
 
 ```bash
-uv run dwriter help
+uv run dwriter
 ```
+> Use `help` command to see all commands and features
+> ```bash
+> uv run dwriter help
+> ```
 
 You should see a list of available commands.
 
