@@ -1,4 +1,4 @@
-"""Database layer for Day Writer.
+"""Database layer for dwriter.
 
 This module handles all SQLite database operations for storing and retrieving
 journal entries using SQLAlchemy 2.0.
@@ -128,7 +128,7 @@ class Todo(Base):
 
 
 class Database:
-    """SQLite database manager for Day Writer entries.
+    """SQLite database manager for dwriter entries.
 
     This class handles database connections, schema management, and CRUD
     operations for journal entries using SQLAlchemy.

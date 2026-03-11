@@ -1,4 +1,4 @@
-"""Natural language date parsing utilities for Day Writer.
+"""Natural language date parsing utilities for dwriter.
 
 This module provides functions to parse natural language date expressions
 like "yesterday", "last Friday", "3 days ago", etc.
