@@ -227,8 +227,7 @@ class AnalyticsEngine:
         Returns:
             Dictionary mapping day names (Mon, Tue, etc.) to entry counts.
         """
-        # SQLite %w returns 0-6 where 0 is Sunday
-        # We need to map this to Mon-Sun (Mon is 1, Sun is 0)
+        # SQLite %w returns 0-6 where 0 is Sunday; map to Mon-Sun format
         day_names = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
         result = dict.fromkeys(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"], 0)
 

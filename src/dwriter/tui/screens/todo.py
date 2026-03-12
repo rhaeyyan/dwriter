@@ -983,7 +983,7 @@ class TodoScreen(Container):
         new_status = "pending" if todo.status == "completed" else "completed"
         now = datetime.now()
 
-        # 1. Update the actual To-Do item in the database
+        # Update the To-Do item status in the database
         self.ctx.db.update_todo(
             todo.id,
             status=new_status,
@@ -991,13 +991,13 @@ class TodoScreen(Container):
         )
 
         if new_status == "completed":
-            # 2. Log to journal AND link the ID!
+            # Log completion to journal with a link back to the todo
             entry = self.ctx.db.add_entry(
                 content=f"✅ {todo.content}",
                 tags=todo.tag_names,
                 project=todo.project,
                 created_at=now,
-                todo_id=todo.id,  # THIS is the magic link
+                todo_id=todo.id,
             )
             self.notify(f"Task #{todo.id} completed & logged to journal!", timeout=1.5)
             # Post EntryAdded message so Logs screen updates reactively
@@ -1009,7 +1009,7 @@ class TodoScreen(Container):
                 )
             )
         else:
-            # 3. Un-completed: Find the linked log and destroy it
+            # Remove the journal entry linked to this todo
             self.ctx.db.delete_entry_by_todo_id(todo.id)
             self.notify(f"Task #{todo.id} marked pending & log removed", timeout=1.5)
 

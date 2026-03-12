@@ -612,7 +612,7 @@ class DWriterApp(App[None]):
 
         # Normal single-line input handling
         if value:
-            # First, check if this is a timer command (works from any screen)
+            # Check for timer command syntax (works from any screen)
             parsed_timer: ParsedTimer | None = parse_timer(value)
 
             if parsed_timer:
@@ -625,11 +625,10 @@ class DWriterApp(App[None]):
                 message.input.value = ""
                 return
 
-            # Check if we're on the Todo screen - start multi-step workflow
+            # On Todo screen, start multi-step workflow; otherwise create journal entry
             if self._current_screen == "todo":
                 self._start_todo_workflow(value, message)
             else:
-                # Create a journal entry (default behavior)
                 self._create_journal_entry(value, message)
 
     def _start_todo_workflow(self, value: str, message: Input.Submitted) -> None:

@@ -823,7 +823,7 @@ class DashboardApp(App):  # type: ignore[type-arg]
 
     def action_drill_down(self) -> None:
         """Drill down into the selected project or tag."""
-        # First switch to activity tab if not already there
+        # Navigate to activity tab if not already active
         tabbed = self.query_one(TabbedContent)
         if tabbed.active != "activity-pane":
             tabbed.active = "activity-pane"

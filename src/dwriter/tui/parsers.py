@@ -88,13 +88,11 @@ def parse_quick_add(raw_input: str) -> ParsedEntry:
     # Extract project (text prefixed with & or $)
     projects: list[str] = re.findall(r"[$&]([\w-]+)", raw_input)
 
-    # Extract date suffix (e.g., -yesterday, -2d, -2w, -2 days ago, -last Friday,
+    # Extract date suffixes (e.g., -yesterday, -2d, -2w, -2 days ago, -last Friday,
     # -2024-01-15, or standalone 2024-01-15)
     created_at: datetime | None = None
 
-    # First try: date with hyphen prefix (-yesterday, -2d, -2w, -2 days ago,
-    # -2024-01-15)
-    # Match hyphen followed by date pattern (including short forms like 2d, 2w)
+    # Match hyphen-prefixed date patterns (including short forms like 2d, 2w)
     date_regex = (
         r"\s+-(yesterday|today|\d+d|\d+w|\d+\s*days?\s*ago|\d+\s*weeks?\s*ago|"
         r"last\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)|"
@@ -105,7 +103,7 @@ def parse_quick_add(raw_input: str) -> ParsedEntry:
         date_str = date_match.group(1)
         created_at = _parse_date_suffix(date_str)
     else:
-        # Second try: standalone YYYY-MM-DD date anywhere in the text
+        # Check for standalone YYYY-MM-DD dates
         date_match = re.search(r"\b(\d{4}-\d{2}-\d{2})\b", raw_input)
         if date_match:
             date_str = date_match.group(1)
@@ -293,7 +291,7 @@ def parse_timer(raw_input: str) -> ParsedTimer | None:
         ParsedTimer with extracted minutes, tags, and project, or None if
         not a timer command.
     """
-    # First, check if input contains a date pattern - if so, it's NOT a timer
+    # Skip if input contains a date pattern - those are journal entries, not timers
     if re.search(r"\b\d{4}-\d{2}-\d{2}\b", raw_input):
         return None
 
