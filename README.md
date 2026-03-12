@@ -270,11 +270,12 @@ You should see a list of available commands.
 
 To ensure you have the latest features and bug fixes, regularly update your local copy of dwriter:
 
+Pull the latest changes from the repository
 ```bash
-# Pull the latest changes from the repository
 git pull origin experimental-tui
-
-# Update dependencies
+```
+Update dependencies
+```bash
 uv sync --extra dev
 ```
 
