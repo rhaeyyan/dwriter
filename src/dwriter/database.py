@@ -159,7 +159,7 @@ class Database:
         )
         Base.metadata.create_all(self.engine)
 
-        # FIX 1: Force SQLite to respect ON DELETE CASCADE and enable WAL mode
+        # Configure SQLite pragmas for foreign keys and WAL mode
         @event.listens_for(self.engine, "connect")
         def set_sqlite_pragma(dbapi_connection, connection_record):
             cursor = dbapi_connection.cursor()
@@ -168,7 +168,7 @@ class Database:
             cursor.execute("PRAGMA synchronous=NORMAL")
             cursor.close()
 
-        # FIX 2: Prevent objects from expiring when the session commits
+        # Disable object expiration on commit to avoid lazy loading issues
         self.Session = sessionmaker(bind=self.engine, expire_on_commit=False)
 
         # Run migrations to add new columns if needed
@@ -198,12 +198,10 @@ class Database:
                         "INTEGER REFERENCES todos(id) ON DELETE CASCADE"
                     )
 
-                # FIX 3: Exorcise all existing ghost tags from the database
-                # Delete orphaned tags that reference non-existent entries
+                # Clean up orphaned tags and todo_tags referencing deleted entries/todos
                 sqlite_conn.execute(
                     "DELETE FROM tags WHERE entry_id NOT IN (SELECT id FROM entries)"
                 )
-                # Delete orphaned todo_tags that reference non-existent todos
                 sqlite_conn.execute(
                     "DELETE FROM todo_tags WHERE todo_id NOT IN (SELECT id FROM todos)"
                 )
@@ -257,7 +255,6 @@ class Database:
                     entry.tags.append(Tag(name=tag_name))
 
             if created_at is not None:
-                # FIX: Just use the exact created_at passed in! No more time stripping.
                 entry.created_at = created_at
             else:
                 entry.created_at = datetime.now()
@@ -265,8 +262,7 @@ class Database:
             session.add(entry)
             session.commit()
 
-            # FIX: Lock the DB-generated ID and timestamps into the object
-            # before the session closes
+            # Refresh to populate DB-generated fields before session closes
             session.refresh(entry)
 
             # Cache tag names to avoid lazy loading
@@ -621,7 +617,7 @@ class Database:
             session.add(todo)
             session.commit()
 
-            # FIX: Refresh to lock in the ID before detaching
+            # Refresh to populate DB-generated fields before detaching
             session.refresh(todo)
 
             todo._tag_names_cache = list(tags) if tags else []

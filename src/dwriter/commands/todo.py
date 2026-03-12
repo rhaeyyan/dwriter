@@ -504,10 +504,9 @@ def done(ctx: AppContext, task_identifier: str, use_search: bool) -> None:
         return
 
     try:
-        # 1. Mark the task as completed
         ctx.db.update_todo(task_id, status="completed", completed_at=datetime.now())
 
-        # 2. Automatically log the entry
+        # Automatically log the completion to the journal
         entry_content = f"Completed: {task.content}"
         entry = ctx.db.add_entry(
             content=entry_content,

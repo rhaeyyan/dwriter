@@ -270,7 +270,7 @@ class ActivitySparkline(Static):
                 tag_display = f"#{tag}({count})"
                 # Minimal padding - just center within allocated space
                 if i == 0:
-                    # First tag: center in first slot
+                    # Center the first tag in its slot
                     tag_padding = max(0, (tag_spacing - len(tag_display)) // 2)
                     tags_line += (
                         " " * tag_padding
@@ -542,7 +542,7 @@ class DashboardScreen(Container):
 
         with TabbedContent(initial="overview-pane", id="dashboard-tabs"):
             with TabPane("📊 Overview", id="overview-pane"):
-                # 1. Top Row: BI Performance KPIs
+                # Performance KPIs row
                 with Horizontal(id="dashboard-kpi-row"):
                     yield KPICard(
                         "Total Entries", "0", color="$primary", id="kpi-total"

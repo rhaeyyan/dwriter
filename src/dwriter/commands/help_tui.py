@@ -109,12 +109,11 @@ class HelpScreen(Screen[Any]):
         if not event.pane.id:
             return
 
-        # Check if this is an outer tab (single word like "search", "timer")
-        # or a sub-tab (format: {category}-{subtab})
+        # Determine if this is an outer tab (single word) or a sub-tab
         parts = event.pane.id.split("-")
 
         if len(parts) == 1:
-            # This is an outer tab - load its first subtab
+            # Outer tab - load its first subtab
             category = event.pane.id
             for _label, tab_id, subtabs in self.CATEGORY_CONFIG:
                 if tab_id == category and subtabs:
