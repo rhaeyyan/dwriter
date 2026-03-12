@@ -58,226 +58,91 @@ Detailed documentation for advanced usage and development:
 
 ## 🚀 Quick Start (Installation)
 
-Follow the steps below for your operating system.
+Getting dwriter running on your computer is quick and easy. Choose your operating system below to get started.
 
 ---
 
-### 🪟 Windows 11
+### 🪟 Windows
 
-#### Option 1: Using uv (Recommended - Faster & Modern)
-
-**Step 1: Clone Repo**
-- Press `Win + X` and select **Terminal** or **PowerShell**
-- Run: `gh repo clone rhaeyyan/dwriter` (clone repo to a location and remember the file location)
-  
-**Step 2: Install uv** (if not already installed)
-- Open new Terminal window: Press `Win + X` and select **Terminal** or **PowerShell**
-```powershell
-powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
-```
-
-**Step 3: Navigate to the dwriter folder**
-- Inside the dwriter folder and right click and select  `Open in Terminal` 
-
-**Step 4: Install with uv**
-```powershell
-uv sync --extra dev
-```
-
-**Step 5: Run dwriter**
-```powershell
-uv run dwriter
-```
-> ```bash
-> uv run dwriter help
-> ```
-
-#### Option 2: Using pip (Traditional - Not Recommended)
-
-**Step 1: Open PowerShell**
-- Press `Win + X` and select **Terminal** or **PowerShell**
-
-**Step 2: Navigate to the dwriter folder**
-```powershell
-cd dwriter
-```
-
-**Step 3: Create a virtual environment**
-```powershell
-python -m venv .venv
-```
-
-**Step 4: Activate the virtual environment**
-```powershell
-.venv\Scripts\Activate
-```
-
-**Step 5: Install dwriter**
-```powershell
-pip install -e ".[dev]"
-```
-
-**Done!** You can now use dwriter by typing `dwriter` in your terminal.
+1.  **Get the Code:**
+    *   Click the green **Code** button at the top of this page and select **Download ZIP**, then extract the folder.
+    *   *Or*, if you have Git installed, run: `git clone https://github.com/rhaeyyan/dwriter.git`
+2.  **Install the Setup Tool (uv):**
+    *   Press `Win + X` on your keyboard and select **Terminal** or **PowerShell**.
+    *   Copy and paste this command and press Enter:
+        ```powershell
+        powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+        ```
+3.  **Install dwriter:**
+    *   Open the `dwriter` folder you downloaded/cloned.
+    *   Right-click in any empty space inside the folder and select **Open in Terminal**.
+    *   Type `uv sync` and press Enter.
+4.  **Launch dwriter:**
+    *   Type `uv run dwriter` and press Enter!
 
 ---
 
 ### 🐧 Linux (Ubuntu / Mint)
 
-#### Option 1: Using uv (Recommended - Faster & Modern)
+1.  **Install the Setup Tool (uv):**
+    *   Open your Terminal (`Ctrl + Alt + T`).
+    *   Copy and paste this command:
+        ```bash
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        ```
+2.  **Navigate to the folder:**
+    *   Use `cd dwriter` to enter the project folder.
+3.  **Install dwriter:**
+    *   Run: `uv sync`
+4.  **Launch dwriter:**
+    *   Run: `uv run dwriter`
 
-**Step 1: Open Terminal**
-- Press `Ctrl + Alt + T` or search for "Terminal" in your applications
-
-**Step 2: Install uv** (if not already installed)
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
-
-**Step 3: Navigate to the dwriter folder**
-```bash
-cd dwriter
-```
-
-**Step 4: Install with uv**
-```bash
-uv sync --extra dev
-```
-
-**Step 5: Run dwriter**
-```bash
-uv run dwriter
-```
-> Use `help` command to see all commands and features
-> ```bash
-> uv run dwriter help
-> ```
-
-#### Option 2: Using pip (Traditional - Not Recommended)
-
-**Step 1: Open Terminal**
-- Press `Ctrl + Alt + T` or search for "Terminal" in your applications
-
-**Step 2: Navigate to the dwriter folder**
-```bash
-cd dwriter
-```
-
-**Step 3: Create a virtual environment**
-```bash
-python3 -m venv .venv
-```
-
-**Step 4: Activate the virtual environment**
-```bash
-source .venv/bin/activate
-```
-
-**Step 5: Install dwriter**
-```bash
-pip install -e ".[dev]"
-```
-
-**Done!** You can now use dwriter by typing `dwriter` in your terminal.
-
-> **Note:** On Linux, you may need `xclip` or `xsel` for clipboard features:
-> ```bash
-> sudo apt install xclip
-> ```
+> **Note:** For clipboard support, run: `sudo apt install xclip`
 
 ---
 
-### 🍎 macOS (MacBook)
+### 🍎 macOS
 
-#### Option 1: Using uv (Recommended - Faster & Modern)
-
-**Step 1: Open Terminal**
-- Press `Cmd + Space`, type "Terminal", and press `Enter`
-
-**Step 2: Install uv** (if not already installed)
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
-
-**Step 3: Navigate to the dwriter folder**
-```bash
-cd dwriter
-```
-
-**Step 4: Install with uv**
-```bash
-uv sync --extra dev
-```
-
-**Step 5: Run dwriter**
-```bash
-uv run dwriter
-```
-> Use `help` command to see all commands and features
-> ```bash
-> uv run dwriter help
-> ```
-
-#### Option 2: Using pip (Traditional - Not Recommended)
-
-**Step 1: Open Terminal**
-- Press `Cmd + Space`, type "Terminal", and press `Enter`
-
-**Step 2: Navigate to the dwriter folder**
-```bash
-cd dwriter
-```
-
-**Step 3: Create a virtual environment**
-```bash
-python3 -m venv .venv
-```
-
-**Step 4: Activate the virtual environment**
-```bash
-source .venv/bin/activate
-```
-
-**Step 5: Install dwriter**
-```bash
-pip install -e ".[dev]"
-```
-
-**Done!** You can now use dwriter by typing `dwriter` in your terminal.
+1.  **Install the Setup Tool (uv):**
+    *   Open Terminal (Press `Cmd + Space`, type "Terminal", and press Enter).
+    *   Copy and paste this command:
+        ```bash
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        ```
+2.  **Navigate to the folder:**
+    *   Use `cd dwriter` to enter the project folder.
+3.  **Install dwriter:**
+    *   Run: `uv sync`
+4.  **Launch dwriter:**
+    *   Run: `uv run dwriter`
 
 ---
 
-### ✅ Verify Installation & Launch
+### ✅ Your First Command
 
-After installation, you can launch dwriter by entering:
-
+Once installed, you can see everything dwriter can do by typing:
 ```bash
-uv run dwriter
+uv run dwriter help
 ```
-> Use `help` command to see all commands and features
-> ```bash
-> uv run dwriter help
-> ```
 
-You should see a list of available commands.
+To start your first journal entry, just type:
+```bash
+uv run dwriter add "Just finished setting up dwriter! #goals"
+```
 
 ---
 
 ### 🔄 Staying Up to Date
 
-To ensure you have the latest features and bug fixes, regularly update your local copy of dwriter:
-
+To get the latest features and fixes, run these commands inside your `dwriter` folder:
 ```bash
-# Pull the latest changes from the repository
-git pull origin experimental-tui
+# Get the latest code
+git pull
 
-# Update dependencies
-uv sync --extra dev
+# Update the tools
+uv sync
 ```
 
-You can check your current version by running:
-```bash
-uv run dwriter --version
-```
 
 ---
 
