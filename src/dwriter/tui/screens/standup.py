@@ -309,7 +309,8 @@ class StandupScreen(ModalScreen[None]):
             return
 
         try:
-            doc_dir = Path.home() / "Documents" / "dwriter"
+            # Save exports to 'dwriter-exports' to avoid confusion with the tool's source code
+            doc_dir = Path.home() / "Documents" / "dwriter-exports"
             doc_dir.mkdir(parents=True, exist_ok=True)
 
             if active_pane == "daily-tab":
