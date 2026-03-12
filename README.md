@@ -26,11 +26,11 @@ Detailed documentation for advanced usage and development:
 
 - [✨ Key Features](#-key-features)
 - [🚀 Quick Start (Installation)](#-quick-start-installation)
-  - [🪟 Windows 11](#-windows-11)
+  - [🪟 Windows](#-windows)
   - [🐧 Linux (Ubuntu / Mint)](#-linux-ubuntu--mint)
-  - [🍎 macOS (MacBook)](#-macos-macbook)
-  - [✅ Verify Installation & Launch](#-verify-installation--launch)
+  - [🍎 macOS](#-macos)
   - [🔄 Staying Up to Date](#-staying-up-to-date)
+- [🎮 Launching dwriter](#-launching-dwriter)
 - [🎨 Interactive TUI](#-interactive-tui)
   - [🔍 Interactive Search](#-interactive-search-dwriter-search)
   - [📋 Interactive Todo Board](#-interactive-todo-board-dwriter-todo)
@@ -77,8 +77,6 @@ Getting dwriter running on your computer is quick and easy. Choose your operatin
     *   Open the `dwriter` folder you downloaded/cloned.
     *   Right-click in any empty space inside the folder and select **Open in Terminal**.
     *   Type `uv sync` and press Enter.
-4.  **Launch dwriter:**
-    *   Type `uv run dwriter` and press Enter!
 
 ---
 
@@ -94,8 +92,6 @@ Getting dwriter running on your computer is quick and easy. Choose your operatin
     *   Use `cd dwriter` to enter the project folder.
 3.  **Install dwriter:**
     *   Run: `uv sync`
-4.  **Launch dwriter:**
-    *   Run: `uv run dwriter`
 
 > **Note:** For clipboard support, run: `sudo apt install xclip`
 
@@ -113,22 +109,6 @@ Getting dwriter running on your computer is quick and easy. Choose your operatin
     *   Use `cd dwriter` to enter the project folder.
 3.  **Install dwriter:**
     *   Run: `uv sync`
-4.  **Launch dwriter:**
-    *   Run: `uv run dwriter`
-
----
-
-### ✅ Your First Command
-
-Once installed, you can see everything dwriter can do by typing:
-```bash
-uv run dwriter help
-```
-
-To start your first journal entry, just type:
-```bash
-uv run dwriter add "Just finished setting up dwriter! #goals"
-```
 
 ---
 
@@ -143,6 +123,33 @@ git pull
 uv sync
 ```
 
+---
+
+## 🎮 Launching dwriter
+
+To open the **unified TUI (Terminal User Interface)** and access all of dwriter's interactive features in one place, simply run:
+
+```bash
+uv run dwriter
+```
+
+This will launch the interactive dashboard where you can:
+- **Manage Tasks:** View and complete todos.
+- **Track Time:** Use the built-in focus timer.
+- **Search:** Fuzzy search through your journal entries.
+- **Statistics:** View your contribution calendar and streaks.
+
+### ✅ Your First Command
+
+Once installed, you can see everything dwriter can do by typing:
+```bash
+uv run dwriter help
+```
+
+To start your first journal entry, just type:
+```bash
+uv run dwriter add "Just finished setting up dwriter! #goals"
+```
 
 ---
 
