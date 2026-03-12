@@ -16,6 +16,12 @@ If you want a minimalist, beautiful productivity suite that gets out of your way
 
 ---
 
+## 📚 Documentation
+
+Detailed documentation for advanced usage and development:
+
+- 🛠️ **[Command Reference](HEADLESS-README.md)**: Full CLI command reference (Logging, Standups, Todos, Timer, Search, etc.)
+- ⚙️ **[Configuration & Development Guide](DEV-and-CONFIG.md)**: Detailed settings, developer setup, and project info.
 ## 📋 Table of Contents
 
 - [✨ Key Features](#-key-features)
@@ -406,15 +412,6 @@ Launch with `dwriter stats`.
 - **Top Tags** - Your 10 most-used tags with visual usage bars
 
 > **Hybrid CLI/TUI Design:** Quick operations remain CLI-based (`dwriter add`, `dwriter todo "task"`) for frictionless use. TUI modes launch only when needed for interactive workflows.
-
----
-
-## 📚 Documentation
-
-Detailed documentation for advanced usage and development:
-
-- 🛠️ **[Command Reference](HEADLESS-README.md)**: Full CLI command reference (Logging, Standups, Todos, Timer, Search, etc.)
-- ⚙️ **[Configuration & Development Guide](DEV-and-CONFIG.md)**: Detailed settings, developer setup, and project info.
 
 ---
 
