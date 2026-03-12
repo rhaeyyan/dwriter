@@ -27,4 +27,11 @@ def help_cmd(ctx: AppContext, plain: bool) -> None:
         from .help_tui import HelpApp
 
         app = HelpApp()
-        app.run()
+        should_open_tui = app.run()
+
+        # If user exits help with 'q' or 'escape', launch the main TUI
+        if should_open_tui:
+            from ..tui.app import DWriterApp
+
+            master_app = DWriterApp(ctx)
+            master_app.run()

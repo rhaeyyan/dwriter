@@ -53,8 +53,8 @@ class HelpScreen(Screen[Any]):
     ]
 
     def action_close(self) -> None:
-        """Close the help screen and return to the previous screen."""
-        self.app.pop_screen()
+        """Close the help screen and return to the dashboard."""
+        self.dismiss(True)
 
     # Command categories with their sub-tabs
     CATEGORY_CONFIG = [
@@ -1208,11 +1208,14 @@ dwriter help --plain | grep -i "tag"
                 break
 
 
-class HelpApp(App[None]):
-    """Standalone app for testing."""
+class HelpApp(App[bool]):
+    """Standalone app for interactive help."""
 
     def on_mount(self) -> None:
-        self.push_screen(HelpScreen())
+        def on_dismiss(result: bool | None) -> None:
+            self.exit(result or False)
+
+        self.push_screen(HelpScreen(), on_dismiss)
 
 
 if __name__ == "__main__":
