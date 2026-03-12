@@ -24,6 +24,7 @@ If you want a minimalist, beautiful productivity suite that gets out of your way
   - [🐧 Linux (Ubuntu / Mint)](#-linux-ubuntu--mint)
   - [🍎 macOS (MacBook)](#-macos-macbook)
   - [✅ Verify Installation & Launch](#-verify-installation--launch)
+  - [🔄 Staying Up to Date](#-staying-up-to-date)
 - [🛠️ Command Reference](#-command-reference)
   - [Logging and Viewing](#logging-and-viewing)
   - [Generation and Summaries](#generation-and-summaries)
@@ -262,6 +263,25 @@ uv run dwriter
 > ```
 
 You should see a list of available commands.
+
+---
+
+### 🔄 Staying Up to Date
+
+To ensure you have the latest features and bug fixes, regularly update your local copy of dwriter:
+
+```bash
+# Pull the latest changes from the repository
+git pull origin experimental-tui
+
+# Update dependencies
+uv sync --extra dev
+```
+
+You can check your current version by running:
+```bash
+uv run dwriter --version
+```
 
 ---
 
