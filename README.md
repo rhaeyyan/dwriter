@@ -66,18 +66,18 @@ Follow the steps below for your operating system.
 
 #### Option 1: Using uv (Recommended - Faster & Modern)
 
-**Step 1: Open PowerShell**
+**Step 1: Clone Repo**
 - Press `Win + X` and select **Terminal** or **PowerShell**
-
+- Run: `gh repo clone rhaeyyan/dwriter` (clone repo to a location and remember the file location)
+  
 **Step 2: Install uv** (if not already installed)
+- Open new Terminal window: Press `Win + X` and select **Terminal** or **PowerShell**
 ```powershell
 powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
 **Step 3: Navigate to the dwriter folder**
-```powershell
-cd dwriter
-```
+- Inside the dwriter folder and right click and select  `Open in Terminal` 
 
 **Step 4: Install with uv**
 ```powershell
