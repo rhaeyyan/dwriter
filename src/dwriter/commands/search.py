@@ -1,5 +1,9 @@
 """Search command for finding past entries and future to-dos."""
 
+from __future__ import annotations
+
+from typing import Any
+
 import click
 
 from ..cli import AppContext
@@ -18,7 +22,7 @@ def format_score(score: float) -> str:
 
 
 @click.command()
-@click.argument("query")
+@click.argument("query", required=False, default=None)
 @click.option(
     "-p",
     "--project",
@@ -51,25 +55,44 @@ def format_score(score: float) -> str:
 @click.pass_obj
 def search(
     ctx: AppContext,
-    query: str,
-    project: str,
-    tags: tuple,
+    query: str | None,
+    project: str | None,
+    tags: tuple[Any, ...],
     search_type: str,
     limit: int,
-):
+) -> None:
     """Fuzzy search your journal entries and tasks.
 
-    QUERY: The text to search for (forgiving of typos).
+    Uses typo-tolerant fuzzy matching to find relevant entries and todos.
+    If omitted, launches interactive search TUI with live filtering.
+
+    Match Scores:
+      - 🟢 90%+: Excellent match (green)
+      - 🟡 75%+: Good match (yellow)
+      - ⚪ 60%+: Partial match (dim)
 
     Examples:
-        dwriter search "auth bug"
-
-        dwriter search "refactor" -p Mainframe_Mayhem
-
-        dwriter search "cache" --type todo
-
-        dwriter search "meeting" -t work -t notes
+      dwriter search                    # Launch interactive TUI
+      dwriter search "auth bug"         # Fuzzy search all
+      dwriter search "refactor" -p my_project
+      dwriter search "cache" --type todo
+      dwriter search "meeting" -t work -t notes -n 5
     """
+    # Launch TUI if no query provided
+    if query is None:
+        from .search_tui import SearchApp
+
+        tag_list = list(tags) if tags else None
+        app = SearchApp(
+            db=ctx.db,
+            console=ctx.console,
+            project=project,
+            tags=tag_list,
+        )
+        app.run()
+        return
+
+    # Original static search behavior
     tag_list = list(tags) if tags else None
 
     # Search Entries
@@ -85,21 +108,33 @@ def search(
         matched_todos = search_items(query, todos, limit=limit, threshold=60)
 
     # Display results
-    ctx.console.print(f"[bold blue]🔍 Search Results for \"{query}\"[/bold blue]\n")
+    ctx.console.print(f'[bold blue]🔍 Search Results for "{query}"[/bold blue]\n')
 
     if matched_entries:
         ctx.console.print("[bold magenta][ENTRIES][/bold magenta]")
         for entry, score in matched_entries:
-            date_str = entry.created_at.strftime("%Y-%m-%d")
-            time_str = entry.created_at.strftime("%I:%M %p")
+            from ..ui_utils import format_entry_datetime
+
+            date_str, time_str = format_entry_datetime(entry)
             score_str = format_score(score)
             tags_str = ""
             if entry.tag_names:
                 tags_str = " ".join(f"[#ffae00]#[/]{t}" for t in entry.tag_names)
-            project_str = f" [purple]Project:[/purple] {entry.project}" if entry.project else ""
-            ctx.console.print(
-                f"[magenta][{entry.id}][/magenta] {date_str} | [#23c76b]{time_str}[/#23c76b]: {entry.content}"
-            )
+            if entry.project:
+                project_str = f" [purple]Project:[/purple] {entry.project}"
+            else:
+                project_str = ""
+
+            # Display with or without time based on whether it's a past date
+            if time_str is None:
+                ctx.console.print(
+                    f"[magenta][{entry.id}][/magenta] {date_str}: {entry.content}"
+                )
+            else:
+                ctx.console.print(
+                    f"[magenta][{entry.id}][/magenta] {date_str} | "
+                    f"[#23c76b]{time_str}[/#23c76b]: {entry.content}"
+                )
             if tags_str:
                 ctx.console.print(f"    [#ffae00]Tags:[/#ffae00] {tags_str}")
             if project_str:

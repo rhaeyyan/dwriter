@@ -1,5 +1,7 @@
 """Today command to view today's entries."""
 
+from __future__ import annotations
+
 from datetime import datetime
 
 import click
@@ -10,17 +12,22 @@ from ..ui_utils import display_entry
 
 @click.command()
 @click.pass_obj
-def today(ctx: AppContext):
+def today(ctx: AppContext) -> None:
     """Show today's entries.
 
     Displays all log entries created today, ordered by time.
+    This is the default command when running `dwriter` without arguments.
+
+    Examples:
+      dwriter today
+      dwriter    # Same as 'dwriter today'
     """
     today_date = datetime.now()
     entries = ctx.db.get_entries_by_date(today_date)
 
     if not entries:
         ctx.console.print(
-            'No entries for today. Start logging with:\n'
+            "No entries for today. Start logging with:\n"
             '  [bold]dwriter add "your task"[/bold]'
         )
         return

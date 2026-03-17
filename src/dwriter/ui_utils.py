@@ -1,12 +1,41 @@
 """UI utilities for consistent output formatting."""
 
-from typing import TYPE_CHECKING
+from datetime import datetime
+from typing import TYPE_CHECKING, Any, Optional
+
+from textual.app import ComposeResult
+from textual.containers import Container, ScrollableContainer
+from textual.screen import ModalScreen
+from textual.widgets import Static
 
 if TYPE_CHECKING:
     from rich.console import Console
 
     from .config import Config
     from .database import Entry
+
+
+def format_entry_datetime(entry: "Entry") -> tuple[str, Optional[str]]:
+    """Format an entry's date and time for display.
+
+    If the time is exactly 00:00 (midnight), it is treated as a date-only
+    entry and time_str will be None.
+
+    Args:
+        entry: The Entry object to format.
+
+    Returns:
+        A tuple of (date_str, time_str). time_str is None for midnight entries.
+    """
+    date_str = entry.created_at.strftime("%Y-%m-%d")
+    
+    # Check if time is exactly midnight (00:00:00)
+    dt = entry.created_at
+    if dt.hour == 0 and dt.minute == 0 and dt.second == 0:
+        return date_str, None
+        
+    time_str = dt.strftime("%I:%M %p")
+    return date_str, time_str
 
 
 def display_entry(console: "Console", entry: "Entry", config: "Config") -> None:
@@ -23,14 +52,27 @@ def display_entry(console: "Console", entry: "Entry", config: "Config") -> None:
     Returns:
         None
     """
-    date_str = entry.created_at.strftime("%Y-%m-%d")
-    time_str = entry.created_at.strftime("%I:%M %p")
+    date_str, time_str = format_entry_datetime(entry)
 
-    if config.display.show_id:
-        id_display = f"[magenta][{entry.id}][/magenta] {date_str}"
-        console.print(f"{id_display} | [#23c76b]{time_str}[/#23c76b]: {entry.content}")
+    # Only show time if provided (non-midnight)
+    if time_str is None:
+        if config.display.show_id:
+            console.print(
+                f"[magenta][{entry.id}][/magenta] {date_str}: {entry.content}"
+            )
+        else:
+            console.print(f"{date_str}: {entry.content}")
     else:
-        console.print(f"{date_str} | [#23c76b]{time_str}[/#23c76b]: {entry.content}")
+        # Today's entry - show time
+        if config.display.show_id:
+            id_display = f"[magenta][{entry.id}][/magenta] {date_str}"
+            console.print(
+                f"{id_display} | [#23c76b]{time_str}[/#23c76b]: {entry.content}"
+            )
+        else:
+            console.print(
+                f"{date_str} | [#23c76b]{time_str}[/#23c76b]: {entry.content}"
+            )
 
     if entry.tag_names:
         tags_str = " ".join(f"[#ffae00]#[/]{t}" for t in entry.tag_names)
@@ -38,3 +80,125 @@ def display_entry(console: "Console", entry: "Entry", config: "Config") -> None:
 
     if entry.project:
         console.print(f"    [purple]Project:[/purple] {entry.project}")
+
+
+class HelpOverlay(ModalScreen[None]):
+    """Reusable contextual help overlay for TUI screens.
+
+    Displays keybindings and context-specific tips in a modal overlay.
+    Triggered by pressing '?' in any TUI screen.
+
+    Attributes:
+        title: The title shown at the top of the overlay.
+        bindings: List of (key, action, description) tuples to display.
+        tips: Optional list of contextual tips for the current screen.
+    """
+
+    DEFAULT_CSS = """
+    HelpOverlay {
+        background: $background 80%;
+        align: center middle;
+    }
+
+    HelpOverlay > Container {
+        width: 80%;
+        height: 70%;
+        background: $surface;
+        border: thick $primary;
+        padding: 1 2;
+    }
+
+    HelpOverlay .help-title {
+        text-style: bold;
+        color: $primary;
+        padding: 1 0;
+        text-align: center;
+    }
+
+    HelpOverlay .help-section {
+        padding: 1 0;
+    }
+
+    HelpOverlay .help-key {
+        color: $primary;
+        text-style: bold;
+        width: 12;
+    }
+
+    HelpOverlay .help-desc {
+        color: $foreground;
+    }
+
+    HelpOverlay .help-tip {
+        color: $warning;
+        padding: 1 0;
+    }
+
+    HelpOverlay .help-close {
+        text-align: center;
+        padding: 1 0;
+        color: $text-muted;
+    }
+    """
+
+    def __init__(
+        self,
+        title: str = "Help",
+        bindings: Optional[list[tuple[str, str, str]]] = None,
+        tips: Optional[list[str]] = None,
+        commands: Optional[list[tuple[str, str]]] = None,
+    ) -> None:
+        """Initialize the help overlay.
+
+        Args:
+            title: Title displayed at the top of the overlay.
+            bindings: List of (key, action, description) tuples.
+            tips: Optional list of contextual tips.
+            commands: Optional list of (command, description) tuples to display.
+        """
+        super().__init__()
+        self.title = title
+        self.bindings = bindings or []
+        self.tips = tips or []
+        self.commands = commands or []
+
+    def compose(self) -> ComposeResult:
+        """Compose the help overlay layout."""
+        with Container():
+            yield Static(f"❓ {self.title}", classes="help-title")
+            yield Static("", classes="help-section")
+
+            with ScrollableContainer(id="help-bindings"):
+                for key, _action, desc in self.bindings:
+                    yield Static(f"[bold cyan]{key:12}[/]  {desc}", classes="help-desc")
+
+            if self.commands:
+                yield Static("\n📝 Commands:", classes="help-section")
+                for cmd, desc in self.commands:
+                    yield Static(f"  [bold yellow]{cmd}[/]", classes="help-desc")
+                    yield Static(f"    {desc}", classes="help-tip")
+
+            if self.tips:
+                yield Static("\n💡 Tips:", classes="help-section")
+                for tip in self.tips:
+                    yield Static(f"  • {tip}", classes="help-tip")
+
+            close_msg = "\nPress [bold]Esc[/] or [bold]Enter[/] to close"
+            yield Static(close_msg, classes="help-close")
+
+    def on_mount(self) -> None:
+        """Focus the overlay for immediate keyboard capture."""
+        self.focus()
+
+    def on_key(self, event: Any) -> None:
+        """Handle key events to close the overlay."""
+        if event.key in ("escape", "enter", "question_mark"):
+            self.dismiss()
+
+    def on_click(self) -> None:
+        """Close overlay on click outside."""
+        self.dismiss()
+
+
+# Re-export for convenience
+__all__ = ["display_entry", "HelpOverlay"]

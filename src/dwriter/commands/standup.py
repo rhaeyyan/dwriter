@@ -1,13 +1,16 @@
 """Standup command for generating standup summaries."""
 
+from __future__ import annotations
+
 from datetime import datetime, timedelta
+from typing import Any
 
 import click
 
 from ..cli import AppContext
 
 
-def format_standup_bullets(entries):
+def format_standup_bullets(entries: Any) -> str:
     """Format entries as bullet points."""
     lines = []
     for entry in entries:
@@ -21,7 +24,7 @@ def format_standup_bullets(entries):
     return "\n".join(lines)
 
 
-def format_standup_slack(entries):
+def format_standup_slack(entries: Any) -> str:
     """Format entries for Slack."""
     lines = []
     for entry in entries:
@@ -35,7 +38,7 @@ def format_standup_slack(entries):
     return "\n".join(lines)
 
 
-def format_standup_jira(entries):
+def format_standup_jira(entries: Any) -> str:
     """Format entries for Jira."""
     lines = []
     for entry in entries:
@@ -49,7 +52,7 @@ def format_standup_jira(entries):
     return "\n".join(lines)
 
 
-def format_standup_markdown(entries):
+def format_standup_markdown(entries: Any) -> str:
     """Format entries as Markdown."""
     lines = []
     for entry in entries:
@@ -63,7 +66,7 @@ def format_standup_markdown(entries):
     return "\n".join(lines)
 
 
-def format_todos(todos, output_format):
+def format_todos(todos: Any, output_format: str) -> str:
     """Format pending todos based on the selected output format."""
     lines = []
     for todo in todos:
@@ -126,22 +129,30 @@ FORMATTERS = {
     help="Append your pending tasks as a 'Plan for Today' section",
 )
 @click.pass_obj
-def standup(ctx: AppContext, output_format: str, no_copy: bool, with_todos: bool):
+def standup(
+    ctx: AppContext,
+    output_format: str,
+    no_copy: bool,
+    with_todos: bool,
+) -> None:
     """Generate yesterday's standup.
 
     Queries all entries from yesterday and formats them for standup meetings.
-    By default, copies the output to clipboard.
+    By default, copies the output to clipboard for easy pasting into Slack,
+    Jira, or other tools.
+
+    Output Formats:
+      - bullets: Simple bullet points
+      - slack: Slack-optimized formatting with bullets
+      - jira: Jira-compatible formatting
+      - markdown: Markdown with proper syntax
 
     Examples:
-        dwriter standup
-
-        dwriter standup --format slack
-
-        dwriter standup --format jira
-
-        dwriter standup --no-copy
-
-        dwriter standup --with-todos
+      dwriter standup                 # Default (copies to clipboard)
+      dwriter standup --format slack
+      dwriter standup --format jira
+      dwriter standup --no-copy
+      dwriter standup --with-todos    # Include pending tasks
     """
     # Use config defaults if not specified
     if output_format is None:

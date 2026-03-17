@@ -2,7 +2,7 @@
 
 from datetime import datetime, timedelta
 
-from dwriter.commands.stats import calculate_streak
+from dwriter.stats_utils import calculate_streak
 
 
 def test_streak_empty():

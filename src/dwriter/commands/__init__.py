@@ -1,15 +1,16 @@
-"""CLI commands for Day Writer."""
+"""CLI commands for dwriter."""
 
 from .add import add
 from .config import config
 from .delete import delete
 from .edit import edit
 from .examples import examples
-from .focus import focus
+from .help import help_cmd
 from .review import review
 from .search import search
 from .standup import standup
 from .stats import stats
+from .timer import timer
 from .today import today
 from .todo import done, todo
 from .undo import undo
@@ -21,11 +22,12 @@ __all__ = [
     "done",
     "edit",
     "examples",
-    "focus",
+    "timer",
+    "help_cmd",
     "review",
     "search",
-    "stats",
     "standup",
+    "stats",
     "today",
     "todo",
     "undo",

@@ -1,0 +1,1006 @@
+"""Logs screen for dwriter TUI.
+
+This module provides a view of recent journal entries with fuzzy search
+capabilities for finding older logs. Completed todos appear here as journal
+entries with their completion date and time.
+"""
+
+from __future__ import annotations
+
+import re
+from datetime import datetime
+from typing import Any
+
+from textual.app import ComposeResult
+from textual.binding import Binding
+from textual.containers import Container, Horizontal, Vertical
+from textual.screen import ModalScreen
+from textual.widgets import Button, Header, Input, Label, ListItem, ListView
+
+from ...cli import AppContext
+from ...database import Entry
+from ...search_utils import search_items
+
+
+class EditEntryModal(ModalScreen):  # type: ignore[type-arg]
+    """Modal dialog for editing a journal entry."""
+
+    CSS = """
+    EditEntryModal {
+        align: center middle;
+    }
+
+    #edit-modal-container {
+        width: 80;
+        height: auto;
+        max-height: 40;
+        background: $surface;
+        border: thick $primary;
+        padding: 1 2;
+    }
+
+    #edit-modal-title {
+        text-align: center;
+        text-style: bold;
+        padding: 1 0;
+    }
+
+    #edit-content-label, #edit-tags-label, #edit-project-label, #edit-datetime-label {
+        text-style: bold;
+        padding: 1 0 0 0;
+    }
+
+    #edit-input, #tags-input, #project-input {
+        width: 100%;
+        margin: 0 0 1 0;
+    }
+
+    .datetime-container {
+        height: auto;
+        width: 100%;
+        margin: 0 0 1 0;
+    }
+
+    #date-input {
+        width: 60%;
+        margin-right: 1;
+    }
+
+    #time-input {
+        width: 1fr;
+    }
+
+    #help-text {
+        color: $text-muted;
+        padding: 0 0 1 0;
+        text-style: italic;
+    }
+
+    #save-exit-btn {
+        dock: top;
+        width: auto;
+        margin: 0 1;
+    }
+
+    #edit-buttons {
+        align: center middle;
+        padding: 1 0;
+    }
+
+    Button {
+        margin: 0 1;
+    }
+    """
+
+    BINDINGS = [
+        ("escape", "cancel", "Cancel"),
+        ("enter", "save", "Save"),
+        ("ctrl+s", "save_and_exit", "Save & Exit"),
+    ]
+
+    def __init__(
+        self,
+        entry: Entry,
+        **kwargs: Any,
+    ) -> None:
+        """Initialize the edit modal.
+
+        Args:
+            entry: Entry object to edit.
+            **kwargs: Additional arguments passed to ModalScreen.
+        """
+        super().__init__(**kwargs)
+        self.entry = entry
+        self.result: tuple[
+            str | None, list[str] | None, str | None, datetime | None
+        ] = (
+            None,
+            None,
+            None,
+            None,
+        )
+
+    def compose(self) -> ComposeResult:
+        """Compose the modal UI."""
+        with Container(id="edit-modal-container"):
+            # Save & Exit button in top-right corner
+            yield Button("💾 Save & Exit", id="save-exit-btn", variant="success")
+
+            yield Label(f"Edit Entry #{self.entry.id}", id="edit-modal-title")
+
+            yield Label("Content:", id="edit-content-label")
+            yield Input(
+                value=self.entry.content,
+                id="edit-input",
+                placeholder="Entry content...",
+            )
+
+            # Tags field
+            yield Label("Tags:", id="edit-tags-label")
+            tags_str = ", ".join(self.entry.tag_names) if self.entry.tag_names else ""
+            yield Input(
+                value=tags_str,
+                id="tags-input",
+                placeholder="Comma-separated tags (e.g., work, urgent)",
+            )
+
+            # Project field
+            yield Label("Project:", id="edit-project-label")
+            yield Input(
+                value=self.entry.project or "",
+                id="project-input",
+                placeholder="Project name (optional)",
+            )
+
+            # Date and Time fields on the same line
+            yield Label("Date and Time:", id="edit-datetime-label")
+            with Horizontal(classes="datetime-container"):
+                date_str = (
+                    self.entry.created_at.strftime("%Y-%m-%d")
+                    if self.entry.created_at
+                    else ""
+                )
+                yield Input(
+                    value=date_str,
+                    id="date-input",
+                    placeholder="YYYY-MM-DD",
+                )
+
+                dt = self.entry.created_at
+                if dt and dt.hour == 0 and dt.minute == 0 and dt.second == 0:
+                    time_str = ""  # Leave blank for midnight times
+                else:
+                    time_str = dt.strftime("%I:%M %p") if dt else ""
+                yield Input(
+                    value=time_str,
+                    id="time-input",
+                    placeholder="HH:MM AM/PM",
+                )
+
+            yield Label(
+                "Date: yesterday, 2 days ago, last Friday | Time: 2:30 PM, 14:30 (or leave blank)",
+                id="help-text",
+            )
+
+            with Container(id="edit-buttons"):
+                yield Button("Cancel", id="cancel-btn", variant="default")
+
+    def on_mount(self) -> None:
+        """Focus the content input on mount."""
+        self.query_one("#edit-input", Input).focus()
+
+    def _parse_date(self, date_str: str) -> datetime | None:
+        """Parse a date string with support for relative dates.
+
+        Args:
+            date_str: Date string in various formats.
+
+        Returns:
+            Parsed datetime or None.
+        """
+        from datetime import timedelta
+
+        date_str = date_str.strip().lower()
+
+        # Try standard format first: YYYY-MM-DD
+        try:
+            return datetime.strptime(date_str, "%Y-%m-%d")
+        except ValueError:
+            pass
+
+        now = datetime.now()
+
+        # Handle "yesterday"
+        if date_str == "yesterday":
+            return now - timedelta(days=1)
+
+        # Handle "today"
+        if date_str == "today":
+            return now
+
+        # Handle "X days ago"
+        days_ago_match = re.match(r"(\d+)\s*days?\s*ago", date_str)
+        if days_ago_match:
+            days = int(days_ago_match.group(1))
+            return now - timedelta(days=days)
+
+        # Handle "X weeks ago"
+        weeks_ago_match = re.match(r"(\d+)\s*weeks?\s*ago", date_str)
+        if weeks_ago_match:
+            weeks = int(weeks_ago_match.group(1))
+            return now - timedelta(weeks=weeks)
+
+        # Handle "last Monday", "last Friday", etc.
+        weekday_map = {
+            "monday": 0,
+            "tuesday": 1,
+            "wednesday": 2,
+            "thursday": 3,
+            "friday": 4,
+            "saturday": 5,
+            "sunday": 6,
+        }
+        if date_str.startswith("last "):
+            day_name = date_str[5:]
+            if day_name in weekday_map:
+                target_weekday = weekday_map[day_name]
+                days_back = (now.weekday() - target_weekday) % 7
+                if days_back == 0:
+                    days_back = 7  # Go to previous week
+                return now - timedelta(days=days_back)
+
+        return None
+
+    def _parse_time(self, time_str: str) -> datetime | None:
+        """Parse a time string in 12 or 24-hour format.
+
+        Args:
+            time_str: Time string (e.g., "02:30 PM", "14:30", "2:30pm").
+
+        Returns:
+            Parsed datetime with today's date or None.
+        """
+        time_str = time_str.strip().upper()
+
+        # Try 12-hour format: HH:MM AM/PM
+        for fmt in ["%I:%M %p", "%I:%M%p", "%I:%M %P", "%I:%M%P"]:
+            try:
+                parsed = datetime.strptime(time_str, fmt)
+                return datetime.now().replace(
+                    hour=parsed.hour,
+                    minute=parsed.minute,
+                    second=0,
+                    microsecond=0,
+                )
+            except ValueError:
+                pass
+
+        # Try 24-hour format: HH:MM
+        try:
+            parsed = datetime.strptime(time_str, "%H:%M")
+            return datetime.now().replace(
+                hour=parsed.hour,
+                minute=parsed.minute,
+                second=0,
+                microsecond=0,
+            )
+        except ValueError:
+            pass
+
+        return None
+
+    def action_save(self) -> None:
+        """Save the edited content, tags, project, and datetime."""
+        self._do_save()
+
+    def action_save_and_exit(self) -> None:
+        """Save and exit the modal."""
+        self._do_save()
+
+    def _do_save(self) -> None:
+        """Perform the save operation."""
+        content_widget = self.query_one("#edit-input", Input)
+        date_widget = self.query_one("#date-input", Input)
+        time_widget = self.query_one("#time-input", Input)
+        tags_widget = self.query_one("#tags-input", Input)
+        project_widget = self.query_one("#project-input", Input)
+
+        content = content_widget.value.strip() or None
+        date_str = date_widget.value.strip() or None
+        time_str = time_widget.value.strip() or None
+        tags_str = tags_widget.value.strip() or None
+        project = project_widget.value.strip() or None
+
+        # Parse date and time
+        created_at: datetime | None = None
+
+        if date_str:
+            parsed_date = self._parse_date(date_str)
+            if parsed_date is None:
+                self.notify(
+                    "Invalid date format. Use YYYY-MM-DD", severity="error", timeout=2
+                )
+                return
+
+            # Parse time if provided (time is optional)
+            if time_str:
+                parsed_time = self._parse_time(time_str)
+                if parsed_time is None:
+                    self.notify(
+                        "Invalid time format. Use HH:MM AM/PM",
+                        severity="error",
+                        timeout=2,
+                    )
+                    return
+                # Combine date and time
+                created_at = parsed_date.replace(
+                    hour=parsed_time.hour,
+                    minute=parsed_time.minute,
+                )
+            else:
+                # Use date only (midnight) - time is optional
+                created_at = parsed_date.replace(hour=0, minute=0)
+        elif time_str:
+            # Time only without date - use today
+            parsed_time = self._parse_time(time_str)
+            if parsed_time:
+                created_at = parsed_time
+
+        # Parse tags from comma-separated string
+        tags: list[str] | None = None
+        if tags_str is not None:
+            tags = [t.strip() for t in tags_str.split(",") if t.strip()]
+
+        self.result = (content, tags, project, created_at)
+        self.dismiss(self.result)
+
+    def action_cancel(self) -> None:
+        """Cancel editing."""
+        self.result = (None, None, None, None)
+        self.dismiss(self.result)
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Handle button presses."""
+        if event.button.id == "save-btn":
+            self.action_save()
+        elif event.button.id == "cancel-btn":
+            self.action_cancel()
+        elif event.button.id == "save-exit-btn":
+            self.action_save_and_exit()
+
+
+class DeleteConfirmModal(ModalScreen):  # type: ignore[type-arg]
+    """Modal dialog for confirming entry deletion."""
+
+    CSS = """
+    DeleteConfirmModal {
+        align: center middle;
+    }
+
+    #delete-modal-container {
+        width: 50;
+        height: auto;
+        min-height: 8;
+        background: $surface;
+        border: thick $error;
+        padding: 0 2;
+    }
+
+    #delete-modal-title {
+        text-align: center;
+        text-style: bold;
+        color: $error;
+        padding: 0;
+        margin-top: 1;
+    }
+
+    #delete-modal-content {
+        text-align: center;
+        padding: 0;
+        margin: 1 0;
+        color: $text-muted;
+    }
+
+    #delete-buttons {
+        align: center middle;
+        padding: 1 0;
+    }
+
+    Button {
+        margin: 0 1;
+    }
+    """
+
+    BINDINGS = [
+        ("escape", "cancel", "Cancel"),
+        ("y", "confirm", "Yes"),
+        ("n", "cancel", "No"),
+    ]
+
+    def __init__(
+        self,
+        entry_id: int,
+        entry_content: str,
+        **kwargs: Any,
+    ) -> None:
+        """Initialize the delete confirm modal.
+
+        Args:
+            entry_id: ID of the entry to delete.
+            entry_content: Preview of entry content.
+            **kwargs: Additional arguments passed to ModalScreen.
+        """
+        super().__init__(**kwargs)
+        self.entry_id = entry_id
+        self.entry_content = entry_content
+        self.result: int | None = None
+
+    def compose(self) -> ComposeResult:
+        """Compose the modal UI."""
+        with Container(id="delete-modal-container"):
+            yield Label("⚠️ Delete Entry?", id="delete-modal-title")
+            yield Label(
+                f'"{self.entry_content[:50]}{"..." if len(self.entry_content) > 50 else ""}"',
+                id="delete-modal-content",
+            )
+            with Container(id="delete-buttons"):
+                yield Button("Delete", id="delete-btn", variant="error")
+                yield Button("Cancel", id="cancel-btn", variant="default")
+
+    def action_confirm(self) -> None:
+        """Confirm deletion."""
+        self.result = self.entry_id
+        self.dismiss(self.entry_id)
+
+    def action_cancel(self) -> None:
+        """Cancel deletion."""
+        self.result = None
+        self.dismiss(None)
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Handle button presses."""
+        if event.button.id == "delete-btn":
+            self.action_confirm()
+        elif event.button.id == "cancel-btn":
+            self.action_cancel()
+
+
+class LogsResultsView(ListView):
+    """ListView for displaying journal entry search results."""
+
+    def __init__(
+        self, items: list[tuple[Entry, float]] | None = None, **kwargs: Any
+    ) -> None:
+        """Initialize the logs results view.
+
+        Args:
+            items: Optional list of (entry, score) tuples to display.
+            **kwargs: Additional arguments passed to ListView.
+        """
+        super().__init__(**kwargs)
+        self._items = items or []
+
+    def update_items(self, items: list[tuple[Entry, float]]) -> None:
+        """Update the displayed items.
+
+        Args:
+            items: List of (entry, score) tuples to display.
+        """
+        self._items = items
+        self.clear()
+        for entry, score in items:
+            self.append_item(entry, score)
+
+    def append_item(self, entry: Entry, score: float | None = None) -> None:
+        """Append a single entry to the list.
+
+        Args:
+            entry: Entry object to display.
+            score: Optional match score (0-100) for search results.
+        """
+        label = self._format_entry(entry, score)
+        list_item = ListItem(Label(label, markup=True))
+        list_item.item_data = {"item": entry, "score": score, "type": "entry"}  # type: ignore[attr-defined]
+        self.append(list_item)
+
+    def _format_entry(self, entry: Entry, score: float | None = None) -> str:
+        """Format an entry for display.
+
+        Args:
+            entry: Entry object to format.
+            score: Optional match score for search results.
+
+        Returns:
+            Formatted string with markup.
+        """
+        from ...ui_utils import format_entry_datetime
+
+        date_str, time_str = format_entry_datetime(entry)
+
+        # Clean up content - remove check emoji/mark from completed todos
+        content = entry.content
+        if content.startswith("✅ "):
+            content = content[2:]
+        elif content.startswith("✓ "):
+            content = content[2:]
+
+        # Format tags and project on first line
+        tags_str = (
+            f"[yellow]#{' #'.join(entry.tag_names)}[/yellow]" if entry.tag_names else ""
+        )
+        project_str = (
+            f"[cyan] : [/cyan][magenta]{entry.project}[/magenta]"
+            if entry.project
+            else ""
+        )
+
+        # Add score if this is a search result
+        score_str = ""
+        if score is not None:
+            score_color = "green" if score >= 90 else "yellow" if score >= 75 else "dim"
+            score_str = f" [{score_color}]({int(score)}%)[/{score_color}]"
+
+        # Format: date time | #tags : Project on first line, content on second line
+        datetime_str = f"[cyan]{date_str}[/cyan]"
+        if time_str:
+            datetime_str = f"[cyan]{date_str}[/cyan] [#73E6CB]{time_str}[/#73E6CB]"
+        else:
+            datetime_str = f"[cyan]{date_str}[/cyan]"
+
+        first_line = f"{datetime_str} | {tags_str}{project_str}{score_str}"
+
+        if content:
+            return f"{first_line}\n  {content}"
+        else:
+            return first_line
+
+
+class LogsScreen(Container):
+    """Logs screen for viewing and searching journal entries.
+
+    Provides a chronological view of all journal entries, including
+    completed todos which are logged as entries with their completion
+    timestamp.
+
+    Key bindings:
+        j/k: Navigate up/down
+        Enter: Copy content to clipboard
+        e: Edit content
+        d: Delete entry
+        t: Edit tags
+        p: Edit project
+        /: Focus search input
+        q: Quit
+    """
+
+    DEFAULT_CSS = """
+    LogsScreen {
+        height: 1fr;
+        background: $surface;
+    }
+
+    #search-container {
+        height: auto;
+        margin: 0 2 1 2;
+        padding: 0 2;
+        background: $panel;
+    }
+
+    #search-container Horizontal {
+        height: auto;
+        align: left middle;
+    }
+
+    #btn-standup {
+        width: auto;
+        min-width: 15;
+        margin-right: 1;
+    }
+
+    #search-input {
+        width: 1fr;
+        border: solid #73E6CB;
+    }
+
+    #search-input:focus {
+        border: solid #00FF7F;
+    }
+
+    #results-container {
+        height: 1fr;
+        margin: 0 2;
+    }
+
+    #load-more-container {
+        height: 3;
+        align: center middle;
+        background: $panel;
+        border-top: solid $primary;
+    }
+
+    #btn-load-more {
+        width: 30;
+    }
+
+    LogsResultsView {
+        height: 1fr;
+        border: solid $primary;
+        padding: 0;
+    }
+
+    LogsResultsView:focus {
+        border: solid $accent;
+    }
+
+    ListItem {
+        height: auto;
+        margin: 0;
+        padding: 0;
+    }
+
+    Label {
+        width: 100%;
+        padding: 0;
+        margin: 0;
+    }
+
+    #logs-status-bar {
+        dock: bottom;
+        height: 1;
+        background: $panel;
+        color: $text-muted;
+        padding: 0 2;
+    }
+    """
+
+    BINDINGS = [
+        Binding("j", "cursor_down", "Down"),
+        Binding("k", "cursor_up", "Up"),
+        Binding("enter", "select", "Select"),
+        Binding("q", "quit", "Quit"),
+        Binding("escape", "quit", "Quit"),
+        Binding("e", "edit_content", "Edit"),
+        Binding("d", "delete_entry", "Delete"),
+        Binding("t", "edit_tags", "Tags"),
+        Binding("p", "edit_project", "Project"),
+    ]
+
+    def __init__(
+        self,
+        ctx: AppContext,
+        **kwargs: Any,
+    ) -> None:
+        """Initialize the logs screen.
+
+        Args:
+            ctx: Application context with database and configuration.
+            **kwargs: Additional arguments passed to Container.
+        """
+        super().__init__(**kwargs)
+        self.ctx = ctx
+        self._all_entries: list[Entry] = []
+        self._page_size = 50
+        self._offset = 0
+        self._has_more = True
+
+    def compose(self) -> ComposeResult:
+        """Compose the logs UI layout."""
+        from textual.containers import Horizontal
+
+        yield Header()
+        with Vertical():
+            with Container(id="search-container"):
+                with Horizontal():
+                    yield Button("🎤 Stand-Up", id="btn-standup", variant="primary")
+                    yield Input(
+                        placeholder="Search logs to edit/delete",
+                        id="search-input",
+                    )
+            with Container(id="results-container"):
+                yield LogsResultsView(id="logs-results")
+                with Horizontal(id="load-more-container"):
+                    yield Button("Load More", id="btn-load-more", variant="default")
+        yield Label(
+            "j/k: Navigate | Enter: Select | e: Edit | d: Delete | t: Tags | p: Project | q: Quit",
+            id="logs-status-bar",
+        )
+
+    def _load_data(self, reset: bool = True) -> None:
+        """Load entries from the database using pagination.
+        
+        Args:
+            reset: If True, reset offset and clear current list.
+        """
+        if reset:
+            self._offset = 0
+            self._has_more = True
+            self._all_entries = []
+
+        if not self._has_more:
+            return
+
+        new_entries = self.ctx.db.get_entries_paginated(
+            limit=self._page_size, offset=self._offset
+        )
+        
+        if len(new_entries) < self._page_size:
+            self._has_more = False
+        
+        self._all_entries.extend(new_entries)
+        self._offset += len(new_entries)
+
+    def on_mount(self) -> None:
+        """Load data and display recent entries on mount."""
+        self._load_data(reset=True)
+        self._display_recent_entries()
+        self.query_one("#logs-results", LogsResultsView).focus()
+
+    def on_show(self) -> None:
+        """Refresh data when the logs screen becomes visible."""
+        self._load_data(reset=True)
+        self._display_recent_entries()
+
+    def on_input_changed(self, event: Input.Changed) -> None:
+        """Handle search input changes.
+
+        Args:
+            event: Input change event containing the query.
+        """
+        if event.input.id == "search-input":
+            query = event.value.strip()
+            # Hide load more during search
+            self.query_one("#btn-load-more").display = not bool(query)
+            self._perform_search(event.value)
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Handle button presses.
+
+        Args:
+            event: Button pressed event.
+        """
+        if event.button.id == "btn-standup":
+            from .standup import StandupScreen
+
+            self.app.push_screen(StandupScreen(self.ctx))
+        elif event.button.id == "btn-load-more":
+            self.action_load_more()
+
+    def action_load_more(self) -> None:
+        """Load the next page of entries."""
+        if not self._has_more:
+            return
+            
+        self._load_data(reset=False)
+        self._display_recent_entries(append=True)
+
+    def _perform_search(self, query: str) -> None:
+        """Execute fuzzy search and update results.
+
+        Args:
+            query: Search query string.
+        """
+        results_view = self.query_one("#logs-results", LogsResultsView)
+        
+        query = query.strip()
+
+        if not query:
+            # Show recent entries when search is empty
+            self._display_recent_entries()
+            return
+
+        results_view.clear()
+        
+        # For search, we still search across ALL entries loaded so far
+        # or we might want to fetch all entries if query is present?
+        # Senior engineer advice: If searching, fetch all IDs/Content first or use FTS5.
+        # For now, let's search across the loaded cache.
+        matched_entries = search_items(query, self._all_entries, limit=50, threshold=50)
+
+        # Display results
+        for entry, score in matched_entries:
+            results_view.append_item(entry, score)
+
+        self._update_status_bar(len(matched_entries), is_search=True)
+
+    def _display_recent_entries(self, append: bool = False) -> None:
+        """Display the entries from the loaded cache.
+
+        Args:
+            append: If True, only append new entries instead of clearing.
+        """
+        results_view = self.query_one("#logs-results", LogsResultsView)
+        
+        if not append:
+            results_view.clear()
+            entries_to_show = self._all_entries
+        else:
+            # Only append the most recent batch
+            entries_to_show = self._all_entries[-self._page_size:]
+
+        for entry in entries_to_show:
+            results_view.append_item(entry, score=None)
+
+        # Update button visibility
+        load_more_btn = self.query_one("#btn-load-more")
+        load_more_btn.display = self._has_more
+        if not self._has_more:
+            load_more_btn.label = "No more entries"
+            load_more_btn.disabled = True
+        else:
+            load_more_btn.label = "Load More"
+            load_more_btn.disabled = False
+
+        self._update_status_bar(len(self._all_entries), is_search=False)
+
+    def _update_status_bar(self, count: int, is_search: bool) -> None:
+        """Update the status bar with result counts.
+
+        Args:
+            count: Number of displayed entries.
+            is_search: Whether this is a search result or recent entries view.
+        """
+        if is_search:
+            self.query_one("#logs-status-bar", Label).update(
+                f"Found {count} matches | "
+                "j/k: Navigate | e: Edit | d: Delete | t: Tags | p: Project | /: Search | q: Quit"
+            )
+        else:
+            self.query_one("#logs-status-bar", Label).update(
+                f"Showing {count} recent entries | "
+                "j/k: Navigate | e: Edit | d: Delete | t: Tags | p: Project | /: Search | q: Quit"
+            )
+
+    def _get_selected_entry(self) -> Entry | None:
+        """Get the currently selected entry.
+
+        Returns:
+            Selected Entry or None.
+        """
+        results_view = self.query_one("#logs-results", LogsResultsView)
+        if results_view.highlighted_child is None:
+            return None
+        item_data = results_view.highlighted_child.item_data  # type: ignore[attr-defined]
+        if not item_data:
+            return None
+        return item_data["item"]
+
+    def action_cursor_down(self) -> None:
+        """Move cursor down in results list."""
+        results_view = self.query_one("#logs-results", LogsResultsView)
+        results_view.action_cursor_down()
+
+    def action_cursor_up(self) -> None:
+        """Move cursor up in results list."""
+        results_view = self.query_one("#logs-results", LogsResultsView)
+        results_view.action_cursor_up()
+
+    def action_focus_search(self) -> None:
+        """Focus the search input."""
+        self.query_one("#search-input", Input).focus()
+
+    def action_select(self) -> None:
+        """Select the highlighted item and copy its content."""
+        entry = self._get_selected_entry()
+        if entry is None:
+            self.notify("No entry selected", severity="warning", timeout=1.5)
+            return
+
+        content = entry.content
+        try:
+            import pyperclip
+
+            pyperclip.copy(content)
+            self.notify(f"Copied: {content[:50]}...", timeout=2)
+        except Exception:
+            self.notify(f"Content: {content}", timeout=3)
+
+    def action_edit_content(self) -> None:
+        """Edit content of selected entry."""
+        entry = self._get_selected_entry()
+        if entry is None:
+            self.notify("No entry selected", severity="warning", timeout=1.5)
+            return
+
+        def on_dismiss(
+            result: tuple[str | None, list[str] | None, str | None, datetime | None]
+            | None,
+        ) -> None:
+            if result is None:
+                return
+            content, tags, project, created_at = result
+            if content is None:
+                return
+
+            self.ctx.db.update_entry(
+                entry.id,
+                content=content,
+                tags=tags,
+                project=project,
+                created_at=created_at,
+            )
+            self.notify(f"Entry #{entry.id} updated", timeout=1.5)
+            self._load_data()
+            self._display_recent_entries()
+
+        self.app.push_screen(EditEntryModal(entry), on_dismiss)
+
+    def action_delete_entry(self) -> None:
+        """Delete selected entry."""
+        entry = self._get_selected_entry()
+        if entry is None:
+            self.notify("No entry selected", severity="warning", timeout=1.5)
+            return
+
+        def on_dismiss(result: int | None) -> None:
+            if result is not None:
+                self.ctx.db.delete_entry(result)
+                self.notify(f"Entry #{result} deleted", timeout=1.5)
+                self._load_data()
+                self._display_recent_entries()
+
+        self.app.push_screen(
+            DeleteConfirmModal(entry.id, entry.content),
+            on_dismiss,
+        )
+
+    def action_edit_tags(self) -> None:
+        """Edit tags of selected entry."""
+        entry = self._get_selected_entry()
+        if entry is None:
+            self.notify("No entry selected", severity="warning", timeout=1.5)
+            return
+
+        def on_dismiss(
+            result: tuple[str | None, list[str] | None, str | None] | None,
+        ) -> None:
+            if result is None:
+                return
+            content, tags, project = result
+            if tags is None:
+                return
+
+            self.ctx.db.update_entry(
+                entry.id,
+                tags=tags,
+            )
+            self.notify(f"Entry #{entry.id} tags updated", timeout=1.5)
+            self._load_data()
+            self._display_recent_entries()
+
+        self.app.push_screen(EditEntryModal(entry), on_dismiss)
+
+    def action_edit_project(self) -> None:
+        """Edit project of selected entry."""
+        entry = self._get_selected_entry()
+        if entry is None:
+            self.notify("No entry selected", severity="warning", timeout=1.5)
+            return
+
+        def on_dismiss(
+            result: tuple[str | None, list[str] | None, str | None] | None,
+        ) -> None:
+            if result is None:
+                return
+            content, tags, project = result
+            if project is None:
+                return
+
+            self.ctx.db.update_entry(
+                entry.id,
+                project=project,
+            )
+            self.notify(f"Entry #{entry.id} project updated", timeout=1.5)
+            self._load_data()
+            self._display_recent_entries()
+
+        self.app.push_screen(EditEntryModal(entry), on_dismiss)
+
+    def on_entry_added(self, message: Any) -> None:
+        """Handle EntryAdded messages from other screens.
+
+        Args:
+            message: EntryAdded message.
+        """
+        # Refresh the logs when entries are added elsewhere
+        self._load_data()
+        self._display_recent_entries()
