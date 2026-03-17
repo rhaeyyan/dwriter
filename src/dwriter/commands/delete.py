@@ -21,8 +21,8 @@ def parse_date(date_str: str) -> datetime:
     """
     try:
         return datetime.strptime(date_str, "%Y-%m-%d")
-    except ValueError:
-        raise click.BadParameter("Date must be in YYYY-MM-DD format")
+    except ValueError as e:
+        raise click.BadParameter("Date must be in YYYY-MM-DD format") from e
 
 
 @click.command()
@@ -34,15 +34,17 @@ def parse_date(date_str: str) -> datetime:
     help="Delete entries before this date (YYYY-MM-DD)",
 )
 @click.pass_obj
-def delete(ctx: AppContext, before_date: str):
+def delete(ctx: AppContext, before_date: str) -> None:
     """Bulk delete old entries.
 
     Deletes all entries created before the specified date.
+    Shows a preview of entries to be deleted and requires confirmation.
+
+    ⚠️ This action cannot be undone.
 
     Examples:
-        dwriter delete --before 2025-01-01
-
-        dwriter delete --before 2024-12-31
+      dwriter delete --before 2025-01-01
+      dwriter delete --before 2024-12-31
     """
     try:
         cutoff_date = parse_date(before_date)
@@ -61,9 +63,18 @@ def delete(ctx: AppContext, before_date: str):
     ctx.console.print()
 
     for entry in entries[:10]:  # Show first 10
-        date_str = entry.created_at.strftime("%Y-%m-%d")
-        time_str = entry.created_at.strftime("%I:%M [bold]%p[/bold]")
-        ctx.console.print(f"  [{entry.id}] {date_str} | {time_str}: `{entry.content}`")
+        from ..ui_utils import format_entry_datetime
+
+        date_str, time_str = format_entry_datetime(entry)
+
+        # Display with or without time based on whether it's a past date
+        if time_str is None:
+            ctx.console.print(f"  [{entry.id}] {date_str}: `{entry.content}`")
+        else:
+            time_str = f"[bold]{time_str}[/bold]"
+            ctx.console.print(
+                f"  [{entry.id}] {date_str} | {time_str}: `{entry.content}`"
+            )
 
     if len(entries) > 10:
         ctx.console.print(f"  ... and {len(entries) - 10} more")

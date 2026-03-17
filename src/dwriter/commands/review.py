@@ -1,22 +1,26 @@
 """Review command for generating periodic summaries."""
 
-from datetime import datetime, timedelta
+from __future__ import annotations
+
+from datetime import date, datetime, timedelta
+from typing import Any
 
 import click
 
 from ..cli import AppContext
+from ..database import Entry
 
 
-def format_review_markdown(entries_by_date):
+def format_review_markdown(entries_by_date: Any) -> str:
     """Format entries as Markdown grouped by date."""
     lines = []
-    for date, entries in entries_by_date.items():
-        date_str = date.strftime("%A, %Y-%m-%d")
+    for date_key, entries in entries_by_date.items():
+        date_str = date_key.strftime("%A, %Y-%m-%d")
         lines.append(f"## {date_str}")
         lines.append("")
         for entry in entries:
             time_str = entry.created_at.strftime("%I:%M %p")
-            date_fmt = date.strftime("%Y-%m-%d")
+            date_fmt = date_key.strftime("%Y-%m-%d")
             line = f"- {date_fmt} | [#23c76b]{time_str}[/#23c76b]: {entry.content}"
             lines.append(line)
             if entry.tag_names:
@@ -28,16 +32,16 @@ def format_review_markdown(entries_by_date):
     return "\n".join(lines)
 
 
-def format_review_plain(entries_by_date):
+def format_review_plain(entries_by_date: Any) -> str:
     """Format entries as plain text grouped by date."""
     lines = []
-    for date, entries in entries_by_date.items():
-        date_str = date.strftime("%A, %Y-%m-%d")
+    for date_key, entries in entries_by_date.items():
+        date_str = date_key.strftime("%A, %Y-%m-%d")
         lines.append(f"[green]{date_str}[/green]")
         lines.append("-" * 40)
         for entry in entries:
             time_str = entry.created_at.strftime("%I:%M %p")
-            date_fmt = date.strftime("%Y-%m-%d")
+            date_fmt = date_key.strftime("%Y-%m-%d")
             line = f"  {date_fmt} | [#23c76b]{time_str}[/#23c76b]: {entry.content}"
             lines.append(line)
             if entry.tag_names:
@@ -49,15 +53,15 @@ def format_review_plain(entries_by_date):
     return "\n".join(lines)
 
 
-def format_review_slack(entries_by_date):
+def format_review_slack(entries_by_date: Any) -> str:
     """Format entries for Slack grouped by date."""
     lines = []
-    for date, entries in entries_by_date.items():
-        date_str = date.strftime("*%A, %Y-%m-%d*")
+    for date_key, entries in entries_by_date.items():
+        date_str = date_key.strftime("*%A, %Y-%m-%d*")
         lines.append(f"[green]{date_str}[/green]")
         for entry in entries:
             time_str = entry.created_at.strftime("%I:%M %p")
-            date_fmt = date.strftime("%Y-%m-%d")
+            date_fmt = date_key.strftime("%Y-%m-%d")
             line = f"  {date_fmt} | [#23c76b]{time_str}[/#23c76b]: {entry.content}"
             lines.append(line)
             if entry.tag_names:
@@ -94,18 +98,21 @@ FORMATTERS = {
     help="Output format: markdown, plain, slack",
 )
 @click.pass_obj
-def review(ctx: AppContext, num_days: int, output_format: str):
+def review(ctx: AppContext, num_days: int, output_format: str | None) -> None:
     """Review last N days.
 
     Generates a summary of all entries from the past N days,
     grouped by date. Useful for sprint retrospectives or timesheets.
 
+    Output Formats:
+      - markdown: Markdown with date headers and bullet points
+      - plain: Plain text with color-coded dates
+      - slack: Slack-optimized formatting
+
     Examples:
-        dwriter review
-
-        dwriter review --days 7
-
-        dwriter review --format markdown
+      dwriter review                  # Last 5 days (default)
+      dwriter review --days 7         # Last week
+      dwriter review --format markdown
     """
     # Use config defaults if not specified
     if num_days is None:
@@ -125,7 +132,7 @@ def review(ctx: AppContext, num_days: int, output_format: str):
         return
 
     # Group entries by date
-    entries_by_date = {}
+    entries_by_date: dict[date, list[Entry]] = {}
     for entry in entries:
         date_key = entry.created_at.date()
         if date_key not in entries_by_date:

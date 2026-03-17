@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dwriter"
-version = "0.1.0"
+version = "3.0.1"
 description = "A low-friction terminal journaling tool for tracking daily tasks and generating standup summaries"
 readme = "README.md"
 license = {text = "MIT"}
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 authors = [
-    {name = "Day Writer Contributors"}
+    {name = "dwriter Contributors"}
 ]
 keywords = ["journal", "standup", "cli", "productivity", "terminal"]
 classifiers = [
@@ -20,7 +20,6 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -35,6 +34,7 @@ dependencies = [
     "sqlalchemy>=2.0",
     "rich>=13.0",
     "rapidfuzz>=3.0",
+    "textual>=0.44.0",
 ]
 
 [project.optional-dependencies]
@@ -43,6 +43,9 @@ dev = [
     "pytest-cov>=4.0",
     "black>=23.0",
     "ruff>=0.1",
+    "mypy>=1.0",
+    "types-pyperclip>=1.6",
+    "tomli>=2.0; python_version<'3.11'",
 ]
 
 [project.scripts]
@@ -57,18 +60,39 @@ where = ["src"]
 
 [tool.black]
 line-length = 88
-target-version = ["py38"]
+target-version = ["py39"]
 
 [tool.ruff]
 line-length = 88
+src = ["src"]
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "N", "D", "UP"]
+select = ["E", "F", "W", "I", "N", "D", "B", "C4", "UP"]
 ignore = ["D100", "D104"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
+[tool.ruff.lint.per-file-ignores]
+# Relax docstring requirements and allow long strings for TUI components (verbose UI code)
+"src/dwriter/commands/*_tui.py" = ["D102", "D107", "E501", "W293"]
+"src/dwriter/tui/screens/*.py" = ["D102", "D107", "E501", "W293", "E701", "W291"]
+"src/dwriter/tui/app.py" = ["E501"]
+# Tests don't need docstrings
+"tests/**/*.py" = ["D100", "D101", "D102", "D103", "D107"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-v --cov=dwriter"
+
+[tool.mypy]
+python_version = "3.9"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+check_untyped_defs = true
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false

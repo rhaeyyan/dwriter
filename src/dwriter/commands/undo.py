@@ -1,5 +1,7 @@
 """Undo command for deleting the most recent entry."""
 
+from __future__ import annotations
+
 import click
 
 from ..cli import AppContext
@@ -7,11 +9,13 @@ from ..cli import AppContext
 
 @click.command()
 @click.pass_obj
-def undo(ctx: AppContext):
+def undo(ctx: AppContext) -> None:
     """Delete the most recent entry.
 
-    Removes the last logged entry. Use with caution as this action
-    cannot be undone.
+    Removes the last logged entry. Shows a preview and requires
+    confirmation before deletion.
+
+    ⚠️ This action cannot be undone.
     """
     latest = ctx.db.get_latest_entry()
     if latest is None:

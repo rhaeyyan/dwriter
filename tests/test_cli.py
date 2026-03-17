@@ -3,7 +3,6 @@
 from click.testing import CliRunner
 
 from dwriter.cli import main
-from dwriter.database import Database
 
 
 def test_cli_help():
@@ -12,7 +11,7 @@ def test_cli_help():
     result = runner.invoke(main, ["--help"])
 
     assert result.exit_code == 0
-    assert "Day Writer" in result.output
+    assert "Dwriter" in result.output
     assert "add" in result.output
     assert "standup" in result.output
 
@@ -37,9 +36,7 @@ def test_add_command():
 def test_add_command_with_tags():
     """Test adding entry with tags."""
     runner = CliRunner()
-    result = runner.invoke(
-        main, ["add", "Test task", "-t", "bug", "-t", "backend"]
-    )
+    result = runner.invoke(main, ["add", "Test task", "-t", "bug", "-t", "backend"])
 
     assert result.exit_code == 0
 
@@ -47,9 +44,7 @@ def test_add_command_with_tags():
 def test_add_command_with_project():
     """Test adding entry with project."""
     runner = CliRunner()
-    result = runner.invoke(
-        main, ["add", "Test task", "--project", "myapp"]
-    )
+    result = runner.invoke(main, ["add", "Test task", "--project", "myapp"])
 
     assert result.exit_code == 0
 
@@ -65,9 +60,7 @@ def test_add_command_with_date_yesterday():
 def test_add_command_with_date_last_friday():
     """Test adding entry with --date "last Friday"."""
     runner = CliRunner()
-    result = runner.invoke(
-        main, ["add", "Test task", "--date", "last Friday"]
-    )
+    result = runner.invoke(main, ["add", "Test task", "--date", "last Friday"])
 
     assert result.exit_code == 0
 
@@ -75,9 +68,7 @@ def test_add_command_with_date_last_friday():
 def test_add_command_with_date_days_ago():
     """Test adding entry with --date "3 days ago"."""
     runner = CliRunner()
-    result = runner.invoke(
-        main, ["add", "Test task", "--date", "3 days ago"]
-    )
+    result = runner.invoke(main, ["add", "Test task", "--date", "3 days ago"])
 
     assert result.exit_code == 0
 
@@ -85,9 +76,7 @@ def test_add_command_with_date_days_ago():
 def test_add_command_with_date_iso_format():
     """Test adding entry with --date in ISO format."""
     runner = CliRunner()
-    result = runner.invoke(
-        main, ["add", "Test task", "--date", "2024-01-15"]
-    )
+    result = runner.invoke(main, ["add", "Test task", "--date", "2024-01-15"])
 
     assert result.exit_code == 0
 
@@ -95,9 +84,7 @@ def test_add_command_with_date_iso_format():
 def test_add_command_with_invalid_date():
     """Test adding entry with invalid date raises error."""
     runner = CliRunner()
-    result = runner.invoke(
-        main, ["add", "Test task", "--date", "invalid date"]
-    )
+    result = runner.invoke(main, ["add", "Test task", "--date", "invalid date"])
 
     assert result.exit_code != 0
     # Click raises ValueError, check the exception info

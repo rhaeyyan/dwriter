@@ -1,5 +1,9 @@
 """Add command for logging new entries."""
 
+from __future__ import annotations
+
+from typing import Any
+
 import click
 
 from ..cli import AppContext
@@ -32,25 +36,39 @@ from ..ui_utils import display_entry
     "'last Friday', '3 days ago') or standard date format (YYYY-MM-DD)",
 )
 @click.pass_obj
-def add(ctx: AppContext, content: str, tags: tuple, project: str, date_str: str):
+def add(
+    ctx: AppContext,
+    content: str,
+    tags: tuple[Any, ...],
+    project: str | None,
+    date_str: str | None,
+) -> None:
     """Add a new log entry.
 
-    CONTENT: The text content of your log entry.
+    Quickly capture tasks, notes, or accomplishments with optional
+    tags and project categorization. Supports backdated entries
+    using natural language dates.
+
+    Supported Date Formats:
+      - Relative: today, yesterday, tomorrow
+      - Days ago: 3 days ago, 2 weeks ago
+      - Last weekday: last Monday, last Friday
+      - Standard: 2024-01-15, 01/15/2024
 
     Examples:
-        dwriter add "fixed the race condition in auth"
+      dwriter add "fixed the race condition in auth"
 
-        dwriter add "fixed login bug" -t bug -t backend
+      dwriter add "fixed login bug" -t bug -t backend
 
-        dwriter add "implemented feature X" --project myapp
+      dwriter add "implemented feature X" --project myapp
 
-        dwriter add "refactored database layer" -t refactor -t backend -p myapp
+      dwriter add "refactored database layer" -t refactor -t backend -p myapp
 
-        dwriter add "Finished report" --date yesterday
+      dwriter add "Finished report" --date yesterday
 
-        dwriter add "Meeting notes" --date "last Friday"
+      dwriter add "Meeting notes" --date "last Friday"
 
-        dwriter add "Completed sprint" --date "3 days ago"
+      dwriter add "Completed sprint" --date "3 days ago"
     """
     # Merge default tags with provided tags
     all_tags = list(ctx.config.defaults.tags) + list(tags)

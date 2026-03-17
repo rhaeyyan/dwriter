@@ -4,17 +4,17 @@ This module provides fuzzy matching capabilities for searching
 journal entries and to-do tasks.
 """
 
-from typing import Any, List, Tuple
+from typing import Any, Optional
 
 from rapidfuzz import fuzz, process
 
 
 def search_items(
     query: str,
-    items: List[Any],
+    items: list[Any],
     limit: int = 10,
     threshold: int = 60,
-) -> List[Tuple[Any, float]]:
+) -> list[tuple[Any, float]]:
     """Search a list of Entry or Todo objects using fuzzy matching.
 
     Args:
@@ -58,9 +58,9 @@ def search_items(
 
 def find_best_match(
     query: str,
-    items: List[Any],
+    items: list[Any],
     threshold: int = 75,
-) -> Tuple[Any, float] | None:
+) -> Optional[tuple[Any, float]]:
     """Find the single best matching item for a query.
 
     Args:
@@ -77,10 +77,10 @@ def find_best_match(
 
 def find_multiple_matches(
     query: str,
-    items: List[Any],
+    items: list[Any],
     limit: int = 5,
     threshold: int = 60,
-) -> List[Tuple[Any, float]]:
+) -> list[tuple[Any, float]]:
     """Find multiple matching items for interactive selection.
 
     Args:
