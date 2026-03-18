@@ -26,6 +26,7 @@ from textual.widgets import (
 
 from ...cli import AppContext
 from ...database import Todo
+from ..colors import get_icon
 from ..messages import EntryAdded, TodoUpdated
 
 
@@ -56,7 +57,7 @@ class EditTodoModal(ModalScreen):  # type: ignore[type-arg]
         height: auto;
         max-height: 90;
         background: $surface;
-        border: thick $primary;
+        border: solid $primary;
         padding: 1 3;
     }
 
@@ -216,7 +217,7 @@ class AddTodoModal(ModalScreen):  # type: ignore[type-arg]
         width: 80;
         height: auto;
         background: $surface;
-        border: thick $primary;
+        border: solid $primary;
         padding: 1 3;
     }
 
@@ -258,8 +259,9 @@ class AddTodoModal(ModalScreen):  # type: ignore[type-arg]
 
     def compose(self) -> ComposeResult:
         """Compose the modal UI."""
+        use_emojis = self.app.ctx.config.display.use_emojis
         with Container(id="add-modal-container"):
-            yield Label("➕ Add New Task", id="add-modal-title")
+            yield Label(f"{get_icon('plus', use_emojis)} Add New Task", id="add-modal-title")
             yield Input(
                 value="",
                 id="add-input",
@@ -304,7 +306,7 @@ class EditTagsModal(ModalScreen):  # type: ignore[type-arg]
         width: 70;
         height: auto;
         background: $surface;
-        border: thick $primary;
+        border: solid $primary;
         padding: 1 3;
     }
 
@@ -403,7 +405,7 @@ class EditProjectModal(ModalScreen):  # type: ignore[type-arg]
         width: 70;
         height: auto;
         background: $surface;
-        border: thick $primary;
+        border: solid $primary;
         padding: 1 3;
     }
 
@@ -639,7 +641,9 @@ class TodoListView(ListView):
 
         # Content on second line with reduced indentation - add check emoji for completed todos
         if todo.status == "completed":
-            return f"[dim]{first_line}\n  ✅ {safe_content}[/dim]"
+            use_emojis = self.app.ctx.config.display.use_emojis
+            check_icon = get_icon("check", use_emojis)
+            return f"[dim]{first_line}\n  {check_icon} {safe_content}[/dim]"
 
         return f"{first_line}\n  [bold white]{safe_content}[/bold white]"
 
@@ -700,7 +704,7 @@ class TodoScreen(Container):
 
     TodoListView {
         height: 1fr;
-        border: solid $primary;
+        border: solid #45475a;
         padding: 0;
     }
 
@@ -710,7 +714,7 @@ class TodoScreen(Container):
 
     ListItem {
         height: auto;
-        margin: 0;
+        margin-bottom: 1;
         padding: 0;
     }
 
@@ -778,21 +782,22 @@ class TodoScreen(Container):
 
     def compose(self) -> ComposeResult:
         """Compose the todo UI layout."""
+        use_emojis = self.ctx.config.display.use_emojis
         with Vertical():
             with Container(id="todo-header-container"):
-                yield Label("📋 To-Do Board", id="todo-title")
+                yield Label(f"{get_icon('todo', use_emojis)} To-Do Board", id="todo-title")
                 yield Label(
-                    "Space: Complete | e: Edit | +/-: Priority | "
-                    "d: Delete | 1/2/3: Tabs | h: Hide header | q: Quit",
+                    f"Space: Complete {get_icon('bullet', use_emojis)} e: Edit {get_icon('bullet', use_emojis)} +/-: Priority {get_icon('bullet', use_emojis)} "
+                    f"d: Delete {get_icon('bullet', use_emojis)} 1/2/3: Tabs {get_icon('bullet', use_emojis)} h: Hide header {get_icon('bullet', use_emojis)} q: Quit",
                     id="todo-subtitle",
                 )
             # Use TabbedContent for filter switching with dynamic counts
             with TabbedContent(initial="upcoming-pane", id="todo-tabs"):
-                with TabPane("📅 Upcoming (0)", id="upcoming-pane"):
+                with TabPane(f"{get_icon('history', use_emojis)} Upcoming (0)", id="upcoming-pane"):
                     yield TodoListView(id="todos-upcoming")
-                with TabPane("⏳ Pending (0)", id="pending-pane"):
+                with TabPane(f"{get_icon('timer', use_emojis)} Pending (0)", id="pending-pane"):
                     yield TodoListView(id="todos")
-                with TabPane("✅ Completed (0)", id="completed-pane"):
+                with TabPane(f"{get_icon('check', use_emojis)} Completed (0)", id="completed-pane"):
                     yield TodoListView(id="todos-completed")
 
     def watch_show_header(self, show: bool) -> None:
@@ -930,17 +935,18 @@ class TodoScreen(Container):
         try:
             tabbed = self.query_one("#todo-tabs", TabbedContent)
             # Use get_tab() to get the Tab object and update its label
+            use_emojis = self.ctx.config.display.use_emojis
             pending_tab = tabbed.get_tab("pending-pane")
             if pending_tab:
-                pending_tab.label = f"⏳ Pending ({pending_count})"
+                pending_tab.label = f"{get_icon('timer', use_emojis)} Pending ({pending_count})"
 
             upcoming_tab = tabbed.get_tab("upcoming-pane")
             if upcoming_tab:
-                upcoming_tab.label = f"📅 Upcoming ({upcoming_count})"
+                upcoming_tab.label = f"{get_icon('history', use_emojis)} Upcoming ({upcoming_count})"
 
             completed_tab = tabbed.get_tab("completed-pane")
             if completed_tab:
-                completed_tab.label = f"✓ Completed ({completed_count})"
+                completed_tab.label = f"{get_icon('check_small', use_emojis)} Completed ({completed_count})"
 
             # Refresh the tabbed widget to ensure labels are redrawn
             tabbed.refresh()
@@ -992,8 +998,10 @@ class TodoScreen(Container):
 
         if new_status == "completed":
             # Log completion to journal with a link back to the todo
+            use_emojis = self.ctx.config.display.use_emojis
+            check_icon = get_icon("check", use_emojis)
             entry = self.ctx.db.add_entry(
-                content=f"✅ {todo.content}",
+                content=f"{check_icon} {todo.content}",
                 tags=todo.tag_names,
                 project=todo.project,
                 created_at=now,

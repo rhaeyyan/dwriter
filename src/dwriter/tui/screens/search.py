@@ -19,6 +19,7 @@ from ...search_utils import search_items
 from ..colors import (
     PROJECT,
     TAG,
+    get_icon,
 )
 
 
@@ -173,7 +174,9 @@ class EntryResultsView(ListView):
 
         # Content on second line with indentation - add check emoji for completed todos
         if todo.status == "completed":
-            return f"[dim]{first_line}\n    ✅ {safe_content}[/dim]"
+            use_emojis = self.app.ctx.config.display.use_emojis
+            check_icon = get_icon("check", use_emojis)
+            return f"[dim]{first_line}\n    {check_icon} {safe_content}[/dim]"
 
         return f"{first_line}\n    [bold white]{safe_content}[/bold white]"
 
@@ -233,7 +236,7 @@ class SearchScreen(Container):
 
     EntryResultsView {
         height: 1fr;
-        border: solid $primary;
+        border: solid #45475a;
         padding: 1;
     }
 
@@ -287,6 +290,7 @@ class SearchScreen(Container):
     def compose(self) -> ComposeResult:
         """Compose the search UI layout."""
         yield Header()
+        use_emojis = self.ctx.config.display.use_emojis
         with Vertical():
             with Container(id="search-container"):
                 yield Input(
@@ -297,7 +301,7 @@ class SearchScreen(Container):
                 # Single unified results view
                 yield EntryResultsView(id="entries-results")
         yield Label(
-            "j/k: Navigate | Enter: Select | /: Search | e: Edit | t: Tags | p: Project | +/-: Priority | ?: Help",
+            f"j/k: Navigate  {get_icon('bullet', use_emojis)}  Enter: Select  {get_icon('bullet', use_emojis)}  /: Search  {get_icon('bullet', use_emojis)}  e: Edit  {get_icon('bullet', use_emojis)}  t: Tags  {get_icon('bullet', use_emojis)}  p: Project  {get_icon('bullet', use_emojis)}  +/-: Priority  {get_icon('bullet', use_emojis)}  ?: Help",
             id="search-status-bar",
         )
 

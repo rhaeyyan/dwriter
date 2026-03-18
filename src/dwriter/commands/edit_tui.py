@@ -53,7 +53,7 @@ class EditEntryModal(ModalScreen):  # type: ignore[type-arg]
         width: 90;
         height: auto;
         background: $surface;
-        border: thick $primary;
+        border: solid $primary;
         padding: 1 3;
     }
 
@@ -144,7 +144,7 @@ class EditTagsModal(ModalScreen):  # type: ignore[type-arg]
         width: 70;
         height: auto;
         background: $surface;
-        border: thick $primary;
+        border: solid $primary;
         padding: 1 3;
     }
 
@@ -246,7 +246,7 @@ class EditProjectModal(ModalScreen):  # type: ignore[type-arg]
         width: 70;
         height: auto;
         background: $surface;
-        border: thick $primary;
+        border: solid $primary;
         padding: 1 3;
     }
 
@@ -691,7 +691,7 @@ class EditApp(App):  # type: ignore[type-arg]
                 width: 40;
                 height: auto;
                 background: $surface;
-                border: thick $error;
+                border: solid $error;
                 padding: 1 3;
             }
 

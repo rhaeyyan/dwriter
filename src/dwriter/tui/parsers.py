@@ -296,8 +296,8 @@ def parse_timer(raw_input: str) -> ParsedTimer | None:
         return None
 
     # Look for a standalone number (minutes) in the input
-    # It should be a number that's not part of a date or other pattern
-    minutes_match = re.search(r"\b(\d{1,3})\b", raw_input.strip())
+    # It must be surrounded by whitespace or string boundaries
+    minutes_match = re.search(r"(?:^|\s)(\d{1,3})(?=\s|$)", raw_input.strip())
 
     if not minutes_match:
         return None
@@ -317,7 +317,7 @@ def parse_timer(raw_input: str) -> ParsedTimer | None:
     # Extract content (everything except tags, projects, and the minutes number)
     clean_text = re.sub(r"#[\w-]+", "", raw_input)
     clean_text = re.sub(r"[$&][\w-]+", "", clean_text)
-    clean_text = re.sub(r"\b\d{1,3}\b", "", clean_text)
+    clean_text = re.sub(r"(?:^|\s)\d{1,3}(?=\s|$)", " ", clean_text, count=1)
     clean_text = re.sub(r"\s+", " ", clean_text).strip()
 
     return ParsedTimer(

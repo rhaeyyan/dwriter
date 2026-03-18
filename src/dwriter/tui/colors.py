@@ -14,6 +14,8 @@ Color Scheme:
 
 from __future__ import annotations
 
+from rich.text import Text
+
 # Due date colors
 DUE_TODAY = "bold yellow"
 DUE_TOMORROW = "yellow"
@@ -43,13 +45,30 @@ STATUS_RUNNING = "green"
 STATUS_PAUSED = "warning"  # Yellow/orange
 STATUS_FINISHED = "accent"
 
+# Border colors (btop-style: muted borders, bright data)
+BORDER_MUTED = "#45475a"  # Dim border for panels at rest
+BORDER_ACTIVE = "#cba6f7"  # Accent border for focused panels
+PANEL_HEADER = "#89b4fa"  # Section header color inside panels
+
+# Block bar gradient (8-step smooth for ▏▎▍▌▋▊▉█ bars)
+BLOCK_GRADIENT = [
+    "#a6e3a1",  # Green
+    "#94e2c4",  # Teal-green
+    "#89dceb",  # Cyan
+    "#89b4fa",  # Blue
+    "#b4befe",  # Lavender
+    "#f9e2af",  # Yellow
+    "#fab387",  # Peach/Orange
+    "#f38ba8",  # Red/Pink
+]
+
 # Progress bar gradient (green → yellow → orange → red)
 PROGRESS_COLORS = [
-    "#00ff00",  # Green (0-25%)
-    "#7fff00",  # Green-yellow (25-50%)
-    "#ffff00",  # Yellow (50-75%)
-    "#ffa500",  # Orange (75-85%)
-    "#ff0000",  # Red (85-100%)
+    "#a6e3a1",  # Green (0-25%)
+    "#94e2c4",  # Teal (25-40%)
+    "#f9e2af",  # Yellow (40-60%)
+    "#fab387",  # Peach (60-75%)
+    "#f38ba8",  # Red (75-100%)
 ]
 
 # UI element colors
@@ -63,6 +82,182 @@ UI_SUCCESS = "$success"
 UI_WARNING = "$warning"
 UI_ERROR = "$error"
 UI_INFO = "$info"
+
+# Block characters for progress bars (btop-style sub-cell resolution)
+_BLOCK_CHARS = " ▏▎▍▌▋▊▉█"
+
+# Icon Mapping for consistency and fallback support
+_ICONS = {
+    "dashboard": ("🏠", "D"),
+    "logs": ("📓", "L"),
+    "todo": ("📋", "T"),
+    "timer": ("⏱️", "M"),
+    "history": ("📅", "H"),
+    "glance": ("✨", "G"),
+    "streak": ("🔥", "S"),
+    "context": ("🔄", "C"),
+    "friction": ("⚙️", "F"),
+    "workload": ("⚡", "W"),
+    "check": ("✅", "v"),
+    "check_small": ("✓", "v"),
+    "plus": ("➕", "+"),
+    "warning": ("⚠️", "!"),
+    "edit": ("✏️", "E"),
+    "search": ("🔍", "Q"),
+    "clock": ("🕒", "C"),
+    "save": ("💾", "S"),
+    "export": ("📤", "X"),
+    "markdown": ("📄", "M"),
+    "csv": ("📊", "C"),
+    "json": ("📦", "J"),
+    "standup": ("🎤", "S"),
+    "question": ("❓", "?"),
+    "tips": ("💡", "i"),
+    "bullet": ("•", "*"),
+    "navigation": ("🧭", "N"),
+    "overview": ("📖", "O"),
+    "shortcuts": ("⌨️", "K"),
+    "clear": ("↺", "R"),
+    "pause": ("⏸", "P"),
+    "play": ("▶", ">"),
+    "arrow_left": ("←", "<"),
+    "arrow_right": ("→", ">"),
+    "tag": ("🏷️", "#"),
+    "folder": ("📁", "/"),
+    "note": ("📝", "N"),
+}
+
+
+def get_icon(name: str, use_emojis: bool = True) -> str:
+    """Get an icon string with optional emoji fallback.
+
+    Args:
+        name: Name of the icon to retrieve.
+        use_emojis: Whether to return the emoji or ASCII fallback.
+
+    Returns:
+        The requested icon string.
+    """
+    icon_tuple = _ICONS.get(name, ("", ""))
+    return icon_tuple[0] if use_emojis else icon_tuple[1]
+
+
+def render_block_bar(
+    value: float,
+    max_val: float,
+    width: int = 20,
+    color: str | None = None,
+    gradient: bool = True,
+    use_emojis: bool = True,
+) -> str:
+    """Render a btop-style block-character progress bar with gradient.
+
+    Uses sub-cell resolution characters ▏▎▍▌▋▊▉█ for smooth fill,
+    with optional gradient coloring from green → red.
+
+    Args:
+        value: Current value.
+        max_val: Maximum value for normalization.
+        width: Bar width in characters.
+        color: Single color override (disables gradient).
+        gradient: Whether to use gradient coloring.
+        use_emojis: Whether to use Unicode block characters or ASCII.
+
+    Returns:
+        Rich markup string for the progress bar.
+    """
+    empty_char = "─" if use_emojis else "-"
+    if max_val <= 0:
+        return f"[#313244]{empty_char * width}[/]"
+
+    ratio = min(value / max_val, 1.0)
+    fill_exact = ratio * width
+    full_blocks = int(fill_exact)
+    fractional = fill_exact - full_blocks
+    frac_index = int(fractional * 8)
+    empty = width - full_blocks - (1 if frac_index > 0 else 0)
+
+    # Pick color based on ratio
+    if color:
+        bar_color = color
+    elif gradient:
+        # Map ratio to gradient
+        idx = min(int(ratio * (len(PROGRESS_COLORS) - 1)), len(PROGRESS_COLORS) - 1)
+        bar_color = PROGRESS_COLORS[idx]
+    else:
+        bar_color = "#a6e3a1"
+
+    parts = []
+    if full_blocks > 0:
+        parts.append(f"[{bar_color}]{'█' * full_blocks if use_emojis else '#' * full_blocks}[/]")
+    if frac_index > 0 and use_emojis:
+        parts.append(f"[{bar_color}]{_BLOCK_CHARS[frac_index]}[/]")
+    elif frac_index > 0:
+        parts.append(f"[{bar_color}]#[/]")
+
+    if empty > 0:
+        parts.append(f"[#313244]{empty_char * empty}[/]")
+
+    return "".join(parts)
+
+
+def render_block_bar_rich(
+    value: float,
+    max_val: float,
+    width: int = 20,
+    color: str | None = None,
+    gradient: bool = True,
+    use_emojis: bool = True,
+) -> Text:
+    """Render a btop-style block bar as a Rich Text object.
+
+    Same as render_block_bar but returns a Rich Text object for use
+    in Static widget updates.
+
+    Args:
+        value: Current value.
+        max_val: Maximum value for normalization.
+        width: Bar width in characters.
+        color: Single color override.
+        gradient: Whether to use gradient coloring.
+        use_emojis: Whether to use Unicode block characters or ASCII.
+
+    Returns:
+        Rich Text object with styled progress bar.
+    """
+    empty_char = "─" if use_emojis else "-"
+    if max_val <= 0:
+        text = Text()
+        text.append(empty_char * width, style="#313244")
+        return text
+
+    ratio = min(value / max_val, 1.0)
+    fill_exact = ratio * width
+    full_blocks = int(fill_exact)
+    fractional = fill_exact - full_blocks
+    frac_index = int(fractional * 8)
+    empty = width - full_blocks - (1 if frac_index > 0 else 0)
+
+    if color:
+        bar_color = color
+    elif gradient:
+        idx = min(int(ratio * (len(PROGRESS_COLORS) - 1)), len(PROGRESS_COLORS) - 1)
+        bar_color = PROGRESS_COLORS[idx]
+    else:
+        bar_color = "#a6e3a1"
+
+    text = Text()
+    if full_blocks > 0:
+        text.append("█" * full_blocks if use_emojis else "#" * full_blocks, style=bar_color)
+    if frac_index > 0 and use_emojis:
+        text.append(_BLOCK_CHARS[frac_index], style=bar_color)
+    elif frac_index > 0:
+        text.append("#", style=bar_color)
+
+    if empty > 0:
+        text.append(empty_char * empty, style="#313244")
+
+    return text
 
 
 def get_priority_color(priority: str) -> str:

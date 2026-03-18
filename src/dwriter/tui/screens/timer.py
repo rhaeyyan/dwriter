@@ -16,6 +16,7 @@ from textual.screen import ModalScreen
 from textual.widgets import Button, Input, Label, Static, Switch
 
 from ...cli import AppContext
+from ..colors import get_icon, render_block_bar_rich
 from ..messages import EntryAdded, TimerStateChanged
 from ..parsers import parse_quick_add
 
@@ -32,7 +33,7 @@ class SessionCompleteModal(ModalScreen):  # type: ignore[type-arg]
         width: 80;
         height: auto;
         background: $surface;
-        border: thick $success;
+        border: solid $success;
         padding: 1 3;
     }
 
@@ -94,8 +95,9 @@ class SessionCompleteModal(ModalScreen):  # type: ignore[type-arg]
 
     def compose(self) -> ComposeResult:
         """Compose the modal UI."""
+        use_emojis = self.app.ctx.config.display.use_emojis
         with Container(id="modal-container"):
-            yield Label("✅ Session Complete!", id="modal-title")
+            yield Label(f"{get_icon('check', use_emojis)} Session Complete!", id="modal-title")
             yield Label(
                 f"Record your {self.minutes} minute{'s' if self.minutes != 1 else ''} of activity:",
                 id="session-info",
@@ -152,7 +154,7 @@ class TimerProgressBar(Static):
     DEFAULT_CSS = """
     TimerProgressBar {
         height: 3;
-        margin: 1 0;
+        margin: 0;
         padding: 0 2;
         content-align: center middle;
         background: $panel;
@@ -210,7 +212,7 @@ class TimerProgressBar(Static):
             return "#ff0000"  # Red
 
     def _render_bar(self) -> None:
-        """Render the progress bar with single color pips."""
+        """Render the progress bar with pip-style characters."""
         if self.total_seconds <= 0:
             self.update("No time set")
             return
@@ -219,33 +221,19 @@ class TimerProgressBar(Static):
         percentage = int(progress * 100)
 
         bar_width = 30
-        filled = int(bar_width * progress)
-
-        from rich.text import Text
-
-        text = Text()
-
-        # Single color for the progress bar
-        bar_color = "#f2a134"
+        filled = int(progress * bar_width)
+        empty = bar_width - filled
 
         mins = self.remaining_seconds // 60
         secs = self.remaining_seconds % 60
         time_str = f"{mins:02d}:{secs:02d}"
 
-        # Cyan for time and percentage
-        text.append(f"{time_str}  [ ", style="cyan")
-
-        for i in range(bar_width):
-            if i < filled:
-                text.append("▮", style=bar_color)
-            elif i == filled:
-                text.append("🥭")
-            else:
-                text.append("▯", style="dim")
-
-        text.append(f" ]  {percentage}%", style="cyan")
-
-        self.update(text)
+        color = self._get_gradient_color(progress)
+        use_emojis = self.app.ctx.config.display.use_emojis
+        fill_char = "▮" if use_emojis else "#"
+        empty_char = "▯" if use_emojis else "."
+        bar = f"[bold cyan]{time_str}[/bold cyan]  [{color}]{fill_char * filled}[/][#313244]{empty_char * empty}[/]  [bold cyan]{percentage}%[/bold cyan]"
+        self.update(bar)
 
 
 class TimerScreen(Container):
@@ -271,15 +259,16 @@ class TimerScreen(Container):
         height: auto;
         width: 78;
         align: center middle;
-        padding: 2 4;
+        padding: 1 3;
         background: $panel;
-        border: solid $primary;
+        border: solid #45475a;
+        border-title-color: #89b4fa;
     }
 
     #timer-header {
         height: 3;
         width: 100%;
-        margin-bottom: 1;
+        margin-bottom: 0;
         padding: 0 2;
         background: $panel;
     }
@@ -313,7 +302,7 @@ class TimerScreen(Container):
     #timer-controls {
         height: auto;
         align: center middle;
-        padding: 1 0;
+        padding: 0;
     }
 
     #timer-control-button {
@@ -321,10 +310,21 @@ class TimerScreen(Container):
         height: 3;
     }
 
+    #timer-clear-row {
+        height: auto;
+        align: right middle;
+        padding: 0 1;
+    }
+
+    #timer-clear-button {
+        min-width: 10;
+        height: 3;
+    }
+
     #timer-adjust-buttons {
         height: auto;
         align: center middle;
-        padding: 1 0;
+        padding: 0;
     }
 
     #timer-adjust-buttons Button {
@@ -335,13 +335,14 @@ class TimerScreen(Container):
     #timer-progress-container {
         height: auto;
         align: center middle;
-        padding: 1 0;
+        padding: 0;
     }
 
     .timer-session-meta {
         text-align: center;
         color: $text-muted;
         padding: 0 0 1 0;
+        margin-top: 1;
         content-align: center middle;
         width: 100%;
     }
@@ -349,7 +350,7 @@ class TimerScreen(Container):
     #timer-adjust-section {
         height: auto;
         align: center middle;
-        padding: 1 0;
+        padding: 0;
     }
 
     #timer-adjust-buttons {
@@ -402,6 +403,7 @@ class TimerScreen(Container):
         Binding("q", "quit", "Quit"),
         Binding("escape", "quit", "Quit"),
         Binding("b", "toggle_break_mode", "Break Mode"),
+        Binding("c", "clear_timer", "Clear"),
     ]
 
     # Reactive properties for timer state
@@ -446,10 +448,11 @@ class TimerScreen(Container):
 
     def compose(self) -> ComposeResult:
         """Compose the timer UI layout."""
+        use_emojis = self.ctx.config.display.use_emojis
         with Container(id="timer-main-container"):
             # Header with title and break toggle
             with Horizontal(id="timer-header"):
-                yield Label("⏱️ Timer", id="timer-title")
+                yield Label(f"{get_icon('timer', use_emojis)} Timer", id="timer-title")
                 with Horizontal(id="timer-break-mode-container"):
                     yield Label("Break:", id="timer-break-label")
                     yield Switch(
@@ -460,7 +463,7 @@ class TimerScreen(Container):
             # Control button (Start/Pause)
             with Horizontal(id="timer-controls"):
                 yield Button(
-                    "⏸ Paused",
+                    f"{get_icon('pause', use_emojis)} Paused",
                     id="timer-control-button",
                     variant="warning",
                 )
@@ -484,8 +487,16 @@ class TimerScreen(Container):
                     yield Button("-1", id="btn-minus-1", variant="error")
                     yield Button("-5", id="btn-minus-5", variant="error")
 
+            # Clear button - isolated from main controls to prevent accidental clicks
+            with Horizontal(id="timer-clear-row"):
+                yield Button(
+                    f"{get_icon('clear', use_emojis)} Clear",
+                    id="timer-clear-button",
+                    variant="default",
+                )
+
         yield Label(
-            "Space: Start/Pause  •  B: Break Mode  •  Enter: Finish  •  ?: Help  •  q: Quit",
+            f"Space: Start/Pause  {get_icon('bullet', use_emojis)}  C: Clear  {get_icon('bullet', use_emojis)}  B: Break  {get_icon('bullet', use_emojis)}  Enter: Finish  {get_icon('bullet', use_emojis)}  ?: Help",
             id="timer-session-info",
         )
 
@@ -559,16 +570,21 @@ class TimerScreen(Container):
             progress_bar = self.query_one("#timer-progress-bar", TimerProgressBar)
             timer_title = self.query_one("#timer-title", Label)
 
-            # Update title with mode
-            mode_str = "🧘 Break" if self.is_break_mode else "💼 Work"
-            timer_title.update(f"⏱️ Timer [{mode_str}]")
+            # Update title with mode — highlight only when running
+            use_emojis = self.ctx.config.display.use_emojis
+            mode_str = f"{get_icon('glance', use_emojis)} Break" if self.is_break_mode else f"{get_icon('streak', use_emojis)} Focus"
+            timer_icon = get_icon("timer", use_emojis)
+            if self.is_running:
+                timer_title.update(f"[bold $secondary]{timer_icon} Timer [{mode_str}][/bold $secondary]")
+            else:
+                timer_title.update(f"[dim]{timer_icon} Timer [{mode_str}][/dim]")
 
             # Update progress bar
             progress_bar.update_progress(self.remaining_seconds, self.total_seconds)
 
             # Update control button
             if self.is_finished:
-                control_button.label = "✅ Complete!"
+                control_button.label = f"{get_icon('check', use_emojis)} Complete!"
                 control_button.variant = "success"
                 control_button.remove_class("paused-button")
                 control_button.remove_class("running-button")
@@ -580,7 +596,7 @@ class TimerScreen(Container):
                 control_button.remove_class("finished-button")
                 control_button.add_class("running-button")
             else:
-                control_button.label = "⏸ Paused"
+                control_button.label = f"{get_icon('pause', use_emojis)} Paused"
                 control_button.variant = "warning"
                 control_button.remove_class("running-button")
                 control_button.remove_class("finished-button")
@@ -781,6 +797,8 @@ class TimerScreen(Container):
             self._adjust_time(-1)
         elif event.button.id == "btn-minus-5":
             self._adjust_time(-5)
+        elif event.button.id == "timer-clear-button":
+            self.action_clear_timer()
 
     def _adjust_time(self, minutes: int) -> None:
         """Adjust timer by specified minutes.
@@ -812,6 +830,32 @@ class TimerScreen(Container):
 
         self._update_display()
 
+    def action_clear_timer(self) -> None:
+        """Clear and reset the timer back to initial duration."""
+        if self.is_finished:
+            return
+
+        # Stop the timer if running
+        if self.is_running:
+            self.is_running = False
+            self._timer_handle.pause()
+
+        # Reset to initial duration
+        reset_seconds = self.initial_minutes * 60
+        self.remaining_seconds = reset_seconds
+        self.total_seconds = reset_seconds
+
+        # Update button to paused state
+        try:
+            btn = self.query_one("#timer-control-button", Button)
+            btn.label = "⏸ Paused"
+            btn.variant = "warning"
+        except Exception:
+            pass
+
+        self._update_display()
+        self.notify(f"Timer reset to {self.initial_minutes} min", timeout=1.5)
+
     def action_toggle_break_mode(self) -> None:
         """Toggle between work mode and break mode.
 
@@ -829,7 +873,7 @@ class TimerScreen(Container):
         else:
             new_duration = self.work_duration
             self.project = None
-            self.notify(f"Work mode: {new_duration} minutes", timeout=1.5)
+            self.notify(f"Focus mode: {new_duration} minutes", timeout=1.5)
 
         # Update timer
         self.initial_minutes = new_duration

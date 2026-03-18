@@ -6,6 +6,7 @@ from .delete import delete
 from .edit import edit
 from .examples import examples
 from .help import help_cmd
+from .mcp import mcp
 from .review import review
 from .search import search
 from .standup import standup
@@ -24,6 +25,7 @@ __all__ = [
     "examples",
     "timer",
     "help_cmd",
+    "mcp",
     "review",
     "search",
     "standup",

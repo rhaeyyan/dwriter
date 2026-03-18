@@ -40,7 +40,7 @@ class EditContentModal(ModalScreen):  # type: ignore[type-arg]
         width: 90;
         height: auto;
         background: $surface;
-        border: thick $primary;
+        border: solid $primary;
         padding: 1 3;
     }
 
@@ -122,7 +122,7 @@ class EditTagsModal(ModalScreen):  # type: ignore[type-arg]
         width: 70;
         height: auto;
         background: $surface;
-        border: thick $primary;
+        border: solid $primary;
         padding: 1 3;
     }
 
@@ -213,7 +213,7 @@ class EditProjectModal(ModalScreen):  # type: ignore[type-arg]
         width: 70;
         height: auto;
         background: $surface;
-        border: thick $primary;
+        border: solid $primary;
         padding: 1 3;
     }
 
