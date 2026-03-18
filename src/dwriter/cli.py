@@ -106,6 +106,13 @@ def main(ctx: click.Context) -> None:
     if ctx.invoked_subcommand is None:
         import sys
 
+        # Force UTF-8 encoding for terminal output to prevent mojibake/character distortion
+        # Textual/Rich rely on Unicode box-drawing characters for borders and UI elements.
+        if hasattr(sys.stdout, "reconfigure"):
+            sys.stdout.reconfigure(encoding="utf-8")
+        if hasattr(sys.stderr, "reconfigure"):
+            sys.stderr.reconfigure(encoding="utf-8")
+
         # Force terminal resize to exactly 42 rows by 88 columns (default size)
         # ANSI escape sequence: \x1b[8;{height};{width}t
         # Works on MacOS Terminal, iTerm2, Alacritty, and most X11 Linux terminals
@@ -129,6 +136,7 @@ def _register_commands() -> None:
         edit,
         examples,
         help_cmd,
+        mcp,
         review,
         search,
         standup,
@@ -148,6 +156,7 @@ def _register_commands() -> None:
         examples,
         timer,
         help_cmd,
+        mcp,
         review,
         search,
         stats,

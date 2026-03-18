@@ -50,6 +50,7 @@ class DisplayConfig:
         show_confirmation: Whether to show confirmation after adding entries.
         show_id: Whether to show entry IDs in output.
         colors: Whether to use colors in output.
+        use_emojis: Whether to use emojis in the UI.
         clock_24hr: Whether to use 24-hour clock format (vs 12-hour).
         theme: Theme preset name (cyberpunk, light, dark, minimal).
         ergonomic_mode: Whether to use spacious ergonomic layout.
@@ -59,6 +60,7 @@ class DisplayConfig:
     show_confirmation: bool = True
     show_id: bool = True
     colors: bool = True
+    use_emojis: bool = True
     clock_24hr: bool = True
     theme: str = "cyberpunk"
     ergonomic_mode: bool = False
@@ -191,6 +193,7 @@ class ConfigManager:
                 show_confirmation=display_data.get("show_confirmation", True),
                 show_id=display_data.get("show_id", True),
                 colors=display_data.get("colors", True),
+                use_emojis=display_data.get("use_emojis", True),
                 clock_24hr=display_data.get("clock_24hr", True),
                 theme=display_data.get("theme", "cyberpunk"),
                 ergonomic_mode=display_data.get("ergonomic_mode", False),
@@ -245,6 +248,7 @@ class ConfigManager:
         display_table["show_confirmation"] = self._config.display.show_confirmation
         display_table["show_id"] = self._config.display.show_id
         display_table["colors"] = self._config.display.colors
+        display_table["use_emojis"] = self._config.display.use_emojis
         display_table["clock_24hr"] = self._config.display.clock_24hr
         display_table["theme"] = self._config.display.theme
         display_table["ergonomic_mode"] = self._config.display.ergonomic_mode
@@ -312,6 +316,7 @@ class ConfigManager:
                 "show_confirmation": config.display.show_confirmation,
                 "show_id": config.display.show_id,
                 "colors": config.display.colors,
+                "use_emojis": config.display.use_emojis,
                 "clock_24hr": config.display.clock_24hr,
                 "theme": config.display.theme,
                 "ergonomic_mode": config.display.ergonomic_mode,

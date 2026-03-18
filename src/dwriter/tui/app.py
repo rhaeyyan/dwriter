@@ -35,6 +35,7 @@ from .parsers import (
     parse_timer,
     parse_todo_add,
 )
+from .colors import get_icon
 from .themes import THEMES
 
 TodoStep = Literal["task", "tags", "priority", "due_date"]
@@ -81,13 +82,14 @@ class DWriterApp(App[None]):
     /* We keep only functional variables that themes don't provide */
     $text-muted: #8c92a6;
     $panel-light: #45475a;
+    $border-muted: #45475a;
 
     /* Omnibox - Top command palette */
     #omnibox-container {
         height: auto;
-        border: round $success;
+        border: solid $border-muted;
         background: $panel;
-        margin: 1 1 0 1;
+        margin: 0 1;
         padding: 0 1;
     }
 
@@ -99,7 +101,8 @@ class DWriterApp(App[None]):
     #omnibox-hint {
         height: 1;
         color: $text-muted;
-        padding: 1 2 0 2;
+        padding: 0 2;
+        margin-bottom: 1;
     }
 
     #help-btn, #settings-btn {
@@ -109,7 +112,7 @@ class DWriterApp(App[None]):
         margin-left: 0;
     }
 
-    /* Horizontal Navigation Tabs */
+    /* Horizontal Navigation Tabs - btop underline style */
     Tabs {
         height: 3;
         margin: 0 1;
@@ -122,26 +125,28 @@ class DWriterApp(App[None]):
     }
 
     Tab {
-        background: #0d0f18;
+        background: transparent;
         color: $text-muted;
         margin: 0 1 0 0;
         padding: 0 2;
     }
 
     Tab:hover {
-        background: $panel;
+        background: transparent;
         color: $foreground;
+        text-style: bold;
     }
 
     Tab.-active {
-        background: #0d0f18;
+        background: transparent;
         color: $primary;
+        text-style: bold;
     }
 
     /* Flashing timer tab when running */
     Tab.timer-running {
-        background: #00FF7F;
-        color: #000000;
+        background: transparent;
+        color: #00FF7F;
         text-style: bold;
     }
 
@@ -155,24 +160,24 @@ class DWriterApp(App[None]):
         padding: 0 1;
     }
 
-    /* Floating Panels - Optimized for 75 columns */
+    /* Floating Panels - btop solid borders */
     .todo-panel, .search-panel, .card {
         height: 100%;
-        border: round $primary;
+        border: solid $border-muted;
         background: $panel;
-        margin: 1 0;
-        padding: 1 1;
+        margin: 0;
+        padding: 0 1;
     }
 
     .active-panel, .search-panel:focus-within, .todo-panel:focus-within {
-        border: round $warning;
+        border: solid $accent;
     }
 
     .panel-title {
         text-style: bold;
-        padding: 0 0 1 0;
-        margin-bottom: 1;
-        border-bottom: solid $primary;
+        padding: 0;
+        margin-bottom: 0;
+        border-bottom: solid $border-muted;
     }
 
     #pending-title {
@@ -185,19 +190,20 @@ class DWriterApp(App[None]):
         border-bottom: solid $success;
     }
 
-    /* Lists */
+    /* Lists - tighter spacing but with gaps between entries */
     ListItem {
-        padding: 1 0;
-        border-bottom: hkey $surface;
+        padding: 0;
+        margin-bottom: 1;
     }
 
     ListItem:focus {
-        background: #1a1e29;
+        background: $surface;
     }
 
     ListView {
         background: transparent;
         scrollbar-size-vertical: 1;
+        scrollbar-gutter: stable;
     }
 
     /* Dashboard */
@@ -208,34 +214,34 @@ class DWriterApp(App[None]):
     }
 
     #dashboard-kpi-row {
-        height: 6;
-        min-height: 6;
+        height: 5;
+        min-height: 5;
     }
 
     KPICard {
-        border: round $primary;
+        border: solid $border-muted;
         background: $panel;
-        margin: 0 1;
-        padding: 1 0;
+        margin: 0 0 0 1;
+        padding: 0;
     }
 
     StreakCalendar, ActivitySparkline {
-        border: round $primary;
+        border: solid $border-muted;
         background: $panel;
-        margin: 1 0;
-        padding: 1 1;
+        margin: 0 0 0 1;
+        padding: 0 1;
     }
 
     /* DataTables & Tabs */
     DataTable {
-        border: round $primary;
+        border: solid $border-muted;
         border-title-color: $success;
-        margin: 1 0;
+        margin: 0;
         background: transparent;
     }
 
     TabPane {
-        padding: 1 2;
+        padding: 0 1;
     }
 
     TabbedContent {
@@ -256,28 +262,28 @@ class DWriterApp(App[None]):
 
     .help-row {
         height: 1fr;
-        margin: 0 0 1 0;
+        margin: 0;
     }
 
     .help-panel {
         width: 1fr;
         height: 100%;
-        border: round $primary;
+        border: solid $border-muted;
         background: $panel;
         margin: 0 1;
-        padding: 1 2;
+        padding: 0 2;
     }
 
     .help-panel:focus-within {
-        border: round $warning;
+        border: solid $accent;
     }
 
     .help-title {
         text-style: bold;
         color: $secondary;
-        padding: 0 0 1 0;
-        border-bottom: solid $primary;
-        margin-bottom: 1;
+        padding: 0;
+        border-bottom: solid $border-muted;
+        margin-bottom: 0;
     }
 
     .help-content {
@@ -290,23 +296,23 @@ class DWriterApp(App[None]):
         height: 1;
         text-align: center;
         color: $text-muted;
-        margin-top: 1;
+        margin-top: 0;
     }
 
     /* Ergonomic Mode Toggle */
     Screen.ergonomic-mode #content-area {
-        padding: 1 4;
+        padding: 0 4;
     }
 
     Screen.ergonomic-mode .todo-panel,
     Screen.ergonomic-mode .search-panel {
         border: none;
-        border-top: wide $panel-light;
-        padding: 1 3;
+        border-top: solid $panel-light;
+        padding: 0 3;
     }
 
     Screen.ergonomic-mode ListItem {
-        padding: 2 0;
+        padding: 1 0;
     }
     """
 
@@ -340,21 +346,22 @@ class DWriterApp(App[None]):
         # Omnibox - Top command palette for frictionless entry
         with Horizontal(id="omnibox-container"):
             yield Input(
-                placeholder="Log entry... (use #tag &project or YYYY-MM-DD)",
+                placeholder="#tag &project YOUR-ENTRY | #tag &project YOUR-ENTRY YYYY-MM-DD",
                 id="quick-add",
             )
             yield Button("Help", id="help-btn", variant="default")
         yield Label(
-            "Press / to focus",
+            "#tag &project YOUR-ENTRY | #tag &project YOUR-ENTRY YYYY-MM-DD",
             id="omnibox-hint",
         )
 
         # Horizontal Navigation Tabs
+        use_emojis = self.ctx.config.display.use_emojis
         yield Tabs(
-            Tab("🏠 Dashboard", id="dashboard"),
-            Tab("📓 Logs", id="logs"),
-            Tab("📋 To-Do", id="todo"),
-            Tab("⏱️ Timer", id="timer"),
+            Tab(f"{get_icon('dashboard', use_emojis)} Dashboard", id="dashboard"),
+            Tab(f"{get_icon('logs', use_emojis)} Logs", id="logs"),
+            Tab(f"{get_icon('todo', use_emojis)} To-Do", id="todo"),
+            Tab(f"{get_icon('timer', use_emojis)} Timer", id="timer"),
             id="navigation-tabs",
         )
 
@@ -396,7 +403,7 @@ class DWriterApp(App[None]):
 
     def _set_default_size(self) -> None:
         """Set the default terminal size."""
-        self.set_size(88, 42)
+        self.set_size(90, 45)
 
     def action_command_palette(self) -> None:
         """Open the command palette with dwriter commands."""
@@ -483,6 +490,8 @@ class DWriterApp(App[None]):
         Args:
             screen_name: Name of the current screen.
         """
+        use_emojis = self.ctx.config.display.use_emojis
+        bullet = get_icon("bullet", use_emojis)
         try:
             omnibox = self.query_one("#quick-add", Input)
             hint = self.query_one("#omnibox-hint", Label)
@@ -493,7 +502,7 @@ class DWriterApp(App[None]):
                     if step == "task":
                         omnibox.placeholder = "Enter task description..."
                         hint.update(
-                            "Task text with optional #tag &project • 'q' to cancel"
+                            f"Task text with optional #tag &project {bullet} 'q' to cancel"
                         )
                     elif step == "tags":
                         current_tags = (
@@ -508,7 +517,7 @@ class DWriterApp(App[None]):
                             else ""
                         )
                         hint.update(
-                            f"{tags_info} {proj_info} • "
+                            f"{tags_info} {proj_info} {bullet} "
                             "Add more #tag &project or Enter to skip"
                         )
                         omnibox.placeholder = (
@@ -520,7 +529,7 @@ class DWriterApp(App[None]):
                             "(or Enter for Normal)"
                         )
                         hint.update(
-                            f"Task: {self._todo_state.content[:40]}... • 'q' to cancel"
+                            f"Task: {self._todo_state.content[:40]}... {bullet} 'q' to cancel"
                         )
                     elif step == "due_date":
                         omnibox.placeholder = (
@@ -528,24 +537,24 @@ class DWriterApp(App[None]):
                             "(or Enter for none)"
                         )
                         hint.update(
-                            f"Priority: {self._todo_state.priority.upper()} • "
+                            f"Priority: {self._todo_state.priority.upper()} {bullet} "
                             "'q' to cancel"
                         )
                 else:
-                    omnibox.placeholder = "Add todo... (task #tag &project)"
+                    omnibox.placeholder = "Enter Task and press Enter to start multi-step add"
                     hint.update(
-                        "Enter task and press Enter to start multi-step add • "
+                        f"Enter Task and press Enter to start multi-step add {bullet} "
                         "'q' to cancel"
                     )
             elif screen_name == "timer":
                 omnibox.placeholder = "Start timer... (use #tag &project MINUTES)"
                 hint.update(
-                    "Press / to focus • Enter: #tag &project 15 starts 15min timer"
+                    f"Press / to focus {bullet} Enter: #tag &project 15 starts 15min timer"
                 )
             else:
-                omnibox.placeholder = "Log entry... (use #tag &project or YYYY-MM-DD)"
+                omnibox.placeholder = "#tag &project YOUR-ENTRY | #tag &project YOUR-ENTRY YYYY-MM-DD"
                 hint.update(
-                    "Press / to focus • Enter: Your Log Entry YYYY-MM-DD #tag &project"
+                    f"#tag &project YOUR-ENTRY {bullet} #tag &project YOUR-ENTRY YYYY-MM-DD"
                 )
         except Exception:
             pass

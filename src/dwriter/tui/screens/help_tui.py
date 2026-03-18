@@ -11,6 +11,7 @@ from textual.binding import Binding
 from textual.containers import Container
 from textual.screen import Screen
 from textual.widgets import Footer, Header, Static, TabbedContent, TabPane
+from ..colors import get_icon
 
 
 class HelpScreen(Screen):  # type: ignore[type-arg]
@@ -101,46 +102,48 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
         """Compose the help screen layout."""
         yield Header()
 
+        use_emojis = self.app.ctx.config.display.use_emojis
         with Container(id="help-container"):
             with TabbedContent(initial="overview", id="help-tabs"):
                 # Tab 1: Overview
-                with TabPane("📖 Overview", id="overview"):
+                with TabPane(f"{get_icon('overview', use_emojis)} Overview", id="overview"):
                     yield Static(self._get_overview_content(), markup=True)
 
                 # Tab 2: Navigation
-                with TabPane("🧭 Navigation", id="navigation"):
+                with TabPane(f"{get_icon('navigation', use_emojis)} Navigation", id="navigation"):
                     yield Static(self._get_navigation_content(), markup=True)
 
                 # Tab 3: Omnibox
-                with TabPane("⚡ Omnibox", id="omnibox"):
+                with TabPane(f"{get_icon('context', use_emojis)} Omnibox", id="omnibox"):
                     yield Static(self._get_omnibox_content(), markup=True)
 
                 # Tab 4: Dashboard
-                with TabPane("📊 Dashboard", id="dashboard"):
+                with TabPane(f"{get_icon('csv', use_emojis)} Dashboard", id="dashboard"):
                     yield Static(self._get_dashboard_content(), markup=True)
 
                 # Tab 5: Todo
-                with TabPane("📋 Todo", id="todo"):
+                with TabPane(f"{get_icon('todo', use_emojis)} Todo", id="todo"):
                     yield Static(self._get_todo_content(), markup=True)
 
                 # Tab 6: Timer
-                with TabPane("⏱️ Timer", id="timer"):
+                with TabPane(f"{get_icon('timer', use_emojis)} Timer", id="timer"):
                     yield Static(self._get_timer_content(), markup=True)
 
                 # Tab 7: Search & Logs
-                with TabPane("🔍 Search/Logs", id="search"):
+                with TabPane(f"{get_icon('search', use_emojis)} Search/Logs", id="search"):
                     yield Static(self._get_search_content(), markup=True)
 
                 # Tab 8: Shortcuts
-                with TabPane("⌨️ Shortcuts", id="shortcuts"):
+                with TabPane(f"{get_icon('shortcuts', use_emojis)} Shortcuts", id="shortcuts"):
                     yield Static(self._get_shortcuts_content(), markup=True)
 
         yield Footer()
 
     def _get_overview_content(self) -> str:
         """Get overview tab content."""
-        return """
-[bold]Welcome to dwriter! 📝[/bold]
+        use_emojis = self.app.ctx.config.display.use_emojis
+        return f"""
+[bold]Welcome to dwriter! {get_icon('note', use_emojis)}[/bold]
 
 [dim]A low-friction terminal journaling tool for developers.[/dim]
 
@@ -167,10 +170,10 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
   [yellow]#meeting[/yellow] [magenta]&team[/magenta] Weekly standup notes
 
 [bold #cba6f7]TUI Screens:[/bold #cba6f7]
-  [#89dceb]1[/#89dceb] → Dashboard (stats, calendar, activity)
-  [#89dceb]2[/#89dceb] → Logs (journal entries)
-  [#89dceb]3[/#89dceb] → Todo Board (task management)
-  [#89dceb]4[/#89dceb] → Timer (timer sessions)
+  [#89dceb]1[/#89dceb] → {get_icon('dashboard', use_emojis)} Dashboard (stats, calendar, activity)
+  [#89dceb]2[/#89dceb] → {get_icon('logs', use_emojis)} Logs (journal entries)
+  [#89dceb]3[/#89dceb] → {get_icon('todo', use_emojis)} Todo Board (task management)
+  [#89dceb]4[/#89dceb] → {get_icon('timer', use_emojis)} Timer (timer sessions)
 
 [dim]Press Tab to navigate between help topics[/dim]
 [dim]Press q or Esc to close[/dim]
@@ -178,8 +181,9 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
 
     def _get_navigation_content(self) -> str:
         """Get navigation tab content."""
-        return """
-[bold]TUI Navigation 🧭[/bold]
+        use_emojis = self.app.ctx.config.display.use_emojis
+        return f"""
+[bold]TUI Navigation {get_icon('navigation', use_emojis)}[/bold]
 
 [bold #cba6f7]Global Keys (work everywhere):[/bold #cba6f7]
   [cyan]/[/cyan]              → Focus omnibox (quick-add bar at top)
@@ -189,10 +193,10 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
   [#89dceb]1-4[/#89dceb]            → Switch between main screens
 
 [bold #cba6f7]Screen Navigation:[/bold #cba6f7]
-  [#89dceb]1[/#89dceb]              → 🏠 Dashboard (statistics & calendar)
-  [#89dceb]2[/#89dceb]              → 📓 Logs (journal entries view)
-  [#89dceb]3[/#89dceb]              → 📋 Todo Board (task management)
-  [#89dceb]4[/#89dceb]              → ⏱️ Timer (timer sessions)
+  [#89dceb]1[/#89dceb]              → {get_icon('dashboard', use_emojis)} Dashboard (statistics & calendar)
+  [#89dceb]2[/#89dceb]              → {get_icon('logs', use_emojis)} Logs (journal entries view)
+  [#89dceb]3[/#89dceb]              → {get_icon('todo', use_emojis)} Todo Board (task management)
+  [#89dceb]4[/#89dceb]              → {get_icon('timer', use_emojis)} Timer (timer sessions)
 
   [cyan]Tab[/cyan]            → Cycle to next tab (in tabbed views)
   [cyan]Shift+Tab[/cyan]      → Cycle to previous tab
@@ -217,9 +221,10 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
 
     def _get_omnibox_content(self) -> str:
         """Get omnibox tab content."""
+        use_emojis = self.app.ctx.config.display.use_emojis
         # fmt: off
-        return """
-[bold]Omnibox Commands ⚡[/bold]
+        return f"""
+[bold]Omnibox Commands {get_icon('context', use_emojis)}[/bold]
 
 [dim]The omnibox is the input bar at TOP of the screen.[/dim]
 [dim]Press [cyan]/[/cyan] to focus it.[/dim]
@@ -266,9 +271,10 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
 
     def _get_dashboard_content(self) -> str:
         """Get dashboard tab content."""
+        use_emojis = self.app.ctx.config.display.use_emojis
         # fmt: off
-        return """
-[bold]Dashboard & Analytics 📊[/bold]
+        return f"""
+[bold]Dashboard & Analytics {get_icon('csv', use_emojis)}[/bold]
 
 [dim]Your activity overview with behavioral insights and visualizations.[/dim]
 
@@ -280,33 +286,33 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
 
 [bold #cba6f7]Behavioral Insights (Interpretation):[/bold #cba6f7]
 
-[bold]🔄 Context Switches (Cognitive Load):[/bold]
+[bold]{get_icon('context', use_emojis)} Context Switches (Cognitive Load):[/bold]
   [dim]Measures the average number of unique projects you touch per day.[/dim]
   → [#a6e3a1]Low[/#a6e3a1] [#89dceb](0-2)[/#89dceb]: Deep focus. You are staying in the zone on few topics.
   → [yellow]Med[/yellow] [#89dceb](3-4)[/#89dceb]: Moderate load. Typical for multi-tasking days.
   → [red]High[/red] [#89dceb](5+)[/#89dceb]: Fragmentation. Frequent switching kills productivity.
 
-[bold]⚙️ Friction Ratio (Project ROI):[/bold]
+[bold]{get_icon('friction', use_emojis)} Friction Ratio (Project ROI):[/bold]
   [dim]Calculated as: (Journal Entries) / (Completed Tasks) per project.[/dim]
   → [#a6e3a1]Avg Activity[/#a6e3a1] [#89dceb](<= 2.0)[/#89dceb]: Lean execution. Logs align with results.
   → [yellow]Prioritized[/yellow] [#89dceb](2.1 - 3.5)[/#89dceb]: High documentation or complex tasks.
   → [red]Time Hog[/red] [#89dceb](> 3.5)[/#89dceb]: High friction. You are logging a lot but not finishing tasks. 
     [dim]Tip: Break these tasks down into smaller, manageable pieces.[/dim]
 
-[bold]📋 To-do Health (Staleness):[/bold]
+[bold]{get_icon('todo', use_emojis)} To-do Health (Staleness):[/bold]
   → [#a6e3a1]Fresh[/#a6e3a1]: Tasks added within the last [#89dceb]3[/#89dceb] days.
   → [yellow]Stale[/yellow]: Tasks sitting for [#89dceb]4-14[/#89dceb] days.
   → [red]Stuck[/red]: Tasks older than [#89dceb]2[/#89dceb] weeks. [dim](Review or delete these!)[/dim]
 
-[bold]⚡ Workload & Throughput:[/bold]
+[bold]{get_icon('workload', use_emojis)} Workload & Throughput:[/bold]
   → [bold]Backlog:[/bold] The difference between tasks added vs. done this week.
   → [bold]Completion:[/bold] Your "Say-Do" ratio percentage.
   → [bold]Throughput:[/bold] Average tasks completed per day.
 
 [bold #cba6f7]Visualizations:[/bold #cba6f7]
-  → [bold]📅 History:[/bold] [#89dceb]365[/#89dceb]-day activity heatmap. Darker colors = more logs.
-  → [bold]📈 Trends:[/bold] [#89dceb]30[/#89dceb]-day sparkline showing daily activity volume.
-  → [bold]🏷️ Top Tags:[/bold] Your most active topics over the last [#89dceb]30[/#89dceb] days.
+  → [bold]{get_icon('history', use_emojis)} History:[/bold] [#89dceb]365[/#89dceb]-day activity heatmap. Darker colors = more logs.
+  → [bold]{get_icon('search', use_emojis)} Trends:[/bold] [#89dceb]30[/#89dceb]-day sparkline showing daily activity volume.
+  → [bold]{get_icon('tag', use_emojis)} Top Tags:[/bold] Your most active topics over the last [#89dceb]30[/#89dceb] days.
 
 [bold #cba6f7]Navigation:[/bold #cba6f7]
   [cyan]r[/cyan]              → Refresh all analytics
@@ -317,9 +323,10 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
 
     def _get_todo_content(self) -> str:
         """Get todo tab content."""
+        use_emojis = self.app.ctx.config.display.use_emojis
         # fmt: off
-        return """
-[bold]Todo Board 📋[/bold]
+        return f"""
+[bold]Todo Board {get_icon('todo', use_emojis)}[/bold]
 
 [dim]Task management with priorities, due dates, and auto-logging.[/dim]
 
@@ -339,9 +346,9 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
   [cyan]1/2/3[/cyan]          → Switch tabs
 
 [bold #cba6f7]Tabs:[/bold #cba6f7]
-  [cyan]⏳ Pending (X)[/cyan]    → All pending tasks (shows count)
-  [cyan]📅 Upcoming (Y)[/cyan]   → Due today, tomorrow, next [#89dceb]2[/#89dceb] days
-  [cyan]✓ Completed (Z)[/cyan]   → Completed tasks with completion date
+  [cyan]{get_icon('timer', use_emojis)} Pending (X)[/cyan]    → All pending tasks (shows count)
+  [cyan]{get_icon('history', use_emojis)} Upcoming (Y)[/cyan]   → Due today, tomorrow, next [#89dceb]2[/#89dceb] days
+  [cyan]{get_icon('check', use_emojis)} Completed (Z)[/cyan]   → Completed tasks with completion date
 
 [bold #cba6f7]Display Format:[/bold #cba6f7]
   [#89dceb]\\[5d\\][/#89dceb] [yellow]\\[H\\][/yellow] Task description [yellow]#tag1 #tag2[/yellow] [magenta]: Project[/magenta]
@@ -368,15 +375,16 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
   → Project: Single project name
 
 [dim]Tip: Completing a task auto-logs to your journal![/dim]
-[dim]Format: "✓ Task content [yellow]#tag[/yellow] : project"[/dim]
+[dim]Format: "{get_icon('check', use_emojis)} Task content [yellow]#tag[/yellow] : project"[/dim]
 """
         # fmt: on
 
     def _get_timer_content(self) -> str:
         """Get timer tab content."""
+        use_emojis = self.app.ctx.config.display.use_emojis
         # fmt: off
-        return """
-[bold]Timer Screen ⏱️[/bold]
+        return f"""
+[bold]Timer Screen {get_icon('timer', use_emojis)}[/bold]
 
 [dim]Timer-style focused work sessions with automatic logging.[/dim]
 
@@ -397,7 +405,7 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
   → Entry logged with timestamp
 
 [bold #cba6f7]Display Format:[/bold #cba6f7]
-  [cyan]mm:ss[/cyan]  [ ▮▮▮🥭▯▯▯ ]  [#89dceb]40%[/#89dceb]
+  [cyan]mm:ss[/cyan]  [ {'▮▮▮' if use_emojis else '###'}# {'▯▯▯' if use_emojis else '...'} ]  [#89dceb]40%[/#89dceb]
   ↑ Time    ↑ Progress bar  ↑ Percentage
 
   Session: [yellow]#tag1[/yellow] [yellow]#tag2[/yellow] | [magenta]project[/magenta]
@@ -409,8 +417,9 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
 
     def _get_search_content(self) -> str:
         """Get search tab content."""
-        return """
-[bold]Search & Logs 🔍📓[/bold]
+        use_emojis = self.app.ctx.config.display.use_emojis
+        return f"""
+[bold]Search & Logs {get_icon('search', use_emojis)}{get_icon('logs', use_emojis)}[/bold]
 
 [dim]Fuzzy search across entries and todos, plus logs view.[/dim]
 
@@ -445,7 +454,7 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
 [bold]View Entries:[/bold]
   → Chronological list of all journal entries
   → Shows date, time, content, tags, project
-  → Completed todos appear as "✓ Task" entries
+  → Completed todos appear as "{get_icon('check_small', use_emojis)} Task" entries
 
 [bold]Key Bindings:[/bold]
   [cyan]j/k[/cyan]            → Navigate up/down
@@ -470,18 +479,19 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
 
     def _get_shortcuts_content(self) -> str:
         """Get shortcuts reference tab content."""
-        return """
-[bold]Keyboard Shortcuts Reference ⌨️[/bold]
+        use_emojis = self.app.ctx.config.display.use_emojis
+        return f"""
+[bold]Keyboard Shortcuts Reference {get_icon('shortcuts', use_emojis)}[/bold]
 
 [bold #cba6f7]Global (All Screens):[/bold #cba6f7]
   [cyan]/[/cyan]              → Focus omnibox
   [cyan]Ctrl+P[/cyan]         → Command palette
   [cyan]q[/cyan] / [cyan]Esc[/cyan]       → Quit / Close
   [cyan]?[/cyan]              → Open help
-  [#89dceb]1[/#89dceb]              → Dashboard
-  [#89dceb]2[/#89dceb]              → Logs
-  [#89dceb]3[/#89dceb]              → Todo Board
-  [#89dceb]4[/#89dceb]              → Timer
+  [#89dceb]1[/#89dceb]              → {get_icon('dashboard', use_emojis)} Dashboard
+  [#89dceb]2[/#89dceb]              → {get_icon('logs', use_emojis)} Logs
+  [#89dceb]3[/#89dceb]              → {get_icon('todo', use_emojis)} Todo Board
+  [#89dceb]4[/#89dceb]              → {get_icon('timer', use_emojis)} Timer
 
 [bold #cba6f7]Dashboard:[/bold #cba6f7]
   [cyan]r[/cyan]              → Refresh data

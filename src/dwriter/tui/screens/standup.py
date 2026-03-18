@@ -22,6 +22,7 @@ from textual.widgets import (
 
 from ...cli import AppContext
 from ...ui_utils import format_entry_datetime
+from ..colors import get_icon
 
 
 class ExportFormatScreen(ModalScreen[str]):
@@ -29,18 +30,19 @@ class ExportFormatScreen(ModalScreen[str]):
 
     DEFAULT_CSS = """
     ExportFormatScreen { align: center middle; background: rgba(13, 15, 24, 0.85); }
-    #export-container { width: 50; height: auto; border: round $primary; background: $panel; padding: 1 2; }
+    #export-container { width: 50; height: auto; border: solid $primary; background: $panel; padding: 1 2; }
     #export-title { text-align: center; text-style: bold; margin-bottom: 1; }
     #export-container Button { width: 100%; margin: 1 0; }
     """
 
     def compose(self) -> ComposeResult:
+        use_emojis = self.app.ctx.config.display.use_emojis
         with Container(id="export-container"):
-            yield Label("📤 Export As", id="export-title")
-            yield Button("📄 Markdown", id="export-markdown", variant="primary")
-            yield Button("📄 Plain Text", id="export-plain", variant="default")
-            yield Button("📊 CSV", id="export-csv", variant="default")
-            yield Button("📦 JSON", id="export-json", variant="default")
+            yield Label(f"{get_icon('export', use_emojis)} Export As", id="export-title")
+            yield Button(f"{get_icon('markdown', use_emojis)} Markdown", id="export-markdown", variant="primary")
+            yield Button(f"{get_icon('note', use_emojis)} Plain Text", id="export-plain", variant="default")
+            yield Button(f"{get_icon('csv', use_emojis)} CSV", id="export-csv", variant="default")
+            yield Button(f"{get_icon('json', use_emojis)} JSON", id="export-json", variant="default")
             yield Button("Cancel", id="export-cancel", variant="default")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
@@ -61,7 +63,7 @@ class StandupScreen(ModalScreen[None]):
 
     DEFAULT_CSS = """
     StandupScreen { align: center middle; background: rgba(13, 15, 24, 0.85); }
-    #unified-container { width: 100%; height: 100%; border: round $primary; background: $panel; padding: 1 2; }
+    #unified-container { width: 100%; height: 100%; border: solid $primary; background: $panel; padding: 1 2; }
 
     #unified-header { height: 3; border-bottom: solid $primary; margin-bottom: 1; }
     .header-title { color: $text-muted; text-style: bold; }
@@ -79,7 +81,7 @@ class StandupScreen(ModalScreen[None]):
     #weekly-format { width: 20; }
     #custom-days-input { width: 12; display: none; margin-left: 1; }
 
-    #daily-editor, #weekly-editor { height: 1fr; border: round $success; background: #0d0f18; }
+    #daily-editor, #weekly-editor { height: 1fr; border: solid $success; background: #0d0f18; }
     #weekly-summary { height: 1; margin-top: 1; color: $text-muted; text-style: bold; content-align: center middle; }
 
     #unified-footer { height: auto; min-height: 3; margin-top: 1; align: center middle; }
@@ -102,22 +104,23 @@ class StandupScreen(ModalScreen[None]):
         self.weekly_days = 7
 
     def compose(self) -> ComposeResult:
+        use_emojis = self.ctx.config.display.use_emojis
         with Container(id="unified-container"):
             with Horizontal(id="unified-header"):
-                yield Label("📋 Standup & Review", classes="header-title")
+                yield Label(f"{get_icon('todo', use_emojis)} Standup & Review", classes="header-title")
                 yield Static(classes="spacer")
                 yield Button("Back (Esc)", id="btn-back", variant="default")
 
             with TabbedContent(id="tabs"):
-                with TabPane("📅 Daily Standup", id="daily-tab"):
+                with TabPane(f"{get_icon('history', use_emojis)} Daily Standup", id="daily-tab"):
                     with Horizontal(classes="controls"):
-                        yield Button("←", id="btn-prev-day", variant="primary")
+                        yield Button(get_icon("arrow_left", use_emojis), id="btn-prev-day", variant="primary")
                         yield Label(
                             " Yesterday ",
                             id="daily-date-label",
                             classes="control-label",
                         )
-                        yield Button("→", id="btn-next-day", variant="primary")
+                        yield Button(get_icon("arrow_right", use_emojis), id="btn-next-day", variant="primary")
                         yield Static(classes="spacer")
                         yield Label("Format: ", classes="control-label")
                         yield Select(
@@ -136,7 +139,7 @@ class StandupScreen(ModalScreen[None]):
                         id="daily-editor", show_line_numbers=True, read_only=True
                     )
 
-                with TabPane("📊 Period Review", id="weekly-tab"):
+                with TabPane(f"{get_icon('csv', use_emojis)} Period Review", id="weekly-tab"):
                     with Horizontal(classes="controls"):
                         yield Label("Period: ", classes="control-label")
                         yield Select(
@@ -176,9 +179,9 @@ class StandupScreen(ModalScreen[None]):
                     )
 
             with Horizontal(id="unified-footer"):
-                yield Button("☑ Todos (^T)", id="btn-todos")
-                yield Button("📋 Copy", id="btn-copy", variant="success")
-                yield Button("📤 Export", id="btn-save", variant="primary")
+                yield Button(f"{get_icon('check', use_emojis)} Todos (^T)", id="btn-todos")
+                yield Button(f"{get_icon('copy', use_emojis)} Copy", id="btn-copy", variant="success")
+                yield Button(f"{get_icon('export', use_emojis)} Export", id="btn-save", variant="primary")
 
     async def on_mount(self) -> None:
         """Initialize standup screen."""
@@ -511,7 +514,7 @@ class StandupScreen(ModalScreen[None]):
                     time_prefix = f"{time_str} - " if time_str else ""
                     
                     p_str = f" [{e.project}]" if e.project else ""
-                    t_str = f" ({', '.join(e.tag_names)})" if e.tag_names else ""
+                    t_str = f" ({', '.join(f'#{t}' for t in e.tag_names)})" if e.tag_names else ""
                     clean_content = e.content.lstrip("✅⏱️ ")
                     lines.append(
                         f"  {time_prefix}{clean_content}{p_str}{t_str}"
@@ -532,7 +535,7 @@ class StandupScreen(ModalScreen[None]):
                     time_prefix = f"{time_str} - " if time_str else ""
                     
                     p_str = f" [{e.project}]" if e.project else ""
-                    t_str = f" ({', '.join(e.tag_names)})" if e.tag_names else ""
+                    t_str = f" ({', '.join(f'#{t}' for t in e.tag_names)})" if e.tag_names else ""
                     clean_content = e.content.lstrip("✅⏱️ ")
                     lines.append(f"• {time_prefix}{clean_content}{p_str}{t_str}")
                 if self.daily_include_todos:
@@ -551,7 +554,7 @@ class StandupScreen(ModalScreen[None]):
                     time_prefix = f"{time_str} - " if time_str else ""
                     
                     p_str = f" [{e.project}]" if e.project else ""
-                    t_str = f" #{', #'.join(e.tag_names)}" if e.tag_names else ""
+                    t_str = f" ({', '.join(f'#{t}' for t in e.tag_names)})" if e.tag_names else ""
                     clean_content = e.content.lstrip("✅⏱️ ")
                     lines.append(
                         f"* {time_prefix}{clean_content}{p_str}{t_str}"
@@ -569,7 +572,7 @@ class StandupScreen(ModalScreen[None]):
                     lines.append("* No entries logged.")
                 for e in entries:
                     p_str = f" [{e.project}]" if e.project else ""
-                    t_str = f" ({', '.join(e.tag_names)})" if e.tag_names else ""
+                    t_str = f" ({', '.join(f'#{t}' for t in e.tag_names)})" if e.tag_names else ""
                     clean_content = e.content.lstrip("✅⏱️ ")
                     lines.append(f"* {clean_content}{p_str}{t_str}")
 
@@ -598,8 +601,12 @@ class StandupScreen(ModalScreen[None]):
                 if e.project:
                     projects_set.add(e.project)
 
+            use_emojis = self.ctx.config.display.use_emojis
+            note_icon = get_icon("note", use_emojis)
+            tag_icon = get_icon("tag", use_emojis)
+            folder_icon = get_icon("folder", use_emojis)
             self.query_one("#weekly-summary", Label).update(
-                f"─── Summary: 📝 {len(entries)} entries | 🏷️ {len(tags_set)} tags | 📁 {len(projects_set)} projects ───"
+                f"─── Summary: {note_icon} {len(entries)} entries | {tag_icon} {len(tags_set)} tags | {folder_icon} {len(projects_set)} projects ───"
             )
 
             format_val = self.query_one("#weekly-format", Select).value
@@ -616,7 +623,7 @@ class StandupScreen(ModalScreen[None]):
                         time_prefix = f"{time_str} - " if time_str else ""
                         
                         proj = f" `[{e.project}]`" if e.project else ""
-                        tags = f" #{' #'.join(e.tag_names)}" if e.tag_names else ""
+                        tags = f" ({', '.join(f'#{t}' for t in e.tag_names)})" if e.tag_names else ""
                         clean_content = e.content.lstrip("✅⏱️ ")
                         lines.append(f"- {time_prefix}{clean_content}{proj}{tags}")
                     lines.append("")
@@ -633,7 +640,7 @@ class StandupScreen(ModalScreen[None]):
                         time_prefix = f"{time_str} - " if time_str else ""
                         
                         p_str = f" [{e.project}]" if e.project else ""
-                        t_str = f" ({', '.join(e.tag_names)})" if e.tag_names else ""
+                        t_str = f" ({', '.join(f'#{t}' for t in e.tag_names)})" if e.tag_names else ""
                         clean_content = e.content.lstrip("✅⏱️ ")
                         lines.append(
                             f"• {time_prefix}{clean_content}{p_str}{t_str}"
@@ -651,7 +658,7 @@ class StandupScreen(ModalScreen[None]):
                         time_prefix = f"{time_str} - " if time_str else ""
                         
                         p_str = f" [{e.project}]" if e.project else ""
-                        t_str = f" ({', '.join(e.tag_names)})" if e.tag_names else ""
+                        t_str = f" ({', '.join(f'#{t}' for t in e.tag_names)})" if e.tag_names else ""
                         clean_content = e.content.lstrip("✅⏱️ ")
                         lines.append(
                             f"• {time_prefix}{clean_content}{p_str}{t_str}"
@@ -669,7 +676,7 @@ class StandupScreen(ModalScreen[None]):
                         time_prefix = f"{time_str} - " if time_str else ""
                         
                         p_str = f" [{e.project}]" if e.project else ""
-                        t_str = f" #{', #'.join(e.tag_names)}" if e.tag_names else ""
+                        t_str = f" ({', '.join(f'#{t}' for t in e.tag_names)})" if e.tag_names else ""
                         clean_content = e.content.lstrip("✅⏱️ ")
                         lines.append(
                             f"* {time_prefix}{clean_content}{p_str}{t_str}"
@@ -686,7 +693,7 @@ class StandupScreen(ModalScreen[None]):
                         time_prefix = f"{time_str} - " if time_str else ""
                         
                         p_str = f" [{e.project}]" if e.project else ""
-                        t_str = f" ({', '.join(e.tag_names)})" if e.tag_names else ""
+                        t_str = f" ({', '.join(f'#{t}' for t in e.tag_names)})" if e.tag_names else ""
                         clean_content = e.content.lstrip("✅⏱️ ")
                         lines.append(
                             f"  * {time_prefix}{clean_content}{p_str}{t_str}"

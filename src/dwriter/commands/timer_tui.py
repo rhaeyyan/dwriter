@@ -134,7 +134,7 @@ class SessionCompleteModal(ModalScreen):  # type: ignore[type-arg]
         width: 80;
         height: auto;
         background: $surface;
-        border: thick $success;
+        border: solid $success;
         padding: 1 3;
     }
 
@@ -279,7 +279,7 @@ class TimerApp(App):  # type: ignore[type-arg]
         align: center middle;
         padding: 2 4;
         background: $panel;
-        border: solid $primary;
+        border: solid #45475a;
     }
 
     #timer-title {

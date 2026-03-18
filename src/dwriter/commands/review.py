@@ -22,12 +22,11 @@ def format_review_markdown(entries_by_date: Any) -> str:
             time_str = entry.created_at.strftime("%I:%M %p")
             date_fmt = date_key.strftime("%Y-%m-%d")
             line = f"- {date_fmt} | [#23c76b]{time_str}[/#23c76b]: {entry.content}"
-            lines.append(line)
             if entry.tag_names:
-                tags_str = " ".join(f"[#ffae00]#[/]{t}" for t in entry.tag_names)
-                lines.append(f"  - [#ffae00]Tags:[/#ffae00] {tags_str}")
+                line += f" ({', '.join(f'#{t}' for t in entry.tag_names)})"
             if entry.project:
-                lines.append(f"  - [purple]Project:[/purple] {entry.project}")
+                line += f" [purple][{entry.project}][/purple]"
+            lines.append(line)
         lines.append("")
     return "\n".join(lines)
 
@@ -43,12 +42,11 @@ def format_review_plain(entries_by_date: Any) -> str:
             time_str = entry.created_at.strftime("%I:%M %p")
             date_fmt = date_key.strftime("%Y-%m-%d")
             line = f"  {date_fmt} | [#23c76b]{time_str}[/#23c76b]: {entry.content}"
-            lines.append(line)
             if entry.tag_names:
-                tags_str = " ".join(f"[#ffae00]#[/]{t}" for t in entry.tag_names)
-                lines.append(f"    [#ffae00]Tags:[/#ffae00] {tags_str}")
+                line += f" ({', '.join(f'#{t}' for t in entry.tag_names)})"
             if entry.project:
-                lines.append(f"    [purple]Project:[/purple] {entry.project}")
+                line += f" [purple][{entry.project}][/purple]"
+            lines.append(line)
         lines.append("")
     return "\n".join(lines)
 
@@ -63,12 +61,11 @@ def format_review_slack(entries_by_date: Any) -> str:
             time_str = entry.created_at.strftime("%I:%M %p")
             date_fmt = date_key.strftime("%Y-%m-%d")
             line = f"  {date_fmt} | [#23c76b]{time_str}[/#23c76b]: {entry.content}"
-            lines.append(line)
             if entry.tag_names:
-                tags_str = " ".join(f"[#ffae00]#[/]{t}" for t in entry.tag_names)
-                lines.append(f"    [#ffae00]Tags:[/#ffae00] {tags_str}")
+                line += f" ({', '.join(f'#{t}' for t in entry.tag_names)})"
             if entry.project:
-                lines.append(f"    [purple]Project:[/purple] {entry.project}")
+                line += f" [purple][{entry.project}][/purple]"
+            lines.append(line)
         lines.append("")
     return "\n".join(lines)
 

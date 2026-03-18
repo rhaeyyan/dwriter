@@ -8,6 +8,8 @@ from textual.containers import Container, ScrollableContainer
 from textual.screen import ModalScreen
 from textual.widgets import Static
 
+from .tui.colors import get_icon
+
 if TYPE_CHECKING:
     from rich.console import Console
 
@@ -104,7 +106,7 @@ class HelpOverlay(ModalScreen[None]):
         width: 80%;
         height: 70%;
         background: $surface;
-        border: thick $primary;
+        border: solid $primary;
         padding: 1 2;
     }
 
@@ -164,8 +166,15 @@ class HelpOverlay(ModalScreen[None]):
 
     def compose(self) -> ComposeResult:
         """Compose the help overlay layout."""
+        # Safety check for app.ctx.config
+        use_emojis = True
+        try:
+            use_emojis = self.app.ctx.config.display.use_emojis
+        except Exception:
+            pass
+
         with Container():
-            yield Static(f"❓ {self.title}", classes="help-title")
+            yield Static(f"{get_icon('question', use_emojis)} {self.title}", classes="help-title")
             yield Static("", classes="help-section")
 
             with ScrollableContainer(id="help-bindings"):
@@ -173,15 +182,15 @@ class HelpOverlay(ModalScreen[None]):
                     yield Static(f"[bold cyan]{key:12}[/]  {desc}", classes="help-desc")
 
             if self.commands:
-                yield Static("\n📝 Commands:", classes="help-section")
+                yield Static(f"\n{get_icon('note', use_emojis)} Commands:", classes="help-section")
                 for cmd, desc in self.commands:
                     yield Static(f"  [bold yellow]{cmd}[/]", classes="help-desc")
                     yield Static(f"    {desc}", classes="help-tip")
 
             if self.tips:
-                yield Static("\n💡 Tips:", classes="help-section")
+                yield Static(f"\n{get_icon('tips', use_emojis)} Tips:", classes="help-section")
                 for tip in self.tips:
-                    yield Static(f"  • {tip}", classes="help-tip")
+                    yield Static(f"  {get_icon('bullet', use_emojis)} {tip}", classes="help-tip")
 
             close_msg = "\nPress [bold]Esc[/] or [bold]Enter[/] to close"
             yield Static(close_msg, classes="help-close")

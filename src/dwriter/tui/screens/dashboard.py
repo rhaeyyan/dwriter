@@ -5,41 +5,12 @@ from typing import Any
 
 from textual import work
 from textual.app import ComposeResult
-from textual.containers import Container, Horizontal
-from textual.widgets import LoadingIndicator, Static, TabbedContent, TabPane
+from textual.containers import Container, Horizontal, ScrollableContainer
+from textual.widgets import LoadingIndicator, Static
 
 from ...analytics import AnalyticsEngine
 from ...cli import AppContext
-
-
-class KPICard(Static):
-    """A minimal KPI card."""
-
-    DEFAULT_CSS = """
-    KPICard {
-        width: 1fr;
-        border: heavy $secondary;
-        background: transparent;
-        margin: 0 1;
-        padding: 1 0;
-        content-align: center middle;
-    }
-    .kpi-title { color: $text-muted; text-align: center; }
-    .kpi-value { text-style: bold; text-align: center; }
-    """
-
-    def __init__(
-        self, title: str, value: str, color: str = "$primary", **kwargs: Any
-    ) -> None:
-        super().__init__(**kwargs)
-        self.title = title
-        self.val = value
-        self.color = color
-
-    def on_mount(self) -> None:
-        self.update(
-            f"[{self.color}]{self.val}[/{self.color}]\n[kpi-title]{self.title}[/kpi-title]"
-        )
+from ..colors import get_icon, render_block_bar_rich
 
 
 class StreakCalendar(Static):
@@ -47,10 +18,11 @@ class StreakCalendar(Static):
 
     DEFAULT_CSS = """
     StreakCalendar {
-        border: round $primary;
+        border: solid #45475a;
+        border-title-color: #89b4fa;
         background: $panel;
-        padding: 1 3;
-        margin: 0 1 1 1;
+        padding: 0 2;
+        margin: 0 0 0 1;
         height: auto;
     }
     """
@@ -59,6 +31,7 @@ class StreakCalendar(Static):
         super().__init__(**kwargs)
         self.ctx = ctx
         self.entries_by_date: dict[str, int] = {}
+        self.total_entries = 0
         self.current_streak = 0
         self.longest_streak = 0
 
@@ -70,6 +43,7 @@ class StreakCalendar(Static):
             self._render_calendar()
 
     def _load_data(self) -> None:
+        self.total_entries = self.ctx.db.get_all_entries_count()
         entries = self.ctx.db.get_all_entries()
         dates = sorted({e.created_at.date() for e in entries})
 
@@ -135,7 +109,9 @@ class StreakCalendar(Static):
 
         weeks = weeks[-num_weeks:]
 
-        content = ["[bold]📅 History[/bold]\n"]
+        use_emojis = self.ctx.config.display.use_emojis
+        self.border_title = f"{get_icon('history', use_emojis)} History"
+        content = []
 
         months = [
             "Jan",
@@ -170,11 +146,11 @@ class StreakCalendar(Static):
 
         day_names = ["   ", "Mon", "   ", "Wed", "   ", "Fri", "   "]
         level_styles = {
-            0: "[#313244]■[/]",  # dim - no activity
-            1: "[#a6e3a1]■[/]",  # green - low
-            2: "[#f9e2af]■[/]",  # yellow - medium
-            3: "[#fab387]■[/]",  # orange - high
-            4: "[#f38ba8]■[/]",  # red - very high
+            0: f"[#313244]{'■' if use_emojis else '-'}[/]",  # dim - no activity
+            1: f"[#a6e3a1]{'■' if use_emojis else '#'}[/]",  # green - low
+            2: f"[#f9e2af]{'■' if use_emojis else '#'}[/]",  # yellow - medium
+            3: f"[#fab387]{'■' if use_emojis else '#'}[/]",  # orange - high
+            4: f"[#f38ba8]{'■' if use_emojis else '#'}[/]",  # red - very high
         }
 
         for day_idx in range(7):
@@ -194,10 +170,11 @@ class StreakCalendar(Static):
                     line += "  "
             content.append(line + "\n")
 
-        content.append("[dim]    Less ")
-        for i in range(5):
-            content.append(f"{level_styles[i]} ")
-        content.append("More[/dim]")
+        content.append(
+            f"[dim]    Total: [bold]{self.total_entries}[/]  |  "
+            f"Streak: [bold]{self.current_streak}d[/]  |  "
+            f"Longest: [bold]{self.longest_streak}d[/][/dim]"
+        )
 
         self.update("".join(content))
 
@@ -207,10 +184,11 @@ class ActivitySparkline(Static):
 
     DEFAULT_CSS = """
     ActivitySparkline {
-        border: round $primary;
+        border: solid #45475a;
+        border-title-color: #89b4fa;
         background: $panel;
-        padding: 1 3;
-        margin: 0 1 0 1;
+        padding: 0 2;
+        margin: 0 0 0 1;
         height: auto;
     }
     """
@@ -254,6 +232,8 @@ class ActivitySparkline(Static):
         padding_str = " " * padding
 
         # Initialize content list
+        use_emojis = self.ctx.config.display.use_emojis
+        self.border_title = f"{get_icon('search', use_emojis)} 30-Day Trend"
         content = []
 
         # Get top 5 trending tags
@@ -286,7 +266,7 @@ class ActivitySparkline(Static):
             content.append(f"{tags_line}\n\n")
 
         if any(data):
-            spark_chars = " ⠀⡀⣀⣄⣤⣦⣶⣷⣿"
+            spark_chars = " ⠀⡀⣀⣄⣤⣦⣶⣷⣿" if use_emojis else " .:-=+*#%"
             max_val = max(data) if data else 1
             colors = ["#89b4fa", "#a6e3a1", "#f9e2af", "#f38ba8"]
 
@@ -325,7 +305,11 @@ class ActivitySparkline(Static):
 class ContextSwitchCard(Static):
     """Context switch behavioral insight."""
 
-    DEFAULT_CSS = "ContextSwitchCard { border: round $primary; background: $panel; padding: 0 2; height: 6; }"
+    DEFAULT_CSS = "ContextSwitchCard { border: solid #45475a; background: $panel; padding: 0 2; height: 6; }"
+
+    def __init__(self, ctx: AppContext, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.ctx = ctx
 
     def update_data(self, switches: float) -> None:
         if switches <= 2:
@@ -338,8 +322,10 @@ class ContextSwitchCard(Static):
             level = "High"
             level_style = "red"
 
+        use_emojis = self.ctx.config.display.use_emojis
+        icon = get_icon("context", use_emojis)
         content = [
-            f"[bold]🔄 Context Switches [{level_style}]{level}[/{level_style}][/bold]\n\n"
+            f"[bold]{icon} Context Switches [{level_style}]{level}[/{level_style}][/bold]\n\n"
         ]
         content.append(f"[dim]Projects per day:[/dim] {switches:.1f}")
         self.update("".join(content))
@@ -348,18 +334,24 @@ class ContextSwitchCard(Static):
 class ContextFrictionCard(Static):
     """Combined Context Switches and Friction Ratio card."""
 
-    DEFAULT_CSS = "ContextFrictionCard { border: round $primary; background: $panel; padding: 0 3; height: 13; }"
+    DEFAULT_CSS = "ContextFrictionCard { border: solid #45475a; border-title-color: #89b4fa; background: $panel; padding: 0 2; height: 13; }"
+
+    def __init__(self, ctx: AppContext, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.ctx = ctx
 
     def _draw_bar(self, value: float, max_val: float, width: int = 17) -> str:
-        """Draws a pip bar with gradient coloring based on value: light green → yellow → orange → red."""
+        """Draws a pip bar with gradient coloring."""
+        use_emojis = self.ctx.config.display.use_emojis
+        empty_char = "･" if use_emojis else "."
         if max_val <= 0:
-            return f"[#313244]{'･' * width}[/]"
+            return f" [#313244]{empty_char * width}[/] "
         filled = int((value / max_val) * width)
         if value > 0 and filled == 0:
             filled = 1
         empty = width - filled
 
-        # Color based on the actual ratio value (not relative)
+        # Pick color based on the actual ratio value
         if value <= 1.0:
             color = "#a6e3a1"  # light green - low friction
         elif value <= 2.0:
@@ -369,7 +361,8 @@ class ContextFrictionCard(Static):
         else:
             color = "#f38ba8"  # red - very high friction
 
-        return f" [{color}]{'￭' * filled}[/][#313244]{'･' * empty}[/] "
+        fill_char = "￭" if use_emojis else "#"
+        return f" [{color}]{fill_char * filled}[/][#313244]{empty_char * empty}[/] "
 
     def _get_status_display(self, ratio: float) -> tuple[str, str]:
         """Get status label and color based on friction ratio.
@@ -387,6 +380,10 @@ class ContextFrictionCard(Static):
         else:
             return "Avg Activity", "#a6e3a1"  # green - same as Fresh bar
 
+    def on_mount(self) -> None:
+        use_emojis = self.ctx.config.display.use_emojis
+        self.border_title = f"{get_icon('glance', use_emojis)} At A Glance"
+
     def update_data(self, switches: float, roi_data: list[Any]) -> None:
         # Context switches section
         if switches <= 2:
@@ -402,15 +399,18 @@ class ContextFrictionCard(Static):
         # Count active projects from roi_data
         active_projects = len(roi_data) if roi_data else 0
 
+        use_emojis = self.ctx.config.display.use_emojis
+        icon_context = get_icon("context", use_emojis)
         content = [
-            f"[bold]🔄 Context Switches [{level_style}]{level}[/{level_style}][/bold]\n\n"
+            f"[bold]{icon_context} Context Switches [{level_style}]{level}[/{level_style}][/bold]\n\n"
         ]
         content.append(
             f"[dim]Projects/day:[/dim] {switches:.1f}    [dim]Active:[/dim] {active_projects}"
         )
 
         # Friction Ratio section
-        content.append("\n\n[bold]⚙️ Friction Ratio[/bold]\n")
+        icon_friction = get_icon("friction", use_emojis)
+        content.append(f"\n\n[bold]{icon_friction} Friction Ratio[/bold]\n")
         if not roi_data:
             content.append("[dim]Not enough data yet...[/dim]")
         else:
@@ -428,19 +428,30 @@ class ContextFrictionCard(Static):
 class TodoHealthCard(Static):
     """Combined To-do Health and Workload card."""
 
-    DEFAULT_CSS = "TodoHealthCard { border: round $error; background: $panel; padding: 0 3; height: 13; }"
+    DEFAULT_CSS = "TodoHealthCard { border: solid #45475a; border-title-color: #89b4fa; background: $panel; padding: 0 2; height: 13; }"
+
+    def __init__(self, ctx: AppContext, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.ctx = ctx
 
     def _draw_bar(
         self, value: int, max_val: int, width: int = 15, color: str = "white"
     ) -> str:
-        """Draws the ［ ￭￭￭￭￭･････ ］ style bar."""
+        """Draws the ￭･ pip style bar."""
+        use_emojis = self.ctx.config.display.use_emojis
+        empty_char = "･" if use_emojis else "."
         if max_val <= 0:
-            return f"［ [#313244]{'･' * width}[/] ］"
+            return f"［ [#313244]{empty_char * width}[/] ］"
         filled = int((value / max_val) * width)
         if value > 0 and filled == 0:
             filled = 1
         empty = width - filled
-        return f"［ [{color}]{'￭' * filled}[/][#313244]{'･' * empty}[/] ］"
+        fill_char = "￭" if use_emojis else "#"
+        return f"［ [{color}]{fill_char * filled}[/][#313244]{empty_char * empty}[/] ］"
+
+    def on_mount(self) -> None:
+        use_emojis = self.ctx.config.display.use_emojis
+        self.border_title = f"{get_icon('todo', use_emojis)} To-do Health"
 
     def update_data(
         self, fresh: int, stale: int, dead: int, added: int, done: int
@@ -453,19 +464,20 @@ class TodoHealthCard(Static):
         stuck_color = "#f38ba8"  # red
 
         # Workload status
+        use_emojis = self.ctx.config.display.use_emojis
         diff = added - done
         if diff > 0:
             status = f"+{diff} backlog"
             status_style = "yellow"
-            warning_icon = "⚠️"
+            warning_icon = get_icon("warning", use_emojis)
         elif diff < 0:
             status = "Up to Date"
             status_style = "green"
-            warning_icon = "✅"
+            warning_icon = get_icon("check", use_emojis)
         else:
             status = "Balanced"
             status_style = "green"
-            warning_icon = "✓"
+            warning_icon = get_icon("check_small", use_emojis)
 
         # Completion rate
         total = added + done
@@ -478,7 +490,8 @@ class TodoHealthCard(Static):
         label_color = "#8c92a6"  # gray for labels (matches To-Do Health dim)
         value_color = "#89dceb"  # teal for numbers
 
-        content = ["[bold]📋 To-do Health[/bold]\n\n"]
+        icon_workload = get_icon("workload", use_emojis)
+        content = ["\n"]
         # Fresh bar with matching color number
         content.append(
             f"[dim]Fresh[/dim] {self._draw_bar(fresh, max_val, 15, fresh_color)} [{fresh_color}]{fresh}[/]\n"
@@ -492,7 +505,7 @@ class TodoHealthCard(Static):
             f"[dim]Stuck[/dim] {self._draw_bar(dead, max_val, 15, stuck_color)} [{stuck_color}]{dead}[/]\n"
         )
         content.append(
-            f"\n[bold]⚡ Workload [{status_style}]{warning_icon} {status}[/bold]\n"
+            f"\n[bold]{icon_workload} Workload [{status_style}]{warning_icon} {status}[/bold]\n"
         )
         content.append(
             f" [{label_color}]Added:[/{label_color}] [{value_color}]{added}[/]      [{label_color}]Done:[/{label_color}] [{value_color}]{done}[/]\n"
@@ -511,22 +524,19 @@ class DashboardScreen(Container):
 
     DEFAULT_CSS = """
     DashboardScreen { height: 1fr; background: transparent; }
-    #dashboard-loading { dock: top; margin-top: 1; }
-    #dashboard-tabs { height: 1fr; }
-    #overview-pane, #activity-pane {
+    #dashboard-loading { dock: top; margin-top: 0; }
+    #dashboard-main-container {
         height: 1fr;
         overflow-y: auto;
         padding: 0;
     }
-    #dashboard-kpi-row { height: auto; margin-bottom: 1; }
+    #dashboard-kpi-row { height: auto; margin-bottom: 0; }
 
     /* Layout grid rules */
     .insights-row { height: auto; margin: 0; padding: 0; }
-    .half-card-left { width: 1fr; margin-right: 1; margin-bottom: 1; }
-    .half-card-right { width: 1fr; margin-bottom: 1; }
-    .full-card { width: 1fr; margin-bottom: 1; }
-    .full-card-last { width: 1fr; margin-bottom: 1; }
-    
+    .half-card-left { width: 1fr; margin-right: 0; margin-bottom: 0; }
+    .half-card-right { width: 1fr; margin-bottom: 0; }
+
     /* Card heights */
     TodoHealthCard { height: 13; }
     ContextFrictionCard { height: 13; }
@@ -540,35 +550,19 @@ class DashboardScreen(Container):
     def compose(self) -> ComposeResult:
         yield LoadingIndicator(id="dashboard-loading")
 
-        with TabbedContent(initial="overview-pane", id="dashboard-tabs"):
-            with TabPane("📊 Overview", id="overview-pane"):
-                # Performance KPIs row
-                with Horizontal(id="dashboard-kpi-row"):
-                    yield KPICard(
-                        "Total Entries", "0", color="$primary", id="kpi-total"
-                    )
-                    yield KPICard(
-                        "Current Streak", "0 days", color="$success", id="kpi-streak"
-                    )
-                    yield KPICard(
-                        "Longest", "0 days", color="$warning", id="kpi-longest"
-                    )
-                    yield KPICard(
-                        "Consistency", "0%", color="$info", id="kpi-consistency"
-                    )
+        with ScrollableContainer(id="dashboard-main-container"):
+            # Row 1: 30-day activity sparkline
+            yield ActivitySparkline(self.ctx, id="sparkline-activity")
 
-                yield StreakCalendar(self.ctx, id="calendar")
+            # Row 2: Streak calendar (history)
+            yield StreakCalendar(self.ctx, id="calendar")
 
-            with TabPane("📈 Trends", id="activity-pane"):
-                # 30-day heatmap spanning full width
-                yield ActivitySparkline(self.ctx, id="sparkline-activity")
-
-                # Two cards side by side: Todo Health and Context/Friction
-                with Horizontal(classes="insights-row"):
-                    yield TodoHealthCard(classes="half-card-left", id="todo-health")
-                    yield ContextFrictionCard(
-                        classes="half-card-right", id="context-friction"
-                    )
+            # Row 3: Todo Health + At A Glance side by side
+            with Horizontal(classes="insights-row"):
+                yield TodoHealthCard(self.ctx, classes="half-card-left", id="todo-health")
+                yield ContextFrictionCard(
+                    self.ctx, classes="half-card-right", id="context-friction"
+                )
 
     def on_mount(self) -> None:
         self._load_dashboard_data()
@@ -580,38 +574,6 @@ class DashboardScreen(Container):
     @work(exclusive=True, thread=True)
     def _load_dashboard_data(self) -> None:
         """Fetch all data in the background to prevent UI lag."""
-        self.total_entries = self.ctx.db.get_all_entries_count()
-
-        # Calculate streaks
-        entries = self.ctx.db.get_all_entries()
-        dates = sorted({e.created_at.date() for e in entries})
-
-        self.current_streak = 0
-        self.longest_streak = 0
-
-        if dates:
-            current_streak = 1
-            longest_streak = 1
-            for i in range(1, len(dates)):
-                if (dates[i] - dates[i - 1]).days == 1:
-                    current_streak += 1
-                    longest_streak = max(longest_streak, current_streak)
-                else:
-                    current_streak = 1
-
-            if (datetime.now().date() - dates[-1]).days > 1:
-                self.current_streak = 0
-            else:
-                self.current_streak = current_streak
-
-            self.longest_streak = longest_streak
-
-        # Consistency (last 30 days)
-        today = datetime.now().date()
-        start_date = today - timedelta(days=29)
-        active_days = sum(1 for d in dates if d >= start_date)
-        self.consistency = int((active_days / 30) * 100)
-
         # Behavioral Analytics
         engine = AnalyticsEngine(self.ctx.db)
         fresh, stale, dead = engine.get_task_staleness()
@@ -620,6 +582,7 @@ class DashboardScreen(Container):
         roi_data = engine.get_project_roi(days=30)
 
         # Weekly data
+        today = datetime.now().date()
         start_date_week = today - timedelta(days=6)
         entries_by_date = self.ctx.db.get_entries_count_by_date(start_date_week, today)
         weekly_data = [
@@ -630,7 +593,6 @@ class DashboardScreen(Container):
         ]
 
         if hasattr(self.app, "call_from_thread"):
-            self.app.call_from_thread(self._update_kpis)
             self.app.call_from_thread(
                 self._update_ui,
                 fresh,
@@ -642,32 +604,6 @@ class DashboardScreen(Container):
                 roi_data,
                 weekly_data,
             )
-
-    def _update_kpis(self) -> None:
-        try:
-            kpi_total = self.query_one("#kpi-total", KPICard)
-            kpi_total.update(
-                f"[{kpi_total.color}]{self.total_entries}[/{kpi_total.color}]\n[kpi-title]Total Entries[/kpi-title]"
-            )
-
-            kpi_streak = self.query_one("#kpi-streak", KPICard)
-            kpi_streak.update(
-                f"[{kpi_streak.color}]{self.current_streak} days[/{kpi_streak.color}]\n[kpi-title]Current Streak[/kpi-title]"
-            )
-
-            kpi_longest = self.query_one("#kpi-longest", KPICard)
-            kpi_longest.update(
-                f"[{kpi_longest.color}]{self.longest_streak} days[/{kpi_longest.color}]\n[kpi-title]Longest[/kpi-title]"
-            )
-
-            kpi_consistency = self.query_one("#kpi-consistency", KPICard)
-            kpi_consistency.update(
-                f"[{kpi_consistency.color}]{self.consistency}%[/{kpi_consistency.color}]\n[kpi-title]Consistency[/kpi-title]"
-            )
-        except Exception as e:
-            import sys
-
-            print(f"KPI update error: {e}", file=sys.stderr)
 
     def _update_ui(
         self, fresh, stale, dead, added, done, switches, roi_data, weekly_data
@@ -681,6 +617,7 @@ class DashboardScreen(Container):
                 switches, roi_data
             )
             self.query_one("#sparkline-activity", ActivitySparkline).refresh_data()
+            self.query_one("#calendar", StreakCalendar)._load_data()
 
             # Hide the loading spinner
             loading = self.query_one("#dashboard-loading")

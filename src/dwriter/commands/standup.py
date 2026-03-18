@@ -31,7 +31,7 @@ def format_standup_slack(entries: Any) -> str:
         time_str = entry.created_at.strftime("%I:%M %p")
         line = f"[#23c76b]{time_str}[/#23c76b] • {entry.content}"
         if entry.tags:
-            line += f" ({', '.join(f'[#ffae00]#[/]{tag.name}' for tag in entry.tags)})"
+            line += f" ({', '.join(f'#{tag.name}' for tag in entry.tags)})"
         if entry.project:
             line += f" [magenta]{entry.project}[/magenta]"
         lines.append(line)
@@ -45,7 +45,7 @@ def format_standup_jira(entries: Any) -> str:
         time_str = entry.created_at.strftime("%I:%M %p")
         line = f"[#23c76b]{time_str}[/#23c76b] * {entry.content}"
         if entry.tags:
-            line += f" ({', '.join(f'[#ffae00]#[/]{tag.name}' for tag in entry.tags)})"
+            line += f" ({', '.join(f'#{tag.name}' for tag in entry.tags)})"
         if entry.project:
             line += f" [magenta]{entry.project}[/magenta]"
         lines.append(line)
@@ -59,7 +59,7 @@ def format_standup_markdown(entries: Any) -> str:
         time_str = entry.created_at.strftime("%I:%M %p")
         line = f"[#23c76b]{time_str}[/#23c76b] - {entry.content}"
         if entry.tags:
-            line += f" ({', '.join(f'[#ffae00]#[/]{tag.name}' for tag in entry.tags)})"
+            line += f" ({', '.join(f'#{tag.name}' for tag in entry.tags)})"
         if entry.project:
             line += f" [magenta]{entry.project}[/magenta]"
         lines.append(line)
@@ -82,12 +82,8 @@ def format_todos(todos: Any, output_format: str) -> str:
         line = f"{bullet} {todo.content}"
 
         if todo.tag_names:
-            tags_list = ", ".join(f"[#ffae00]#[/]{tag}" for tag in todo.tag_names)
-            if output_format in ["bullets", "markdown"]:
-                line += f" ({tags_list})"
-            else:
-                tags_plain = ", ".join(f"#{tag}" for tag in todo.tag_names)
-                line += f" ({tags_plain})"
+            tags_list = ", ".join(f"#{tag}" for tag in todo.tag_names)
+            line += f" ({tags_list})"
 
         if todo.project:
             if output_format in ["bullets", "markdown"]:

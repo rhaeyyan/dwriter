@@ -56,7 +56,7 @@ class EditTodoModal(ModalScreen):  # type: ignore[type-arg]
         height: auto;
         max-height: 90;
         background: $surface;
-        border: thick $primary;
+        border: solid $primary;
         padding: 1 3;
     }
 
@@ -218,7 +218,7 @@ class AddTodoModal(ModalScreen):  # type: ignore[type-arg]
         width: 80;
         height: auto;
         background: $surface;
-        border: thick $primary;
+        border: solid $primary;
         padding: 1 3;
     }
 
@@ -308,7 +308,7 @@ class EditTagsModal(ModalScreen):  # type: ignore[type-arg]
         width: 70;
         height: auto;
         background: $surface;
-        border: thick $primary;
+        border: solid $primary;
         padding: 1 3;
     }
 
@@ -410,7 +410,7 @@ class EditProjectModal(ModalScreen):  # type: ignore[type-arg]
         width: 70;
         height: auto;
         background: $surface;
-        border: thick $primary;
+        border: solid $primary;
         padding: 1 3;
     }
 
@@ -653,7 +653,7 @@ class TodoApp(App):  # type: ignore[type-arg]
 
     TodoListView {
         height: 1fr;
-        border: solid $primary;
+        border: solid #45475a;
         padding: 1;
     }
 
@@ -1217,7 +1217,7 @@ class TodoApp(App):  # type: ignore[type-arg]
                 width: 60;
                 height: auto;
                 background: $surface;
-                border: thick $error;
+                border: solid $error;
                 padding: 1 3;
             }
 

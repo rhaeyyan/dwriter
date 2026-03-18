@@ -19,6 +19,7 @@ from textual.widgets import Button, Header, Input, Label, ListItem, ListView
 
 from ...cli import AppContext
 from ...database import Entry
+from ..colors import get_icon
 from ...search_utils import search_items
 
 
@@ -35,7 +36,7 @@ class EditEntryModal(ModalScreen):  # type: ignore[type-arg]
         height: auto;
         max-height: 40;
         background: $surface;
-        border: thick $primary;
+        border: solid $primary;
         padding: 1 2;
     }
 
@@ -122,11 +123,12 @@ class EditEntryModal(ModalScreen):  # type: ignore[type-arg]
 
     def compose(self) -> ComposeResult:
         """Compose the modal UI."""
+        use_emojis = self.app.ctx.config.display.use_emojis
         with Container(id="edit-modal-container"):
             # Save & Exit button in top-right corner
-            yield Button("💾 Save & Exit", id="save-exit-btn", variant="success")
+            yield Button(f"{get_icon('save', use_emojis)} Save & Exit", id="save-exit-btn", variant="success")
 
-            yield Label(f"Edit Entry #{self.entry.id}", id="edit-modal-title")
+            yield Label(f"{get_icon('edit', use_emojis)} Edit Entry #{self.entry.id}", id="edit-modal-title")
 
             yield Label("Content:", id="edit-content-label")
             yield Input(
@@ -382,7 +384,7 @@ class DeleteConfirmModal(ModalScreen):  # type: ignore[type-arg]
         height: auto;
         min-height: 8;
         background: $surface;
-        border: thick $error;
+        border: solid $error;
         padding: 0 2;
     }
 
@@ -437,8 +439,9 @@ class DeleteConfirmModal(ModalScreen):  # type: ignore[type-arg]
 
     def compose(self) -> ComposeResult:
         """Compose the modal UI."""
+        use_emojis = self.app.ctx.config.display.use_emojis
         with Container(id="delete-modal-container"):
-            yield Label("⚠️ Delete Entry?", id="delete-modal-title")
+            yield Label(f"{get_icon('warning', use_emojis)} Delete Entry?", id="delete-modal-title")
             yield Label(
                 f'"{self.entry_content[:50]}{"..." if len(self.entry_content) > 50 else ""}"',
                 id="delete-modal-content",
@@ -519,10 +522,19 @@ class LogsResultsView(ListView):
 
         # Clean up content - remove check emoji/mark from completed todos
         content = entry.content
+        
+        use_emojis = self.app.ctx.config.display.use_emojis
+        check_icon = get_icon("check", use_emojis)
+        timer_icon = get_icon("timer", use_emojis)
+        
         if content.startswith("✅ "):
-            content = content[2:]
+            content = content.replace("✅ ", f"{check_icon} ", 1)
         elif content.startswith("✓ "):
-            content = content[2:]
+            content = content.replace("✓ ", f"{check_icon} ", 1)
+        
+        # Ensure timer session icon is correct
+        if "⏱️" in content:
+            content = content.replace("⏱️", timer_icon)
 
         # Format tags and project on first line
         tags_str = (
@@ -599,11 +611,11 @@ class LogsScreen(Container):
 
     #search-input {
         width: 1fr;
-        border: solid #73E6CB;
+        border: solid #45475a;
     }
 
     #search-input:focus {
-        border: solid #00FF7F;
+        border: solid $accent;
     }
 
     #results-container {
@@ -624,7 +636,7 @@ class LogsScreen(Container):
 
     LogsResultsView {
         height: 1fr;
-        border: solid $primary;
+        border: solid #45475a;
         padding: 0;
     }
 
@@ -688,10 +700,11 @@ class LogsScreen(Container):
         from textual.containers import Horizontal
 
         yield Header()
+        use_emojis = self.ctx.config.display.use_emojis
         with Vertical():
             with Container(id="search-container"):
                 with Horizontal():
-                    yield Button("🎤 Stand-Up", id="btn-standup", variant="primary")
+                    yield Button(f"{get_icon('standup', use_emojis)} Stand-Up", id="btn-standup", variant="primary")
                     yield Input(
                         placeholder="Search logs to edit/delete",
                         id="search-input",
@@ -701,7 +714,7 @@ class LogsScreen(Container):
                 with Horizontal(id="load-more-container"):
                     yield Button("Load More", id="btn-load-more", variant="default")
         yield Label(
-            "j/k: Navigate | Enter: Select | e: Edit | d: Delete | t: Tags | p: Project | q: Quit",
+            f"j/k: Navigate  {get_icon('bullet', use_emojis)}  Enter: Select  {get_icon('bullet', use_emojis)}  e: Edit  {get_icon('bullet', use_emojis)}  d: Delete  {get_icon('bullet', use_emojis)}  t: Tags  {get_icon('bullet', use_emojis)}  p: Project  {get_icon('bullet', use_emojis)}  q: Quit",
             id="logs-status-bar",
         )
 
@@ -790,10 +803,8 @@ class LogsScreen(Container):
 
         results_view.clear()
         
-        # For search, we still search across ALL entries loaded so far
-        # or we might want to fetch all entries if query is present?
-        # Senior engineer advice: If searching, fetch all IDs/Content first or use FTS5.
-        # For now, let's search across the loaded cache.
+        # Search across the entries loaded in the current session.
+        # Note: Large databases may eventually require FTS5 or background fetching.
         matched_entries = search_items(query, self._all_entries, limit=50, threshold=50)
 
         # Display results
@@ -839,15 +850,17 @@ class LogsScreen(Container):
             count: Number of displayed entries.
             is_search: Whether this is a search result or recent entries view.
         """
+        use_emojis = self.ctx.config.display.use_emojis
+        bullet = get_icon("bullet", use_emojis)
         if is_search:
             self.query_one("#logs-status-bar", Label).update(
-                f"Found {count} matches | "
-                "j/k: Navigate | e: Edit | d: Delete | t: Tags | p: Project | /: Search | q: Quit"
+                f"Found {count} matches  {bullet}  "
+                f"j/k: Navigate  {bullet}  e: Edit  {bullet}  d: Delete  {bullet}  t: Tags  {bullet}  p: Project  {bullet}  /: Search  {bullet}  q: Quit"
             )
         else:
             self.query_one("#logs-status-bar", Label).update(
-                f"Showing {count} recent entries | "
-                "j/k: Navigate | e: Edit | d: Delete | t: Tags | p: Project | /: Search | q: Quit"
+                f"Showing {count} recent entries  {bullet}  "
+                f"j/k: Navigate  {bullet}  e: Edit  {bullet}  d: Delete  {bullet}  t: Tags  {bullet}  p: Project  {bullet}  /: Search  {bullet}  q: Quit"
             )
 
     def _get_selected_entry(self) -> Entry | None:
