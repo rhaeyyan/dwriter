@@ -19,7 +19,7 @@ class StreakCalendar(Static):
     DEFAULT_CSS = """
     StreakCalendar {
         border: solid #45475a;
-        border-title-color: #89b4fa;
+        border-title-color: $primary;
         background: $panel;
         padding: 0 2;
         margin: 0 0 0 1;
@@ -185,7 +185,7 @@ class ActivitySparkline(Static):
     DEFAULT_CSS = """
     ActivitySparkline {
         border: solid #45475a;
-        border-title-color: #89b4fa;
+        border-title-color: $primary;
         background: $panel;
         padding: 0 2;
         margin: 0 0 0 1;
@@ -254,14 +254,14 @@ class ActivitySparkline(Static):
                     tag_padding = max(0, (tag_spacing - len(tag_display)) // 2)
                     tags_line += (
                         " " * tag_padding
-                        + f"[{TAG}]#{tag}[/{TAG}][#89dceb]({count})[/#89dceb]"
+                        + f"[{TAG}]#{tag}[/{TAG}][#00e5ff]({count})[/#00e5ff]"
                     )
                 else:
                     # Subsequent tags: fixed spacing from previous
                     spacing = max(1, tag_spacing - len(tag_display))
                     tags_line += (
                         " " * spacing
-                        + f"[{TAG}]#{tag}[/{TAG}][#89dceb]({count})[/#89dceb]"
+                        + f"[{TAG}]#{tag}[/{TAG}][#00e5ff]({count})[/#00e5ff]"
                     )
             content.append(f"{tags_line}\n\n")
 
@@ -334,7 +334,7 @@ class ContextSwitchCard(Static):
 class ContextFrictionCard(Static):
     """Combined Context Switches and Friction Ratio card."""
 
-    DEFAULT_CSS = "ContextFrictionCard { border: solid #45475a; border-title-color: #89b4fa; background: $panel; padding: 0 2; height: auto; }"
+    DEFAULT_CSS = "ContextFrictionCard { border: solid #45475a; border-title-color: $primary; background: $panel; padding: 0 2; height: auto; }"
 
     def __init__(self, ctx: AppContext, **kwargs: Any) -> None:
         super().__init__(**kwargs)
@@ -431,7 +431,7 @@ class ContextFrictionCard(Static):
                 status_pad_left = max(1, (20 - status_len) // 2)
                 
                 content.append(
-                    f"[dim]{safe_proj:<10}[/dim] [#89dceb][bold]{ratio:>4.1f}[/bold][/#89dceb]{' ' * status_pad_left}[{status_color}]{status_label}[/{status_color}]\n"
+                    f"[dim]{safe_proj:<10}[/dim] [#00e5ff][bold]{ratio:>4.1f}[/bold][/#00e5ff]{' ' * status_pad_left}[{status_color}]{status_label}[/{status_color}]\n"
                 )
                 content.append(f"{self._draw_bar(ratio, max_ratio, 15)}\n")
         self.update("".join(content))
@@ -440,7 +440,7 @@ class ContextFrictionCard(Static):
 class TodoHealthCard(Static):
     """Combined To-do Health and Workload card."""
 
-    DEFAULT_CSS = "TodoHealthCard { border: solid #45475a; border-title-color: #89b4fa; background: $panel; padding: 0 2; height: auto; }"
+    DEFAULT_CSS = "TodoHealthCard { border: solid #45475a; border-title-color: $primary; background: $panel; padding: 0 2; height: auto; }"
 
     def __init__(self, ctx: AppContext, **kwargs: Any) -> None:
         super().__init__(**kwargs)
@@ -500,7 +500,7 @@ class TodoHealthCard(Static):
 
         # Colors for stats
         label_color = "#8c92a6"  # gray for labels (matches To-Do Health dim)
-        value_color = "#89dceb"  # teal for numbers
+        value_color = "#00e5ff"  # teal for numbers
 
         icon_workload = get_icon("workload", use_emojis)
         content = ["\n"]

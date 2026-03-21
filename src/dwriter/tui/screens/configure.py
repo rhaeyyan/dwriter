@@ -203,9 +203,9 @@ class ConfigureScreen(Container):
         # ── Footer ──────────────────────────────────────────────────
         with Container(id="configure-footer"):
             with Horizontal(id="configure-buttons"):
-                yield Button("Save Changes", id="save-config-btn", variant="success")
-                yield Button("Reset to Defaults", id="reset-config-btn", variant="default")
-                yield Button("Close App", id="close-app-btn", variant="error")
+                yield Button("\\[ SAVE CHANGES \\]", id="save-config-btn", variant="success")
+                yield Button("\\[ RESET TO DEFAULTS \\]", id="reset-config-btn", variant="default")
+                yield Button("\\[ CLOSE APP \\]", id="close-app-btn", variant="error")
             yield Label(
                 "Some settings marked 'Requires restart' need a full app restart to take effect.",
                 classes="restart-note",

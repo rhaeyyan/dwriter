@@ -39,11 +39,11 @@ class ExportFormatScreen(ModalScreen[str]):
         use_emojis = self.app.ctx.config.display.use_emojis
         with Container(id="export-container"):
             yield Label(f"{get_icon('export', use_emojis)} Export As", id="export-title")
-            yield Button(f"{get_icon('markdown', use_emojis)} Markdown", id="export-markdown", variant="primary")
-            yield Button(f"{get_icon('note', use_emojis)} Plain Text", id="export-plain", variant="default")
-            yield Button(f"{get_icon('csv', use_emojis)} CSV", id="export-csv", variant="default")
-            yield Button(f"{get_icon('json', use_emojis)} JSON", id="export-json", variant="default")
-            yield Button("Cancel", id="export-cancel", variant="default")
+            yield Button(f"\\[ {get_icon('markdown', use_emojis)} MARKDOWN \\]", id="export-markdown", variant="primary")
+            yield Button(f"\\[ {get_icon('note', use_emojis)} PLAIN \\]", id="export-plain", variant="default")
+            yield Button(f"\\[ {get_icon('csv', use_emojis)} CSV \\]", id="export-csv", variant="default")
+            yield Button(f"\\[ {get_icon('json', use_emojis)} JSON \\]", id="export-json", variant="default")
+            yield Button("\\[ CANCEL \\]", id="export-cancel", variant="default")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "export-markdown":
@@ -80,8 +80,8 @@ class RangeSelectionScreen(ModalScreen[tuple[datetime, datetime] | None]):
                 yield Label(" To ", id="range-label")
                 yield Input(placeholder="YYYY-MM-DD", id="range-end")
             with Horizontal(id="range-footer"):
-                yield Button("Cancel", id="btn-cancel", variant="default")
-                yield Button("Enter", id="btn-enter", variant="primary")
+                yield Button("[ CANCEL ]", id="btn-cancel", variant="default")
+                yield Button("[ ENTER ]", id="btn-enter", variant="primary")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "btn-cancel":
@@ -120,7 +120,7 @@ class StandupScreen(ModalScreen[None]):
 
     .spacer { width: 1fr; }
 
-    #btn-prev-day, #btn-next-day { min-width: 3; }
+    #btn-prev-day, #btn-next-day { height: 1; min-width: 7; }
     #daily-format { width: 25; }
     #weekly-period { width: 25; }
     #weekly-format { width: 20; }
@@ -154,7 +154,7 @@ class StandupScreen(ModalScreen[None]):
             with Horizontal(id="unified-header"):
                 yield Label(f"{get_icon('todo', use_emojis)} Standup & Review", classes="header-title")
                 yield Static(classes="spacer")
-                yield Button("Back (Esc)", id="btn-back", variant="default")
+                yield Button("[ BACK (ESC) ]", id="btn-back", variant="default")
 
             with TabbedContent(id="tabs"):
                 with TabPane(f"{get_icon('history', use_emojis)} Daily Standup", id="daily-tab"):
@@ -221,9 +221,9 @@ class StandupScreen(ModalScreen[None]):
                     )
 
             with Horizontal(id="unified-footer"):
-                yield Button(f"{get_icon('check', use_emojis)} Todos (^T)", id="btn-todos")
-                yield Button(f"{get_icon('copy', use_emojis)} Copy", id="btn-copy", variant="success")
-                yield Button(f"{get_icon('export', use_emojis)} Export", id="btn-save", variant="primary")
+                yield Button(f"\\[ {get_icon('check', use_emojis)} TODOS (^T) \\]", id="btn-todos")
+                yield Button(f"\\[ {get_icon('copy', use_emojis)} COPY \\]", id="btn-copy", variant="success")
+                yield Button(f"\\[ {get_icon('export', use_emojis)} EXPORT \\]", id="btn-save", variant="primary")
 
     async def on_mount(self) -> None:
         """Initialize standup screen."""
@@ -262,7 +262,7 @@ class StandupScreen(ModalScreen[None]):
         if event.pane.id == "daily-tab":
             todos_btn.display = "block"
             todos_btn.label = (
-                "Hide To-Do's" if self.daily_include_todos else "Show To-Do's"
+                "\\[ HIDE TODOS \\]" if self.daily_include_todos else "\\[ SHOW TODOS \\]"
             )
         else:
             todos_btn.display = "none"
@@ -318,7 +318,7 @@ class StandupScreen(ModalScreen[None]):
             self._generate_daily_report()
             todos_btn = self.query_one("#btn-todos", Button)
             todos_btn.label = (
-                "Hide To-Do's" if self.daily_include_todos else "Show To-Do's"
+                "\\[ HIDE TODOS \\]" if self.daily_include_todos else "\\[ SHOW TODOS \\]"
             )
             self.notify(
                 f"Todos {'included' if self.daily_include_todos else 'excluded'}."
