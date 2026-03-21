@@ -112,34 +112,28 @@ class DWriterApp(App[None]):
         margin-left: 0;
     }
 
-    /* Horizontal Navigation Tabs - btop underline style */
+    /* Horizontal Navigation Tabs - bracket style */
     Tabs {
-        height: 3;
-        margin: 0 1;
         background: transparent;
         border: none;
     }
 
-    Tabs:focus .underline--bar {
-        color: $primary;
-    }
-
     Tab {
         background: transparent;
-        color: $text-muted;
+        color: $primary;
         margin: 0 1 0 0;
         padding: 0 2;
     }
 
     Tab:hover {
-        background: transparent;
+        background: $surface;
         color: $foreground;
         text-style: bold;
     }
 
     Tab.-active {
-        background: transparent;
-        color: $primary;
+        background: $primary;
+        color: $background;
         text-style: bold;
     }
 
@@ -314,6 +308,19 @@ class DWriterApp(App[None]):
     Screen.ergonomic-mode ListItem {
         padding: 1 0;
     }
+
+    /* Buttons */
+    Button {
+        border: none;
+        height: 3;
+        min-width: 10;
+        padding: 0 1;
+    }
+    Button.-success { background: $success; color: $background; text-style: bold; }
+    Button.-warning { background: $warning; color: $background; text-style: bold; }
+    Button.-error { background: $error; color: $background; text-style: bold; }
+    Button.-primary { background: $primary; color: $background; text-style: bold; }
+    Button.-default { background: $panel-light; color: $foreground; text-style: bold; }
     """
 
     BINDINGS = [
@@ -357,13 +364,12 @@ class DWriterApp(App[None]):
         )
 
         # Horizontal Navigation Tabs
-        use_emojis = self.ctx.config.display.use_emojis
         yield Tabs(
-            Tab(f"{get_icon('dashboard', use_emojis)} Dashboard", id="dashboard"),
-            Tab(f"{get_icon('logs', use_emojis)} Logs", id="logs"),
-            Tab(f"{get_icon('todo', use_emojis)} To-Do", id="todo"),
-            Tab(f"{get_icon('timer', use_emojis)} Timer", id="timer"),
-            Tab(f"{get_icon('configure', use_emojis)} Configure", id="configure"),
+            Tab("\\[ DASH \\]", id="dashboard"),
+            Tab("\\[ LOGS \\]", id="logs"),
+            Tab("\\[ TO-DO \\]", id="todo"),
+            Tab("\\[ TIMER \\]", id="timer"),
+            Tab("\\[ CONFIGURE \\]", id="configure"),
             id="navigation-tabs",
         )
 

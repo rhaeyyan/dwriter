@@ -25,10 +25,10 @@ DUE_LATER = "dim cyan"  # More than 30 days
 DUE_NONE = "dim"  # No due date
 
 # Tag colors
-TAG = "bold yellow"
+TAG = "bold #e5ff00"  # Neon yellow
 
 # Project colors
-PROJECT = "#ff00ff"  # Magenta/fuchsia
+PROJECT = "bold #ff00ff"  # Magenta/fuchsia
 
 # Priority colors
 PRIORITY_URGENT = "red"
@@ -37,7 +37,7 @@ PRIORITY_NORMAL = "white"
 PRIORITY_LOW = "dim"
 
 # Content colors
-CONTENT_ACTIVE = "#00ff00"  # Bright green for active items
+CONTENT_ACTIVE = "#00e5ff"  # Bright cyan for active items
 CONTENT_COMPLETED = "dim"  # Dimmed for completed items
 
 # Status colors
@@ -47,28 +47,28 @@ STATUS_FINISHED = "accent"
 
 # Border colors (btop-style: muted borders, bright data)
 BORDER_MUTED = "#45475a"  # Dim border for panels at rest
-BORDER_ACTIVE = "#cba6f7"  # Accent border for focused panels
-PANEL_HEADER = "#89b4fa"  # Section header color inside panels
+BORDER_ACTIVE = "#00e5ff"  # Accent border for focused panels
+PANEL_HEADER = "#00e5ff"  # Section header color inside panels
 
 # Block bar gradient (8-step smooth for ▏▎▍▌▋▊▉█ bars)
 BLOCK_GRADIENT = [
-    "#a6e3a1",  # Green
-    "#94e2c4",  # Teal-green
-    "#89dceb",  # Cyan
-    "#89b4fa",  # Blue
-    "#b4befe",  # Lavender
-    "#f9e2af",  # Yellow
-    "#fab387",  # Peach/Orange
-    "#f38ba8",  # Red/Pink
+    "#00e5ff",  # Cyan
+    "#00ffcc",  # Teal-cyan
+    "#39ff14",  # Neon green
+    "#ccff00",  # Neon green-yellow
+    "#e5ff00",  # Neon yellow
+    "#ffea00",  # Bright yellow
+    "#ff7b00",  # Neon orange
+    "#ff003c",  # Neon red
 ]
 
 # Progress bar gradient (green → yellow → orange → red)
 PROGRESS_COLORS = [
-    "#a6e3a1",  # Green (0-25%)
-    "#94e2c4",  # Teal (25-40%)
-    "#f9e2af",  # Yellow (40-60%)
-    "#fab387",  # Peach (60-75%)
-    "#f38ba8",  # Red (75-100%)
+    "#00e5ff",  # Cyan (0-25%)
+    "#ccff00",  # Neon green-yellow (25-40%)
+    "#ffea00",  # Yellow (40-60%)
+    "#ff7b00",  # Orange (60-75%)
+    "#ff003c",  # Red (75-100%)
 ]
 
 # UI element colors

@@ -132,8 +132,8 @@ class SessionCompleteModal(ModalScreen):  # type: ignore[type-arg]
                 )
 
             with Horizontal(id="edit-buttons"):
-                yield Button("Log Entry", id="save-btn", variant="success")
-                yield Button("Skip", id="cancel-btn", variant="default")
+                yield Button("[ LOG ENTRY ]", id="save-btn", variant="success")
+                yield Button("[ SKIP ]", id="cancel-btn", variant="default")
 
     def on_mount(self) -> None:
         """Focus the input on mount."""
@@ -211,15 +211,15 @@ class TimerProgressBar(Static):
             Hex color string (green → yellow → orange → red).
         """
         if position < 0.25:
-            return "#00ff00"  # Green
+            return "#00e5ff"  # Cyan
         elif position < 0.5:
-            return "#7fff00"  # Green-yellow
+            return "#ccff00"  # Neon green-yellow
         elif position < 0.75:
-            return "#ffff00"  # Yellow
+            return "#ffea00"  # Yellow
         elif position < 0.85:
-            return "#ffa500"  # Orange
+            return "#ff7b00"  # Orange
         else:
-            return "#ff0000"  # Red
+            return "#ff003c"  # Red
 
     def _render_bar(self) -> None:
         """Render the progress bar with pip-style characters."""
@@ -242,7 +242,7 @@ class TimerProgressBar(Static):
         use_emojis = self.app.ctx.config.display.use_emojis
         fill_char = "▮" if use_emojis else "#"
         empty_char = "▯" if use_emojis else "."
-        bar = f"[bold cyan]{time_str}[/bold cyan]  [{color}]{fill_char * filled}[/][#313244]{empty_char * empty}[/]  [bold cyan]{percentage}%[/bold cyan]"
+        bar = f"[bold #00E5FF]{time_str}[/bold #00E5FF]  [{color}]{fill_char * filled}[/][#313244]{empty_char * empty}[/]  [bold #00E5FF]{percentage}%[/bold #00E5FF]"
         self.update(bar)
 
 
@@ -391,12 +391,17 @@ class TimerScreen(Container):
 
     .paused-button {
         background: $warning;
-        color: $foreground;
+        color: $background;
     }
 
     .running-button {
         background: $success;
-        color: $foreground;
+        color: $background;
+    }
+
+    .finished-button {
+        background: $primary;
+        color: $background;
     }
 
     .finished-button {
@@ -473,7 +478,7 @@ class TimerScreen(Container):
             # Control button (Start/Pause)
             with Horizontal(id="timer-controls"):
                 yield Button(
-                    f"{get_icon('pause', use_emojis)} Paused",
+                    "[ START / PAUSE ]",
                     id="timer-control-button",
                     variant="warning",
                 )
@@ -492,15 +497,15 @@ class TimerScreen(Container):
             with Vertical(id="timer-adjust-section"):
                 yield Label("Add/Remove Minutes:", classes="add-time-label")
                 with Horizontal(id="timer-adjust-buttons"):
-                    yield Button("+5", id="btn-plus-5", variant="success")
-                    yield Button("+1", id="btn-plus-1", variant="success")
-                    yield Button("-1", id="btn-minus-1", variant="error")
-                    yield Button("-5", id="btn-minus-5", variant="error")
+                    yield Button("\\[ +5 MIN \\]", id="btn-plus-5", variant="success")
+                    yield Button("\\[ +1 MIN \\]", id="btn-plus-1", variant="success")
+                    yield Button("\\[ -1 MIN \\]", id="btn-minus-1", variant="error")
+                    yield Button("\\[ -5 MIN \\]", id="btn-minus-5", variant="error")
 
             # Reset button - loads fresh durations from config
             with Horizontal(id="timer-clear-row"):
                 yield Button(
-                    f"{get_icon('clear', use_emojis)} Reset",
+                    "[ RESET_TIMER ]",
                     id="timer-clear-button",
                     variant="default",
                 )
@@ -601,19 +606,19 @@ class TimerScreen(Container):
 
             # Update control button
             if self.is_finished:
-                control_button.label = f"{get_icon('check', use_emojis)} Complete!"
-                control_button.variant = "success"
+                control_button.label = "\\[ DONE \\]"
+                control_button.variant = "primary"
                 control_button.remove_class("paused-button")
                 control_button.remove_class("running-button")
                 control_button.add_class("finished-button")
             elif self.is_running:
-                control_button.label = "▶ Running"
+                control_button.label = "\\[ PAUSE \\]"
                 control_button.variant = "success"
                 control_button.remove_class("paused-button")
                 control_button.remove_class("finished-button")
                 control_button.add_class("running-button")
             else:
-                control_button.label = f"{get_icon('pause', use_emojis)} Paused"
+                control_button.label = "\\[ START \\]"
                 control_button.variant = "warning"
                 control_button.remove_class("running-button")
                 control_button.remove_class("finished-button")

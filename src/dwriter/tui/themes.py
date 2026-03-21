@@ -6,19 +6,19 @@ defined using Textual's Theme object for seamless switching.
 
 from textual.theme import Theme
 
-# Cyberpunk theme - default (btop-inspired dark theme)
+# Cyberpunk theme - neo-cyan synth_term palette (default)
 CYBERPUNK = Theme(
     name="cyberpunk",
-    primary="#cba6f7",
-    secondary="#89b4fa",
-    success="#a6e3a1",
-    warning="#f9e2af",
-    error="#f38ba8",
-    accent="#cba6f7",
+    primary="#00E5FF",
+    secondary="#00E5FF",
+    success="#CCFF00",
+    warning="#FFD700",
+    error="#FF003C",
+    accent="#00E5FF",
     foreground="#ffffff",
     background="#0d0f18",
     surface="#1a1e29",
-    panel="#151822",
+    panel="#111111",
 )
 
 # Dark theme - softer, more muted colors

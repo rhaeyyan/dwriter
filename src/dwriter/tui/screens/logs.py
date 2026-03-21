@@ -191,7 +191,7 @@ class EditEntryModal(ModalScreen):  # type: ignore[type-arg]
             )
 
             with Container(id="edit-buttons"):
-                yield Button("Cancel", id="cancel-btn", variant="default")
+                yield Button("\\[ CANCEL \\]", id="cancel-btn", variant="default")
 
     def on_mount(self) -> None:
         """Focus the content input on mount."""
@@ -453,8 +453,8 @@ class DeleteConfirmModal(ModalScreen):  # type: ignore[type-arg]
                 id="delete-modal-content",
             )
             with Container(id="delete-buttons"):
-                yield Button("Delete", id="delete-btn", variant="error")
-                yield Button("Cancel", id="cancel-btn", variant="default")
+                yield Button("\\[ DELETE \\]", id="delete-btn", variant="error")
+                yield Button("\\[ CANCEL \\]", id="cancel-btn", variant="default")
 
     def action_confirm(self) -> None:
         """Confirm deletion."""
@@ -710,7 +710,7 @@ class LogsScreen(Container):
         with Vertical():
             with Container(id="search-container"):
                 with Horizontal():
-                    yield Button(f"{get_icon('standup', use_emojis)} Stand-Up", id="btn-standup", variant="primary")
+                    yield Button(f"[ {get_icon('standup', use_emojis)} STAND-UP ]", id="btn-standup", variant="primary")
                     yield Input(
                         placeholder="Search logs to edit/delete",
                         id="search-input",
@@ -718,7 +718,7 @@ class LogsScreen(Container):
             with Container(id="results-container"):
                 yield LogsResultsView(id="logs-results")
                 with Horizontal(id="load-more-container"):
-                    yield Button("Load More", id="btn-load-more", variant="default")
+                    yield Button("\\[ LOAD MORE \\]", id="btn-load-more", variant="default")
         yield Label(
             f"j/k: Navigate  {get_icon('bullet', use_emojis)}  Enter: Select  {get_icon('bullet', use_emojis)}  e: Edit  {get_icon('bullet', use_emojis)}  d: Delete  {get_icon('bullet', use_emojis)}  t: Tags  {get_icon('bullet', use_emojis)}  p: Project  {get_icon('bullet', use_emojis)}  q: Quit",
             id="logs-status-bar",
