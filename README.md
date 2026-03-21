@@ -26,6 +26,7 @@ Detailed documentation for advanced usage and development:
 
 ## 📋 Table of Contents
 
+- [🎯 Who is this for?](#-who-is-this-for)
 - [✨ Key Features](#-key-features)
 - [🚀 Quick Start (Installation)](#-quick-start-installation)
   - [🪟 Windows](#-windows)
@@ -33,6 +34,8 @@ Detailed documentation for advanced usage and development:
   - [🍎 macOS](#-macos)
   - [🔄 Staying Up to Date](#-staying-up-to-date)
 - [🎮 Launching dwriter](#-launching-dwriter)
+  - [✅ Your First Command](#-your-first-command)
+- [💡 How to Get the Most Out of dwriter](#-how-to-get-the-most-out-of-dwriter)
 - [🎨 Interactive TUI](#-interactive-tui)
   - [🔍 Interactive Search](#-interactive-search-dwriter-search)
   - [📋 Interactive Todo Board](#-interactive-todo-board-dwriter-todo)
@@ -164,16 +167,22 @@ The magic of `dwriter` is its hybrid design. To stay in your flow state, use the
 
 ### 2. Establish a Tagging Convention Early
 Because `dwriter` relies heavily on `#tags` and `&projects` to generate summaries, consistency is key. Pick a handful of standard tags and stick to them. 
-* **Good convention:** Use `&projects` for the *context* or *client* (e.g., `&acmecorp`, `&personal`, `&cs_101`) and `#tags` for the *action* (e.g., `#bugfix`, `#meeting`, `#reading`). 
-* This makes generating a timesheet or study log via `dwriter review -p acmecorp` incredibly accurate.
+* **Good convention:** Use `&projects` for the *context* or *client* (e.g., `&acmecorp`, `&personal`) and `#tags` for the *action* (e.g., `#bugfix`, `#meeting`, `#reading`). 
 
-### 3. Let the Timer Do the Logging
+### 3. Create Subcategories with Colons (`&project:subproject`)
+If you have a large project with multiple moving parts, you don't need to invent entirely new project names. You can create clean subcategories by using a colon in your project tag!
+* **For Freelancers:** `&client_acme:website` vs. `&client_acme:marketing`
+* **For Students:** `&cs_101:homework` vs. `&cs_101:labs`
+* **For Makers:** `&desk_build:woodworking` vs. `&desk_build:finishing`
+This syntax keeps your root projects organized while giving you granular control over what you are tracking. 
+
+### 4. Let the Timer Do the Logging
 If you are sitting down for a focused session, don't just use `dwriter add` afterward. Use `dwriter timer 25 -p my_project`. Not only do you get a visual Pomodoro countdown to keep you accountable, but the TUI will automatically prompt you to log what you accomplished the second the timer finishes. It combines focus tracking and journaling into one step.
 
-### 4. Leverage Natural Language Time-Traveling
+### 5. Leverage Natural Language Time-Traveling
 Don't stress if you forget to log a massive debugging session on a Friday afternoon. `dwriter` understands natural language. On Monday morning, just run `dwriter add "Fixed the memory leak" --date "last Friday"`. This keeps your timeline pristine for your weekly reviews and contribution calendar.
 
-### 5. Alias it for Ultimate Speed
+### 6. Alias it for Ultimate Speed
 If you are typing out `dwriter` 20 times a day, save your keystrokes! Add a simple alias to your `.bashrc` or `.zshrc` file:
 ```bash
 alias dw="dwriter"
