@@ -39,7 +39,7 @@ class ConfigureScreen(Container):
 
     .section {
         height: auto;
-        width: 100%;
+        width: 1fr;
         margin-bottom: 1;
         padding: 0 1;
         border: solid $border-blurred;
@@ -52,7 +52,7 @@ class ConfigureScreen(Container):
         margin-bottom: 0;
         padding-bottom: 0;
         border-bottom: solid $primary;
-        width: 100%;
+        width: 1fr;
     }
 
     .row {

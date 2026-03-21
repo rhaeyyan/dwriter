@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import click
+from typing import TYPE_CHECKING
 
-from ..cli import AppContext
+if TYPE_CHECKING:
+    from ..cli import AppContext
 
 
 @click.command()
@@ -26,8 +28,5 @@ def mcp(ctx: AppContext) -> None:
     # MCP servers communicate over stdout. Status messages MUST go to stderr.
     import sys
     ctx.console.file = sys.stderr
-    
-    ctx.console.print("[bold blue]🚀 Launching dwriter MCP server...[/bold blue]")
-    ctx.console.print("[dim]Note: This process uses STDIO and should be managed by an MCP client.[/dim]")
     
     mcp_main()

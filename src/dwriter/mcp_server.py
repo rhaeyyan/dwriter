@@ -7,6 +7,7 @@ preserving all business logic and sorting rules natively.
 from __future__ import annotations
 
 import asyncio
+import logging
 from datetime import datetime, timedelta
 
 from mcp.server.fastmcp import FastMCP
@@ -19,6 +20,10 @@ from .stats_utils import calculate_streak
 # Initialization
 # ──────────────────────────────────────────────────────────────────────────────
 
+# Suppress FastMCP's default logging to avoid polluting stderr with ANSI/RPC logs
+# which causes strictly-parsed MCP clients (like LM Studio) to disconnect.
+logging.getLogger("mcp").setLevel(logging.CRITICAL)
+
 mcp = FastMCP("dwriter")
 db = Database()
 
@@ -30,8 +35,8 @@ db = Database()
 @mcp.tool()
 async def add_journal_entry(
     content: str,
-    project: str | None = None,
-    tags: list[str] | None = None,
+    project: str = "",
+    tags: str = "",
 ) -> str:
     """Log a new journal entry.
 
@@ -42,11 +47,14 @@ async def add_journal_entry(
         project: Optional project name for categorization.
         tags: Optional list of tags for labeling.
     """
+    tag_list = [t.strip() for t in tags.split(",")] if tags else None
+    proj_val = project if project else None
+
     entry = await asyncio.to_thread(
         db.add_entry,
         content=content,
-        project=project,
-        tags=tags,
+        project=proj_val,
+        tags=tag_list,
         created_at=datetime.now()
     )
     return f"Successfully logged entry #{entry.id}: {entry.content}"
@@ -55,8 +63,8 @@ async def add_journal_entry(
 @mcp.tool()
 async def get_journal_entries(
     days_back: int = 7,
-    project: str | None = None,
-    tags: list[str] | None = None,
+    project: str = "",
+    tags: str = "",
 ) -> str:
     """Retrieve journal entries, optionally filtered by project, tags, or time.
 
@@ -67,7 +75,9 @@ async def get_journal_entries(
         project: Filter by project name (e.g., "backend", "client-x").
         tags: Filter by tag names.
     """
-    entries = await asyncio.to_thread(db.get_all_entries, project=project, tags=tags)
+    tag_list = [t.strip() for t in tags.split(",")] if tags else None
+    proj_val = project if project else None
+    entries = await asyncio.to_thread(db.get_all_entries, project=proj_val, tags=tag_list)
 
     start_date = datetime.now() - timedelta(days=days_back)
     start_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -128,8 +138,8 @@ async def get_standup_report(with_todos: bool = True) -> str:
 @mcp.tool()
 async def get_todos(
     status: str = "pending",
-    project: str | None = None,
-    tags: list[str] | None = None,
+    project: str = "",
+    tags: str = "",
 ) -> str:
     """Retrieve tasks from the to-do list.
 
@@ -143,10 +153,13 @@ async def get_todos(
     """
     tasks = await asyncio.to_thread(db.get_todos, status=status)
 
-    if project:
-        tasks = [t for t in tasks if t.project == project]
-    if tags:
-        tasks = [t for t in tasks if any(tag in t.tag_names for tag in tags)]
+    tag_list = [t.strip() for t in tags.split(",")] if tags else []
+    proj_val = project if project else None
+
+    if proj_val:
+        tasks = [t for t in tasks if t.project == proj_val]
+    if tag_list:
+        tasks = [t for t in tasks if any(tag in t.tag_names for tag in tag_list)]
 
     if not tasks:
         return f"No {status} tasks found matching the criteria."
@@ -205,11 +218,11 @@ async def add_todo(
 @mcp.tool()
 async def update_todo(
     task_id: int,
-    content: str | None = None,
-    priority: str | None = None,
-    project: str | None = None,
-    tags: list[str] | None = None,
-    due_date: str | None = None,
+    content: str = "",
+    priority: str = "",
+    project: str = "",
+    tags: str = "",
+    due_date: str = "",
 ) -> str:
     """Update an existing task's properties.
 
@@ -220,7 +233,7 @@ async def update_todo(
         content: New task description (optional).
         priority: New priority level (optional).
         project: New project name (optional).
-        tags: New list of tags (optional, replaces existing).
+        tags: New comma-separated list of tags (optional, replaces existing).
         due_date: New due date in YYYY-MM-DD format (optional).
     """
     try:
@@ -229,7 +242,7 @@ async def update_todo(
         return f"Error: {e}"
 
     parsed_date = None
-    if due_date is not None:
+    if due_date:
         try:
             parsed_date = datetime.fromisoformat(due_date)
         except ValueError:
@@ -238,13 +251,18 @@ async def update_todo(
                 "Please use YYYY-MM-DD."
             )
 
+    tag_list = [t.strip() for t in tags.split(",")] if tags else None
+    content_val = content if content else None
+    priority_val = priority if priority else None
+    proj_val = project if project else None
+
     task = await asyncio.to_thread(
         db.update_todo,
         todo_id=task_id,
-        content=content,
-        priority=priority,
-        project=project,
-        tags=tags,
+        content=content_val,
+        priority=priority_val,
+        project=proj_val,
+        tags=tag_list,
         due_date=parsed_date
     )
     return f"Successfully updated task #{task.id}."
