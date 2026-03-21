@@ -17,6 +17,8 @@ def test_default_config():
     assert config.display.show_confirmation is True
     assert config.display.show_id is True
     assert config.display.colors is True
+    assert config.display.lock_mode is False
+    assert config.display.color_scheme == "normal"
     assert config.defaults.tags == []
     assert config.defaults.project is None
 
@@ -43,6 +45,8 @@ def test_config_manager_save_and_load(temp_path):
     config.review.default_days = 7
     config.defaults.tags = ["work", "dev"]
     config.defaults.project = "myapp"
+    config.display.lock_mode = True
+    config.display.color_scheme = "deuteranopia"
     manager.save(config)
 
     # Load again
@@ -53,6 +57,8 @@ def test_config_manager_save_and_load(temp_path):
     assert loaded.review.default_days == 7
     assert loaded.defaults.tags == ["work", "dev"]
     assert loaded.defaults.project == "myapp"
+    assert loaded.display.lock_mode is True
+    assert loaded.display.color_scheme == "deuteranopia"
 
 
 def test_config_manager_reset(temp_path):

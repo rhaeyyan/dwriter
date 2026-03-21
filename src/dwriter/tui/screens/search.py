@@ -17,6 +17,11 @@ from ...cli import AppContext
 from ...database import Entry, Todo
 from ...search_utils import search_items
 from ..colors import (
+    DUE_LATER,
+    DUE_OVERDUE,
+    DUE_SOON,
+    DUE_TODAY,
+    DUE_TOMORROW,
     PROJECT,
     TAG,
     get_icon,
@@ -94,7 +99,7 @@ class EntryResultsView(ListView):
         if entry.tag_names:
             tags_str = f" [{TAG}]#{' #'.join(entry.tag_names)}[/{TAG}]"
         project_str = (
-            f" [{PROJECT}]: {entry.project}[/{PROJECT}]" if entry.project else ""
+            f" [{PROJECT}]&{entry.project}[/{PROJECT}]" if entry.project else ""
         )
 
         # Hide ID, uniform format (no magenta ID)
@@ -143,17 +148,17 @@ class EntryResultsView(ListView):
             due_only = todo.due_date.replace(hour=0, minute=0, second=0, microsecond=0)
             days = (due_only - today).days
             if days < 0:
-                d_str = "[red]\\[OVD][/red]"
+                d_str = f"[{DUE_OVERDUE}]\\[OVD\\][/{DUE_OVERDUE}]"
             elif days == 0:
-                d_str = "[bold yellow]\\[TDY][/bold yellow]"
+                d_str = f"[{DUE_TODAY}]\\[TDY\\][/{DUE_TODAY}]"
             elif days == 1:
-                d_str = "[yellow]\\[TMR][/yellow]"
+                d_str = f"[{DUE_TOMORROW}]\\[TMR\\][/{DUE_TOMORROW}]"
             elif days <= 9:
-                d_str = f"[cyan]\\[{days}d][/cyan]"
+                d_str = f"[{DUE_SOON}]\\[{days}d\\][/{DUE_SOON}]"
             elif days <= 99:
-                d_str = f"[cyan]\\[{days}d][/cyan]"
+                d_str = f"[{DUE_SOON}]\\[{days}d\\][/{DUE_SOON}]"
             else:
-                d_str = "[cyan]\\[99+][/cyan]"
+                d_str = f"[{DUE_SOON}]\\[99+\\][/{DUE_SOON}]"
 
         # ESCAPE USER CONTENT! This stops user-typed brackets from crashing the app.
         safe_content = todo.content.replace("[", "\\[")
@@ -161,10 +166,10 @@ class EntryResultsView(ListView):
 
         # Format tags and project on first line
         tags_str = (
-            f"[yellow]#{' #'.join(todo.tag_names)}[/yellow]" if todo.tag_names else ""
+            f"[{TAG}]#{' #'.join(todo.tag_names)}[/{TAG}]" if todo.tag_names else ""
         )
         project_str = (
-            f"[cyan] : [/cyan][magenta]{safe_project}[/magenta]" if safe_project else ""
+            f" [magenta]&{safe_project}[/magenta]" if safe_project else ""
         )
 
         score_str = f"[{score_color}]({int(score)}%)[/{score_color}]"
@@ -256,7 +261,7 @@ class SearchScreen(Container):
         dock: bottom;
         height: 1;
         background: $panel;
-        color: $text-muted;
+        color: $foreground 60%;
         padding: 0 2;
     }
     """

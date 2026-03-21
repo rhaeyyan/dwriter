@@ -17,15 +17,15 @@ from __future__ import annotations
 from rich.text import Text
 
 # Due date colors
-DUE_TODAY = "bold yellow"
-DUE_TOMORROW = "yellow"
+DUE_TODAY = "bold #fab387"
+DUE_TOMORROW = "#fab387"
 DUE_OVERDUE = "red"
 DUE_SOON = "cyan"  # Within 30 days
 DUE_LATER = "dim cyan"  # More than 30 days
 DUE_NONE = "dim"  # No due date
 
 # Tag colors
-TAG = "yellow"
+TAG = "bold yellow"
 
 # Project colors
 PROJECT = "#ff00ff"  # Magenta/fuchsia
@@ -125,6 +125,7 @@ _ICONS = {
     "tag": ("🏷️", "#"),
     "folder": ("📁", "/"),
     "note": ("📝", "N"),
+    "configure": ("⚙️", "C"),
 }
 
 

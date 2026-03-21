@@ -70,12 +70,19 @@ def add(
 
       dwriter add "Completed sprint" --date "3 days ago"
     """
-    # Merge default tags with provided tags
-    all_tags = list(ctx.config.defaults.tags) + list(tags)
+    # Extract tags/project from content if present
+    from ..tui.parsers import parse_quick_add
+    parsed = parse_quick_add(content)
+    
+    # Merge default tags, content-extracted tags, and explicitly provided tags
+    all_tags = list(ctx.config.defaults.tags) + list(parsed.tags) + list(tags)
 
-    # Use default project if none provided
-    if project is None and ctx.config.defaults.project:
-        project = ctx.config.defaults.project
+    # Use explicitly provided project, then content-extracted project, then default
+    if project is None:
+        project = parsed.project or ctx.config.defaults.project
+
+    # Use the cleaned content (tags/project removed)
+    content = parsed.content
 
     # Parse the date (or use current time if not provided)
     entry_date = parse_date_or_default(date_str)

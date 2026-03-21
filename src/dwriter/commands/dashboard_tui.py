@@ -31,6 +31,7 @@ from textual.widgets import (
 )
 
 from ..database import Entry
+from ..tui.colors import TAG
 
 
 class KPICard(Static):
@@ -457,13 +458,14 @@ class ActivitySparkline(Static):
             # Header
             content.append("\n[purple]Projects:[/purple] ")
             content.append(" " * 6)
-            content.append("[yellow]Tags:[/yellow]\n")
+            content.append(f"[{TAG}]Tags:[/{TAG}]\n")
 
             # Data rows (compact)
             for i in range(max_rows):
                 if i < len(top_projects):
                     proj, cnt = top_projects[i]
-                    content.append(f"  {proj[:12]:<12}{cnt:>3}")
+                    proj_display = f"&{proj[:11]}"
+                    content.append(f"  {proj_display:<12}{cnt:>3}")
                 else:
                     content.append(" " * 16)
                 content.append("  ")
@@ -776,7 +778,7 @@ class DashboardApp(App):  # type: ignore[type-arg]
             for project, count in sorted(
                 self.project_stats.items(), key=lambda x: x[1], reverse=True
             )[:15]:
-                projects_table.add_row(project, f"     {count}")
+                projects_table.add_row(f"&{project}", f"     {count}")
 
             # Tags table
             tags_table = self.query_one("#tags-table", DataTable)

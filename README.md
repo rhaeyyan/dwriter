@@ -20,8 +20,10 @@ If you want a minimalist, beautiful productivity suite that gets out of your way
 
 Detailed documentation for advanced usage and development:
 
+- 📖 **[Creative Use Cases](USE_CASES.md)**: 16 creative ways to use dwriter beyond standard task management.
 - 🛠️ **[Command Reference](HEADLESS-README.md)**: Full CLI command reference (Logging, Standups, Todos, Timer, Search, etc.)
 - ⚙️ **[Configuration & Development Guide](DEV-and-CONFIG.md)**: Detailed settings, developer setup, and project info.
+
 ## 📋 Table of Contents
 
 - [✨ Key Features](#-key-features)
@@ -47,7 +49,7 @@ Detailed documentation for advanced usage and development:
 * **⚡ Ultra-Fast Logging:** Capture tasks in seconds without leaving your terminal.
 * **🤖 Standup Automation:** Instantly format yesterday's work for Slack, Jira, or Markdown.
 * **📅 Weekly Reviews:** Generate organized summaries for sprint retrospectives or timesheets.
-* **🏷️ Smart Organization:** Categorize entries with #tags and [projects].
+* **🏷️ Smart Organization:** Categorize entries with #tags and &projects.
 * **🔥 Streak Tracking:** Keep your momentum high with a built-in logging streak counter.
 * **🔍 Fuzzy Search:** Find past entries and tasks with typo-tolerant fuzzy matching.
 * **🎨 Interactive TUI:** Real-time search and todo management with keyboard navigation.

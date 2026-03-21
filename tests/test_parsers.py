@@ -20,14 +20,14 @@ def test_parse_with_tags() -> None:
 
 def test_parse_with_project() -> None:
     """Test parsing entry with project."""
-    result = parse_quick_add("Deployed to prod [backend-api]")
+    result = parse_quick_add("Deployed to prod &backend-api")
     assert result.content == "Deployed to prod"
     assert result.project == "backend-api"
 
 
 def test_parse_mixed() -> None:
     """Test parsing entry with mixed tags and project."""
-    result = parse_quick_add("Fixed auth #security [core-engine] #bug")
+    result = parse_quick_add("Fixed auth #security &core-engine #bug")
     assert result.content == "Fixed auth"
     assert set(result.tags) == {"security", "bug"}
     assert result.project == "core-engine"
@@ -43,7 +43,7 @@ def test_parse_empty() -> None:
 
 def test_parse_multiple_projects() -> None:
     """Test that only first project is captured."""
-    result = parse_quick_add("Task [project-a] with [project-b]")
+    result = parse_quick_add("Task &project-a with &project-b")
     assert result.content == "Task with"
     assert result.project == "project-a"
     assert len(result.tags) == 0
@@ -58,14 +58,14 @@ def test_parse_tag_with_hyphen() -> None:
 
 def test_parse_project_with_hyphen() -> None:
     """Test parsing projects containing hyphens."""
-    result = parse_quick_add("Update docs [my-project]")
+    result = parse_quick_add("Update docs &my-project")
     assert result.content == "Update docs"
     assert result.project == "my-project"
 
 
 def test_parse_preserves_content_order() -> None:
     """Test that content order is preserved when tags/projects are removed."""
-    result = parse_quick_add("Started #work on [project] the #feature")
+    result = parse_quick_add("Started #work on &project the #feature")
     assert result.content == "Started on the"
     assert result.tags == ["work", "feature"]
     assert result.project == "project"

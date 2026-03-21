@@ -339,8 +339,8 @@ dwriter todo edit <ID>
 | Display | Meaning | Color |
 |---------|---------|-------|
 | `OVERDUE` | Past due | Red (appears FIRST!) |
-| `TODAY` | Due today | Bold Yellow |
-| `TOMORROW` | Due tomorrow | Yellow |
+| `TODAY` | Due today | Bold Orange |
+| `TOMORROW` | Due tomorrow | Orange |
 | `13d` | 13 days until due | Cyan |
 | `2m` | 2 months until due | Dim Cyan |
 | `–` | No due date set | Dim |

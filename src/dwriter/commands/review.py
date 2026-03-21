@@ -9,6 +9,7 @@ import click
 
 from ..cli import AppContext
 from ..database import Entry
+from ..tui.colors import TAG
 
 
 def format_review_markdown(entries_by_date: Any) -> str:
@@ -25,7 +26,7 @@ def format_review_markdown(entries_by_date: Any) -> str:
             if entry.tag_names:
                 line += f" ({', '.join(f'#{t}' for t in entry.tag_names)})"
             if entry.project:
-                line += f" [purple][{entry.project}][/purple]"
+                line += f" [purple]&{entry.project}[/purple]"
             lines.append(line)
         lines.append("")
     return "\n".join(lines)
@@ -43,9 +44,9 @@ def format_review_plain(entries_by_date: Any) -> str:
             date_fmt = date_key.strftime("%Y-%m-%d")
             line = f"  {date_fmt} | [#23c76b]{time_str}[/#23c76b]: {entry.content}"
             if entry.tag_names:
-                line += f" ({', '.join(f'#{t}' for t in entry.tag_names)})"
+                line += f" ({', '.join(f'[{TAG}]#{t}[/{TAG}]' for t in entry.tag_names)})"
             if entry.project:
-                line += f" [purple][{entry.project}][/purple]"
+                line += f" [purple]&{entry.project}[/purple]"
             lines.append(line)
         lines.append("")
     return "\n".join(lines)
@@ -64,7 +65,7 @@ def format_review_slack(entries_by_date: Any) -> str:
             if entry.tag_names:
                 line += f" ({', '.join(f'#{t}' for t in entry.tag_names)})"
             if entry.project:
-                line += f" [purple][{entry.project}][/purple]"
+                line += f" [purple]&{entry.project}[/purple]"
             lines.append(line)
         lines.append("")
     return "\n".join(lines)

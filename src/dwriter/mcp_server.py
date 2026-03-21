@@ -81,7 +81,7 @@ async def get_journal_entries(
     for e in filtered_entries:
         time_str = e.created_at.strftime("%Y-%m-%d %H:%M")
         tag_str = f" [{', '.join(t.name for t in e.tags)}]" if e.tags else ""
-        proj_str = f" (Project: {e.project})" if e.project else ""
+        proj_str = f" &{e.project}" if e.project else ""
         lines.append(f"[{time_str}] #{e.id}: {e.content}{proj_str}{tag_str}")
 
     return "\n".join(lines)
@@ -105,7 +105,7 @@ async def get_standup_report(with_todos: bool = True) -> str:
         lines.append("Yesterday's Accomplishments:")
         for e in entries:
             time_str = e.created_at.strftime("%I:%M %p")
-            proj_str = f" [{e.project}]" if e.project else ""
+            proj_str = f" &{e.project}" if e.project else ""
             lines.append(f"- {time_str}: {e.content}{proj_str}")
 
     if with_todos:
@@ -113,7 +113,7 @@ async def get_standup_report(with_todos: bool = True) -> str:
         if todos:
             lines.append("\nPlan for Today:")
             for t in todos:
-                proj_str = f" [{t.project}]" if t.project else ""
+                proj_str = f" &{t.project}" if t.project else ""
                 lines.append(f"- [ ] {t.content}{proj_str}")
         else:
             lines.append("\nPlan for Today:\n(No pending tasks)")
@@ -154,7 +154,7 @@ async def get_todos(
     lines = [f"--- {status.capitalize()} Tasks ---"]
     for t in tasks:
         tag_str = f" [{', '.join(t.tag_names)}]" if t.tag_names else ""
-        proj_str = f" (Project: {t.project})" if t.project else ""
+        proj_str = f" &{t.project}" if t.project else ""
         due_str = f" Due: {t.due_date.strftime('%Y-%m-%d')}" if t.due_date else ""
         lines.append(
             f"ID: {t.id} | Priority: {t.priority} | "

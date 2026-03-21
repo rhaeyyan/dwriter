@@ -10,7 +10,7 @@ from textual.widgets import LoadingIndicator, Static
 
 from ...analytics import AnalyticsEngine
 from ...cli import AppContext
-from ..colors import get_icon, render_block_bar_rich
+from ..colors import TAG, get_icon, render_block_bar_rich
 
 
 class StreakCalendar(Static):
@@ -254,14 +254,14 @@ class ActivitySparkline(Static):
                     tag_padding = max(0, (tag_spacing - len(tag_display)) // 2)
                     tags_line += (
                         " " * tag_padding
-                        + f"[yellow]#{tag}[/yellow][#89dceb]({count})[/#89dceb]"
+                        + f"[{TAG}]#{tag}[/{TAG}][#89dceb]({count})[/#89dceb]"
                     )
                 else:
                     # Subsequent tags: fixed spacing from previous
                     spacing = max(1, tag_spacing - len(tag_display))
                     tags_line += (
                         " " * spacing
-                        + f"[yellow]#{tag}[/yellow][#89dceb]({count})[/#89dceb]"
+                        + f"[{TAG}]#{tag}[/{TAG}][#89dceb]({count})[/#89dceb]"
                     )
             content.append(f"{tags_line}\n\n")
 
@@ -626,3 +626,6 @@ class DashboardScreen(Container):
             import sys
 
             print(f"UI update error: {e}", file=sys.stderr)
+            self.query_one("#calendar", StreakCalendar)._load_data()
+            self.query_one("#dashboard-loading").display = False
+        except Exception: pass

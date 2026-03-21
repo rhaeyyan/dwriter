@@ -27,7 +27,7 @@ class Clock(Static):
         height: 1;
         text-align: right;
         padding: 0 2;
-        color: $text-muted;
+        color: $foreground 60%;
     }
     """
 
