@@ -63,3 +63,6 @@ Thumbs.db
 # Day Writer data (user-specific)
 ~/.day-writer/
 gemini.md
+
+# Stitch prototypes
+stitch/
