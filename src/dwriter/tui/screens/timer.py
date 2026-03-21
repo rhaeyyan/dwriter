@@ -30,37 +30,46 @@ class SessionCompleteModal(ModalScreen):  # type: ignore[type-arg]
     }
 
     #modal-container {
-        width: 80;
+        width: 64;
         height: auto;
-        background: $surface;
+        background: $panel;
         border: solid $success;
-        padding: 1 3;
+        padding: 1 2;
     }
 
     #modal-title {
         text-align: center;
         text-style: bold;
         color: $success;
-        padding: 1 0;
+        margin-top: 1;
     }
 
     #session-info {
         text-align: center;
-        padding: 0 0 1 0;
+        margin-bottom: 1;
+        color: $text-muted;
     }
 
     #edit-input {
+        width: 1fr;
+        margin-bottom: 1;
+    }
+
+    .session-meta {
+        text-align: center;
         width: 100%;
-        margin: 1 0;
+        margin-bottom: 1;
     }
 
     #edit-buttons {
+        height: 3;
         align: center middle;
-        padding: 1 0;
+        margin-top: 1;
     }
 
     Button {
         margin: 0 1;
+        width: 18;
     }
     """
 
@@ -112,16 +121,17 @@ class SessionCompleteModal(ModalScreen):  # type: ignore[type-arg]
             if self.tags or self.project:
                 meta_parts = []
                 if self.tags:
-                    meta_parts.append(f"Tags: #{', #'.join(self.tags)}")
+                    tags_markup = " ".join([f"[bold yellow]#{tag}[/]" for tag in self.tags])
+                    meta_parts.append(f"Tags: {tags_markup}")
                 if self.project:
-                    meta_parts.append(f"Project: {self.project}")
+                    meta_parts.append(f"Project: [magenta]{self.project}[/]")
                 yield Label(
                     " | ".join(meta_parts),
                     id="session-meta",
                     classes="session-meta",
                 )
 
-            with Container(id="edit-buttons"):
+            with Horizontal(id="edit-buttons"):
                 yield Button("Log Entry", id="save-btn", variant="success")
                 yield Button("Skip", id="cancel-btn", variant="default")
 
@@ -256,13 +266,13 @@ class TimerScreen(Container):
     }
 
     #timer-main-container {
-        height: auto;
+        height: 28;
         width: 78;
         align: center middle;
         padding: 1 3;
         background: $panel;
-        border: solid #45475a;
-        border-title-color: #89b4fa;
+        border: solid #3b494c;
+        border-title-color: $primary;
     }
 
     #timer-header {
@@ -341,7 +351,7 @@ class TimerScreen(Container):
     .timer-session-meta {
         text-align: center;
         color: $text-muted;
-        padding: 0 0 1 0;
+        height: 2;
         margin-top: 1;
         content-align: center middle;
         width: 100%;
@@ -632,9 +642,11 @@ class TimerScreen(Container):
 
             if parts:
                 meta_label.update(" | ".join(parts))
-                meta_label.display = True
             else:
-                meta_label.display = False
+                meta_label.update("")
+            
+            # Always keep visible to prevent layout jumping
+            meta_label.display = True
         except Exception as e:
             # Filter the exception so we ONLY retry if it's a DOM mounting issue
             if "NoMatches" in str(type(e)):

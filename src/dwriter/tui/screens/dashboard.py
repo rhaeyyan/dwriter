@@ -334,13 +334,13 @@ class ContextSwitchCard(Static):
 class ContextFrictionCard(Static):
     """Combined Context Switches and Friction Ratio card."""
 
-    DEFAULT_CSS = "ContextFrictionCard { border: solid #45475a; border-title-color: #89b4fa; background: $panel; padding: 0 2; height: 13; }"
+    DEFAULT_CSS = "ContextFrictionCard { border: solid #45475a; border-title-color: #89b4fa; background: $panel; padding: 0 2; height: auto; }"
 
     def __init__(self, ctx: AppContext, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.ctx = ctx
 
-    def _draw_bar(self, value: float, max_val: float, width: int = 17) -> str:
+    def _draw_bar(self, value: float, max_val: float, width: int = 15) -> str:
         """Draws a pip bar with gradient coloring."""
         use_emojis = self.ctx.config.display.use_emojis
         empty_char = "･" if use_emojis else "."
@@ -401,41 +401,53 @@ class ContextFrictionCard(Static):
 
         use_emojis = self.ctx.config.display.use_emojis
         icon_context = get_icon("context", use_emojis)
+        
+        # Center Context Switches
+        header_text = f"{icon_context} Context Switches {level}"
+        header_pad = max(0, (36 - len(header_text)) // 2)
         content = [
-            f"[bold]{icon_context} Context Switches [{level_style}]{level}[/{level_style}][/bold]\n\n"
+            f"{' ' * header_pad}[bold]{icon_context} Context Switches [{level_style}]{level}[/{level_style}][/bold]\n\n"
         ]
+        
+        sub_text = f"Projects/day: {switches:.1f}    Active: {active_projects}"
+        sub_pad = max(0, (36 - len(sub_text)) // 2)
         content.append(
-            f"[dim]Projects/day:[/dim] {switches:.1f}    [dim]Active:[/dim] {active_projects}"
+            f"{' ' * sub_pad}[dim]Projects/day:[/dim] {switches:.1f}    [dim]Active:[/dim] {active_projects}\n"
         )
 
         # Friction Ratio section
         icon_friction = get_icon("friction", use_emojis)
         content.append(f"\n\n[bold]{icon_friction} Friction Ratio[/bold]\n")
+        
         if not roi_data:
             content.append("[dim]Not enough data yet...[/dim]")
         else:
             max_ratio = max([r[1] for r in roi_data] + [1.0])
             for proj, ratio, _e, _t in roi_data[:3]:
-                safe_proj = proj[:12] if proj else "none"
+                safe_proj = proj[:10] if proj else "none"
                 status_label, status_color = self._get_status_display(ratio)
+                
+                status_len = len(status_label)
+                status_pad_left = max(1, (20 - status_len) // 2)
+                
                 content.append(
-                    f"[dim]{safe_proj:<12}[/dim] [bold]{ratio:>4.1f}[/bold] [{status_color}]{status_label}[/{status_color}]\n"
+                    f"[dim]{safe_proj:<10}[/dim] [#89dceb][bold]{ratio:>4.1f}[/bold][/#89dceb]{' ' * status_pad_left}[{status_color}]{status_label}[/{status_color}]\n"
                 )
-                content.append(f"{self._draw_bar(ratio, max_ratio, 17)}\n")
+                content.append(f"{self._draw_bar(ratio, max_ratio, 15)}\n")
         self.update("".join(content))
 
 
 class TodoHealthCard(Static):
     """Combined To-do Health and Workload card."""
 
-    DEFAULT_CSS = "TodoHealthCard { border: solid #45475a; border-title-color: #89b4fa; background: $panel; padding: 0 2; height: 13; }"
+    DEFAULT_CSS = "TodoHealthCard { border: solid #45475a; border-title-color: #89b4fa; background: $panel; padding: 0 2; height: auto; }"
 
     def __init__(self, ctx: AppContext, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.ctx = ctx
 
     def _draw_bar(
-        self, value: int, max_val: int, width: int = 15, color: str = "white"
+        self, value: int, max_val: int, width: int = 13, color: str = "white"
     ) -> str:
         """Draws the ￭･ pip style bar."""
         use_emojis = self.ctx.config.display.use_emojis
@@ -494,27 +506,42 @@ class TodoHealthCard(Static):
         content = ["\n"]
         # Fresh bar with matching color number
         content.append(
-            f"[dim]Fresh[/dim] {self._draw_bar(fresh, max_val, 15, fresh_color)} [{fresh_color}]{fresh}[/]\n"
+            f"[dim]Fresh[/dim] {self._draw_bar(fresh, max_val, 13, fresh_color)} [{fresh_color}]{fresh}[/]\n"
         )
         # Stale bar with matching color number
         content.append(
-            f"[dim]Stale[/dim] {self._draw_bar(stale, max_val, 15, stale_color)} [{stale_color}]{stale}[/]\n"
+            f"[dim]Stale[/dim] {self._draw_bar(stale, max_val, 13, stale_color)} [{stale_color}]{stale}[/]\n"
         )
         # Stuck bar with matching color number
         content.append(
-            f"[dim]Stuck[/dim] {self._draw_bar(dead, max_val, 15, stuck_color)} [{stuck_color}]{dead}[/]\n"
+            f"[dim]Stuck[/dim] {self._draw_bar(dead, max_val, 13, stuck_color)} [{stuck_color}]{dead}[/]\n"
         )
+        
+        # Center Workload
+        wl_str = f"{icon_workload} Workload {warning_icon} {status}"
+        wl_pad = max(0, (36 - len(wl_str)) // 2)
         content.append(
-            f"\n[bold]{icon_workload} Workload [{status_style}]{warning_icon} {status}[/bold]\n"
+            f"\n{' ' * wl_pad}[bold]{icon_workload} Workload [{status_style}]{warning_icon} {status}[/bold]\n\n"
         )
+        
+        row1_str = f"Added: {added}      Done: {done}"
+        r1_pad = max(0, (36 - len(row1_str)) // 2)
         content.append(
-            f" [{label_color}]Added:[/{label_color}] [{value_color}]{added}[/]      [{label_color}]Done:[/{label_color}] [{value_color}]{done}[/]\n"
+            f"{' ' * r1_pad}[{label_color}]Added:[/{label_color}] [{value_color}]{added}[/]      [{label_color}]Done:[/{label_color}] [{value_color}]{done}[/]\n"
         )
+        
+        comp_str = f"Completion: {completion_rate:.0f}%"
+        thru_str = f"Throughput: {throughput}/day"
+        
+        block_width = max(len(comp_str), len(thru_str))
+        block_pad = max(0, (36 - block_width) // 2)
+        
         content.append(
-            f" [{label_color}]Completion:[/{label_color}] [{value_color}]{completion_rate:.0f}%[/]\n"
+            f"\n{' ' * block_pad}[{label_color}]Completion:[/{label_color}] [{value_color}]{completion_rate:.0f}%[/]\n"
         )
+        
         content.append(
-            f" [{label_color}]Throughput:[/{label_color}] [{value_color}]{throughput}/day[/]"
+            f"{' ' * block_pad}[{label_color}]Throughput:[/{label_color}] [{value_color}]{throughput}/day[/]"
         )
         self.update("".join(content))
 
@@ -538,8 +565,8 @@ class DashboardScreen(Container):
     .half-card-right { width: 1fr; margin-bottom: 0; }
 
     /* Card heights */
-    TodoHealthCard { height: 13; }
-    ContextFrictionCard { height: 13; }
+    TodoHealthCard { height: 16; }
+    ContextFrictionCard { height: 16; }
     ActivitySparkline { height: auto; }
     """
 

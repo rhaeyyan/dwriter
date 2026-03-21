@@ -124,6 +124,9 @@ def main(ctx: click.Context) -> None:
 
         app = DWriterApp(ctx.obj)
         app.run()
+    else:
+        # Commands are registered at the bottom but we ensure they are available
+        pass
 
 
 def _register_commands() -> None:
@@ -168,6 +171,7 @@ def _register_commands() -> None:
         main.add_command(cmd)
 
 
+# Register commands immediately after definition to make them available for the group
 _register_commands()
 
 

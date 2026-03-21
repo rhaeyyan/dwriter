@@ -58,6 +58,51 @@ class ExportFormatScreen(ModalScreen[str]):
             self.dismiss(None)
 
 
+class RangeSelectionScreen(ModalScreen[tuple[datetime, datetime] | None]):
+    """Modal screen for selecting a date range."""
+
+    DEFAULT_CSS = """
+    RangeSelectionScreen { align: center middle; background: rgba(13, 15, 24, 0.85); }
+    #range-container { width: 50; height: auto; border: solid $primary; background: $panel; padding: 1 2; }
+    #range-title { text-align: center; text-style: bold; margin-bottom: 1; }
+    .range-inputs { height: auto; margin-bottom: 1; }
+    #range-start, #range-end { width: 1fr; }
+    #range-label { color: $text-muted; text-style: bold; content-align: center middle; padding-top: 1; margin: 0 1; }
+    #range-footer { height: auto; align: center middle; }
+    #range-footer Button { margin: 0 1; }
+    """
+
+    def compose(self) -> ComposeResult:
+        with Container(id="range-container"):
+            yield Label("Select Date Range", id="range-title")
+            with Horizontal(classes="range-inputs"):
+                yield Input(placeholder="YYYY-MM-DD", id="range-start")
+                yield Label(" To ", id="range-label")
+                yield Input(placeholder="YYYY-MM-DD", id="range-end")
+            with Horizontal(id="range-footer"):
+                yield Button("Cancel", id="btn-cancel", variant="default")
+                yield Button("Enter", id="btn-enter", variant="primary")
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "btn-cancel":
+            self.dismiss(None)
+        elif event.button.id == "btn-enter":
+            self.action_submit()
+
+    def action_submit(self) -> None:
+        start_input = self.query_one("#range-start", Input).value
+        end_input = self.query_one("#range-end", Input).value
+        try:
+            start_date = datetime.strptime(start_input.strip(), "%Y-%m-%d")
+            end_date = datetime.strptime(end_input.strip(), "%Y-%m-%d")
+            self.dismiss((start_date, end_date))
+        except ValueError:
+            self.notify("Invalid date format. Use YYYY-MM-DD.", severity="error")
+
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        self.action_submit()
+
+
 class StandupScreen(ModalScreen[None]):
     """Unified modal screen for generating Daily Standups and Period Reviews."""
 
@@ -79,7 +124,6 @@ class StandupScreen(ModalScreen[None]):
     #daily-format { width: 25; }
     #weekly-period { width: 25; }
     #weekly-format { width: 20; }
-    #custom-days-input { width: 12; display: none; margin-left: 1; }
 
     #daily-editor, #weekly-editor { height: 1fr; border: solid $success; background: #0d0f18; }
     #weekly-summary { height: 1; margin-top: 1; color: $text-muted; text-style: bold; content-align: center middle; }
@@ -102,6 +146,7 @@ class StandupScreen(ModalScreen[None]):
         self.daily_date = datetime.now() - timedelta(days=1)
         self.daily_include_todos = True
         self.weekly_days = 7
+        self.weekly_range: tuple[datetime, datetime] | None = None
 
     def compose(self) -> ComposeResult:
         use_emojis = self.ctx.config.display.use_emojis
@@ -147,14 +192,11 @@ class StandupScreen(ModalScreen[None]):
                                 ("Last 7 Days", 7),
                                 ("Last 14 Days", 14),
                                 ("Last 30 Days", 30),
-                                ("Custom...", -1),
+                                ("Range", -1),
                             ],
                             value=7,
                             id="weekly-period",
                             allow_blank=False,
-                        )
-                        yield Input(
-                            placeholder="Days", id="custom-days-input", type="integer"
                         )
                         yield Static(classes="spacer")
                         yield Label("Format: ", classes="control-label")
@@ -249,24 +291,25 @@ class StandupScreen(ModalScreen[None]):
             self._generate_daily_report()
         elif event.select.id == "weekly-period":
             if event.value == -1:
-                self.query_one("#custom-days-input", Input).display = "block"
-                self.query_one("#custom-days-input", Input).focus()
+                def on_range_selected(date_range: tuple[datetime, datetime] | None) -> None:
+                    if date_range:
+                        self.weekly_range = date_range
+                        self.weekly_days = -1
+                        self._generate_weekly_report()
+                        self.query_one("#weekly-editor").focus()
+                    else:
+                        # Revert selection on cancel
+                        self.query_one("#weekly-period", Select).value = self.weekly_days if self.weekly_days != -1 else 7
+                
+                self.app.push_screen(RangeSelectionScreen(), on_range_selected)
             else:
-                self.query_one("#custom-days-input", Input).display = "none"
+                self.weekly_range = None
                 if isinstance(event.value, int):
                     self.weekly_days = event.value
                     self._generate_weekly_report()
         elif event.select.id == "weekly-format":
             self._generate_weekly_report()
 
-    def on_input_submitted(self, event: Input.Submitted) -> None:
-        if event.input.id == "custom-days-input":
-            try:
-                self.weekly_days = int(event.value)
-                self._generate_weekly_report()
-                self.query_one("#weekly-editor").focus()
-            except ValueError:
-                self.notify("Please enter a valid number.", severity="error")
 
     def action_toggle_todos(self) -> None:
         active_pane = self.query_one(TabbedContent).active
@@ -319,9 +362,14 @@ class StandupScreen(ModalScreen[None]):
             if active_pane == "daily-tab":
                 base_name = f"standup-{self.daily_date.strftime('%Y-%m-%d')}"
             else:
-                base_name = (
-                    f"review-{self.weekly_days}d-{datetime.now().strftime('%Y-%m-%d')}"
-                )
+                if self.weekly_range:
+                    s_str = self.weekly_range[0].strftime('%Y-%m-%d')
+                    e_str = self.weekly_range[1].strftime('%Y-%m-%d')
+                    base_name = f"review-{s_str}-to-{e_str}"
+                else:
+                    base_name = (
+                        f"review-{self.weekly_days}d-{datetime.now().strftime('%Y-%m-%d')}"
+                    )
 
             if format == "markdown":
                 path = doc_dir / f"{base_name}.md"
@@ -377,10 +425,17 @@ class StandupScreen(ModalScreen[None]):
                 if e.created_at.date() == target_d
             ]
         else:
-            start_date = datetime.now() - timedelta(days=self.weekly_days)
-            entries = [
-                e for e in self.ctx.db.get_all_entries() if e.created_at >= start_date
-            ]
+            if self.weekly_range:
+                start_date = self.weekly_range[0]
+                end_date = self.weekly_range[1]
+                entries = [
+                    e for e in self.ctx.db.get_all_entries() if start_date.date() <= e.created_at.date() <= end_date.date()
+                ]
+            else:
+                start_date = datetime.now() - timedelta(days=self.weekly_days)
+                entries = [
+                    e for e in self.ctx.db.get_all_entries() if e.created_at >= start_date
+                ]
             entries.sort(key=lambda x: x.created_at, reverse=True)
 
         if not entries:
@@ -430,10 +485,17 @@ class StandupScreen(ModalScreen[None]):
                 if e.created_at.date() == target_d
             ]
         else:
-            start_date = datetime.now() - timedelta(days=self.weekly_days)
-            entries = [
-                e for e in self.ctx.db.get_all_entries() if e.created_at >= start_date
-            ]
+            if self.weekly_range:
+                start_date = self.weekly_range[0]
+                end_date = self.weekly_range[1]
+                entries = [
+                    e for e in self.ctx.db.get_all_entries() if start_date.date() <= e.created_at.date() <= end_date.date()
+                ]
+            else:
+                start_date = datetime.now() - timedelta(days=self.weekly_days)
+                entries = [
+                    e for e in self.ctx.db.get_all_entries() if e.created_at >= start_date
+                ]
             entries.sort(key=lambda x: x.created_at, reverse=True)
 
         if not entries:
@@ -492,8 +554,8 @@ class StandupScreen(ModalScreen[None]):
                     _, time_str = format_entry_datetime(e)
                     time_prefix = f"{time_str} - " if time_str else ""
                     
-                    proj = f" `&{e.project}`" if e.project else ""
-                    tags = f" #{' #'.join(e.tag_names)}" if e.tag_names else ""
+                    proj = f" `{e.project}`" if e.project else ""
+                    tags = f" {' '.join(f'#{t}' for t in e.tag_names)}" if e.tag_names else ""
                     clean_content = e.content.lstrip("✅⏱️ ")
                     lines.append(f"- {time_prefix}{clean_content}{proj}{tags}")
                 if self.daily_include_todos:
@@ -513,8 +575,8 @@ class StandupScreen(ModalScreen[None]):
                     _, time_str = format_entry_datetime(e)
                     time_prefix = f"{time_str} - " if time_str else ""
                     
-                    p_str = f" &{e.project}" if e.project else ""
-                    t_str = f" ({', '.join(f'#{t}' for t in e.tag_names)})" if e.tag_names else ""
+                    p_str = f" ({e.project})" if e.project else ""
+                    t_str = f" {' '.join(f'#{t}' for t in e.tag_names)}" if e.tag_names else ""
                     clean_content = e.content.lstrip("✅⏱️ ")
                     lines.append(
                         f"  {time_prefix}{clean_content}{p_str}{t_str}"
@@ -534,8 +596,8 @@ class StandupScreen(ModalScreen[None]):
                     _, time_str = format_entry_datetime(e)
                     time_prefix = f"{time_str} - " if time_str else ""
                     
-                    p_str = f" &{e.project}" if e.project else ""
-                    t_str = f" ({', '.join(f'#{t}' for t in e.tag_names)})" if e.tag_names else ""
+                    p_str = f" ({e.project})" if e.project else ""
+                    t_str = f" {' '.join(f'#{t}' for t in e.tag_names)}" if e.tag_names else ""
                     clean_content = e.content.lstrip("✅⏱️ ")
                     lines.append(f"• {time_prefix}{clean_content}{p_str}{t_str}")
                 if self.daily_include_todos:
@@ -553,8 +615,8 @@ class StandupScreen(ModalScreen[None]):
                     _, time_str = format_entry_datetime(e)
                     time_prefix = f"{time_str} - " if time_str else ""
                     
-                    p_str = f" &{e.project}" if e.project else ""
-                    t_str = f" ({', '.join(f'#{t}' for t in e.tag_names)})" if e.tag_names else ""
+                    p_str = f" ({e.project})" if e.project else ""
+                    t_str = f" {' '.join(f'#{t}' for t in e.tag_names)}" if e.tag_names else ""
                     clean_content = e.content.lstrip("✅⏱️ ")
                     lines.append(
                         f"* {time_prefix}{clean_content}{p_str}{t_str}"
@@ -571,8 +633,8 @@ class StandupScreen(ModalScreen[None]):
                 if not entries:
                     lines.append("* No entries logged.")
                 for e in entries:
-                    p_str = f" &{e.project}" if e.project else ""
-                    t_str = f" ({', '.join(f'#{t}' for t in e.tag_names)})" if e.tag_names else ""
+                    p_str = f" {e.project}" if e.project else ""
+                    t_str = f" {' '.join(f'#{t}' for t in e.tag_names)}" if e.tag_names else ""
                     clean_content = e.content.lstrip("✅⏱️ ")
                     lines.append(f"* {clean_content}{p_str}{t_str}")
 
@@ -582,12 +644,19 @@ class StandupScreen(ModalScreen[None]):
 
     def _generate_weekly_report(self) -> None:
         try:
-            now = datetime.now()
-            start_date = now - timedelta(days=self.weekly_days)
-
-            entries = [
-                e for e in self.ctx.db.get_all_entries() if e.created_at >= start_date
-            ]
+            if self.weekly_range:
+                start_date = self.weekly_range[0]
+                end_date = self.weekly_range[1]
+                entries = [
+                    e for e in self.ctx.db.get_all_entries() if start_date.date() <= e.created_at.date() <= end_date.date()
+                ]
+            else:
+                now = datetime.now()
+                start_date = now - timedelta(days=self.weekly_days)
+                entries = [
+                    e for e in self.ctx.db.get_all_entries() if e.created_at >= start_date
+                ]
+            
             entries.sort(key=lambda x: x.created_at, reverse=True)
 
             grouped, tags_set, projects_set = {}, set(), set()
@@ -613,7 +682,12 @@ class StandupScreen(ModalScreen[None]):
             lines = []
 
             if format_val == "markdown":
-                lines.append(f"# Review: Last {self.weekly_days} Days\n")
+                if self.weekly_range:
+                    s_str = self.weekly_range[0].strftime('%Y-%m-%d')
+                    e_str = self.weekly_range[1].strftime('%Y-%m-%d')
+                    lines.append(f"# Review: {s_str} to {e_str}\n")
+                else:
+                    lines.append(f"# Review: Last {self.weekly_days} Days\n")
                 if not grouped:
                     lines.append("No activity.")
                 for d_str, day_entries in grouped.items():
@@ -622,14 +696,19 @@ class StandupScreen(ModalScreen[None]):
                         _, time_str = format_entry_datetime(e)
                         time_prefix = f"{time_str} - " if time_str else ""
                         
-                        proj = f" `&{e.project}`" if e.project else ""
-                        tags = f" ({', '.join(f'#{t}' for t in e.tag_names)})" if e.tag_names else ""
+                        proj = f" `{e.project}`" if e.project else ""
+                        tags = f" {' '.join(f'#{t}' for t in e.tag_names)}" if e.tag_names else ""
                         clean_content = e.content.lstrip("✅⏱️ ")
                         lines.append(f"- {time_prefix}{clean_content}{proj}{tags}")
                     lines.append("")
 
             elif format_val == "plain-txt":
-                lines.append(f"Review: Last {self.weekly_days} Days")
+                if self.weekly_range:
+                    s_str = self.weekly_range[0].strftime('%Y-%m-%d')
+                    e_str = self.weekly_range[1].strftime('%Y-%m-%d')
+                    lines.append(f"Review: {s_str} to {e_str}")
+                else:
+                    lines.append(f"Review: Last {self.weekly_days} Days")
                 lines.append("-" * 40)
                 if not grouped:
                     lines.append("No activity.")
@@ -639,15 +718,20 @@ class StandupScreen(ModalScreen[None]):
                         _, time_str = format_entry_datetime(e)
                         time_prefix = f"{time_str} - " if time_str else ""
                         
-                        p_str = f" &{e.project}" if e.project else ""
-                        t_str = f" ({', '.join(f'#{t}' for t in e.tag_names)})" if e.tag_names else ""
+                        p_str = f" ({e.project})" if e.project else ""
+                        t_str = f" {' '.join(f'#{t}' for t in e.tag_names)}" if e.tag_names else ""
                         clean_content = e.content.lstrip("✅⏱️ ")
                         lines.append(
                             f"• {time_prefix}{clean_content}{p_str}{t_str}"
                         )
 
             elif format_val == "slack":
-                lines.append(f"*Review: Last {self.weekly_days} Days*")
+                if self.weekly_range:
+                    s_str = self.weekly_range[0].strftime('%Y-%m-%d')
+                    e_str = self.weekly_range[1].strftime('%Y-%m-%d')
+                    lines.append(f"*Review: {s_str} to {e_str}*")
+                else:
+                    lines.append(f"*Review: Last {self.weekly_days} Days*")
                 lines.append("")
                 if not grouped:
                     lines.append("No activity.")
@@ -657,8 +741,8 @@ class StandupScreen(ModalScreen[None]):
                         _, time_str = format_entry_datetime(e)
                         time_prefix = f"{time_str} - " if time_str else ""
                         
-                        p_str = f" &{e.project}" if e.project else ""
-                        t_str = f" ({', '.join(f'#{t}' for t in e.tag_names)})" if e.tag_names else ""
+                        p_str = f" {e.project}" if e.project else ""
+                        t_str = f" {' '.join(f'#{t}' for t in e.tag_names)}" if e.tag_names else ""
                         clean_content = e.content.lstrip("✅⏱️ ")
                         lines.append(
                             f"• {time_prefix}{clean_content}{p_str}{t_str}"
@@ -666,7 +750,12 @@ class StandupScreen(ModalScreen[None]):
                     lines.append("")
 
             elif format_val == "jira":
-                lines.append(f"h1. Review: Last {self.weekly_days} Days\n")
+                if self.weekly_range:
+                    s_str = self.weekly_range[0].strftime('%Y-%m-%d')
+                    e_str = self.weekly_range[1].strftime('%Y-%m-%d')
+                    lines.append(f"h1. Review: {s_str} to {e_str}\n")
+                else:
+                    lines.append(f"h1. Review: Last {self.weekly_days} Days\n")
                 if not grouped:
                     lines.append("No activity.")
                 for d_str, day_entries in grouped.items():
