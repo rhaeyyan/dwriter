@@ -155,6 +155,35 @@ uv run dwriter add "Just finished setting up dwriter! #goals"
 
 ---
 
+## 💡 How to Get the Most Out of dwriter
+
+To truly make `dwriter` a seamless part of your daily routine, it helps to adopt a few simple habits and workflows. Here are some pro tips to maximize your experience:
+
+### 1. The "CLI for Capture, TUI for Review" Rule
+The magic of `dwriter` is its hybrid design. To stay in your flow state, use the **headless CLI** for all your data entry (`dwriter add`, `dwriter todo`, `dwriter timer`). It takes two seconds and you never leave your prompt. Then, reserve the **interactive TUI** (`dwriter search`, `dwriter stats`, `dwriter edit`) for when you actually need to review your week, plan your sprint, or fix typos. 
+
+### 2. Establish a Tagging Convention Early
+Because `dwriter` relies heavily on `#tags` and `&projects` to generate summaries, consistency is key. Pick a handful of standard tags and stick to them. 
+* **Good convention:** Use `&projects` for the *context* or *client* (e.g., `&acmecorp`, `&personal`, `&cs_101`) and `#tags` for the *action* (e.g., `#bugfix`, `#meeting`, `#reading`). 
+* This makes generating a timesheet or study log via `dwriter review -p acmecorp` incredibly accurate.
+
+### 3. Let the Timer Do the Logging
+If you are sitting down for a focused session, don't just use `dwriter add` afterward. Use `dwriter timer 25 -p my_project`. Not only do you get a visual Pomodoro countdown to keep you accountable, but the TUI will automatically prompt you to log what you accomplished the second the timer finishes. It combines focus tracking and journaling into one step.
+
+### 4. Leverage Natural Language Time-Traveling
+Don't stress if you forget to log a massive debugging session on a Friday afternoon. `dwriter` understands natural language. On Monday morning, just run `dwriter add "Fixed the memory leak" --date "last Friday"`. This keeps your timeline pristine for your weekly reviews and contribution calendar.
+
+### 5. Alias it for Ultimate Speed
+If you are typing out `dwriter` 20 times a day, save your keystrokes! Add a simple alias to your `.bashrc` or `.zshrc` file:
+```bash
+alias dw="dwriter"
+alias dwt="dwriter todo"
+alias dws="dwriter search"
+```
+Now, logging an idea takes literally three keystrokes: `dw add "New idea!"`. 
+
+---
+
 ## 🎨 Interactive TUI
 
 dwriter now includes interactive TUI (Text User Interface) modes for enhanced workflow. These modes provide real-time, keyboard-driven interfaces for common tasks.
