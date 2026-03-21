@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CMD_TIMER_V1.0 | FOCUS_TERMINAL</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body {
+            font-family: 'JetBrains+Mono', monospace;
+            background-color: #131313;
+            color: #e2e2e2;
+        }
+        .step-transition {
+            transition: none !important;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+            font-size: 1.25rem;
+        }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#c3f5ff",
+              "on-tertiary-fixed-variant": "#8a1d00",
+              "on-primary-fixed-variant": "#004f58",
+              "tertiary-fixed-dim": "#ffb4a2",
+              "tertiary-container": "#ffc2b3",
+              "on-surface": "#e2e2e2",
+              "tertiary": "#ffe7e2",
+              "surface-container": "#1f1f1f",
+              "on-tertiary": "#621100",
+              "outline": "#849396",
+              "on-background": "#e2e2e2",
+              "secondary-fixed-dim": "#9dd922",
+              "secondary-fixed": "#b8f642",
+              "on-error": "#690005",
+              "error": "#ffb4ab",
+              "on-surface-variant": "#bac9cc",
+              "surface": "#131313",
+              "primary-fixed": "#9cf0ff",
+              "on-secondary-fixed": "#131f00",
+              "surface-container-highest": "#353535",
+              "on-secondary-fixed-variant": "#354e00",
+              "on-error-container": "#ffdad6",
+              "secondary": "#a8e430",
+              "primary-container": "#00e5ff",
+              "outline-variant": "#3b494c",
+              "on-secondary-container": "#364f00",
+              "surface-container-lowest": "#0e0e0e",
+              "on-primary": "#00363d",
+              "background": "#131313",
+              "on-tertiary-fixed": "#3c0700",
+              "primary-fixed-dim": "#00daf3",
+              "on-tertiary-container": "#aa2600",
+              "surface-tint": "#00daf3",
+              "surface-variant": "#353535",
+              "surface-container-low": "#1b1b1b",
+              "inverse-surface": "#e2e2e2",
+              "on-primary-fixed": "#001f24",
+              "secondary-container": "#8dc702",
+              "on-primary-container": "#00626e",
+              "surface-container-high": "#2a2a2a",
+              "surface-bright": "#393939",
+              "on-secondary": "#233600",
+              "surface-dim": "#131313",
+              "inverse-on-surface": "#303030",
+              "error-container": "#93000a",
+              "inverse-primary": "#006875",
+              "tertiary-fixed": "#ffdad2"
+            },
+            fontFamily: {
+              "mono": ["JetBrains Mono", "monospace"],
+              "headline": ["JetBrains Mono", "monospace"],
+              "body": ["JetBrains Mono", "monospace"],
+              "label": ["JetBrains Mono", "monospace"]
+            },
+            borderRadius: {"DEFAULT": "0", "lg": "0", "xl": "0", "full": "0"},
+          },
+        },
+      }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen flex flex-col font-mono selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopAppBar -->
+<header class="bg-[#131313] text-[#00e5ff] font-mono uppercase tracking-tighter text-[0.875rem] border-b-[1ch] border-[#1b1b1b] flex justify-between items-center w-full px-5 py-3 sticky top-0 z-50">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#c3f5ff] font-bold tracking-widest" data-icon="terminal">terminal</span>
+<span class="text-[#c3f5ff] font-bold tracking-widest">CMD_TIMER_V1.0</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="text-[#b8f642]">[ STATUS: ACTIVE ]</span>
+<span class="material-symbols-outlined hover:bg-[#00e5ff] hover:text-[#131313] transition-none cursor-pointer" data-icon="settings">settings</span>
+</div>
+</header>
+<main class="flex-grow p-5 md:p-12 max-w-5xl mx-auto w-full flex flex-col gap-8">
+<!-- Command Prompt Section -->
+<section class="flex flex-col gap-1">
+<div class="text-secondary-fixed font-bold">admin@dwriter:~$ <span class="text-on-surface">timer --focus</span><span class="animate-pulse">█</span></div>
+</section>
+<!-- Main Dashboard Grid -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-8">
+<!-- Timer Block (Asymmetric Focus) -->
+<div class="md:col-span-8 bg-surface-container-low border border-outline-variant p-8 flex flex-col items-center justify-center relative">
+<div class="absolute top-0 left-0 text-outline-variant text-[0.6rem] p-1">┌ FOCUS_ENGINE_V2 ┐</div>
+<!-- Large Digital Display -->
+<div class="text-[8rem] md:text-[12rem] font-black text-primary-container leading-none tracking-tighter">
+                    25:00
+                </div>
+<!-- Progress Bar -->
+<div class="w-full mt-8 font-mono">
+<div class="flex justify-between text-[0.7rem] text-secondary mb-1">
+<span>PROGRESS: 60%</span>
+<span>REMAINING: 10:00</span>
+</div>
+<div class="text-primary-container text-xl md:text-2xl break-all tracking-widest">
+                        [ ■■■■■■■■■■■■░░░░░░░░ ]
+                    </div>
+</div>
+</div>
+<!-- Stats & Session Info (Asymmetric Sidebar) -->
+<div class="md:col-span-4 flex flex-col gap-8">
+<!-- Session Info -->
+<div class="border border-outline-variant p-4 bg-surface-container-lowest">
+<div class="text-secondary-fixed text-xs mb-4">┌ SESSION_METADATA ┐</div>
+<div class="space-y-3 text-sm">
+<div class="flex justify-between">
+<span class="text-outline">PROJECT:</span>
+<span class="text-primary">&amp;dwriter_core</span>
+</div>
+<div class="flex justify-between">
+<span class="text-outline">TASK:</span>
+<span class="text-primary">#focus_deep</span>
+</div>
+<div class="flex justify-between">
+<span class="text-outline">SESSION:</span>
+<span class="text-primary">04 / 08</span>
+</div>
+</div>
+</div>
+<!-- Status Toggles -->
+<div class="flex flex-col border border-outline-variant">
+<div class="flex w-full">
+<button class="flex-1 bg-primary-container text-on-primary p-3 font-bold text-xs">FOCUS</button>
+<button class="flex-1 bg-surface-container-high text-outline p-3 font-bold text-xs hover:bg-surface-container-highest">BREAK</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Controls Section -->
+<section class="grid grid-cols-1 md:grid-cols-12 gap-8">
+<div class="md:col-span-8 flex flex-col gap-4">
+<!-- Primary Action -->
+<div class="flex justify-center">
+<button class="w-full max-w-md bg-secondary-fixed text-on-secondary-fixed py-4 px-12 font-black text-xl hover:bg-transparent hover:text-secondary-fixed border-2 border-secondary-fixed transition-none">
+                        [ START / PAUSE ]
+                    </button>
+</div>
+<!-- Time Adjustment Row -->
+<div class="grid grid-cols-4 gap-2">
+<button class="border border-outline-variant text-primary py-2 hover:bg-primary-container hover:text-on-primary transition-none">[ -5 MIN ]</button>
+<button class="border border-outline-variant text-primary py-2 hover:bg-primary-container hover:text-on-primary transition-none">[ -1 MIN ]</button>
+<button class="border border-outline-variant text-primary py-2 hover:bg-primary-container hover:text-on-primary transition-none">[ +1 MIN ]</button>
+<button class="border border-outline-variant text-primary py-2 hover:bg-primary-container hover:text-on-primary transition-none">[ +5 MIN ]</button>
+</div>
+</div>
+<!-- Danger Zone -->
+<div class="md:col-span-4">
+<div class="border border-error-container p-4 bg-surface-container-lowest h-full flex flex-col justify-between">
+<div class="text-error text-[0.6rem] mb-2 font-bold uppercase tracking-widest">!! WARNING: SYSTEM RESET !!</div>
+<button class="w-full border border-error text-error py-4 hover:bg-error hover:text-on-error font-bold transition-none">
+                        [ RESET_TIMER ]
+                    </button>
+</div>
+</div>
+</section>
+<!-- System Logs / Visual Texture -->
+<section class="border border-outline-variant bg-surface-container-lowest p-4 font-mono text-[0.7rem] text-outline/50 overflow-hidden h-32 relative">
+<div class="absolute top-0 right-0 bg-outline-variant text-surface px-2 py-0.5">SYS_LOG</div>
+<p>&gt; initializing focus_module... [OK]</p>
+<p>&gt; mounting productivity_fs... [OK]</p>
+<p>&gt; session_start: 2023-10-27T09:00:00Z</p>
+<p>&gt; user_activity: deep_work_detected</p>
+<p>&gt; monitoring heart_rate... standard</p>
+<p>&gt; background_noise: white_noise_active</p>
+<p>&gt; system_load: 0.12 0.45 0.89</p>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-stretch bg-[#131313] border-t-[1ch] border-[#1b1b1b] h-16">
+<a class="flex flex-col items-center justify-center bg-[#00e5ff] text-[#131313] p-2 flex-1 step-transition" href="#">
+<span class="material-symbols-outlined" data-icon="timer">timer</span>
+<span class="font-mono text-[0.6875rem] uppercase">TIMERS</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#c3f5ff] p-2 flex-1 hover:bg-[#2a2a2a] transition-none step-transition" href="#">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span class="font-mono text-[0.6875rem] uppercase">LAPSE</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#c3f5ff] p-2 flex-1 hover:bg-[#2a2a2a] transition-none step-transition" href="#">
+<span class="material-symbols-outlined" data-icon="insights">insights</span>
+<span class="font-mono text-[0.6875rem] uppercase">STATS</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#c3f5ff] p-2 flex-1 hover:bg-[#2a2a2a] transition-none step-transition" href="#">
+<span class="material-symbols-outlined" data-icon="memory">memory</span>
+<span class="font-mono text-[0.6875rem] uppercase">SYS</span>
+</a>
+</nav>
+<!-- Padding for fixed bottom nav -->
+<div class="h-20"></div>
+</body></html>

@@ -19,7 +19,7 @@ from textual.widgets import Button, Header, Input, Label, ListItem, ListView
 
 from ...cli import AppContext
 from ...database import Entry
-from ..colors import get_icon
+from ..colors import TAG, get_icon
 from ...search_utils import search_items
 
 
@@ -155,7 +155,11 @@ class EditEntryModal(ModalScreen):  # type: ignore[type-arg]
             )
 
             # Date and Time fields on the same line
-            yield Label("Date and Time:", id="edit-datetime-label")
+            lock_mode = self.app.ctx.config.display.lock_mode
+            yield Label(
+                "Date and Time:" + (" [yellow](Locked)[/]" if lock_mode else ""),
+                id="edit-datetime-label"
+            )
             with Horizontal(classes="datetime-container"):
                 date_str = (
                     self.entry.created_at.strftime("%Y-%m-%d")
@@ -166,6 +170,7 @@ class EditEntryModal(ModalScreen):  # type: ignore[type-arg]
                     value=date_str,
                     id="date-input",
                     placeholder="YYYY-MM-DD",
+                    disabled=lock_mode,
                 )
 
                 dt = self.entry.created_at
@@ -177,6 +182,7 @@ class EditEntryModal(ModalScreen):  # type: ignore[type-arg]
                     value=time_str,
                     id="time-input",
                     placeholder="HH:MM AM/PM",
+                    disabled=lock_mode,
                 )
 
             yield Label(
@@ -518,7 +524,7 @@ class LogsResultsView(ListView):
         """
         from ...ui_utils import format_entry_datetime
 
-        date_str, time_str = format_entry_datetime(entry)
+        date_str, time_str = format_entry_datetime(entry, self.app.ctx.config)
 
         # Clean up content - remove check emoji/mark from completed todos
         content = entry.content
@@ -538,10 +544,10 @@ class LogsResultsView(ListView):
 
         # Format tags and project on first line
         tags_str = (
-            f"[yellow]#{' #'.join(entry.tag_names)}[/yellow]" if entry.tag_names else ""
+            f"[{TAG}]#{' #'.join(entry.tag_names)}[/{TAG}]" if entry.tag_names else ""
         )
         project_str = (
-            f"[cyan] : [/cyan][magenta]{entry.project}[/magenta]"
+            f" [magenta]&{entry.project}[/magenta]"
             if entry.project
             else ""
         )

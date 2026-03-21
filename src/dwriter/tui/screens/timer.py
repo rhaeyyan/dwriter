@@ -16,7 +16,7 @@ from textual.screen import ModalScreen
 from textual.widgets import Button, Input, Label, Static, Switch
 
 from ...cli import AppContext
-from ..colors import get_icon, render_block_bar_rich
+from ..colors import TAG, get_icon, render_block_bar_rich
 from ..messages import EntryAdded, TimerStateChanged
 from ..parsers import parse_quick_add
 
@@ -403,7 +403,7 @@ class TimerScreen(Container):
         Binding("q", "quit", "Quit"),
         Binding("escape", "quit", "Quit"),
         Binding("b", "toggle_break_mode", "Break Mode"),
-        Binding("c", "clear_timer", "Clear"),
+        Binding("c", "clear_timer", "Reset"),
     ]
 
     # Reactive properties for timer state
@@ -487,16 +487,16 @@ class TimerScreen(Container):
                     yield Button("-1", id="btn-minus-1", variant="error")
                     yield Button("-5", id="btn-minus-5", variant="error")
 
-            # Clear button - isolated from main controls to prevent accidental clicks
+            # Reset button - loads fresh durations from config
             with Horizontal(id="timer-clear-row"):
                 yield Button(
-                    f"{get_icon('clear', use_emojis)} Clear",
+                    f"{get_icon('clear', use_emojis)} Reset",
                     id="timer-clear-button",
                     variant="default",
                 )
 
         yield Label(
-            f"Space: Start/Pause  {get_icon('bullet', use_emojis)}  C: Clear  {get_icon('bullet', use_emojis)}  B: Break  {get_icon('bullet', use_emojis)}  Enter: Finish  {get_icon('bullet', use_emojis)}  ?: Help",
+            f"Space: Start/Pause  {get_icon('bullet', use_emojis)}  C: Reset  {get_icon('bullet', use_emojis)}  B: Break  {get_icon('bullet', use_emojis)}  Enter: Finish  {get_icon('bullet', use_emojis)}  ?: Help",
             id="timer-session-info",
         )
 
@@ -518,7 +518,14 @@ class TimerScreen(Container):
                 self.action_toggle_break_mode()
 
     def on_show(self) -> None:
-        """Refresh timer display when the screen becomes visible."""
+        """Refresh timer display when the screen becomes visible.
+        
+        Also reloads work/break durations from the live config so that
+        changes saved in the Configure tab take effect immediately.
+        """
+        # Reload durations from live config (picks up changes from Configure tab)
+        self.work_duration = self.ctx.config.timer.work_duration
+        self.break_duration = self.ctx.config.timer.break_duration
         self._update_display()
         self.update_session_meta()
 
@@ -615,8 +622,8 @@ class TimerScreen(Container):
             display_project = "Break" if self.is_break_mode else self.project
 
             if self.tags and not self.is_break_mode:
-                # Yellow tags like Todo Board
-                tags_str = " ".join([f"[yellow]#{tag}[/yellow]" for tag in self.tags])
+                # TAG color tags like Todo Board
+                tags_str = " ".join([f"[{TAG}]#{tag}[/{TAG}]" for tag in self.tags])
                 parts.append(f"Session: {tags_str}")
 
             if display_project:
@@ -831,19 +838,26 @@ class TimerScreen(Container):
         self._update_display()
 
     def action_clear_timer(self) -> None:
-        """Clear and reset the timer back to initial duration."""
+        """Reset the timer to default durations from config."""
         if self.is_finished:
             return
 
         # Stop the timer if running
         if self.is_running:
             self.is_running = False
-            self._timer_handle.pause()
+            if self._timer_handle:
+                self._timer_handle.stop()
+            self._timer_handle = None
 
-        # Reset to initial duration
-        reset_seconds = self.initial_minutes * 60
-        self.remaining_seconds = reset_seconds
-        self.total_seconds = reset_seconds
+        # Reload durations from live config
+        self.work_duration = self.ctx.config.timer.work_duration
+        self.break_duration = self.ctx.config.timer.break_duration
+
+        # Reset to the correct default depending on current mode
+        default_minutes = self.break_duration if self.is_break_mode else self.work_duration
+        self.initial_minutes = default_minutes
+        self.remaining_seconds = default_minutes * 60
+        self.total_seconds = default_minutes * 60
 
         # Update button to paused state
         try:
@@ -854,7 +868,7 @@ class TimerScreen(Container):
             pass
 
         self._update_display()
-        self.notify(f"Timer reset to {self.initial_minutes} min", timeout=1.5)
+        self.notify(f"Timer reset to {default_minutes} min", timeout=1.5)
 
     def action_toggle_break_mode(self) -> None:
         """Toggle between work mode and break mode.

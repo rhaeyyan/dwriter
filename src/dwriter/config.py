@@ -55,6 +55,8 @@ class DisplayConfig:
         theme: Theme preset name (cyberpunk, light, dark, minimal).
         ergonomic_mode: Whether to use spacious ergonomic layout.
         date_format: Date display format string.
+        lock_mode: Whether to disable editing of date and time fields.
+        color_scheme: Color blindness color scheme (normal, deuteranopia, protanopia, tritanopia).
     """
 
     show_confirmation: bool = True
@@ -65,6 +67,8 @@ class DisplayConfig:
     theme: str = "cyberpunk"
     ergonomic_mode: bool = False
     date_format: str = "YYYY-MM-DD"
+    lock_mode: bool = False
+    color_scheme: str = "normal"
 
 
 @dataclass
@@ -198,6 +202,8 @@ class ConfigManager:
                 theme=display_data.get("theme", "cyberpunk"),
                 ergonomic_mode=display_data.get("ergonomic_mode", False),
                 date_format=display_data.get("date_format", "YYYY-MM-DD"),
+                lock_mode=display_data.get("lock_mode", False),
+                color_scheme=display_data.get("color_scheme", "normal"),
             ),
             defaults=DefaultsConfig(
                 tags=defaults_data.get("tags", []),
@@ -253,6 +259,8 @@ class ConfigManager:
         display_table["theme"] = self._config.display.theme
         display_table["ergonomic_mode"] = self._config.display.ergonomic_mode
         display_table["date_format"] = self._config.display.date_format
+        display_table["lock_mode"] = self._config.display.lock_mode
+        display_table["color_scheme"] = self._config.display.color_scheme
         doc.add("display", display_table)
 
         defaults_table = tomlkit.table()
@@ -321,6 +329,8 @@ class ConfigManager:
                 "theme": config.display.theme,
                 "ergonomic_mode": config.display.ergonomic_mode,
                 "date_format": config.display.date_format,
+                "lock_mode": config.display.lock_mode,
+                "color_scheme": config.display.color_scheme,
             },
             "defaults": {
                 "tags": config.defaults.tags,

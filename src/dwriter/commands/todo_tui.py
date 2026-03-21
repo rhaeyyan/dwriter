@@ -27,6 +27,14 @@ from textual.widgets import (
 )
 
 from ..database import Todo
+from ..tui.colors import (
+    DUE_LATER,
+    DUE_OVERDUE,
+    DUE_SOON,
+    DUE_TODAY,
+    DUE_TOMORROW,
+    TAG,
+)
 
 
 class TodoListItem(ListItem):
@@ -553,32 +561,32 @@ class TodoListView(ListView):
             days_until = (due_date_only - today).days
 
             if days_until == 0:
-                due_str = "[bold yellow]TODAY[/bold yellow] | "
+                due_str = f"[{DUE_TODAY}]TODAY[/{DUE_TODAY}] | "
             elif days_until == 1:
-                due_str = "[yellow]TOMORROW[/yellow] | "
+                due_str = f"[{DUE_TOMORROW}]TOMORROW[/{DUE_TOMORROW}] | "
             elif days_until < 0:
                 # Overdue - show as negative days in red
-                due_str = f"[red]{days_until}d[/red] | "
+                due_str = f"[{DUE_OVERDUE}]{days_until}d[/{DUE_OVERDUE}] | "
             elif days_until <= 30:
                 # Within a month - show as Xd in cyan
-                due_str = f"[cyan]{days_until}d[/cyan] | "
+                due_str = f"[{DUE_SOON}]{days_until}d[/{DUE_SOON}] | "
             else:
                 # More than a month - show as Xm in dim cyan
                 months_until = days_until // 30
-                due_str = f"[dim cyan]{months_until}m[/dim cyan] | "
+                due_str = f"[{DUE_LATER}]{months_until}m[/{DUE_LATER}] | "
         else:
             due_str = "     – | "  # Placeholder for tasks without due date
 
-        # Format tags with default terminal color (no special styling)
+        # Format tags with TAG color
         tags_str = ""
         if todo.tag_names:
-            tags_display = ", ".join(todo.tag_names)
-            tags_str = f" #{tags_display}"
+            tags_display = " #".join(todo.tag_names)
+            tags_str = f" [{TAG}]#{tags_display}[/{TAG}]"
 
         # Format projects with magenta/fuchsia color (#ff00ff)
         project_str = ""
         if todo.project:
-            project_str = f" [#ff00ff]→ {todo.project}[/]"
+            project_str = f" [#ff00ff]&{todo.project}[/]"
 
         # Format priority label
         priority_label = todo.priority.upper()

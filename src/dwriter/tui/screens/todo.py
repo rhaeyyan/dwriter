@@ -26,7 +26,15 @@ from textual.widgets import (
 
 from ...cli import AppContext
 from ...database import Todo
-from ..colors import get_icon
+from ..colors import (
+    DUE_LATER,
+    DUE_OVERDUE,
+    DUE_SOON,
+    DUE_TODAY,
+    DUE_TOMORROW,
+    TAG,
+    get_icon,
+)
 from ..messages import EntryAdded, TodoUpdated
 
 
@@ -94,7 +102,7 @@ class EditTodoModal(ModalScreen):  # type: ignore[type-arg]
 
     #help-text {
         text-style: italic;
-        color: $text-muted;
+        color: $foreground 60%;
         padding: 0 0 1 0;
     }
     """
@@ -322,7 +330,7 @@ class EditTagsModal(ModalScreen):  # type: ignore[type-arg]
     }
 
     #edit-hint {
-        color: $text-muted;
+        color: $foreground 60%;
         padding: 0 0 1 0;
     }
 
@@ -612,17 +620,17 @@ class TodoListView(ListView):
             due_only = todo.due_date.replace(hour=0, minute=0, second=0, microsecond=0)
             days = (due_only - today).days
             if days < 0:
-                d_str = "[red]Overdue[/red]"
+                d_str = f"[{DUE_OVERDUE}]Overdue[/{DUE_OVERDUE}]"
             elif days == 0:
-                d_str = "[orange]Today[/orange]"
+                d_str = f"[{DUE_TODAY}]Today[/{DUE_TODAY}]"
             elif days == 1:
-                d_str = "[yellow]Tomorrow[/yellow]"
+                d_str = f"[{DUE_TOMORROW}]Tomorrow[/{DUE_TOMORROW}]"
             elif days <= 9:
-                d_str = f"[cyan]{days}d[/cyan]"
+                d_str = f"[{DUE_SOON}]{days}d[/{DUE_SOON}]"
             elif days <= 99:
-                d_str = f"[cyan]{days}d[/cyan]"
+                d_str = f"[{DUE_SOON}]{days}d[/{DUE_SOON}]"
             else:
-                d_str = "[cyan]99+[/cyan]"
+                d_str = f"[{DUE_SOON}]99+[/{DUE_SOON}]"
 
         # ESCAPE USER CONTENT! This stops user-typed brackets from crashing the app.
         safe_content = todo.content.replace("[", "\\[")
@@ -630,10 +638,10 @@ class TodoListView(ListView):
 
         # Format tags and project on first line
         tags_str = (
-            f"[yellow]#{' #'.join(todo.tag_names)}[/yellow]" if todo.tag_names else ""
+            f"[{TAG}]#{' #'.join(todo.tag_names)}[/{TAG}]" if todo.tag_names else ""
         )
         project_str = (
-            f"[cyan] : [/cyan][magenta]{safe_project}[/magenta]" if safe_project else ""
+            f" [magenta]&{safe_project}[/magenta]" if safe_project else ""
         )
 
         # Format: Due date priority | #tags : Project on first line, content on second line
@@ -694,7 +702,7 @@ class TodoScreen(Container):
     }
 
     #todo-subtitle {
-        color: $text-muted;
+        color: $foreground 60%;
     }
 
     #todo-list-container {
@@ -728,7 +736,7 @@ class TodoScreen(Container):
         dock: bottom;
         height: 1;
         background: $panel;
-        color: $text-muted;
+        color: $foreground 60%;
         padding: 0 2;
     }
 

@@ -58,7 +58,7 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
     }
 
     .help-subtitle {
-        color: $text-muted;
+        color: $foreground 60%;
         padding: 0 0 1 0;
     }
 
@@ -73,7 +73,7 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
     }
 
     .help-example {
-        color: $text-muted;
+        color: $foreground 60%;
         padding: 0 0 0 4;
     }
 
@@ -159,15 +159,15 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
   [cyan]dwriter help[/cyan]                → This help screen
 
 [bold #cba6f7]Omnibox Syntax (press / to focus):[/bold #cba6f7]
-  [yellow]#tag[/yellow]               → Add tags (e.g., [yellow]#bug[/yellow], [yellow]#feature[/yellow])
+  [bold yellow]#tag[/bold yellow]               → Add tags (e.g., [bold yellow]#bug[/bold yellow], [bold yellow]#feature[/bold yellow])
   [magenta]&project[/magenta]           → Add project (e.g., [magenta]&backend[/magenta])
   [#89dceb]15[/#89dceb]                → Timer minutes (e.g., [#89dceb]25[/#89dceb])
 
 [bold #cba6f7]Examples:[/bold #cba6f7]
-  [yellow]#bug[/yellow] [magenta]&backend[/magenta] Fixed login issue
-  [yellow]#work[/yellow] [magenta]&frontend[/magenta] Implement new feature
-  [yellow]#deepwork[/yellow] [magenta]&research[/magenta] [#89dceb]25[/#89dceb] (25min timer)
-  [yellow]#meeting[/yellow] [magenta]&team[/magenta] Weekly standup notes
+  [bold yellow]#bug[/bold yellow] [magenta]&backend[/magenta] Fixed login issue
+  [bold yellow]#work[/bold yellow] [magenta]&frontend[/magenta] Implement new feature
+  [bold yellow]#deepwork[/bold yellow] [magenta]&research[/magenta] [#89dceb]25[/#89dceb] (25min timer)
+  [bold yellow]#meeting[/bold yellow] [magenta]&team[/magenta] Weekly standup notes
 
 [bold #cba6f7]TUI Screens:[/bold #cba6f7]
   [#89dceb]1[/#89dceb] → {get_icon('dashboard', use_emojis)} Dashboard (stats, calendar, activity)
@@ -230,24 +230,24 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
 [dim]Press [cyan]/[/cyan] to focus it.[/dim]
 
 [bold #cba6f7]Log Entry (default on Dashboard/Logs screens):[/bold #cba6f7]
-  Format: [yellow]#tag[/yellow] [magenta]&project[/magenta] Your entry text
-  Example: [yellow]#bug[/yellow] [magenta]&backend[/magenta] Fixed race condition
+  Format: [bold yellow]#tag[/bold yellow] [magenta]&project[/magenta] Your entry text
+  Example: [bold yellow]#bug[/bold yellow] [magenta]&backend[/magenta] Fixed race condition
 
 [bold #cba6f7]Add Todo (on Todo screen - multi-step workflow):[/bold #cba6f7]
   Step 1: Enter task with optional tags/project
-    [yellow]#tag[/yellow] [magenta]&project[/magenta] Task description
+    [bold yellow]#tag[/bold yellow] [magenta]&project[/magenta] Task description
   Step 2: Add more tags/project (or press Enter to skip)
   Step 3: Set priority: [cyan]L[/cyan]=Low, [cyan]N[/cyan]=Normal
     [cyan]H[/cyan]=High, [cyan]U[/cyan]=Urgent
   Step 4: Set due date: [cyan]tomorrow[/cyan], [#89dceb]+5d[/#89dceb], [#89dceb]2024-03-15[/#89dceb]
 
 [bold #cba6f7]Start Timer (works from ANY screen):[/bold #cba6f7]
-  Format: [yellow]#tag[/yellow] [magenta]&project[/magenta] [#89dceb]MINUTES[/#89dceb]
-  Example: [yellow]#deepwork[/yellow] [magenta]&research[/magenta] [#89dceb]25[/#89dceb]
-  Example: [yellow]#meeting[/yellow] [#89dceb]30[/#89dceb] (30-minute meeting)
+  Format: [bold yellow]#tag[/bold yellow] [magenta]&project[/magenta] [#89dceb]MINUTES[/#89dceb]
+  Example: [bold yellow]#deepwork[/bold yellow] [magenta]&research[/magenta] [#89dceb]25[/#89dceb]
+  Example: [bold yellow]#meeting[/bold yellow] [#89dceb]30[/#89dceb] (30-minute meeting)
 
 [bold #cba6f7]Special Syntax:[/bold #cba6f7]
-  [yellow]#tag[/yellow] → Add tags (multiple: [yellow]#bug #urgent[/yellow])
+  [bold yellow]#tag[/bold yellow] → Add tags (multiple: [bold yellow]#bug #urgent[/bold yellow])
   [magenta]&project[/magenta] → Add project (use [magenta]&[/magenta] prefix)
   [cyan]YYYY-MM-DD[/cyan] → Log entry for specific date
   [#89dceb]NUMBER[/#89dceb] → Timer minutes (on Timer screen)
@@ -351,7 +351,7 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
   [cyan]{get_icon('check', use_emojis)} Completed (Z)[/cyan]   → Completed tasks with completion date
 
 [bold #cba6f7]Display Format:[/bold #cba6f7]
-  [#89dceb]\\[5d\\][/#89dceb] [yellow]\\[H\\][/yellow] Task description [yellow]#tag1 #tag2[/yellow] [magenta]: Project[/magenta]
+  [#89dceb]\\[5d\\][/#89dceb] [yellow]\\[H\\][/yellow] Task description [bold yellow]#tag1 #tag2[/bold yellow] [magenta]&Project[/magenta]
   ↑      ↑            ↑                    ↑
   Due    Priority   Content            Tags & Project
 
@@ -363,8 +363,8 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
 
 [bold #cba6f7]Due Date Display:[/bold #cba6f7]
   [red]\\[OVD\\][/red]       → Overdue (past due, appears FIRST!)
-  [bold yellow]\\[TDY\\][/bold yellow]     → Due today
-  [yellow]\\[TMR\\][/yellow]       → Due tomorrow
+  [bold #fab387]\\[TDY\\][/bold #fab387]     → Due today
+  [#fab387]\\[TMR\\][/#fab387]     → Due tomorrow
   [#89dceb]\\[5d\\][/#89dceb] / [#89dceb]\\[2m\\][/#89dceb]   → Days/months until due
   [dim]\\[---\\][/dim]       → No due date set
 
@@ -375,7 +375,7 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
   → Project: Single project name
 
 [dim]Tip: Completing a task auto-logs to your journal![/dim]
-[dim]Format: "{get_icon('check', use_emojis)} Task content [yellow]#tag[/yellow] : project"[/dim]
+[dim]Format: "{get_icon('check', use_emojis)} Task content [bold yellow]#tag[/bold yellow] &project"[/dim]
 """
         # fmt: on
 
@@ -389,7 +389,7 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
 [dim]Timer-style focused work sessions with automatic logging.[/dim]
 
 [bold #cba6f7]Starting a Timer:[/bold #cba6f7]
-  Via omnibox (any screen): [yellow]#tag[/yellow] [magenta]&project[/magenta] [#89dceb]25[/#89dceb]
+  Via omnibox (any screen): [bold yellow]#tag[/bold yellow] [magenta]&project[/magenta] [#89dceb]25[/#89dceb]
   Via CLI: [cyan]dwriter timer [#89dceb]25[/#89dceb] -t tag -p project[/cyan]
   Via TUI: Navigate → Adjust time → Start
 
@@ -408,7 +408,7 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
   [cyan]mm:ss[/cyan]  [ {'▮▮▮' if use_emojis else '###'}# {'▯▯▯' if use_emojis else '...'} ]  [#89dceb]40%[/#89dceb]
   ↑ Time    ↑ Progress bar  ↑ Percentage
 
-  Session: [yellow]#tag1[/yellow] [yellow]#tag2[/yellow] | [magenta]project[/magenta]
+  Session: [bold yellow]#tag1[/bold yellow] [bold yellow]#tag2[/bold yellow] | [magenta]&project[/magenta]
   ↑ Shows below pause button
 
 [dim]Tip: Timer commands work from ANY screen via omnibox![/dim]

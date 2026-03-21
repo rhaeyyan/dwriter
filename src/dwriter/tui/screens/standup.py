@@ -492,7 +492,7 @@ class StandupScreen(ModalScreen[None]):
                     _, time_str = format_entry_datetime(e)
                     time_prefix = f"{time_str} - " if time_str else ""
                     
-                    proj = f" `[{e.project}]`" if e.project else ""
+                    proj = f" `&{e.project}`" if e.project else ""
                     tags = f" #{' #'.join(e.tag_names)}" if e.tag_names else ""
                     clean_content = e.content.lstrip("✅⏱️ ")
                     lines.append(f"- {time_prefix}{clean_content}{proj}{tags}")
@@ -513,7 +513,7 @@ class StandupScreen(ModalScreen[None]):
                     _, time_str = format_entry_datetime(e)
                     time_prefix = f"{time_str} - " if time_str else ""
                     
-                    p_str = f" [{e.project}]" if e.project else ""
+                    p_str = f" &{e.project}" if e.project else ""
                     t_str = f" ({', '.join(f'#{t}' for t in e.tag_names)})" if e.tag_names else ""
                     clean_content = e.content.lstrip("✅⏱️ ")
                     lines.append(
@@ -534,7 +534,7 @@ class StandupScreen(ModalScreen[None]):
                     _, time_str = format_entry_datetime(e)
                     time_prefix = f"{time_str} - " if time_str else ""
                     
-                    p_str = f" [{e.project}]" if e.project else ""
+                    p_str = f" &{e.project}" if e.project else ""
                     t_str = f" ({', '.join(f'#{t}' for t in e.tag_names)})" if e.tag_names else ""
                     clean_content = e.content.lstrip("✅⏱️ ")
                     lines.append(f"• {time_prefix}{clean_content}{p_str}{t_str}")
@@ -553,7 +553,7 @@ class StandupScreen(ModalScreen[None]):
                     _, time_str = format_entry_datetime(e)
                     time_prefix = f"{time_str} - " if time_str else ""
                     
-                    p_str = f" [{e.project}]" if e.project else ""
+                    p_str = f" &{e.project}" if e.project else ""
                     t_str = f" ({', '.join(f'#{t}' for t in e.tag_names)})" if e.tag_names else ""
                     clean_content = e.content.lstrip("✅⏱️ ")
                     lines.append(
@@ -571,7 +571,7 @@ class StandupScreen(ModalScreen[None]):
                 if not entries:
                     lines.append("* No entries logged.")
                 for e in entries:
-                    p_str = f" [{e.project}]" if e.project else ""
+                    p_str = f" &{e.project}" if e.project else ""
                     t_str = f" ({', '.join(f'#{t}' for t in e.tag_names)})" if e.tag_names else ""
                     clean_content = e.content.lstrip("✅⏱️ ")
                     lines.append(f"* {clean_content}{p_str}{t_str}")
@@ -622,7 +622,7 @@ class StandupScreen(ModalScreen[None]):
                         _, time_str = format_entry_datetime(e)
                         time_prefix = f"{time_str} - " if time_str else ""
                         
-                        proj = f" `[{e.project}]`" if e.project else ""
+                        proj = f" `&{e.project}`" if e.project else ""
                         tags = f" ({', '.join(f'#{t}' for t in e.tag_names)})" if e.tag_names else ""
                         clean_content = e.content.lstrip("✅⏱️ ")
                         lines.append(f"- {time_prefix}{clean_content}{proj}{tags}")
@@ -639,7 +639,7 @@ class StandupScreen(ModalScreen[None]):
                         _, time_str = format_entry_datetime(e)
                         time_prefix = f"{time_str} - " if time_str else ""
                         
-                        p_str = f" [{e.project}]" if e.project else ""
+                        p_str = f" &{e.project}" if e.project else ""
                         t_str = f" ({', '.join(f'#{t}' for t in e.tag_names)})" if e.tag_names else ""
                         clean_content = e.content.lstrip("✅⏱️ ")
                         lines.append(
@@ -657,7 +657,7 @@ class StandupScreen(ModalScreen[None]):
                         _, time_str = format_entry_datetime(e)
                         time_prefix = f"{time_str} - " if time_str else ""
                         
-                        p_str = f" [{e.project}]" if e.project else ""
+                        p_str = f" &{e.project}" if e.project else ""
                         t_str = f" ({', '.join(f'#{t}' for t in e.tag_names)})" if e.tag_names else ""
                         clean_content = e.content.lstrip("✅⏱️ ")
                         lines.append(
@@ -675,7 +675,7 @@ class StandupScreen(ModalScreen[None]):
                         _, time_str = format_entry_datetime(e)
                         time_prefix = f"{time_str} - " if time_str else ""
                         
-                        p_str = f" [{e.project}]" if e.project else ""
+                        p_str = f" &{e.project}" if e.project else ""
                         t_str = f" ({', '.join(f'#{t}' for t in e.tag_names)})" if e.tag_names else ""
                         clean_content = e.content.lstrip("✅⏱️ ")
                         lines.append(
@@ -692,7 +692,7 @@ class StandupScreen(ModalScreen[None]):
                         _, time_str = format_entry_datetime(e)
                         time_prefix = f"{time_str} - " if time_str else ""
                         
-                        p_str = f" [{e.project}]" if e.project else ""
+                        p_str = f" &{e.project}" if e.project else ""
                         t_str = f" ({', '.join(f'#{t}' for t in e.tag_names)})" if e.tag_names else ""
                         clean_content = e.content.lstrip("✅⏱️ ")
                         lines.append(

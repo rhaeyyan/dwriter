@@ -8,6 +8,7 @@ import click
 
 from ..cli import AppContext
 from ..search_utils import search_items
+from ..tui.colors import TAG
 
 
 def format_score(score: float) -> str:
@@ -119,9 +120,9 @@ def search(
             score_str = format_score(score)
             tags_str = ""
             if entry.tag_names:
-                tags_str = " ".join(f"[#ffae00]#[/]{t}" for t in entry.tag_names)
+                tags_str = " ".join(f"[{TAG}]#[/]{t}" for t in entry.tag_names)
             if entry.project:
-                project_str = f" [purple]Project:[/purple] {entry.project}"
+                project_str = f" [purple]Project:[/purple] &{entry.project}"
             else:
                 project_str = ""
 
@@ -136,7 +137,7 @@ def search(
                     f"[#23c76b]{time_str}[/#23c76b]: {entry.content}"
                 )
             if tags_str:
-                ctx.console.print(f"    [#ffae00]Tags:[/#ffae00] {tags_str}")
+                ctx.console.print(f"    [{TAG}]Tags:[/{TAG}] {tags_str}")
             if project_str:
                 ctx.console.print(f"    {project_str}")
             ctx.console.print(f"    [dim](Match: {score_str})[/dim]")
@@ -154,8 +155,8 @@ def search(
             score_str = format_score(score)
             tags_str = ""
             if todo.tag_names:
-                tags_str = f" [dim]| {', '.join(todo.tag_names)}[/dim]"
-            project_str = f" [dim]| {todo.project}[/dim]" if todo.project else ""
+                tags_str = f" [dim]| [/{dim}][{TAG}]#{' #'.join(todo.tag_names)}[/{TAG}]"
+            project_str = f" [dim]| &{todo.project}[/dim]" if todo.project else ""
             priority_label = (
                 f"[{priority_color}]{todo.priority.upper()}[/{priority_color}]"
             )

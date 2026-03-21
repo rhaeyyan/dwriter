@@ -325,6 +325,7 @@ class DWriterApp(App[None]):
         Binding("2", "switch_mode('logs')", "Logs", show=False),
         Binding("3", "switch_mode('todo')", "To-Do", show=False),
         Binding("4", "switch_mode('timer')", "Timer", show=False),
+        Binding("5", "switch_mode('configure')", "Configure", show=False),
     ]
 
     def __init__(self, ctx: AppContext) -> None:
@@ -362,6 +363,7 @@ class DWriterApp(App[None]):
             Tab(f"{get_icon('logs', use_emojis)} Logs", id="logs"),
             Tab(f"{get_icon('todo', use_emojis)} To-Do", id="todo"),
             Tab(f"{get_icon('timer', use_emojis)} Timer", id="timer"),
+            Tab(f"{get_icon('configure', use_emojis)} Configure", id="configure"),
             id="navigation-tabs",
         )
 
@@ -371,11 +373,13 @@ class DWriterApp(App[None]):
             from .screens.logs import LogsScreen
             from .screens.timer import TimerScreen
             from .screens.todo import TodoScreen
+            from .screens.configure import ConfigureScreen
 
             yield DashboardScreen(self.ctx, id="dashboard")
             yield LogsScreen(self.ctx, id="logs")
             yield TodoScreen(self.ctx, id="todo")
             yield TimerScreen(self.ctx, id="timer")
+            yield ConfigureScreen(self.ctx, id="configure")
 
         # Single Footer
         yield Footer()

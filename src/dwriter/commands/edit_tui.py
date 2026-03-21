@@ -25,6 +25,7 @@ from textual.widgets import (
 )
 
 from ..database import Entry
+from ..tui.colors import TAG
 
 
 class EntryListItem(ListItem):
@@ -375,8 +376,8 @@ class EntryListView(ListView):
         date_str, time_str = format_entry_datetime(entry)
         tags_str = ""
         if entry.tag_names:
-            tags_str = f" [yellow]#{' #'.join(entry.tag_names)}[/yellow]"
-        project_str = f" [purple]{entry.project}[/purple]" if entry.project else ""
+            tags_str = f" [{TAG}]#{' #'.join(entry.tag_names)}[/{TAG}]"
+        project_str = f" [purple]&{entry.project}[/purple]" if entry.project else ""
 
         # Display with or without time based on whether it's a past date
         if time_str is None:

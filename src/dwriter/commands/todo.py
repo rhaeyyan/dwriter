@@ -11,6 +11,7 @@ from rich.table import Table
 from ..cli import AppContext
 from ..date_utils import parse_natural_date
 from ..search_utils import find_multiple_matches
+from ..tui.colors import DUE_OVERDUE, DUE_SOON, DUE_TODAY, DUE_TOMORROW, TAG
 
 
 @click.group(invoke_without_command=True)
@@ -98,18 +99,35 @@ def todo(
     content_str = " ".join(content) if content else None
 
     if content_str is not None:
+        # Extract metadata from content if present
+        from ..tui.parsers import parse_todo_add
+        parsed = parse_todo_add(content_str)
+        
+        # Merge default tags, content-extracted tags, and explicitly provided tags
+        all_tags = list(app_ctx.config.defaults.tags) + list(parsed.tags) + list(tags)
+        
+        # Merge content-extracted priority if not explicitly set to non-default
+        if priority == "normal" and parsed.priority != "normal":
+            priority = parsed.priority
+
+        # Use explicitly provided project, then content-extracted project, then default
+        if project is None:
+            project = parsed.project or app_ctx.config.defaults.project
+
+        # Use the cleaned content
+        content_str = parsed.content
+
         # Parse due date if provided
         due_date = None
-        if due_date_str is not None:
+        # Use content-extracted due date if not explicitly provided
+        final_due_str = due_date_str or parsed.due_date
+        
+        if final_due_str is not None:
             try:
-                due_date = parse_natural_date(due_date_str)
+                due_date = parse_natural_date(final_due_str)
             except ValueError as e:
                 app_ctx.console.print(f"[red]Error:[/red] {e}")
                 return
-
-        all_tags = list(app_ctx.config.defaults.tags) + list(tags)
-        if project is None and app_ctx.config.defaults.project:
-            project = app_ctx.config.defaults.project
 
         task = app_ctx.db.add_todo(
             content=content_str,
@@ -131,9 +149,19 @@ def todo(
             due_str = ""
             if due_date:
                 due_str = f" [dim](due: {due_date.strftime('%Y-%m-%d')})[/dim]"
+
+            tags_str = ""
+            if task.tag_names:
+                tags_str = f" [{TAG}]#{' #'.join(task.tag_names)}[/{TAG}]"
+
+            proj_str = ""
+            if task.project:
+                proj_str = f" [purple]&{task.project}[/purple]"
+
             app_ctx.console.print(
                 f"[green]Added Task [{task.id}]:[/green] "
-                f"[{color}]{task.content}[/{color}]{due_str}"
+                f"[{color}]{task.priority.upper()}[/{color}] | "
+                f"[{color}]{task.content}[/{color}]{tags_str}{proj_str}{due_str}"
             )
     else:
         # No content - launch interactive TUI
@@ -208,19 +236,35 @@ def todo_add(
     """
     content_str = " ".join(content)
 
+    # Extract metadata from content if present
+    from ..tui.parsers import parse_todo_add
+    parsed = parse_todo_add(content_str)
+    
+    # Merge default tags, content-extracted tags, and explicitly provided tags
+    all_tags = list(ctx.config.defaults.tags) + list(parsed.tags) + list(tags)
+
+    # Merge content-extracted priority if not explicitly set to non-default
+    if priority == "normal" and parsed.priority != "normal":
+        priority = parsed.priority
+
+    # Use explicitly provided project, then content-extracted project, then default
+    if project is None:
+        project = parsed.project or ctx.config.defaults.project
+
+    # Use the cleaned content
+    content_str = parsed.content
+
     # Parse due date if provided
     due_date = None
-    if due_date_str is not None:
+    # Use content-extracted due date if not explicitly provided
+    final_due_str = due_date_str or parsed.due_date
+    
+    if final_due_str is not None:
         try:
-            due_date = parse_natural_date(due_date_str)
+            due_date = parse_natural_date(final_due_str)
         except ValueError as e:
             ctx.console.print(f"[red]Error:[/red] {e}")
             return
-
-    # Get default tags and project from config
-    all_tags = list(ctx.config.defaults.tags) + list(tags)
-    if project is None and ctx.config.defaults.project:
-        project = ctx.config.defaults.project
 
     task = ctx.db.add_todo(
         content=content_str,
@@ -242,9 +286,19 @@ def todo_add(
         due_str = ""
         if due_date:
             due_str = f" [dim](due: {due_date.strftime('%Y-%m-%d')})[/dim]"
+        
+        tags_str = ""
+        if task.tag_names:
+            tags_str = f" [{TAG}]#{' #'.join(task.tag_names)}[/{TAG}]"
+        
+        proj_str = ""
+        if task.project:
+            proj_str = f" [purple]&{task.project}[/purple]"
+
         ctx.console.print(
             f"[green]Added Task [{task.id}]:[/green] "
-            f"[{color}]{task.content}[/{color}]{due_str}"
+            f"[{color}]{task.priority.upper()}[/{color}] | "
+            f"[{color}]{task.content}[/{color}]{tags_str}{proj_str}{due_str}"
         )
 
 
@@ -323,7 +377,7 @@ def todo_list(ctx: AppContext, show_all: bool, use_tui: bool) -> None:
         )
 
         tags_str = ", ".join(task.tag_names) if task.tag_names else ""
-        project_str = task.project or ""
+        project_str = f"&{task.project}" if task.project else ""
 
         # Format due date
         due_str = ""
@@ -334,13 +388,13 @@ def todo_list(ctx: AppContext, show_all: bool, use_tui: bool) -> None:
             days_until = (due_date_only - today).days
 
             if days_until < 0:
-                due_str = f"[red]{due_date.strftime('%Y-%m-%d')}[/red]"
+                due_str = f"[{DUE_OVERDUE}]{due_date.strftime('%Y-%m-%d')}[/{DUE_OVERDUE}]"
             elif days_until == 0:
-                due_str = "[bold yellow]TODAY[/bold yellow]"
+                due_str = f"[{DUE_TODAY}]TODAY[/{DUE_TODAY}]"
             elif days_until == 1:
-                due_str = "[yellow]Tomorrow[/yellow]"
+                due_str = f"[{DUE_TOMORROW}]Tomorrow[/{DUE_TOMORROW}]"
             elif days_until <= 7:
-                due_str = f"[cyan]{days_until}d[/cyan]"
+                due_str = f"[{DUE_SOON}]{days_until}d[/{DUE_SOON}]"
             else:
                 due_str = due_date.strftime("%Y-%m-%d")
 

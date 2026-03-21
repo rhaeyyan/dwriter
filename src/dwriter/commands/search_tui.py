@@ -25,6 +25,7 @@ from textual.widgets import (
 )
 
 from ..database import Entry, Todo
+from ..tui.colors import TAG
 from ..search_utils import search_items
 
 
@@ -336,8 +337,8 @@ class EntryResultsView(ListView):
         score_color = self._get_score_color(score)
         tags_str = ""
         if entry.tag_names:
-            tags_str = f" [yellow]#{' #'.join(entry.tag_names)}[/yellow]"
-        project_str = f" [purple]{entry.project}[/purple]" if entry.project else ""
+            tags_str = f" [{TAG}]#{' #'.join(entry.tag_names)}[/{TAG}]"
+        project_str = f" [purple]&{entry.project}[/purple]" if entry.project else ""
 
         # Display with or without time based on whether it's a past date
         if time_str is None:
@@ -430,11 +431,11 @@ class TodoResultsView(ListView):
         score_color = self._get_score_color(score)
         # Match entry formatting: yellow tags, purple project
         if todo.tag_names:
-            tags_str = f" [yellow]#{' #'.join(todo.tag_names)}[/yellow]"
+            tags_str = f" [{TAG}]#{' #'.join(todo.tag_names)}[/{TAG}]"
         else:
             tags_str = ""
         if todo.project:
-            project_str = f" [purple]{todo.project}[/purple]"
+            project_str = f" [purple]&{todo.project}[/purple]"
         else:
             project_str = ""
 

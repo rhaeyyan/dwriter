@@ -8,6 +8,7 @@ from typing import Any
 import click
 
 from ..cli import AppContext
+from ..tui.colors import TAG
 
 
 def format_standup_bullets(entries: Any) -> str:
@@ -17,9 +18,9 @@ def format_standup_bullets(entries: Any) -> str:
         time_str = entry.created_at.strftime("%I:%M %p")
         line = f"[#23c76b]{time_str}[/#23c76b] - {entry.content}"
         if entry.tags:
-            line += f" ({', '.join(f'[#ffae00]#[/]{tag.name}' for tag in entry.tags)})"
+            line += f" ({', '.join(f'[{TAG}]#[/]{tag.name}' for tag in entry.tags)})"
         if entry.project:
-            line += f" [magenta]{entry.project}[/magenta]"
+            line += f" [magenta]&{entry.project}[/magenta]"
         lines.append(line)
     return "\n".join(lines)
 
@@ -33,7 +34,7 @@ def format_standup_slack(entries: Any) -> str:
         if entry.tags:
             line += f" ({', '.join(f'#{tag.name}' for tag in entry.tags)})"
         if entry.project:
-            line += f" [magenta]{entry.project}[/magenta]"
+            line += f" [magenta]&{entry.project}[/magenta]"
         lines.append(line)
     return "\n".join(lines)
 
@@ -47,7 +48,7 @@ def format_standup_jira(entries: Any) -> str:
         if entry.tags:
             line += f" ({', '.join(f'#{tag.name}' for tag in entry.tags)})"
         if entry.project:
-            line += f" [magenta]{entry.project}[/magenta]"
+            line += f" [magenta]&{entry.project}[/magenta]"
         lines.append(line)
     return "\n".join(lines)
 
@@ -61,7 +62,7 @@ def format_standup_markdown(entries: Any) -> str:
         if entry.tags:
             line += f" ({', '.join(f'#{tag.name}' for tag in entry.tags)})"
         if entry.project:
-            line += f" [magenta]{entry.project}[/magenta]"
+            line += f" [magenta]&{entry.project}[/magenta]"
         lines.append(line)
     return "\n".join(lines)
 
@@ -82,14 +83,17 @@ def format_todos(todos: Any, output_format: str) -> str:
         line = f"{bullet} {todo.content}"
 
         if todo.tag_names:
-            tags_list = ", ".join(f"#{tag}" for tag in todo.tag_names)
+            if output_format == "bullets":
+                tags_list = ", ".join(f"[{TAG}]#{tag}[/{TAG}]" for tag in todo.tag_names)
+            else:
+                tags_list = ", ".join(f"#{tag}" for tag in todo.tag_names)
             line += f" ({tags_list})"
 
         if todo.project:
             if output_format in ["bullets", "markdown"]:
-                line += f" [magenta]{todo.project}[/magenta]"
+                line += f" [magenta]&{todo.project}[/magenta]"
             else:
-                line += f" [{todo.project}]"
+                line += f" &{todo.project}"
 
         lines.append(line)
     return "\n".join(lines)
