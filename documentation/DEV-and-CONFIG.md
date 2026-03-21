@@ -1,6 +1,6 @@
 # dwriter - Developer & Configuration Guide 💻
 
-This document contains configuration settings and developer-focused documentation for **dwriter**. For an overview of the tool and installation instructions, please refer to the [Main README](README.md).
+This document contains configuration settings and developer-focused documentation for **dwriter**. For an overview of the tool and installation instructions, please refer to the [Main README](../README.md).
 
 ---
 
@@ -193,4 +193,4 @@ Distributed under the **MIT License**. See `LICENSE` for more information.
 
 ---
 
-[Back to Main README](README.md)
+[Back to Main README](../README.md)

@@ -20,9 +20,9 @@ If you want a minimalist, beautiful productivity suite that gets out of your way
 
 Detailed documentation for advanced usage and development:
 
-- 📖 **[Creative Use Cases](USE_CASES.md)**: 16 creative ways to use dwriter beyond standard task management.
-- 🛠️ **[Command Reference](HEADLESS-README.md)**: Full CLI command reference (Logging, Standups, Todos, Timer, Search, etc.)
-- ⚙️ **[Configuration & Development Guide](DEV-and-CONFIG.md)**: Detailed settings, developer setup, and project info.
+- 📖 **[Creative Use Cases](documentation/USE_CASES.md)**: 16 creative ways to use dwriter beyond standard task management.
+- 🛠️ **[Command Reference](documentation/HEADLESS-README.md)**: Full CLI command reference (Logging, Standups, Todos, Timer, Search, etc.)
+- ⚙️ **[Configuration & Development Guide](documentation/DEV-and-CONFIG.md)**: Detailed settings, developer setup, and project info.
 
 ## 📋 Table of Contents
 

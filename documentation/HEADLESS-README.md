@@ -1,6 +1,6 @@
 # dwriter - Command Reference 🛠️
 
-This document contains the full command-line reference for **dwriter**. For an overview of the tool and installation instructions, please refer to the [Main README](README.md).
+This document contains the full command-line reference for **dwriter**. For an overview of the tool and installation instructions, please refer to the [Main README](../README.md).
 
 ---
 
@@ -227,4 +227,4 @@ dwriter search "meeting" -t work -t notes
 
 ---
 
-[Back to Main README](README.md)
+[Back to Main README](../README.md)
