@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dwriter"
-version = "3.5.0"
+version = "3.6.0"
 description = "A low-friction terminal journaling tool for tracking daily tasks and generating standup summaries"
 readme = "README.md"
 license = {text = "MIT"}
@@ -46,13 +46,9 @@ dev = [
     "types-pyperclip>=1.6",
     "tomli>=2.0; python_version<'3.11'",
 ]
-mcp = [
-    "mcp>=1.0.0",
-]
 
 [project.scripts]
 dwriter = "dwriter.cli:main"
-dwriter-mcp = "dwriter.mcp_server:main"
 
 [project.urls]
 Homepage = "https://github.com/yourusername/dwriter"

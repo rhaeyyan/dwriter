@@ -99,17 +99,32 @@ class DWriterApp(App[None]):
     }
 
     #omnibox-hint {
+        width: 1fr;
         height: 1;
         color: $text-muted;
         padding: 0 2;
-        margin-bottom: 1;
+    }
+
+    #omnibox-footer {
+        height: auto;
+        margin: 0 1 1 1;
+        padding: 0;
     }
 
     #help-btn, #settings-btn {
         width: auto;
         min-width: 0;
+        height: 1;
+        background: transparent;
+        border: none;
         padding: 0 1;
-        margin-left: 0;
+        margin: 0;
+        color: $primary;
+    }
+
+    #help-btn:hover, #settings-btn:hover {
+        background: $surface;
+        text-style: bold;
     }
 
     /* Horizontal Navigation Tabs - bracket style */
@@ -142,6 +157,24 @@ class DWriterApp(App[None]):
         background: transparent;
         color: #00FF7F;
         text-style: bold;
+    }
+
+    Tab#settings {
+        width: auto;
+    }
+
+    Tab#tab-spacer {
+        width: 1fr;
+        border: none;
+        background: transparent;
+    }
+    
+    Tab#tab-spacer:hover {
+        background: transparent;
+    }
+    
+    Tab#tab-spacer.-active {
+        background: transparent;
     }
 
     /* Content Area - Full width, no borders */
@@ -309,18 +342,30 @@ class DWriterApp(App[None]):
         padding: 1 0;
     }
 
-    /* Buttons */
+    /* Buttons - Sleek Neon Ghost Style */
     Button {
         border: none;
-        height: 3;
-        min-width: 10;
+        height: auto;
+        min-height: 1;
+        min-width: 8;
         padding: 0 1;
+        background: transparent;
     }
-    Button.-success { background: $success; color: $background; text-style: bold; }
-    Button.-warning { background: $warning; color: $background; text-style: bold; }
-    Button.-error { background: $error; color: $background; text-style: bold; }
-    Button.-primary { background: $primary; color: $background; text-style: bold; }
-    Button.-default { background: $panel-light; color: $foreground; text-style: bold; }
+    
+    Button.-success { color: $success; text-style: bold; }
+    Button.-success:hover, Button.-success:focus { background: $success 20%; color: $success; text-style: reverse bold; }
+    
+    Button.-warning { color: $warning; text-style: bold; }
+    Button.-warning:hover, Button.-warning:focus { background: $warning 20%; color: $warning; text-style: reverse bold; }
+    
+    Button.-error { color: $error; text-style: bold; }
+    Button.-error:hover, Button.-error:focus { background: $error 20%; color: $error; text-style: reverse bold; }
+    
+    Button.-primary { color: $primary; text-style: bold; }
+    Button.-primary:hover, Button.-primary:focus { background: $primary 20%; color: $primary; text-style: reverse bold; }
+    
+    Button.-default { color: $foreground 70%; text-style: bold; }
+    Button.-default:hover, Button.-default:focus { color: $foreground; background: $surface; text-style: reverse bold; }
     """
 
     BINDINGS = [
@@ -332,7 +377,7 @@ class DWriterApp(App[None]):
         Binding("2", "switch_mode('logs')", "Logs", show=False),
         Binding("3", "switch_mode('todo')", "To-Do", show=False),
         Binding("4", "switch_mode('timer')", "Timer", show=False),
-        Binding("5", "switch_mode('configure')", "Configure", show=False),
+        Binding("5", "switch_mode('settings')", "Settings", show=False),
     ]
 
     def __init__(self, ctx: AppContext) -> None:
@@ -357,19 +402,22 @@ class DWriterApp(App[None]):
                 placeholder="#tag &project YOUR-ENTRY | #tag &project YOUR-ENTRY YYYY-MM-DD",
                 id="quick-add",
             )
+        
+        with Horizontal(id="omnibox-footer"):
+            yield Label(
+                "#tag &project YOUR-ENTRY | #tag &project YOUR-ENTRY YYYY-MM-DD",
+                id="omnibox-hint",
+            )
             yield Button("Help", id="help-btn", variant="default")
-        yield Label(
-            "#tag &project YOUR-ENTRY | #tag &project YOUR-ENTRY YYYY-MM-DD",
-            id="omnibox-hint",
-        )
 
         # Horizontal Navigation Tabs
         yield Tabs(
-            Tab("\\[ DASH \\]", id="dashboard"),
-            Tab("\\[ LOGS \\]", id="logs"),
-            Tab("\\[ TO-DO \\]", id="todo"),
-            Tab("\\[ TIMER \\]", id="timer"),
-            Tab("\\[ CONFIGURE \\]", id="configure"),
+            Tab("\\[ DASH ]", id="dashboard"),
+            Tab("\\[ LOGS ]", id="logs"),
+            Tab("\\[ TO-DO ]", id="todo"),
+            Tab("\\[ TIMER ]", id="timer"),
+            Tab("", id="tab-spacer", disabled=True),
+            Tab("\\[ SETTINGS ]", id="settings"),
             id="navigation-tabs",
         )
 
@@ -385,7 +433,7 @@ class DWriterApp(App[None]):
             yield LogsScreen(self.ctx, id="logs")
             yield TodoScreen(self.ctx, id="todo")
             yield TimerScreen(self.ctx, id="timer")
-            yield ConfigureScreen(self.ctx, id="configure")
+            yield ConfigureScreen(self.ctx, id="settings")
 
         # Single Footer
         yield Footer()

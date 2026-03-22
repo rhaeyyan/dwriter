@@ -62,9 +62,9 @@ class SessionCompleteModal(ModalScreen):  # type: ignore[type-arg]
     }
 
     #edit-buttons {
-        height: 3;
+        height: auto;
         align: center middle;
-        margin-top: 1;
+        margin-top: 2;
     }
 
     Button {
@@ -132,8 +132,8 @@ class SessionCompleteModal(ModalScreen):  # type: ignore[type-arg]
                 )
 
             with Horizontal(id="edit-buttons"):
-                yield Button("[ LOG ENTRY ]", id="save-btn", variant="success")
-                yield Button("[ SKIP ]", id="cancel-btn", variant="default")
+                yield Button("\\[ LOG ENTRY ]", id="save-btn", variant="success")
+                yield Button("\\[ SKIP ]", id="cancel-btn", variant="default")
 
     def on_mount(self) -> None:
         """Focus the input on mount."""
@@ -268,8 +268,8 @@ class TimerScreen(Container):
     #timer-main-container {
         height: 28;
         width: 78;
-        align: center middle;
-        padding: 1 3;
+        align: center top;
+        padding: 0 3;
         background: $panel;
         border: solid #3b494c;
         border-title-color: $primary;
@@ -281,6 +281,7 @@ class TimerScreen(Container):
         margin-bottom: 0;
         padding: 0 2;
         background: $panel;
+        align: left top;
     }
 
     #timer-title {
@@ -288,47 +289,56 @@ class TimerScreen(Container):
         text-style: bold;
         color: $secondary;
         width: 1fr;
-        padding-top: 1;
+        height: 1;
+        padding: 0;
+        margin-top: 1;
     }
 
     #timer-break-mode-container {
-        height: auto;
+        height: 3;
         width: auto;
-        align: right middle;
-        padding: 0 1;
+        align: right top;
+        padding: 0;
+        margin-top: 0;
     }
 
     #timer-break-label {
-        text-align: right;
-        padding: 1 1 0 0;
+        text-align: left;
+        padding: 0 1 0 0;
         color: $text-muted;
         width: auto;
+        margin-top: 1;
     }
 
     #timer-break-switch {
         margin: 0;
+        height: auto;
     }
 
     #timer-controls {
         height: auto;
         align: center middle;
         padding: 0;
+        margin-top: 4;
     }
 
     #timer-control-button {
         min-width: 15;
-        height: 3;
+        height: auto;
     }
 
     #timer-clear-row {
+        dock: bottom;
         height: auto;
+        width: 100%;
         align: right middle;
         padding: 0 1;
+        margin-bottom: 1;
     }
 
     #timer-clear-button {
         min-width: 10;
-        height: 3;
+        height: auto;
     }
 
     #timer-adjust-buttons {
@@ -346,6 +356,7 @@ class TimerScreen(Container):
         height: auto;
         align: center middle;
         padding: 0;
+        margin-bottom: 1; /* Space below progress bar */
     }
 
     .timer-session-meta {
@@ -465,7 +476,7 @@ class TimerScreen(Container):
         """Compose the timer UI layout."""
         use_emojis = self.ctx.config.display.use_emojis
         with Container(id="timer-main-container"):
-            # Header with title and break toggle
+            # Header with title (left) and break toggle (right)
             with Horizontal(id="timer-header"):
                 yield Label(f"{get_icon('timer', use_emojis)} Timer", id="timer-title")
                 with Horizontal(id="timer-break-mode-container"):
@@ -483,9 +494,6 @@ class TimerScreen(Container):
                     variant="warning",
                 )
 
-            # Session metadata (tags/project) - centered below button
-            yield Label("", id="timer-session-meta", classes="timer-session-meta")
-
             # Progress bar
             with Container(id="timer-progress-container"):
                 yield TimerProgressBar(
@@ -493,19 +501,22 @@ class TimerScreen(Container):
                     id="timer-progress-bar",
                 )
 
+            # Session metadata (tags/project) - centered below progress bar
+            yield Label("", id="timer-session-meta", classes="timer-session-meta")
+
             # Adjust buttons with centered label
             with Vertical(id="timer-adjust-section"):
                 yield Label("Add/Remove Minutes:", classes="add-time-label")
                 with Horizontal(id="timer-adjust-buttons"):
-                    yield Button("\\[ +5 MIN \\]", id="btn-plus-5", variant="success")
-                    yield Button("\\[ +1 MIN \\]", id="btn-plus-1", variant="success")
-                    yield Button("\\[ -1 MIN \\]", id="btn-minus-1", variant="error")
-                    yield Button("\\[ -5 MIN \\]", id="btn-minus-5", variant="error")
+                    yield Button("\\[ +5 MIN ]", id="btn-plus-5", variant="success")
+                    yield Button("\\[ +1 MIN ]", id="btn-plus-1", variant="success")
+                    yield Button("\\[ -1 MIN ]", id="btn-minus-1", variant="error")
+                    yield Button("\\[ -5 MIN ]", id="btn-minus-5", variant="error")
 
             # Reset button - loads fresh durations from config
             with Horizontal(id="timer-clear-row"):
                 yield Button(
-                    "[ RESET_TIMER ]",
+                    "\\[ RESET ]",
                     id="timer-clear-button",
                     variant="default",
                 )
@@ -606,19 +617,19 @@ class TimerScreen(Container):
 
             # Update control button
             if self.is_finished:
-                control_button.label = "\\[ DONE \\]"
+                control_button.label = "\\[ DONE ]"
                 control_button.variant = "primary"
                 control_button.remove_class("paused-button")
                 control_button.remove_class("running-button")
                 control_button.add_class("finished-button")
             elif self.is_running:
-                control_button.label = "\\[ PAUSE \\]"
+                control_button.label = "\\[ PAUSE ]"
                 control_button.variant = "success"
                 control_button.remove_class("paused-button")
                 control_button.remove_class("finished-button")
                 control_button.add_class("running-button")
             else:
-                control_button.label = "\\[ START \\]"
+                control_button.label = "\\[ START ]"
                 control_button.variant = "warning"
                 control_button.remove_class("running-button")
                 control_button.remove_class("finished-button")

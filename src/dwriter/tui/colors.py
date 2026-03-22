@@ -106,6 +106,7 @@ _ICONS = {
     "search": ("🔍", "Q"),
     "clock": ("🕒", "C"),
     "save": ("💾", "S"),
+    "copy": ("📋", "C"),
     "export": ("📤", "X"),
     "markdown": ("📄", "M"),
     "csv": ("📊", "C"),

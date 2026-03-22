@@ -5,12 +5,97 @@ from typing import Any
 
 from textual import work
 from textual.app import ComposeResult
-from textual.containers import Container, Horizontal, ScrollableContainer
+from textual.binding import Binding
+from textual.containers import Container, ScrollableContainer, Vertical
 from textual.widgets import LoadingIndicator, Static
 
-from ...analytics import AnalyticsEngine
+from ...analytics import AnalyticsEngine, InsightGenerator
 from ...cli import AppContext
-from ..colors import TAG, get_icon, render_block_bar_rich
+from ..colors import PROJECT, TAG, get_icon
+
+
+class UnifiedPulsePanel(Static):
+    """Unified panel for activity heatmap and 'Two-Cents' insights."""
+
+    DEFAULT_CSS = """
+    UnifiedPulsePanel {
+        border: solid #45475a;
+        border-title-color: $primary;
+        background: $panel;
+        padding: 0 2;
+        margin: 1 1 0 1;
+        height: auto;
+    }
+    """
+
+    def __init__(self, ctx: AppContext, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.ctx = ctx
+        self.nudges: list[str] = []
+        self.sparkline_data: list[int] = []
+
+    def on_mount(self) -> None:
+        use_emojis = self.ctx.config.display.use_emojis
+        self.border_title = f"{get_icon('tips', use_emojis)} Two-Cents"
+
+    def update_data(self, nudges: list[str], sparkline_data: list[int]) -> None:
+        try:
+            self.nudges = nudges
+            self.sparkline_data = sparkline_data
+            
+            use_emojis = self.ctx.config.display.use_emojis
+            content = []
+
+            # 1. Render Sparkline Heatmap at the top
+            if self.sparkline_data and any(self.sparkline_data):
+                # Using a tiny braille dot (U+2801) for 0-activity instead of space
+                # providing a subtle placeholder for the "Today" slot if empty.
+                spark_chars = "⠂⡀⣀⣄⣤⣦⣶⣷⣿" if use_emojis else "·.:-=+*#%"
+                max_val = max(self.sparkline_data)
+                # Map colors to btop palette (blue -> green -> yellow -> red)
+                colors = ["#45475a", "#a6e3a1", "#f9e2af", "#f38ba8"]
+
+                # Centering calculation based on 45 characters
+                container_width = self.size.width if self.size.width > 10 else 80
+                padding_str = " " * max(0, (container_width - 45) // 2)
+
+                spark_line = ""
+                for val in self.sparkline_data:
+                    idx = max(1, int((val / max_val) * 8)) if val > 0 else 0
+                    color_idx = int((val / max_val) * (len(colors) - 1)) if val > 0 else 0
+                    # For 0 activity (val == 0), use a very dim color for the placeholder dot
+                    c = colors[0] if val == 0 else colors[color_idx or 1]
+                    spark_line += f"[{c}]{spark_chars[idx]}[/]"
+                
+                content.append(f"{padding_str}{spark_line}\n")
+                
+                # Perfect 45-character alignment for the labels:
+                # 7 (45d ago) + 1 (space) + 15 (─) + 1 (•) + 15 (─) + 1 (space) + 5 (Today) = 45
+                day_count_text = "[dim]45d ago[/] ─────────────── • ────────────── [dim]Today[/]"
+                content.append(f"{padding_str}{day_count_text}\n\n")
+
+            # 2. Render Insights below
+            if not nudges:
+                content.append("✨ [bold #a6e3a1]Everything looks balanced![/] [n]Your workload and focus are perfectly optimized. Keep it up![/]")
+            else:
+                for i, n in enumerate(nudges):
+                    if n:
+                        content.append(f" {n}")
+                        if i < len(nudges) - 1:
+                            content.append("\n\n")
+            
+            # Final styling: replace [n] placeholder with a readable off-white color
+            # and ensure trailing [/] are present. 
+            # #cdd6f4 is Catppuccin Mocha 'Text' color, which provides great contrast.
+            final_markup = "".join(content).replace("[n]", "[#cdd6f4]").replace("[/n]", "[/]")
+            if not final_markup:
+                final_markup = "[dim]No activity data to analyze yet.[/]"
+                
+            self.update(final_markup)
+        except Exception as e:
+            import sys
+            print(f"Pulse update error: {e}", file=sys.stderr)
+            self.update(f"[red]Error loading insights: {e}[/]")
 
 
 class StreakCalendar(Static):
@@ -21,8 +106,8 @@ class StreakCalendar(Static):
         border: solid #45475a;
         border-title-color: $primary;
         background: $panel;
-        padding: 0 2;
-        margin: 0 0 0 1;
+        padding: 1 2;
+        margin: 1 1 0 1;
         height: auto;
     }
     """
@@ -114,18 +199,8 @@ class StreakCalendar(Static):
         content = []
 
         months = [
-            "Jan",
-            "Feb",
-            "Mar",
-            "Apr",
-            "May",
-            "Jun",
-            "Jul",
-            "Aug",
-            "Sep",
-            "Oct",
-            "Nov",
-            "Dec",
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
         ]
         month_line_chars = [" "] * (4 + len(weeks) * 2)
         last_month = -1
@@ -142,15 +217,15 @@ class StreakCalendar(Static):
                     last_month = month
 
         month_line = "".join(month_line_chars).rstrip()
-        content.append(f"[dim bold]{month_line}[/dim bold]\n")
+        content.append(f"[dim bold]{month_line}[/dim bold]\n\n")
 
         day_names = ["   ", "Mon", "   ", "Wed", "   ", "Fri", "   "]
         level_styles = {
-            0: f"[#313244]{'■' if use_emojis else '-'}[/]",  # dim - no activity
-            1: f"[#a6e3a1]{'■' if use_emojis else '#'}[/]",  # green - low
-            2: f"[#f9e2af]{'■' if use_emojis else '#'}[/]",  # yellow - medium
-            3: f"[#fab387]{'■' if use_emojis else '#'}[/]",  # orange - high
-            4: f"[#f38ba8]{'■' if use_emojis else '#'}[/]",  # red - very high
+            0: f"[#313244]{'■' if use_emojis else '-'}[/]",
+            1: f"[#a6e3a1]{'■' if use_emojis else '#'}[/]",
+            2: f"[#f9e2af]{'■' if use_emojis else '#'}[/]",
+            3: f"[#fab387]{'■' if use_emojis else '#'}[/]",
+            4: f"[#f38ba8]{'■' if use_emojis else '#'}[/]",
         }
 
         for day_idx in range(7):
@@ -171,378 +246,11 @@ class StreakCalendar(Static):
             content.append(line + "\n")
 
         content.append(
-            f"[dim]    Total: [bold]{self.total_entries}[/]  |  "
+            f"\n[dim]    Total: [bold]{self.total_entries}[/]  |  "
             f"Streak: [bold]{self.current_streak}d[/]  |  "
-            f"Longest: [bold]{self.longest_streak}d[/][/dim]"
+            f"Longest: [bold]{self.longest_streak}d[/][/]"
         )
 
-        self.update("".join(content))
-
-
-class ActivitySparkline(Static):
-    """Sparkline showing activity heatmap rendered with Unicode Braille."""
-
-    DEFAULT_CSS = """
-    ActivitySparkline {
-        border: solid #45475a;
-        border-title-color: $primary;
-        background: $panel;
-        padding: 0 2;
-        margin: 0 0 0 1;
-        height: auto;
-    }
-    """
-
-    def __init__(self, ctx: AppContext, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
-        self.ctx = ctx
-        self._data_loaded = False
-
-    def on_mount(self) -> None:
-        self._render_sparkline()
-        self._data_loaded = True
-
-    def on_resize(self, event: Any) -> None:
-        if self._data_loaded:
-            self._render_sparkline()
-
-    def refresh_data(self) -> None:
-        """Force refresh of the sparkline data."""
-        self._render_sparkline()
-
-    def _render_sparkline(self) -> None:
-        today = datetime.now()
-        # Fixed 30-day window for sparkline
-        num_days = 30
-        start_date = today - timedelta(days=num_days - 1)
-        entries_by_date = self.ctx.db.get_entries_count_by_date(start_date, today)
-
-        data = []
-        for i in range(num_days):
-            date = start_date + timedelta(days=i)
-            date_str = date.strftime("%Y-%m-%d")
-            data.append(entries_by_date.get(date_str, 0))
-
-        # Get container width for centering
-        container_width = self.size.width if self.size.width > 10 else 60
-        content_width = num_days  # Each day is one character
-
-        # Calculate padding for center alignment
-        padding = max(0, (container_width - content_width) // 2)
-        padding_str = " " * padding
-
-        # Initialize content list
-        use_emojis = self.ctx.config.display.use_emojis
-        self.border_title = f"{get_icon('search', use_emojis)} 30-Day Trend"
-        content = []
-
-        # Get top 5 trending tags
-        engine = AnalyticsEngine(self.ctx.db)
-        tag_velocity = engine.get_tag_velocity(days=30)
-        top_tags = tag_velocity[:5]
-
-        # Add trending tags at the top, evenly spaced
-        if top_tags:
-            # Calculate spacing for even distribution across container width
-            tag_spacing = container_width // len(top_tags)
-            tags_line = ""
-            for i, (tag, count, _trend) in enumerate(top_tags):
-                tag_display = f"#{tag}({count})"
-                # Minimal padding - just center within allocated space
-                if i == 0:
-                    # Center the first tag in its slot
-                    tag_padding = max(0, (tag_spacing - len(tag_display)) // 2)
-                    tags_line += (
-                        " " * tag_padding
-                        + f"[{TAG}]#{tag}[/{TAG}][#00e5ff]({count})[/#00e5ff]"
-                    )
-                else:
-                    # Subsequent tags: fixed spacing from previous
-                    spacing = max(1, tag_spacing - len(tag_display))
-                    tags_line += (
-                        " " * spacing
-                        + f"[{TAG}]#{tag}[/{TAG}][#00e5ff]({count})[/#00e5ff]"
-                    )
-            content.append(f"{tags_line}\n\n")
-
-        if any(data):
-            spark_chars = " ⠀⡀⣀⣄⣤⣦⣶⣷⣿" if use_emojis else " .:-=+*#%"
-            max_val = max(data) if data else 1
-            colors = ["#89b4fa", "#a6e3a1", "#f9e2af", "#f38ba8"]
-
-            spark_line = ""
-            for val in data:
-                if val == 0:
-                    idx = 0
-                else:
-                    idx = max(1, int((val / max_val) * 8)) if max_val > 0 else 0
-                color_idx = (
-                    int((val / max_val) * (len(colors) - 1)) if max_val > 0 else 0
-                )
-                color = colors[color_idx]
-                spark_line += f"[{color}]{spark_chars[idx]}[/{color}]"
-
-            # Center the sparkline
-            content.append(f"{padding_str}{spark_line}\n")
-
-            # Center-align the stats
-            low_val = min(data)
-            high_val = max(data)
-            total_val = sum(data)
-            stats_text = (
-                f"Entries: Low: {low_val}  |  High: {high_val}  |  Total: {total_val}"
-            )
-            stats_padding = max(0, (container_width - len(stats_text)) // 2)
-            content.append(f"{' ' * stats_padding}[dim]{stats_text}[/dim]")
-        else:
-            no_activity_text = "[dim]No activity[/dim]"
-            no_activity_padding = max(0, (container_width - len("No activity")) // 2)
-            content.append(f"{' ' * no_activity_padding}{no_activity_text}")
-
-        self.update("".join(content))
-
-
-class ContextSwitchCard(Static):
-    """Context switch behavioral insight."""
-
-    DEFAULT_CSS = "ContextSwitchCard { border: solid #45475a; background: $panel; padding: 0 2; height: 6; }"
-
-    def __init__(self, ctx: AppContext, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
-        self.ctx = ctx
-
-    def update_data(self, switches: float) -> None:
-        if switches <= 2:
-            level = "Low"
-            level_style = "green"
-        elif switches <= 4:
-            level = "Med"
-            level_style = "yellow"
-        else:
-            level = "High"
-            level_style = "red"
-
-        use_emojis = self.ctx.config.display.use_emojis
-        icon = get_icon("context", use_emojis)
-        content = [
-            f"[bold]{icon} Context Switches [{level_style}]{level}[/{level_style}][/bold]\n\n"
-        ]
-        content.append(f"[dim]Projects per day:[/dim] {switches:.1f}")
-        self.update("".join(content))
-
-
-class ContextFrictionCard(Static):
-    """Combined Context Switches and Friction Ratio card."""
-
-    DEFAULT_CSS = "ContextFrictionCard { border: solid #45475a; border-title-color: $primary; background: $panel; padding: 0 2; height: auto; }"
-
-    def __init__(self, ctx: AppContext, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
-        self.ctx = ctx
-
-    def _draw_bar(self, value: float, max_val: float, width: int = 15) -> str:
-        """Draws a pip bar with gradient coloring."""
-        use_emojis = self.ctx.config.display.use_emojis
-        empty_char = "･" if use_emojis else "."
-        if max_val <= 0:
-            return f" [#313244]{empty_char * width}[/] "
-        filled = int((value / max_val) * width)
-        if value > 0 and filled == 0:
-            filled = 1
-        empty = width - filled
-
-        # Pick color based on the actual ratio value
-        if value <= 1.0:
-            color = "#a6e3a1"  # light green - low friction
-        elif value <= 2.0:
-            color = "#f9e2af"  # yellow - moderate friction
-        elif value <= 3.5:
-            color = "#fab387"  # orange - high friction
-        else:
-            color = "#f38ba8"  # red - very high friction
-
-        fill_char = "￭" if use_emojis else "#"
-        return f" [{color}]{fill_char * filled}[/][#313244]{empty_char * empty}[/] "
-
-    def _get_status_display(self, ratio: float) -> tuple[str, str]:
-        """Get status label and color based on friction ratio.
-
-        Args:
-            ratio: Friction ratio value.
-
-        Returns:
-            Tuple of (status_label, color_code).
-        """
-        if ratio > 3.5:
-            return "Time Hog", "#f38ba8"  # red - high ratio
-        elif ratio > 2.0:
-            return "Prioritized", "#f9e2af"  # yellow - mid ratio
-        else:
-            return "Avg Activity", "#a6e3a1"  # green - same as Fresh bar
-
-    def on_mount(self) -> None:
-        use_emojis = self.ctx.config.display.use_emojis
-        self.border_title = f"{get_icon('glance', use_emojis)} At A Glance"
-
-    def update_data(self, switches: float, roi_data: list[Any]) -> None:
-        # Context switches section
-        if switches <= 2:
-            level = "Low"
-            level_style = "green"
-        elif switches <= 4:
-            level = "Med"
-            level_style = "yellow"
-        else:
-            level = "High"
-            level_style = "red"
-
-        # Count active projects from roi_data
-        active_projects = len(roi_data) if roi_data else 0
-
-        use_emojis = self.ctx.config.display.use_emojis
-        icon_context = get_icon("context", use_emojis)
-        
-        # Center Context Switches
-        header_text = f"{icon_context} Context Switches {level}"
-        header_pad = max(0, (36 - len(header_text)) // 2)
-        content = [
-            f"{' ' * header_pad}[bold]{icon_context} Context Switches [{level_style}]{level}[/{level_style}][/bold]\n\n"
-        ]
-        
-        sub_text = f"Projects/day: {switches:.1f}    Active: {active_projects}"
-        sub_pad = max(0, (36 - len(sub_text)) // 2)
-        content.append(
-            f"{' ' * sub_pad}[dim]Projects/day:[/dim] {switches:.1f}    [dim]Active:[/dim] {active_projects}\n"
-        )
-
-        # Friction Ratio section
-        icon_friction = get_icon("friction", use_emojis)
-        content.append(f"\n\n[bold]{icon_friction} Friction Ratio[/bold]\n")
-        
-        if not roi_data:
-            content.append("[dim]Not enough data yet...[/dim]")
-        else:
-            max_ratio = max([r[1] for r in roi_data] + [1.0])
-            for proj, ratio, _e, _t in roi_data[:3]:
-                safe_proj = proj[:10] if proj else "none"
-                status_label, status_color = self._get_status_display(ratio)
-                
-                status_len = len(status_label)
-                status_pad_left = max(1, (20 - status_len) // 2)
-                
-                content.append(
-                    f"[dim]{safe_proj:<10}[/dim] [#00e5ff][bold]{ratio:>4.1f}[/bold][/#00e5ff]{' ' * status_pad_left}[{status_color}]{status_label}[/{status_color}]\n"
-                )
-                content.append(f"{self._draw_bar(ratio, max_ratio, 15)}\n")
-        self.update("".join(content))
-
-
-class TodoHealthCard(Static):
-    """Combined To-do Health and Workload card."""
-
-    DEFAULT_CSS = "TodoHealthCard { border: solid #45475a; border-title-color: $primary; background: $panel; padding: 0 2; height: auto; }"
-
-    def __init__(self, ctx: AppContext, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
-        self.ctx = ctx
-
-    def _draw_bar(
-        self, value: int, max_val: int, width: int = 13, color: str = "white"
-    ) -> str:
-        """Draws the ￭･ pip style bar."""
-        use_emojis = self.ctx.config.display.use_emojis
-        empty_char = "･" if use_emojis else "."
-        if max_val <= 0:
-            return f"［ [#313244]{empty_char * width}[/] ］"
-        filled = int((value / max_val) * width)
-        if value > 0 and filled == 0:
-            filled = 1
-        empty = width - filled
-        fill_char = "￭" if use_emojis else "#"
-        return f"［ [{color}]{fill_char * filled}[/][#313244]{empty_char * empty}[/] ］"
-
-    def on_mount(self) -> None:
-        use_emojis = self.ctx.config.display.use_emojis
-        self.border_title = f"{get_icon('todo', use_emojis)} To-do Health"
-
-    def update_data(
-        self, fresh: int, stale: int, dead: int, added: int, done: int
-    ) -> None:
-        max_val = max((fresh, stale, dead, 1))
-
-        # Colors for each category
-        fresh_color = "#a6e3a1"  # light green
-        stale_color = "#f9e2af"  # yellow
-        stuck_color = "#f38ba8"  # red
-
-        # Workload status
-        use_emojis = self.ctx.config.display.use_emojis
-        diff = added - done
-        if diff > 0:
-            status = f"+{diff} backlog"
-            status_style = "yellow"
-            warning_icon = get_icon("warning", use_emojis)
-        elif diff < 0:
-            status = "Up to Date"
-            status_style = "green"
-            warning_icon = get_icon("check", use_emojis)
-        else:
-            status = "Balanced"
-            status_style = "green"
-            warning_icon = get_icon("check_small", use_emojis)
-
-        # Completion rate
-        total = added + done
-        completion_rate = round((done / total * 100) if total > 0 else 0, 0)
-
-        # Throughput (tasks completed per day average)
-        throughput = round(done / 7, 1) if done > 0 else 0
-
-        # Colors for stats
-        label_color = "#8c92a6"  # gray for labels (matches To-Do Health dim)
-        value_color = "#00e5ff"  # teal for numbers
-
-        icon_workload = get_icon("workload", use_emojis)
-        content = ["\n"]
-        # Fresh bar with matching color number
-        content.append(
-            f"[dim]Fresh[/dim] {self._draw_bar(fresh, max_val, 13, fresh_color)} [{fresh_color}]{fresh}[/]\n"
-        )
-        # Stale bar with matching color number
-        content.append(
-            f"[dim]Stale[/dim] {self._draw_bar(stale, max_val, 13, stale_color)} [{stale_color}]{stale}[/]\n"
-        )
-        # Stuck bar with matching color number
-        content.append(
-            f"[dim]Stuck[/dim] {self._draw_bar(dead, max_val, 13, stuck_color)} [{stuck_color}]{dead}[/]\n"
-        )
-        
-        # Center Workload
-        wl_str = f"{icon_workload} Workload {warning_icon} {status}"
-        wl_pad = max(0, (36 - len(wl_str)) // 2)
-        content.append(
-            f"\n{' ' * wl_pad}[bold]{icon_workload} Workload [{status_style}]{warning_icon} {status}[/bold]\n\n"
-        )
-        
-        row1_str = f"Added: {added}      Done: {done}"
-        r1_pad = max(0, (36 - len(row1_str)) // 2)
-        content.append(
-            f"{' ' * r1_pad}[{label_color}]Added:[/{label_color}] [{value_color}]{added}[/]      [{label_color}]Done:[/{label_color}] [{value_color}]{done}[/]\n"
-        )
-        
-        comp_str = f"Completion: {completion_rate:.0f}%"
-        thru_str = f"Throughput: {throughput}/day"
-        
-        block_width = max(len(comp_str), len(thru_str))
-        block_pad = max(0, (36 - block_width) // 2)
-        
-        content.append(
-            f"\n{' ' * block_pad}[{label_color}]Completion:[/{label_color}] [{value_color}]{completion_rate:.0f}%[/]\n"
-        )
-        
-        content.append(
-            f"{' ' * block_pad}[{label_color}]Throughput:[/{label_color}] [{value_color}]{throughput}/day[/]"
-        )
         self.update("".join(content))
 
 
@@ -557,18 +265,16 @@ class DashboardScreen(Container):
         overflow-y: auto;
         padding: 0;
     }
-    #dashboard-kpi-row { height: auto; margin-bottom: 0; }
 
-    /* Layout grid rules */
-    .insights-row { height: auto; margin: 0; padding: 0; }
-    .half-card-left { width: 1fr; margin-right: 0; margin-bottom: 0; }
-    .half-card-right { width: 1fr; margin-bottom: 0; }
+    #zone-pulse { height: auto; margin: 0; padding: 0; width: 100%; }
+    #zone-narrative { height: auto; margin: 0; padding: 0; width: 100%; }
 
-    /* Card heights */
-    TodoHealthCard { height: 16; }
-    ContextFrictionCard { height: 16; }
-    ActivitySparkline { height: auto; }
+    StreakCalendar { height: auto; }
     """
+
+    BINDINGS = [
+        Binding("c", "copy_report", "Copy Report", show=True),
+    ]
 
     def __init__(self, ctx: AppContext, **kwargs: Any) -> None:
         super().__init__(**kwargs)
@@ -578,81 +284,96 @@ class DashboardScreen(Container):
         yield LoadingIndicator(id="dashboard-loading")
 
         with ScrollableContainer(id="dashboard-main-container"):
-            # Row 1: 30-day activity sparkline
-            yield ActivitySparkline(self.ctx, id="sparkline-activity")
+            with Vertical(id="zone-pulse"):
+                yield UnifiedPulsePanel(self.ctx, id="pulse-panel")
 
-            # Row 2: Streak calendar (history)
-            yield StreakCalendar(self.ctx, id="calendar")
+            with Vertical(id="zone-narrative"):
+                yield StreakCalendar(self.ctx, id="calendar")
 
-            # Row 3: Todo Health + At A Glance side by side
-            with Horizontal(classes="insights-row"):
-                yield TodoHealthCard(self.ctx, classes="half-card-left", id="todo-health")
-                yield ContextFrictionCard(
-                    self.ctx, classes="half-card-right", id="context-friction"
-                )
+    def action_copy_report(self) -> None:
+        """Generate and copy a markdown report of current KPIs."""
+        engine = AnalyticsEngine(self.ctx.db)
+        fresh, stale, dead = engine.get_task_staleness()
+        switches = engine.get_context_switches(days=7)
+        deep_count, shallow_count, deep_ratio = engine.get_deep_work_ratio(days=7)
+        burnout = engine.get_rolling_burnout_score(days=7)
+
+        report = f"# dwriter Performance Report\nDate: {datetime.now().strftime('%Y-%m-%d')}\n\n"
+        report += "## 📊 High-Level Metrics\n"
+        report += f"- **To-Do Health**: {fresh} Fresh / {stale} Stale / {dead} Stuck\n"
+        report += f"- **Context Switches**: {switches:.1f} per day\n"
+        report += (f"- **Deep Work Ratio**: {deep_ratio:.1f}% ({deep_count} sessions vs "
+                  f"{shallow_count} shallow tasks)\n")
+        report += f"- **Burnout Risk Score**: {burnout:.2f}/1.00\n\n"
+        report += "## 💡 Coach's Insights\n"
+
+        insight_gen = InsightGenerator(engine)
+        import re
+        for n in insight_gen.generate_insights():
+            clean_n = re.sub(r"\[.*?\]", "", n)
+            report += f"- {clean_n}\n"
+
+        try:
+            import pyperclip
+            pyperclip.copy(report)
+            self.app.notify("Report copied to clipboard!", title="Export Success")
+        except Exception:
+            self.app.notify("Could not copy report", title="Export Error", severity="error")
 
     def on_mount(self) -> None:
         self._load_dashboard_data()
 
     def on_show(self) -> None:
-        """Refresh data when the dashboard screen becomes visible."""
         self._load_dashboard_data()
 
     @work(exclusive=True, thread=True)
     def _load_dashboard_data(self) -> None:
-        """Fetch all data in the background to prevent UI lag."""
-        # Behavioral Analytics
-        engine = AnalyticsEngine(self.ctx.db)
-        fresh, stale, dead = engine.get_task_staleness()
-        added, done = engine.get_say_do_ratio(days=7)
-        switches = engine.get_context_switches(days=7)
-        roi_data = engine.get_project_roi(days=30)
-
-        # Weekly data
-        today = datetime.now().date()
-        start_date_week = today - timedelta(days=6)
-        entries_by_date = self.ctx.db.get_entries_count_by_date(start_date_week, today)
-        weekly_data = [
-            entries_by_date.get(
-                (start_date_week + timedelta(days=i)).strftime("%Y-%m-%d"), 0
-            )
-            for i in range(7)
-        ]
-
-        if hasattr(self.app, "call_from_thread"):
-            self.app.call_from_thread(
-                self._update_ui,
-                fresh,
-                stale,
-                dead,
-                added,
-                done,
-                switches,
-                roi_data,
-                weekly_data,
-            )
-
-    def _update_ui(
-        self, fresh, stale, dead, added, done, switches, roi_data, weekly_data
-    ) -> None:
-        """Push fetched data into the charts."""
         try:
-            self.query_one("#todo-health", TodoHealthCard).update_data(
-                fresh, stale, dead, added, done
-            )
-            self.query_one("#context-friction", ContextFrictionCard).update_data(
-                switches, roi_data
-            )
-            self.query_one("#sparkline-activity", ActivitySparkline).refresh_data()
-            self.query_one("#calendar", StreakCalendar)._load_data()
+            engine = AnalyticsEngine(self.ctx.db)
+            
+            # 1. Fetch Insights
+            insight_gen = InsightGenerator(engine)
+            nudges = insight_gen.generate_insights()
 
-            # Hide the loading spinner
-            loading = self.query_one("#dashboard-loading")
-            loading.display = False
+            # 2. Fetch Sparkline Data (45 days)
+            today = datetime.now()
+            num_days = 45
+            start_date = today - timedelta(days=num_days - 1)
+            entries_by_date = self.ctx.db.get_entries_count_by_date(start_date, today)
+            spark_data = []
+            for i in range(num_days):
+                date = start_date + timedelta(days=i)
+                date_str = date.strftime("%Y-%m-%d")
+                spark_data.append(entries_by_date.get(date_str, 0))
+
+            if hasattr(self.app, "call_from_thread"):
+                self.app.call_from_thread(self._update_ui, nudges, spark_data)
         except Exception as e:
             import sys
+            print(f"Data load error: {e}", file=sys.stderr)
+            if hasattr(self.app, "call_from_thread"):
+                self.app.call_from_thread(self._hide_loading)
 
-            print(f"UI update error: {e}", file=sys.stderr)
-            self.query_one("#calendar", StreakCalendar)._load_data()
+    def _hide_loading(self) -> None:
+        """Fallback to hide loading indicator on error."""
+        try:
+            loading = self.query_one("#dashboard-loading")
+            loading.display = False
+        except Exception:
+            pass
+
+    def _update_ui(self, nudges, spark_data) -> None:
+        try:
+            pulse_panel = self.query_one("#pulse-panel", UnifiedPulsePanel)
+            if pulse_panel:
+                pulse_panel.update_data(nudges, spark_data)
+            
+            calendar = self.query_one("#calendar", StreakCalendar)
+            if calendar:
+                calendar._load_data()
+                
             self.query_one("#dashboard-loading").display = False
-        except Exception: pass
+        except Exception as e:
+            import sys
+            print(f"UI update error: {e}", file=sys.stderr)
+            self._hide_loading()

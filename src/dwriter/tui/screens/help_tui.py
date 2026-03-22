@@ -1,8 +1,4 @@
-"""Help screen for dwriter TUI.
-
-This module provides a comprehensive help screen with tabbed navigation
-showing all available commands, keybindings, and usage examples.
-"""
+"""Help screen for dwriter TUI."""
 
 from __future__ import annotations
 
@@ -15,18 +11,7 @@ from ..colors import get_icon
 
 
 class HelpScreen(Screen):  # type: ignore[type-arg]
-    """Help screen for dwriter TUI.
-
-    Provides comprehensive help with tabbed navigation for:
-    - Overview & Quick Start
-    - Navigation & Global Keys
-    - Omnibox Commands
-    - Dashboard Features
-    - Todo Board
-    - Timer
-    - Search & Logs
-    - Keyboard Shortcuts Reference
-    """
+    """Help screen for dwriter TUI."""
 
     CSS = """
     HelpScreen {
@@ -351,22 +336,22 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
   [cyan]{get_icon('check', use_emojis)} Completed (Z)[/cyan]   → Completed tasks with completion date
 
 [bold #cba6f7]Display Format:[/bold #cba6f7]
-  [#89dceb]\\[5d\\][/#89dceb] [yellow]\\[H\\][/yellow] Task description [bold yellow]#tag1 #tag2[/bold yellow] [magenta]&Project[/magenta]
+  [#89dceb]\\[5d][/#89dceb] [yellow]\\[H][/yellow] Task description [bold yellow]#tag1 #tag2[/bold yellow] [magenta]&Project[/magenta]
   ↑      ↑            ↑                    ↑
   Due    Priority   Content            Tags & Project
 
 [bold #cba6f7]Priority Colors:[/bold #cba6f7]
-  [red]\\[U\\][/red] Urgent    → Critical tasks
-  [yellow]\\[H\\][/yellow] High      → Important tasks
-  [white]\\[N\\][/white] Normal    → Regular tasks
-  [dim]\\[L\\][/dim] Low       → When time permits
+  [red]\\[U][/red] Urgent    → Critical tasks
+  [yellow]\\[H][/yellow] High      → Important tasks
+  [white]\\[N][/white] Normal    → Regular tasks
+  [dim]\\[L][/dim] Low       → When time permits
 
 [bold #cba6f7]Due Date Display:[/bold #cba6f7]
-  [red]\\[OVD\\][/red]       → Overdue (past due, appears FIRST!)
-  [bold #fab387]\\[TDY\\][/bold #fab387]     → Due today
-  [#fab387]\\[TMR\\][/#fab387]     → Due tomorrow
-  [#89dceb]\\[5d\\][/#89dceb] / [#89dceb]\\[2m\\][/#89dceb]   → Days/months until due
-  [dim]\\[---\\][/dim]       → No due date set
+  [red]\\[OVD][/red]       → Overdue (past due, appears FIRST!)
+  [bold #fab387]\\[TDY][/bold #fab387]     → Due today
+  [#fab387]\\[TMR][/#fab387]     → Due tomorrow
+  [#89dceb]\\[5d][/#89dceb] / [#89dceb]\\[2m][/#89dceb]   → Days/months until due
+  [dim]\\[---][/dim]       → No due date set
 
 [bold #cba6f7]Edit Dialog (press e):[/bold #cba6f7]
   → Content: Task description

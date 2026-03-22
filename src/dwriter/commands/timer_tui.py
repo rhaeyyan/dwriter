@@ -1,8 +1,4 @@
-"""Interactive timer TUI using Textual.
-
-This module provides a real-time timer with pause/resume
-and session logging capabilities.
-"""
+"""Interactive timer TUI using Textual."""
 
 from __future__ import annotations
 
@@ -18,7 +14,7 @@ from textual.widgets import Button, Footer, Header, Input, Label, Static
 
 
 class TimerProgressBar(Static):
-    """Custom progress bar with gradient pips and tomato indicator."""
+    """Custom progress bar with gradient pips."""
 
     DEFAULT_CSS = """
     TimerProgressBar {
@@ -37,60 +33,32 @@ class TimerProgressBar(Static):
     """
 
     def __init__(self, total_seconds: int = 25 * 60, **kwargs: Any) -> None:
-        """Initialize the progress bar.
-
-        Args:
-            total_seconds: Total duration in seconds.
-            **kwargs: Additional arguments passed to Static.
-        """
+        """Initialize the progress bar."""
         super().__init__(**kwargs)
         self.total_seconds = total_seconds
         self.remaining_seconds = total_seconds
 
     def update_progress(self, remaining: int, total: int) -> None:
-        """Update the progress bar.
-
-        Args:
-            remaining: Remaining seconds.
-            total: Total seconds.
-        """
+        """Update the progress bar state."""
         self.remaining_seconds = remaining
         self.total_seconds = total
         self._render_bar()
 
     def _get_gradient_color(self, position: float) -> str:
-        """Get color for a pip based on its position in the bar.
-
-        Args:
-            position: Position from 0.0 (left) to 1.0 (right).
-
-        Returns:
-            Hex color string (green → yellow → orange → red).
-        """
+        """Get color for a pip based on its position in the bar."""
         if position < 0.25:
-            return "#00ff00"  # Green
+            return "#00ff00"
         elif position < 0.5:
-            return "#7fff00"  # Green-yellow
+            return "#7fff00"
         elif position < 0.75:
-            return "#ffff00"  # Yellow
+            return "#ffff00"
         elif position < 0.85:
-            return "#ffa500"  # Orange
+            return "#ffa500"
         else:
-            return "#ff0000"  # Red
+            return "#ff0000"
 
     def _render_bar(self) -> None:
-        """Render the progress bar with gradient pips and mango indicator."""
-        if self.total_seconds <= 0:
-            self.update("[dim]No time set[/dim]")
-            return
-
-        progress = 1.0 - (self.remaining_seconds / self.total_seconds)
-        int(progress * 100)
-
-        self._render_bar()
-
-    def _render_bar(self) -> None:
-        """Render the progress bar with gradient pips and mango indicator."""
+        """Render the progress bar with gradient pips."""
         if self.total_seconds <= 0:
             self.update("No time set")
             return
@@ -98,23 +66,20 @@ class TimerProgressBar(Static):
         progress = 1.0 - (self.remaining_seconds / self.total_seconds)
         percentage = int(progress * 100)
 
-        # Build progress bar
         bar_width = 30
         filled = int(bar_width * progress)
 
-        # Build the bar - use plain text without markup
         bar_parts = []
         for i in range(bar_width):
             if i < filled:
                 bar_parts.append("▮")
             elif i == filled:
-                bar_parts.append("🥭")
+                bar_parts.append("⏱️")
             else:
                 bar_parts.append("▯")
 
         bar_str = "".join(bar_parts)
 
-        # Format time display
         mins = self.remaining_seconds // 60
         secs = self.remaining_seconds % 60
         time_str = f"{mins:02d}:{secs:02d}"
@@ -184,15 +149,7 @@ class SessionCompleteModal(ModalScreen):  # type: ignore[type-arg]
         project: str | None = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize the session complete modal.
-
-        Args:
-            minutes: Duration of the completed session.
-            default_content: Default entry content.
-            tags: Optional tags for the entry.
-            project: Optional project for the entry.
-            **kwargs: Additional arguments passed to ModalScreen.
-        """
+        """Initialize the session complete modal."""
         super().__init__(**kwargs)
         self.minutes = minutes
         self.default_content = default_content
@@ -214,7 +171,6 @@ class SessionCompleteModal(ModalScreen):  # type: ignore[type-arg]
                 placeholder="What did you accomplish?",
             )
 
-            # Show tags and project if provided
             if self.tags or self.project:
                 meta_parts = []
                 if self.tags:
@@ -256,17 +212,7 @@ class SessionCompleteModal(ModalScreen):  # type: ignore[type-arg]
 
 
 class TimerApp(App):  # type: ignore[type-arg]
-    """Interactive timer application.
-
-    Provides a real-time timer with pause/resume capability.
-    Timer starts automatically on mount.
-
-    Key bindings:
-        Space: Pause/Resume timer
-        +/-: Add/Subtract 5 minutes
-        Enter: Finish session early
-        q: Quit without logging
-    """
+    """Interactive timer application."""
 
     CSS = """
     Screen {
@@ -351,7 +297,6 @@ class TimerApp(App):  # type: ignore[type-arg]
         Binding("?", "goto_help", "Help", show=True),
     ]
 
-    # Reactive properties for timer state
     remaining_seconds = reactive(25 * 60)
     is_running = reactive(False)
     is_finished = reactive(False)
@@ -365,16 +310,7 @@ class TimerApp(App):  # type: ignore[type-arg]
         project: str | None = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize the timer application.
-
-        Args:
-            db: Database instance for logging sessions.
-            console: Rich console instance.
-            minutes: Initial timer duration in minutes.
-            tags: Optional tags for the session entry.
-            project: Optional project for the session entry.
-            **kwargs: Additional arguments passed to App.
-        """
+        """Initialize the timer application."""
         super().__init__(**kwargs)
         self.db = db
         self.console = console
@@ -383,7 +319,6 @@ class TimerApp(App):  # type: ignore[type-arg]
         self._timer_handle: Any = None
         self.tags = tags or []
         self.project = project
-        # Start in paused state - user must press Space or click to start
         self.is_running = False
 
     def compose(self) -> ComposeResult:
@@ -392,7 +327,6 @@ class TimerApp(App):  # type: ignore[type-arg]
         with Container(id="main-container"):
             yield Label("⏱️ Timer", id="timer-title")
 
-            # Control button (Start/Pause)
             with Horizontal(id="timer-controls"):
                 yield Button(
                     "⏸ Paused",
@@ -400,14 +334,12 @@ class TimerApp(App):  # type: ignore[type-arg]
                     variant="warning",
                 )
 
-            # Progress bar
             with Container(id="timer-progress-container"):
                 yield TimerProgressBar(
                     total_seconds=self.total_seconds,
                     id="timer-progress-bar",
                 )
 
-            # Adjust buttons
             with Horizontal(id="timer-adjust-buttons"):
                 yield Button("+5", id="btn-plus-5", variant="success")
                 yield Button("+1", id="btn-plus-1", variant="success")
@@ -421,7 +353,7 @@ class TimerApp(App):  # type: ignore[type-arg]
         yield Footer()
 
     def on_mount(self) -> None:
-        """Initialize the timer display on mount."""
+        """Initialize display on mount."""
         self._update_display()
 
     def on_unmount(self) -> None:
@@ -431,9 +363,8 @@ class TimerApp(App):  # type: ignore[type-arg]
             self._timer_handle = None
 
     def watch_remaining_seconds(self) -> None:
-        """Reactively update display when remaining seconds change."""
+        """Update display when time changes."""
         self._update_display()
-        # Update progress bar
         try:
             progress_bar = self.query_one("#timer-progress-bar", TimerProgressBar)
             progress_bar.update_progress(self.remaining_seconds, self.total_seconds)
@@ -441,36 +372,27 @@ class TimerApp(App):  # type: ignore[type-arg]
             pass
 
     def watch_is_running(self) -> None:
-        """Reactively update display when running state changes."""
+        """Update display when running state changes."""
         self._update_display()
 
     def watch_is_finished(self) -> None:
-        """Reactively update display when finished state changes."""
+        """Update display when finished state changes."""
         self._update_display()
 
     def _format_time(self, seconds: int) -> str:
-        """Format seconds as MM:SS.
-
-        Args:
-            seconds: Time in seconds.
-
-        Returns:
-            Formatted time string.
-        """
+        """Format seconds as MM:SS."""
         mins = seconds // 60
         secs = seconds % 60
         return f"{mins:02d}:{secs:02d}"
 
     def _update_display(self) -> None:
-        """Update the timer display."""
+        """Update the timer display components."""
         try:
             control_button = self.query_one("#timer-control-button", Button)
             progress_bar = self.query_one("#timer-progress-bar", TimerProgressBar)
 
-            # Update progress bar
             progress_bar.update_progress(self.remaining_seconds, self.total_seconds)
 
-            # Update control button
             if self.is_finished:
                 control_button.label = "✅ Complete!"
                 control_button.variant = "success"
@@ -498,12 +420,12 @@ class TimerApp(App):  # type: ignore[type-arg]
         self._schedule_tick()
 
     def _schedule_tick(self) -> None:
-        """Schedule the next tick in 1 second."""
+        """Schedule the next tick."""
         if self.is_running and not self.is_finished:
             self._timer_handle = self.set_timer(1.0, self._tick_and_schedule)
 
     def _tick_and_schedule(self) -> None:
-        """Tick and schedule next tick."""
+        """Perform tick and schedule next."""
         self._tick()
         if self.is_running and not self.is_finished:
             self._schedule_tick()
@@ -516,7 +438,7 @@ class TimerApp(App):  # type: ignore[type-arg]
             self._timer_handle = None
 
     def _tick(self) -> None:
-        """Decrement the timer by one second."""
+        """Decrement timer by one second."""
         if self.is_running and self.remaining_seconds > 0:
             self.remaining_seconds -= 1
 
@@ -531,7 +453,7 @@ class TimerApp(App):  # type: ignore[type-arg]
         self._show_session_complete()
 
     def _show_session_complete(self) -> None:
-        """Show the session complete modal with tags and project."""
+        """Show session complete modal."""
         completed_minutes = self.initial_minutes
         default_content = f"Completed {completed_minutes}m timer session"
 
@@ -564,9 +486,8 @@ class TimerApp(App):  # type: ignore[type-arg]
         )
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
-        """Handle button presses for time adjustment and control."""
+        """Handle button interaction."""
         if event.button.id == "timer-control-button":
-            # Toggle pause/resume when clicking the control button
             self.action_toggle_pause()
         elif event.button.id == "btn-plus-1":
             self._adjust_time(1)
@@ -578,11 +499,7 @@ class TimerApp(App):  # type: ignore[type-arg]
             self._adjust_time(-5)
 
     def _adjust_time(self, minutes: int) -> None:
-        """Adjust timer by specified minutes.
-
-        Args:
-            minutes: Minutes to add (positive) or subtract (negative).
-        """
+        """Adjust timer duration."""
         if self.is_finished:
             return
 
@@ -598,17 +515,14 @@ class TimerApp(App):  # type: ignore[type-arg]
         self.initial_minutes = self.remaining_seconds // 60
 
         if minutes > 0:
-            msg = f"Added {minutes} minute{'s' if minutes > 1 else ''}"
-            self.notify(msg, timeout=1)
+            self.notify(f"Added {minutes} minute{'s' if minutes > 1 else ''}", timeout=1)
         else:
-            msg = f"Subtracted {abs(minutes)} minute"
-            msg += "s" if abs(minutes) > 1 else ""
-            self.notify(msg, timeout=1)
+            self.notify(f"Subtracted {abs(minutes)} minute{'s' if abs(minutes) > 1 else ''}", timeout=1)
 
         self._update_display()
 
     def action_toggle_pause(self) -> None:
-        """Toggle timer pause/resume."""
+        """Toggle timer state."""
         if self.is_finished:
             return
 
@@ -621,34 +535,25 @@ class TimerApp(App):  # type: ignore[type-arg]
         self._update_display()
 
     def action_add_5_min(self) -> None:
-        """Add 5 minutes to the timer."""
+        """Add 5 minutes."""
         self._adjust_time(5)
 
     def action_subtract_5_min(self) -> None:
-        """Subtract 5 minutes from the timer."""
+        """Subtract 5 minutes."""
         self._adjust_time(-5)
 
     def action_finish(self) -> None:
-        """Finish the session early."""
+        """Finish session immediately."""
         if self.is_finished:
             return
-
         self._stop_timer()
         self._timer_finished()
 
     def action_quit(self) -> None:  # type: ignore[override]
-        """Quit the timer with confirmation."""
-        if self.is_finished:
-            self.exit()
-        elif self.remaining_seconds == self.total_seconds:
-            # Timer hasn't started, quit without confirmation
-            self.exit()
-        else:
-            self.notify("Session not logged", timeout=1.5)
-            self.exit()
+        """Quit timer application."""
+        self.exit()
 
     def action_goto_help(self) -> None:
-        """Navigate to the help TUI."""
+        """Open help screen."""
         from .help_tui import HelpScreen
-
         self.push_screen(HelpScreen())

@@ -986,10 +986,9 @@ When the timer finishes:
 ## Progress Bar Display
 
 ```
-15:00  [ ▮▮▮▮▮🥭▯▯▯▯▯▯▯▯▯▯▯▯▯▯▯ ]  40%
+15:00  [ ▮▮▮▮▮⏱️▯▯▯▯▯▯▯▯▯▯▯▯▯▯▯ ]  40%
  ↑      ↑                    ↑    ↑
 time   pips                 dim   percentage
-       mango at 40%
 ```
 
 ## Tips

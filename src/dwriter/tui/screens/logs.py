@@ -1,9 +1,4 @@
-"""Logs screen for dwriter TUI.
-
-This module provides a view of recent journal entries with fuzzy search
-capabilities for finding older logs. Completed todos appear here as journal
-entries with their completion date and time.
-"""
+"""Logs screen for viewing journal entries."""
 
 from __future__ import annotations
 
@@ -191,7 +186,7 @@ class EditEntryModal(ModalScreen):  # type: ignore[type-arg]
             )
 
             with Container(id="edit-buttons"):
-                yield Button("\\[ CANCEL \\]", id="cancel-btn", variant="default")
+                yield Button("\\[ CANCEL ]", id="cancel-btn", variant="default")
 
     def on_mount(self) -> None:
         """Focus the content input on mount."""
@@ -453,8 +448,8 @@ class DeleteConfirmModal(ModalScreen):  # type: ignore[type-arg]
                 id="delete-modal-content",
             )
             with Container(id="delete-buttons"):
-                yield Button("\\[ DELETE \\]", id="delete-btn", variant="error")
-                yield Button("\\[ CANCEL \\]", id="cancel-btn", variant="default")
+                yield Button("\\[ DELETE ]", id="delete-btn", variant="error")
+                yield Button("\\[ CANCEL ]", id="cancel-btn", variant="default")
 
     def action_confirm(self) -> None:
         """Confirm deletion."""
@@ -574,22 +569,7 @@ class LogsResultsView(ListView):
 
 
 class LogsScreen(Container):
-    """Logs screen for viewing and searching journal entries.
-
-    Provides a chronological view of all journal entries, including
-    completed todos which are logged as entries with their completion
-    timestamp.
-
-    Key bindings:
-        j/k: Navigate up/down
-        Enter: Copy content to clipboard
-        e: Edit content
-        d: Delete entry
-        t: Edit tags
-        p: Edit project
-        /: Focus search input
-        q: Quit
-    """
+    """Logs screen for viewing and searching journal entries."""
 
     DEFAULT_CSS = """
     LogsScreen {
@@ -600,8 +580,7 @@ class LogsScreen(Container):
     #search-container {
         height: auto;
         margin: 0 2 1 2;
-        padding: 0 2;
-        background: $panel;
+        padding: 0;
     }
 
     #search-container Horizontal {
@@ -611,8 +590,20 @@ class LogsScreen(Container):
 
     #btn-standup {
         width: auto;
-        min-width: 15;
-        margin-right: 1;
+        min-width: 0;
+        height: 1;
+        min-height: 1;
+        background: transparent;
+        border: none;
+        color: $primary;
+        padding: 0 1;
+        margin: 1 1 0 0;
+        content-align: center middle;
+    }
+
+    #btn-standup:hover {
+        background: $surface;
+        text-style: bold;
     }
 
     #search-input {
@@ -710,7 +701,7 @@ class LogsScreen(Container):
         with Vertical():
             with Container(id="search-container"):
                 with Horizontal():
-                    yield Button(f"[ {get_icon('standup', use_emojis)} STAND-UP ]", id="btn-standup", variant="primary")
+                    yield Button(f"\\[ {get_icon('standup', use_emojis)} STAND-UP ]", id="btn-standup", variant="primary")
                     yield Input(
                         placeholder="Search logs to edit/delete",
                         id="search-input",
@@ -718,7 +709,7 @@ class LogsScreen(Container):
             with Container(id="results-container"):
                 yield LogsResultsView(id="logs-results")
                 with Horizontal(id="load-more-container"):
-                    yield Button("\\[ LOAD MORE \\]", id="btn-load-more", variant="default")
+                    yield Button("\\[ LOAD MORE ]", id="btn-load-more", variant="default")
         yield Label(
             f"j/k: Navigate  {get_icon('bullet', use_emojis)}  Enter: Select  {get_icon('bullet', use_emojis)}  e: Edit  {get_icon('bullet', use_emojis)}  d: Delete  {get_icon('bullet', use_emojis)}  t: Tags  {get_icon('bullet', use_emojis)}  p: Project  {get_icon('bullet', use_emojis)}  q: Quit",
             id="logs-status-bar",
