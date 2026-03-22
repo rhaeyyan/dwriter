@@ -128,80 +128,55 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
         """Get overview tab content."""
         use_emojis = self.app.ctx.config.display.use_emojis
         return f"""
-[bold]Welcome to dwriter! {get_icon('note', use_emojis)}[/bold]
+[bold]Welcome to dwriter {get_icon('note', use_emojis)}[/bold]
 
-[dim]A low-friction terminal journaling tool for developers.[/dim]
+[dim]A minimalist terminal journal for capturing work without breaking your flow.[/dim]
 
-[bold #cba6f7]Quick Start:[/bold #cba6f7]
-  [cyan]dwriter[/cyan]                    → Launch TUI
-  [cyan]dwriter add "message"[/cyan]       → Quick log entry
-  [cyan]dwriter todo "task"[/cyan]         → Add a todo
-  [cyan]dwriter search "query"[/cyan]      → Fuzzy search
+[bold #cba6f7]Quick Capture (Headless CLI):[/bold #cba6f7]
+  [cyan]dwriter add "message"[/cyan]       → Log an entry
+  [cyan]dwriter todo "task"[/cyan]         → Add a task
+  [cyan]dwriter timer 25[/cyan]            → Start a focus session
   [cyan]dwriter standup[/cyan]             → Yesterday's summary
-  [cyan]dwriter timer [#89dceb]25[/#89dceb][/cyan]            → Start [#89dceb]25[/#89dceb]min timer
-  [cyan]dwriter stats[/cyan]               → View dashboard
-  [cyan]dwriter edit[/cyan]                → Edit entries
-  [cyan]dwriter help[/cyan]                → This help screen
+  [cyan]dwriter stats[/cyan]               → Performance summary
+
+[bold #cba6f7]Unified Dashboard (TUI):[/bold #cba6f7]
+  [cyan]dwriter[/cyan]                    → Launch the dashboard
+  [#89dceb]1[/#89dceb] → {get_icon('dashboard', use_emojis)} Statistics & Activity Maps
+  [#89dceb]2[/#89dceb] → {get_icon('logs', use_emojis)} History & Logs
+  [#89dceb]3[/#89dceb] → {get_icon('todo', use_emojis)} Task Board
+  [#89dceb]4[/#89dceb] → {get_icon('timer', use_emojis)} Focus Timer
 
 [bold #cba6f7]Omnibox Syntax (press / to focus):[/bold #cba6f7]
-  [bold yellow]#tag[/bold yellow]               → Add tags (e.g., [bold yellow]#bug[/bold yellow], [bold yellow]#feature[/bold yellow])
-  [magenta]&project[/magenta]           → Add project (e.g., [magenta]&backend[/magenta])
-  [#89dceb]15[/#89dceb]                → Timer minutes (e.g., [#89dceb]25[/#89dceb])
+  [bold yellow]#tag[/bold yellow]               → Categorize by tag
+  [magenta]&project[/magenta]           → Assign to project
+  [#89dceb]25[/#89dceb]                → Specify timer duration
 
-[bold #cba6f7]Examples:[/bold #cba6f7]
-  [bold yellow]#bug[/bold yellow] [magenta]&backend[/magenta] Fixed login issue
-  [bold yellow]#work[/bold yellow] [magenta]&frontend[/magenta] Implement new feature
-  [bold yellow]#deepwork[/bold yellow] [magenta]&research[/magenta] [#89dceb]25[/#89dceb] (25min timer)
-  [bold yellow]#meeting[/bold yellow] [magenta]&team[/magenta] Weekly standup notes
-
-[bold #cba6f7]TUI Screens:[/bold #cba6f7]
-  [#89dceb]1[/#89dceb] → {get_icon('dashboard', use_emojis)} Dashboard (stats, calendar, activity)
-  [#89dceb]2[/#89dceb] → {get_icon('logs', use_emojis)} Logs (journal entries)
-  [#89dceb]3[/#89dceb] → {get_icon('todo', use_emojis)} Todo Board (task management)
-  [#89dceb]4[/#89dceb] → {get_icon('timer', use_emojis)} Timer (timer sessions)
-
-[dim]Press Tab to navigate between help topics[/dim]
-[dim]Press q or Esc to close[/dim]
+[dim]Press Tab to navigate help topics. Press q to close.[/dim]
 """
 
     def _get_navigation_content(self) -> str:
         """Get navigation tab content."""
         use_emojis = self.app.ctx.config.display.use_emojis
         return f"""
-[bold]TUI Navigation {get_icon('navigation', use_emojis)}[/bold]
+[bold]Navigation & Global Keys {get_icon('navigation', use_emojis)}[/bold]
 
-[bold #cba6f7]Global Keys (work everywhere):[/bold #cba6f7]
-  [cyan]/[/cyan]              → Focus omnibox (quick-add bar at top)
-  [cyan]Ctrl+P[/cyan]         → Open command palette
-  [cyan]q[/cyan] or [cyan]Esc[/cyan]     → Quit current screen / Close modal
+[bold #cba6f7]Global Commands:[/bold #cba6f7]
+  [cyan]/[/cyan]              → Focus the quick-add bar (Omnibox)
+  [cyan]Ctrl+P[/cyan]         → Open the command palette
+  [cyan]q[/cyan] or [cyan]Esc[/cyan]     → Close current screen or modal
   [cyan]?[/cyan]              → Open this help screen
-  [#89dceb]1-4[/#89dceb]            → Switch between main screens
+  [#89dceb]1-4[/#89dceb]            → Quick-switch between dashboard views
 
-[bold #cba6f7]Screen Navigation:[/bold #cba6f7]
-  [#89dceb]1[/#89dceb]              → {get_icon('dashboard', use_emojis)} Dashboard (statistics & calendar)
-  [#89dceb]2[/#89dceb]              → {get_icon('logs', use_emojis)} Logs (journal entries view)
-  [#89dceb]3[/#89dceb]              → {get_icon('todo', use_emojis)} Todo Board (task management)
-  [#89dceb]4[/#89dceb]              → {get_icon('timer', use_emojis)} Timer (timer sessions)
+[bold #cba6f7]List & Form Controls:[/bold #cba6f7]
+  [cyan]j[/cyan] / [cyan]k[/cyan] or [cyan]↑[/cyan] / [cyan]↓[/cyan] → Navigate through lists
+  [cyan]Enter[/cyan]          → Select, activate, or confirm
+  [cyan]Tab[/cyan]            → Move to the next field or button
+  [cyan]Shift+Tab[/cyan]      → Move to the previous field or button
 
-  [cyan]Tab[/cyan]            → Cycle to next tab (in tabbed views)
-  [cyan]Shift+Tab[/cyan]      → Cycle to previous tab
+[bold #cba6f7]Sidebar Navigation:[/bold #cba6f7]
+  Use [cyan]j/k[/cyan] to highlight options and [cyan]Enter[/cyan] to select.
 
-[bold #cba6f7]List Navigation (within screens):[/bold #cba6f7]
-  [cyan]j[/cyan] or [cyan]↓[/cyan]         → Move down in list
-  [cyan]k[/cyan] or [cyan]↑[/cyan]         → Move up in list
-  [cyan]Enter[/cyan]          → Select / Activate item
-  [cyan]Home[/cyan] / [cyan]End[/cyan]    → Jump to start / end
-
-[bold #cba6f7]Modal Dialogs:[/bold #cba6f7]
-  [cyan]Enter[/cyan]          → Confirm action (Save, OK, Yes)
-  [cyan]Esc[/cyan]            → Cancel / Close modal
-  [cyan]Tab[/cyan]            → Move to next input/button
-
-[bold #cba6f7]Sidebar Navigation (if visible):[/bold #cba6f7]
-  Click or use [cyan]j/k[/cyan] to navigate sidebar items
-  Press [cyan]Enter[/cyan] to select highlighted option
-
-[dim]Tip: Each screen shows its specific keybindings in the footer bar![/dim]
+[dim]The footer bar at the bottom displays context-specific keys for each screen.[/dim]
 """
 
     def _get_omnibox_content(self) -> str:
@@ -209,48 +184,29 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
         use_emojis = self.app.ctx.config.display.use_emojis
         # fmt: off
         return f"""
-[bold]Omnibox Commands {get_icon('context', use_emojis)}[/bold]
+[bold]Omnibox Syntax {get_icon('context', use_emojis)}[/bold]
 
-[dim]The omnibox is the input bar at TOP of the screen.[/dim]
-[dim]Press [cyan]/[/cyan] to focus it.[/dim]
+[dim]The Omnibox is the input bar at the top of the screen. Press [cyan]/[/cyan] to focus.[/dim]
 
-[bold #cba6f7]Log Entry (default on Dashboard/Logs screens):[/bold #cba6f7]
-  Format: [bold yellow]#tag[/bold yellow] [magenta]&project[/magenta] Your entry text
-  Example: [bold yellow]#bug[/bold yellow] [magenta]&backend[/magenta] Fixed race condition
+[bold #cba6f7]Journal Entries:[/bold #cba6f7]
+  Format: [bold yellow]#tag[/bold yellow] [magenta]&project[/magenta] entry text
+  Example: [bold yellow]#refactor[/bold yellow] [magenta]&engine[/magenta] fixed database deadlock
 
-[bold #cba6f7]Add Todo (on Todo screen - multi-step workflow):[/bold #cba6f7]
-  Step 1: Enter task with optional tags/project
-    [bold yellow]#tag[/bold yellow] [magenta]&project[/magenta] Task description
-  Step 2: Add more tags/project (or press Enter to skip)
-  Step 3: Set priority: [cyan]L[/cyan]=Low, [cyan]N[/cyan]=Normal
-    [cyan]H[/cyan]=High, [cyan]U[/cyan]=Urgent
-  Step 4: Set due date: [cyan]tomorrow[/cyan], [#89dceb]+5d[/#89dceb], [#89dceb]2024-03-15[/#89dceb]
+[bold #cba6f7]Task Management (Todo):[/bold #cba6f7]
+  From the [bold]Todo Board[/bold], entering text into the Omnibox starts a
+  multi-step workflow to define priority and due dates.
 
-[bold #cba6f7]Start Timer (works from ANY screen):[/bold #cba6f7]
+[bold #cba6f7]Focus Timer:[/bold #cba6f7]
   Format: [bold yellow]#tag[/bold yellow] [magenta]&project[/magenta] [#89dceb]MINUTES[/#89dceb]
-  Example: [bold yellow]#deepwork[/bold yellow] [magenta]&research[/magenta] [#89dceb]25[/#89dceb]
-  Example: [bold yellow]#meeting[/bold yellow] [#89dceb]30[/#89dceb] (30-minute meeting)
+  Example: [bold yellow]#deepwork[/bold yellow] [#89dceb]25[/#89dceb]
+  Example: [bold yellow]#meeting[/bold yellow] [magenta]&team[/magenta] [#89dceb]60[/#89dceb]
 
-[bold #cba6f7]Special Syntax:[/bold #cba6f7]
-  [bold yellow]#tag[/bold yellow] → Add tags (multiple: [bold yellow]#bug #urgent[/bold yellow])
-  [magenta]&project[/magenta] → Add project (use [magenta]&[/magenta] prefix)
-  [cyan]YYYY-MM-DD[/cyan] → Log entry for specific date
-  [#89dceb]NUMBER[/#89dceb] → Timer minutes (on Timer screen)
+[bold #cba6f7]Metadata Syntax:[/bold #cba6f7]
+  [bold yellow]#tag[/bold yellow]         → Labels for categorization (e.g., #bug, #docs)
+  [magenta]&project[/magenta]     → Project or client context (e.g., &internal)
+  [#89dceb]NUMBER[/#89dceb]       → Focus session duration in minutes
 
-[bold #cba6f7]Due Date Formats (for todos):[/bold #cba6f7]
-  [cyan]tomorrow[/cyan], [cyan]today[/cyan], [cyan]yesterday[/cyan]
-  [#89dceb]+5d[/#89dceb] (5 days), [#89dceb]+1w[/#89dceb] (1 week), [#89dceb]+1m[/#89dceb] (1 month)
-  [#89dceb]3 days[/#89dceb], [#89dceb]2 weeks[/#89dceb]
-  [cyan]next Monday[/cyan], [cyan]last Friday[/cyan]
-  [#89dceb]2024-03-15[/#89dceb], [#89dceb]03/15/2024[/#89dceb]
-
-[bold #cba6f7]Priority Shortcuts:[/bold #cba6f7]
-  [cyan]L[/cyan] → Low (dim display)
-  [cyan]N[/cyan] → Normal (white display)
-  [cyan]H[/cyan] → High (yellow display)
-  [cyan]U[/cyan] → Urgent (red display)
-
-[dim]Tip: Press 'q' in any multi-step workflow to cancel![/dim]
+[dim]Tip: Press 'q' at any time during a multi-step workflow to cancel.[/dim]
 """
         # fmt: on
 
@@ -261,48 +217,35 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
         return f"""
 [bold]Dashboard & Analytics {get_icon('csv', use_emojis)}[/bold]
 
-[dim]Your activity overview with behavioral insights and visualizations.[/dim]
-
-[bold #cba6f7]Key Performance Indicators (KPIs):[/bold #cba6f7]
-  → [bold]Total Entries:[/bold] All-time count of journal entries.
-  → [bold]Current Streak:[/bold] Consecutive days logged (up to today).
-  → [bold]Longest Streak:[/bold] Your all-time record for consecutive logging.
-  → [bold]Consistency:[/bold] % of active days over the last [#89dceb]30[/#89dceb] days. [dim](Aim for >[#89dceb]80%[/#89dceb])[/dim]
-
-[bold #cba6f7]Behavioral Insights (Interpretation):[/bold #cba6f7]
-
-[bold]{get_icon('context', use_emojis)} Context Switches (Cognitive Load):[/bold]
-  [dim]Measures the average number of unique projects you touch per day.[/dim]
-  → [#a6e3a1]Low[/#a6e3a1] [#89dceb](0-2)[/#89dceb]: Deep focus. You are staying in the zone on few topics.
-  → [yellow]Med[/yellow] [#89dceb](3-4)[/#89dceb]: Moderate load. Typical for multi-tasking days.
-  → [red]High[/red] [#89dceb](5+)[/#89dceb]: Fragmentation. Frequent switching kills productivity.
-
-[bold]{get_icon('friction', use_emojis)} Friction Ratio (Project ROI):[/bold]
-  [dim]Calculated as: (Journal Entries) / (Completed Tasks) per project.[/dim]
-  → [#a6e3a1]Avg Activity[/#a6e3a1] [#89dceb](<= 2.0)[/#89dceb]: Lean execution. Logs align with results.
-  → [yellow]Prioritized[/yellow] [#89dceb](2.1 - 3.5)[/#89dceb]: High documentation or complex tasks.
-  → [red]Time Hog[/red] [#89dceb](> 3.5)[/#89dceb]: High friction. You are logging a lot but not finishing tasks. 
-    [dim]Tip: Break these tasks down into smaller, manageable pieces.[/dim]
-
-[bold]{get_icon('todo', use_emojis)} To-do Health (Staleness):[/bold]
-  → [#a6e3a1]Fresh[/#a6e3a1]: Tasks added within the last [#89dceb]3[/#89dceb] days.
-  → [yellow]Stale[/yellow]: Tasks sitting for [#89dceb]4-14[/#89dceb] days.
-  → [red]Stuck[/red]: Tasks older than [#89dceb]2[/#89dceb] weeks. [dim](Review or delete these!)[/dim]
-
-[bold]{get_icon('workload', use_emojis)} Workload & Throughput:[/bold]
-  → [bold]Backlog:[/bold] The difference between tasks added vs. done this week.
-  → [bold]Completion:[/bold] Your "Say-Do" ratio percentage.
-  → [bold]Throughput:[/bold] Average tasks completed per day.
+[dim]A visual summary of your productivity trends and behavioral insights.[/dim]
 
 [bold #cba6f7]Visualizations:[/bold #cba6f7]
-  → [bold]{get_icon('history', use_emojis)} History:[/bold] [#89dceb]365[/#89dceb]-day activity heatmap. Darker colors = more logs.
-  → [bold]{get_icon('search', use_emojis)} Trends:[/bold] [#89dceb]30[/#89dceb]-day sparkline showing daily activity volume.
-  → [bold]{get_icon('tag', use_emojis)} Top Tags:[/bold] Your most active topics over the last [#89dceb]30[/#89dceb] days.
+  → [bold]Pulse Panel (45-Day Heatmap):[/bold] A dense, rolling sparkline at the top
+    of the dashboard showing your activity volume over the last 45 days.
+  → [bold]Activity Calendar:[/bold] A GitHub-style heatmap showing your logging
+    consistency over the past year.
+  → [bold]Streak & Record:[/bold] Real-time tracking of your current and all-time 
+    longest logging streaks.
 
-[bold #cba6f7]Navigation:[/bold #cba6f7]
-  [cyan]r[/cyan]              → Refresh all analytics
-  [#89dceb]1 / 2[/#89dceb]          → Switch between [Overview] and [Activity Trends]
-  [cyan]Tab[/cyan]            → Cycle focus between charts
+[bold #cba6f7]Two-Cents (Behavioral Insights):[/bold #cba6f7]
+  [dim]The dashboard automatically analyzes your patterns to provide context.[/dim]
+
+  → [bold]Active Focus:[/bold] Highlights the tags and projects that have 
+    occupied most of your time over the last 30 days.
+  → [bold]High Focus Ratio:[/bold] Identifies when you are successfully 
+    maintaining deep work sessions.
+  → [bold]Project Fragmentation:[/bold] Alerts you when frequent context 
+    switching between too many projects may be impacting your throughput.
+  → [bold]Task Staleness:[/bold] Flags pending tasks that have been sitting 
+    unattended for more than 14 days.
+
+[bold #cba6f7]Controls & Actions:[/bold #cba6f7]
+  [cyan]c[/cyan]              → Copy Performance Report (Markdown format)
+  [cyan]r[/cyan]              → Refresh all analytics data
+  [cyan]Tab[/cyan]            → Cycle focus between the Pulse Panel and Calendar
+
+[dim]Tip: Use the 'c' key to instantly generate a Markdown report of your 
+    KPIs—perfect for weekly reviews or personal auditing.[/dim]
 """
         # fmt: on
 
@@ -311,56 +254,25 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
         use_emojis = self.app.ctx.config.display.use_emojis
         # fmt: off
         return f"""
-[bold]Todo Board {get_icon('todo', use_emojis)}[/bold]
+[bold]Task Management (Todo) {get_icon('todo', use_emojis)}[/bold]
 
-[dim]Task management with priorities, due dates, and auto-logging.[/dim]
+[dim]Manage pending tasks and automatically log them to your journal upon completion.[/dim]
 
-[bold #cba6f7]Adding Todos:[/bold #cba6f7]
-  Via omnibox (on Todo screen):
-    Press [cyan]/[/cyan] → Type task → Enter multi-step workflow
-  Via CLI:
-    [cyan]dwriter todo "task" --priority high --due tomorrow[/cyan]
+[bold #cba6f7]Board Navigation:[/bold #cba6f7]
+  [cyan]j / k[/cyan]          → Navigate through the task list
+  [cyan]Space / Enter[/cyan]   → Mark as done (this auto-logs the task to your journal)
+  [cyan]e[/cyan]              → Edit task details (content, due date, tags, project)
+  [cyan]d[/cyan]              → Delete task
+  [cyan]+ / -[/cyan]          → Adjust priority level
+  [cyan]1 / 2 / 3[/cyan]      → Switch between [Pending], [Upcoming], and [Completed] tabs
 
-[bold #cba6f7]Key Bindings:[/bold #cba6f7]
-  [cyan]j/k[/cyan]            → Navigate up/down
-  [cyan]Space[/cyan] / [cyan]Enter[/cyan]   → Mark complete (auto-logs to journal!)
-  [cyan]e[/cyan]              → Edit task (content, due, tags, project)
-  [cyan]d[/cyan]              → Delete task (with confirmation)
-  [cyan]+/-[/cyan]            → Change priority
-  [cyan]a[/cyan]              → Add new task (modal dialog)
-  [cyan]1/2/3[/cyan]          → Switch tabs
+[bold #cba6f7]Priority Indicators:[/bold #cba6f7]
+  [red]\\[U][/red] Urgent    [yellow]\\[H][/yellow] High    [white]\\[N][/white] Normal    [dim]\\[L][/dim] Low
 
-[bold #cba6f7]Tabs:[/bold #cba6f7]
-  [cyan]{get_icon('timer', use_emojis)} Pending (X)[/cyan]    → All pending tasks (shows count)
-  [cyan]{get_icon('history', use_emojis)} Upcoming (Y)[/cyan]   → Due today, tomorrow, next [#89dceb]2[/#89dceb] days
-  [cyan]{get_icon('check', use_emojis)} Completed (Z)[/cyan]   → Completed tasks with completion date
+[bold #cba6f7]Due Date Indicators:[/bold #cba6f7]
+  [red]\\[OVD][/red] → Overdue      [bold #fab387]\\[TDY][/bold #fab387] → Due today      [#89dceb]\\[5d][/#89dceb] → Days remaining
 
-[bold #cba6f7]Display Format:[/bold #cba6f7]
-  [#89dceb]\\[5d][/#89dceb] [yellow]\\[H][/yellow] Task description [bold yellow]#tag1 #tag2[/bold yellow] [magenta]&Project[/magenta]
-  ↑      ↑            ↑                    ↑
-  Due    Priority   Content            Tags & Project
-
-[bold #cba6f7]Priority Colors:[/bold #cba6f7]
-  [red]\\[U][/red] Urgent    → Critical tasks
-  [yellow]\\[H][/yellow] High      → Important tasks
-  [white]\\[N][/white] Normal    → Regular tasks
-  [dim]\\[L][/dim] Low       → When time permits
-
-[bold #cba6f7]Due Date Display:[/bold #cba6f7]
-  [red]\\[OVD][/red]       → Overdue (past due, appears FIRST!)
-  [bold #fab387]\\[TDY][/bold #fab387]     → Due today
-  [#fab387]\\[TMR][/#fab387]     → Due tomorrow
-  [#89dceb]\\[5d][/#89dceb] / [#89dceb]\\[2m][/#89dceb]   → Days/months until due
-  [dim]\\[---][/dim]       → No due date set
-
-[bold #cba6f7]Edit Dialog (press e):[/bold #cba6f7]
-  → Content: Task description
-  → Due Date: YYYY-MM-DD, tomorrow, [#89dceb]+5d[/#89dceb], [#89dceb]+1w[/#89dceb], etc.
-  → Tags: Comma-separated (e.g., work, urgent)
-  → Project: Single project name
-
-[dim]Tip: Completing a task auto-logs to your journal![/dim]
-[dim]Format: "{get_icon('check', use_emojis)} Task content [bold yellow]#tag[/bold yellow] &project"[/dim]
+[dim]Note: Completed tasks appear in your journal history with a checkmark icon.[/dim]
 """
         # fmt: on
 
@@ -369,34 +281,20 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
         use_emojis = self.app.ctx.config.display.use_emojis
         # fmt: off
         return f"""
-[bold]Timer Screen {get_icon('timer', use_emojis)}[/bold]
+[bold]Focus Timer {get_icon('timer', use_emojis)}[/bold]
 
-[dim]Timer-style focused work sessions with automatic logging.[/dim]
+[dim]Run timed focus sessions that prompted a journal entry upon completion.[/dim]
 
-[bold #cba6f7]Starting a Timer:[/bold #cba6f7]
-  Via omnibox (any screen): [bold yellow]#tag[/bold yellow] [magenta]&project[/magenta] [#89dceb]25[/#89dceb]
-  Via CLI: [cyan]dwriter timer [#89dceb]25[/#89dceb] -t tag -p project[/cyan]
-  Via TUI: Navigate → Adjust time → Start
+[bold #cba6f7]Session Controls:[/bold #cba6f7]
+  [cyan]Space[/cyan]          → Start or Pause the countdown
+  [cyan]+ / -[/cyan]          → Add or subtract 5 minutes from the duration
+  [cyan]Enter[/cyan]          → Finish early and trigger the log prompt
+  [cyan]q / Esc[/cyan]       → Exit the timer (prompts to log current progress)
 
-[bold #cba6f7]Controls:[/bold #cba6f7]
-  [cyan]Space[/cyan]          → Start / Pause timer
-  [cyan]+/-[/cyan]            → Add / Subtract [#89dceb]5[/#89dceb] minutes
-  [cyan]Enter[/cyan]          → Finish session early
-  [cyan]q/Esc[/cyan]          → Quit (prompts to log)
-
-[bold #cba6f7]When Timer Completes:[/bold #cba6f7]
-  → Modal prompts for session log entry
-  → Tags & project auto-inherited
-  → Entry logged with timestamp
-
-[bold #cba6f7]Display Format:[/bold #cba6f7]
-  [cyan]mm:ss[/cyan]  [ {'▮▮▮' if use_emojis else '###'}# {'▯▯▯' if use_emojis else '...'} ]  [#89dceb]40%[/#89dceb]
-  ↑ Time    ↑ Progress bar  ↑ Percentage
-
-  Session: [bold yellow]#tag1[/bold yellow] [bold yellow]#tag2[/bold yellow] | [magenta]&project[/magenta]
-  ↑ Shows below pause button
-
-[dim]Tip: Timer commands work from ANY screen via omnibox![/dim]
+[bold #cba6f7]Workflow:[/bold #cba6f7]
+  1. Start timer from Omnibox or Timer screen.
+  2. When finished, a modal appears to capture what you accomplished.
+  3. Tags and projects are automatically inherited from the timer session.
 """
         # fmt: on
 
@@ -404,128 +302,52 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
         """Get search tab content."""
         use_emojis = self.app.ctx.config.display.use_emojis
         return f"""
-[bold]Search & Logs {get_icon('search', use_emojis)}{get_icon('logs', use_emojis)}[/bold]
+[bold]Search & History {get_icon('search', use_emojis)}[/bold]
 
-[dim]Fuzzy search across entries and todos, plus logs view.[/dim]
+[dim]Locate past entries or tasks using fuzzy matching.[/dim]
 
-[bold #cba6f7]Search Screen:[/bold #cba6f7]
+[bold #cba6f7]Search View:[/bold #cba6f7]
+  [cyan]j / k[/cyan]          → Navigate results
+  [cyan]Enter[/cyan]          → Select a result to copy its content to the clipboard
+  [cyan]/[/cyan]              → Focus the search input field
+  [cyan]Ctrl+N[/cyan]         → Toggle between searching [All], [Entries], or [Tasks]
 
-[bold]Starting Search:[/bold]
-  Via CLI: [cyan]dwriter search "query"[/cyan]
-  Via TUI: [cyan]dwriter search[/cyan] (interactive)
+[bold #cba6f7]History (Logs) View:[/bold #cba6f7]
+  [cyan]j / k[/cyan]          → Navigate chronological history
+  [cyan]e / Enter[/cyan]      → Edit the selected log entry
+  [cyan]d[/cyan]              → Delete the entry
+  [cyan]t / p[/cyan]          → Quickly edit tags (#) or project (&) metadata
+  [cyan]r[/cyan]              → Refresh the list
 
-[bold]Key Bindings:[/bold]
-  [cyan]j/k[/cyan]            → Navigate results
-  [cyan]Enter[/cyan]          → Select (copy content to clipboard)
-  [cyan]/[/cyan]              → Focus search input
-  [cyan]Ctrl+N[/cyan]         → Toggle search type (All/Entry/Todo)
-  [cyan]q/Esc[/cyan]          → Quit
-
-[bold]Search Syntax:[/bold]
-  Type naturally - fuzzy matching handles typos!
-  
-  Examples:
-  [cyan]auth bug[/cyan]      → Matches "authentication bug fix"
-  [cyan]refactor[/cyan]      → Matches "refactored database"
-  [cyan]meeting[/cyan]       → Matches "team meeting notes"
-
-[bold]Match Scores:[/bold]
-  [#a6e3a1]90%+[/#a6e3a1]   → Excellent match (light green)
-  [yellow]75%+[/yellow]   → Good match (yellow)
-  [dim]60%+[/dim]   → Partial match (dim)
-
-[bold #cba6f7]Logs Screen:[/bold #cba6f7]
-
-[bold]View Entries:[/bold]
-  → Chronological list of all journal entries
-  → Shows date, time, content, tags, project
-  → Completed todos appear as "{get_icon('check_small', use_emojis)} Task" entries
-
-[bold]Key Bindings:[/bold]
-  [cyan]j/k[/cyan]            → Navigate up/down
-  [cyan]e/Enter[/cyan]        → Edit selected entry
-  [cyan]t[/cyan]              → Edit tags
-  [cyan]p[/cyan]              → Edit project
-  [cyan]d[/cyan]              → Delete entry (confirmation)
-  [cyan]r[/cyan]              → Refresh list
-  [cyan]/[/cyan]              → Focus search/filter
-  [cyan]q/Esc[/cyan]          → Quit
-
-[bold]Edit Entry Modal:[/bold]
-  → Content: Entry text
-  → Date: YYYY-MM-DD, yesterday, [#89dceb]2[/#89dceb] days ago, last Friday
-  → Time: HH:MM AM/PM or [#89dceb]24[/#89dceb]-hour format (or leave blank)
-  → Tags: Comma-separated
-  → Project: Single project name
-
-[dim]Tip: Search is typo-tolerant! "fucntion" finds "function"
-    Press Enter on a search result to copy its content to clipboard.[/dim]
+[dim]Tip: Search is typo-tolerant. Pressing Enter on any result copies it for easy sharing.[/dim]
 """
 
     def _get_shortcuts_content(self) -> str:
         """Get shortcuts reference tab content."""
         use_emojis = self.app.ctx.config.display.use_emojis
         return f"""
-[bold]Keyboard Shortcuts Reference {get_icon('shortcuts', use_emojis)}[/bold]
+[bold]Keyboard Reference {get_icon('shortcuts', use_emojis)}[/bold]
 
-[bold #cba6f7]Global (All Screens):[/bold #cba6f7]
-  [cyan]/[/cyan]              → Focus omnibox
-  [cyan]Ctrl+P[/cyan]         → Command palette
-  [cyan]q[/cyan] / [cyan]Esc[/cyan]       → Quit / Close
-  [cyan]?[/cyan]              → Open help
-  [#89dceb]1[/#89dceb]              → {get_icon('dashboard', use_emojis)} Dashboard
-  [#89dceb]2[/#89dceb]              → {get_icon('logs', use_emojis)} Logs
-  [#89dceb]3[/#89dceb]              → {get_icon('todo', use_emojis)} Todo Board
-  [#89dceb]4[/#89dceb]              → {get_icon('timer', use_emojis)} Timer
+[bold #cba6f7]Global Navigation:[/bold #cba6f7]
+  [cyan]/[/cyan]              → Focus Omnibox
+  [cyan]Ctrl+P[/cyan]         → Command Palette
+  [cyan]?[/cyan]              → Open Help
+  [#89dceb]1-4[/#89dceb]            → Switch Dashboard views
 
-[bold #cba6f7]Dashboard:[/bold #cba6f7]
-  [cyan]r[/cyan]              → Refresh data
-  [#89dceb]1/2[/#89dceb]            → Switch tabs (Overview/Activity)
-  [cyan]Tab[/cyan]            → Navigate sections
-  [cyan]d[/cyan]              → Drill down (tag/project)
-
-[bold #cba6f7]Logs:[/bold #cba6f7]
-  [cyan]j/k[/cyan]            → Navigate entries
-  [cyan]e/Enter[/cyan]        → Edit entry
-  [cyan]t[/cyan]              → Edit tags
-  [cyan]p[/cyan]              → Edit project
+[bold #cba6f7]Log Management:[/bold #cba6f7]
+  [cyan]e / Enter[/cyan]      → Edit entry
   [cyan]d[/cyan]              → Delete entry
-  [cyan]r[/cyan]              → Refresh
-  [cyan]/[/cyan]              → Focus search
+  [cyan]t / p[/cyan]          → Quick-edit metadata
 
-[bold #cba6f7]Todo Board:[/bold #cba6f7]
-  [cyan]a[/cyan]              → Add task
-  [cyan]j/k[/cyan]            → Navigate tasks
-  [cyan]Space/Enter[/cyan]    → Complete task (auto-logs!)
-  [cyan]e[/cyan]              → Edit task
-  [cyan]d[/cyan]              → Delete task
-  [cyan]+/-[/cyan]            → Change priority
-  [#89dceb]1/2/3[/#89dceb]          → Switch tabs
+[bold #cba6f7]Task Management:[/bold #cba6f7]
+  [cyan]Space / Enter[/cyan]   → Mark as Done
+  [cyan]+ / -[/cyan]          → Change Priority
 
-[bold #cba6f7]Timer:[/bold #cba6f7]
+[bold #cba6f7]Focus Timer:[/bold #cba6f7]
   [cyan]Space[/cyan]          → Start/Pause
-  [cyan]+/-[/cyan]            → Adjust time (±[#89dceb]5[/#89dceb] min)
-  [cyan]Enter[/cyan]          → Finish early
-  [cyan]q/Esc[/cyan]          → Quit (with prompt)
+  [cyan]+ / -[/cyan]          → Adjust Time
 
-[bold #cba6f7]Search:[/bold #cba6f7]
-  [cyan]j/k[/cyan]            → Navigate results
-  [cyan]Enter[/cyan]          → Select (copy)
-  [cyan]/[/cyan]              → Focus search
-  [cyan]Ctrl+N[/cyan]         → Toggle type
-
-[bold #cba6f7]Omnibox:[/bold #cba6f7]
-  [cyan]Enter[/cyan]          → Submit command
-  [cyan]Esc[/cyan]            → Unfocus / Cancel
-  [cyan]q[/cyan] (in workflow) → Cancel multi-step
-
-[bold #cba6f7]Modal Dialogs:[/bold #cba6f7]
-  [cyan]Enter[/cyan]          → Confirm (Save/OK/Yes)
-  [cyan]Esc[/cyan]            → Cancel / Close
-  [cyan]Tab[/cyan]            → Next field/button
-
-[dim]Pro tip: Live in the omnibox! Most actions start there.
-    Press / to focus, type your command, hit Enter.[/dim]
+[dim]Most actions can be initiated via the Omnibox for a keyboard-first workflow.[/dim]
 """
 
     def action_quit(self) -> None:

@@ -62,35 +62,34 @@ class AppContext:
 @click.pass_context
 @click.version_option(version=__version__, prog_name="dwriter")
 def main(ctx: click.Context) -> None:
-    """Dwriter - A low-friction terminal journaling tool.
+    """Dwriter - A minimalist journal for the terminal.
 
-    Track daily tasks and generate standup summaries with minimal effort.
+    Capture your work without breaking your flow and generate summaries for
+    standups or reviews.
 
     Quick Start:
-      dwriter                      # Launch unified TUI
-      dwriter ui --timer           # Launch TUI directly to timer
-      dwriter add "fixed the bug"
-      dwriter todo "write tests"
-      dwriter standup
+      dwriter                      # Launch the Unified TUI
+      dwriter add "fixed the bug"  # Headless CLI: Quick log
+      dwriter todo "write tests"   # Headless CLI: Add task
+      dwriter standup              # Generate yesterday's summary
 
-    Interactive TUI:
-      Run 'dwriter' or 'dwriter ui' to launch the unified TUI with:
-      - Dashboard with statistics and calendar
+    Unified TUI:
+      Run 'dwriter' to launch the interactive dashboard with:
+      - Statistics and activity maps
       - Todo board for task management
-      - Timer for focus sessions
-      - Search for fuzzy finding entries
-      - Global quick-add bar (press / to focus)
+      - Focus timer for deep work sessions
+      - Live fuzzy search across history
 
     Common Commands:
-      add       - Log a new entry
-      todo      - Manage tasks (headless-first)
-      done      - Complete a task
-      standup   - Generate yesterday's summary
-      review    - Review last N days
-      search    - Fuzzy search (headless-first)
-      timer     - Focus timer (headless-first)
-      stats     - Productivity summary (headless-first)
-      ui        - Launch the full interactive TUI
+      add       - Log a new journal entry
+      todo      - Manage tasks (Headless CLI)
+      done      - Complete a task and log it
+      standup   - Generate a summary of yesterday's work
+      review    - Review entries from the last N days
+      search    - Fuzzy search history (Headless CLI)
+      timer     - Focus timer (Headless CLI)
+      stats     - Productivity summary (Headless CLI)
+      ui        - Launch the interactive dashboard
     """
     try:
         ctx.obj = AppContext()

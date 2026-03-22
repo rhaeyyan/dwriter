@@ -76,7 +76,7 @@ class UnifiedPulsePanel(Static):
 
             # 2. Render Insights below
             if not nudges:
-                content.append("✨ [bold #a6e3a1]Everything looks balanced![/] [n]Your workload and focus are perfectly optimized. Keep it up![/]")
+                content.append("✨ [bold #a6e3a1]Current Status:[/] [n]Your workload distribution appears consistent across active projects.[/]")
             else:
                 for i, n in enumerate(nudges):
                     if n:
