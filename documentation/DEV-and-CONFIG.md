@@ -157,8 +157,8 @@ This script creates a project with:
 | **Type Coverage** | 100% (mypy strict) |
 | **Lint Errors** | 0 |
 | **Test Coverage** | Enabled via pytest-cov |
-| **Python Versions** | 3.8 - 3.12 |
-| **Dependencies** | 9 (click, tomlkit, pyperclip, sqlalchemy, rich, rapidfuzz, textual) |
+| **Python Versions** | 3.10 - 3.12 |
+| **Dependencies** | 7 (click, tomlkit, pyperclip, sqlalchemy, rich, rapidfuzz, textual) |
 | **Dev Dependencies** | 7 (pytest, pytest-cov, black, ruff, mypy, types-pyperclip, tomli) |
 
 ---

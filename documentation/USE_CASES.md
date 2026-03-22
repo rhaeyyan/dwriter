@@ -1,10 +1,8 @@
 # 📖 dwriter: 20 Creative Use Cases & Workflows
 
-**dwriter** is designed as a fast, low-friction terminal journaling tool. Its unique architecture means it thrives in two different environments:
-1. **Headless CLI:** Lightning-fast, one-off commands that don't interrupt your flow.
-2. **Interactive TUI:** Keyboard-driven, real-time dashboards for review, editing, and planning.
+**dwriter** is designed as a fast, low-friction terminal journaling tool centered around a **Unified TUI**. While it offers a powerful CLI for lightning-fast capture, the interactive dashboard is your primary command center for productivity.
 
-Whether you are a **freelance designer**, a **student**, a **maker**, or a **software engineer**, here are 20 creative ways to push `dwriter` beyond standard developer task management, utilizing both the CLI and TUI.
+Whether you are a **freelance designer**, a **student**, a **maker**, or a **software engineer**, here are 20 creative ways to push `dwriter` beyond standard developer task management.
 
 ---
 
@@ -231,8 +229,8 @@ Keep track of one-off business expenses, software subscriptions, or freelance wr
 
 To truly make `dwriter` a seamless part of your daily routine, it helps to adopt a few simple habits and workflows. Here are some pro tips to maximize your experience:
 
-### 1. The "CLI for Capture, TUI for Review" Rule
-The magic of `dwriter` is its hybrid design. To stay in your flow state, use the **headless CLI** for all your data entry (`dwriter add`, `dwriter todo`, `dwriter timer`). It takes two seconds and you never leave your prompt. Then, reserve the **interactive TUI** (`dwriter search`, `dwriter stats`, `dwriter edit`) for when you actually need to review your week, plan your sprint, or fix typos. 
+### 1. The TUI is your "Command Center"
+The most effective way to use `dwriter` is to keep the **interactive TUI** open in a dedicated terminal tab or window throughout the day. It acts as your dashboard for focus, task management, and reflection. Use the **headless CLI** (`dwriter add`) only for "surgical" data entry when you are in the middle of a coding session and don't want to switch tabs.
 
 ### 2. Establish a Tagging Convention Early
 Because `dwriter` relies heavily on `#tags` and `&projects` to generate summaries, consistency is key. Pick a handful of standard tags and stick to them. 
@@ -246,7 +244,7 @@ If you have a large project with multiple moving parts, you don't need to invent
 This syntax keeps your root projects organized while giving you granular control over what you are tracking. 
 
 ### 4. Let the Timer Do the Logging
-If you are sitting down for a focused session, don't just use `dwriter add` afterward. Use `dwriter timer 25 -p my_project`. Not only do you get a visual Pomodoro countdown to keep you accountable, but the TUI will automatically prompt you to log what you accomplished the second the timer finishes. It combines focus tracking and journaling into one step.
+If you are sitting down for a focused session, don't just use `dwriter add` afterward. Launch the **Timer** in the TUI (`dwriter timer 25 -p my_project`). Not only do you get a visual countdown to keep you accountable, but the TUI will automatically prompt you to log what you accomplished the second the timer finishes. It combines focus tracking and journaling into one step.
 
 ### 5. Leverage Natural Language Time-Traveling
 Don't stress if you forget to log a massive debugging session on a Friday afternoon. `dwriter` understands natural language. On Monday morning, just run `dwriter add "Fixed the memory leak" --date "last Friday"`. This keeps your timeline pristine for your weekly reviews and contribution calendar.

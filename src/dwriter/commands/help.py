@@ -1,4 +1,4 @@
-"""Interactive help command."""
+"""Help command - provides CLI help and TUI guidance."""
 
 import click
 
@@ -6,32 +6,17 @@ from ..cli import AppContext
 
 
 @click.command()
-@click.option(
-    "--plain",
-    is_flag=True,
-    help="Show plain text output (for piping/grep)",
-)
 @click.pass_obj
-def help_cmd(ctx: AppContext, plain: bool) -> None:
-    """Show interactive help browser.
+def help_cmd(ctx: AppContext) -> None:
+    """Show dwriter help and usage information.
 
-    Launches an interactive TUI help browser by default.
-    Use --plain for standard Click help output.
+    Displays the standard command-line help.
+    To launch the interactive TUI dashboard, just run:
+      dwriter
     """
-    if plain:
-        # Show standard Click help
-        from ..cli import main
-
-        click.echo(main.get_help(click.Context(main)))
-    else:
-        from .help_tui import HelpApp
-
-        app = HelpApp()
-        should_open_tui = app.run()
-
-        # If user exits help with 'q' or 'escape', launch the main TUI
-        if should_open_tui:
-            from ..tui.app import DWriterApp
-
-            master_app = DWriterApp(ctx)
-            master_app.run()
+    from ..cli import main
+    
+    ctx.console.print("[bold blue]Dwriter Help[/bold blue]\n")
+    click.echo(main.get_help(click.Context(main)))
+    
+    ctx.console.print("\n[dim]Tip: Run [bold]dwriter ui[/bold] for the interactive TUI command center.[/dim]")

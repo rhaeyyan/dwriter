@@ -82,30 +82,23 @@ def search(
     # Join multiple query arguments into a single string
     query_str = " ".join(query) if query else None
 
-    # Launch TUI if no query provided
+    # If no query provided, explain how to search or suggest UI
     if query_str is None:
-        from .search_tui import SearchApp
-
-        tag_list = list(tags) if tags else None
-        app = SearchApp(
-            db=ctx.db,
-            console=ctx.console,
-            project=project,
-            tags=tag_list,
-        )
-        app.run()
+        ctx.console.print("[yellow]No search query provided.[/yellow]")
+        ctx.console.print("  - [bold]CLI:[/] Provide a query (e.g., `dwriter search 'bugfix'`)")
+        ctx.console.print("  - [bold]TUI:[/] Run `dwriter ui --search` for interactive fuzzy-finding")
         return
 
-    # Original static search behavior
+    # Execute search with optional filters
     tag_list = list(tags) if tags else None
 
-    # Search Entries
+    # Query entries from the database
     matched_entries = []
     if search_type in ["all", "entry"]:
         entries = ctx.db.get_all_entries(project=project, tags=tag_list)
         matched_entries = search_items(query_str, entries, limit=limit, threshold=60)
 
-    # Search To-Dos
+    # Query to-dos from the database
     matched_todos = []
     if search_type in ["all", "todo"]:
         todos = ctx.db.get_all_todos(project=project, tags=tag_list)

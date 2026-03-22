@@ -164,15 +164,8 @@ def todo(
                 f"[{color}]{task.content}[/{color}]{tags_str}{proj_str}{due_str}"
             )
     else:
-        # No content - launch interactive TUI
-        from .todo_tui import TodoApp
-
-        app = TodoApp(
-            db=app_ctx.db,
-            console=app_ctx.console,
-            show_all=False,
-        )
-        app.run()
+        # No content - show list by default
+        ctx.invoke(todo_list)
 
 
 @todo.command("add")
@@ -309,14 +302,8 @@ def todo_add(
     is_flag=True,
     help="Show all tasks, including completed ones",
 )
-@click.option(
-    "--tui",
-    "use_tui",
-    is_flag=True,
-    help="Launch interactive TUI mode",
-)
 @click.pass_obj
-def todo_list(ctx: AppContext, show_all: bool, use_tui: bool) -> None:
+def todo_list(ctx: AppContext, show_all: bool) -> None:
     """List pending tasks.
 
     Displays your tasks in a formatted table with priority colors.
@@ -324,25 +311,11 @@ def todo_list(ctx: AppContext, show_all: bool, use_tui: bool) -> None:
 
     Options:
       --all: Include completed tasks (shown with strikethrough)
-      --tui: Launch interactive TUI for managing tasks
 
     Examples:
       dwriter todo list
       dwriter todo list --all
-      dwriter todo list --tui
     """
-    # Launch TUI if requested
-    if use_tui:
-        from .todo_tui import TodoApp
-
-        app = TodoApp(
-            db=ctx.db,
-            console=ctx.console,
-            show_all=show_all,
-        )
-        app.run()
-        return
-
     status_filter = None if show_all else "pending"
     tasks = ctx.db.get_todos(status=status_filter)
 

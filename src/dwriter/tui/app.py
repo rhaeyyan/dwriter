@@ -380,15 +380,16 @@ class DWriterApp(App[None]):
         Binding("5", "switch_mode('settings')", "Settings", show=False),
     ]
 
-    def __init__(self, ctx: AppContext) -> None:
+    def __init__(self, ctx: AppContext, starting_tab: str = "dashboard") -> None:
         """Initialize the dwriter application.
 
         Args:
             ctx: Application context containing database and configuration.
+            starting_tab: The screen to show on launch.
         """
         super().__init__()
         self.ctx = ctx
-        self._current_screen: str = "dashboard"
+        self._current_screen: str = starting_tab
         self._todo_state: TodoInputState = TodoInputState()
         self._timer_running: bool = False
 
@@ -418,11 +419,12 @@ class DWriterApp(App[None]):
             Tab("\\[ TIMER ]", id="timer"),
             Tab("", id="tab-spacer", disabled=True),
             Tab("\\[ SETTINGS ]", id="settings"),
+            active=self._current_screen,
             id="navigation-tabs",
         )
 
         # Content Switcher for screen management
-        with ContentSwitcher(initial="dashboard", id="content-area"):
+        with ContentSwitcher(initial=self._current_screen, id="content-area"):
             from .screens.dashboard import DashboardScreen
             from .screens.logs import LogsScreen
             from .screens.timer import TimerScreen
@@ -857,8 +859,6 @@ class DWriterApp(App[None]):
         # Get the timer screen and start the timer
         try:
             timer_screen = self.query_one("#timer", TimerScreen)
-            # Debug: show what we're passing
-            self.notify(f"Starting timer: tags={tags}, project={project}", timeout=2)
 
             # Update timer with parameters - set tags/project FIRST before starting
             timer_screen.tags = tags if tags else []
