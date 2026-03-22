@@ -138,6 +138,9 @@ def test_stats_command():
     result = runner.invoke(main, ["stats"])
 
     assert result.exit_code == 0
+    assert "Productivity Summary" in result.output
+    assert "Streak" in result.output
+    assert "Activity" in result.output
 
 
 def test_examples_command():
@@ -146,7 +149,9 @@ def test_examples_command():
     result = runner.invoke(main, ["examples"])
 
     assert result.exit_code == 0
-    assert "Usage Examples" in result.output
+    assert "dwriter Examples & Workflows" in result.output
+    assert "Quick Logging" in result.output
+    assert "Task Management" in result.output
 
 
 def test_config_show_command():

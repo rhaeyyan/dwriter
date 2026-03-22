@@ -20,12 +20,13 @@ Use these commands to record your work and view your history.
 
 | Command | Description |
 | --- | --- |
-| `dwriter add message` | Add a new log entry (multi-word support) |
-| `dwriter add "message" -t TAG` | Add an entry with tags (can use multiple `-t`) |
-| `dwriter add "message" -p PROJECT` | Add an entry with a project name |
-| `dwriter add "message" --date DATE` | Add an entry for a specific date |
+| `dwriter` | Launch the Unified Visual Dashboard |
+| `dwriter ui` | Launch the Visual Dashboard (supports deep-linking) |
+| `dwriter ui --timer` | Launch dashboard directly to the timer |
+| `dwriter ui --todo` | Launch dashboard directly to the todo board |
+| `dwriter ui --search` | Launch dashboard directly to search |
+| `dwriter add message` | Add a new log entry |
 | `dwriter today` | Show all entries logged today |
-| `dwriter` | Show all entries (default view) |
 | `dwriter undo` | Delete the most recent entry |
 
 #### Examples:
@@ -85,16 +86,16 @@ Edit your history or customize how the tool behaves.
 
 | Command | Description |
 | --- | --- |
-| `dwriter edit` | Launch interactive edit TUI for today's entries |
+| `dwriter edit` | List today's entries for ID-based editing |
 | `dwriter edit -i ID` | Edit a specific entry by ID |
 | `dwriter edit -s QUERY` | Search for an entry to edit (fuzzy match) |
-| `dwriter stats` | Launch interactive dashboard TUI |
-| `dwriter delete --before DATE` | Bulk delete entries older than a specific date (YYYY-MM-DD) |
+| `dwriter stats` | Show text-based productivity summary |
+| `dwriter delete --before DATE` | Bulk delete old entries |
 | `dwriter config show` | View your current settings |
-| `dwriter config edit` | Open the configuration file in your editor |
+| `dwriter config edit` | Open configuration file in editor |
 | `dwriter config reset` | Reset configuration to defaults |
 | `dwriter config path` | Show configuration file path |
-| `dwriter examples` | Display comprehensive usage workflows |
+| `dwriter examples` | Display usage workflows |
 
 ### Task Management (Todo)
 
@@ -102,15 +103,14 @@ Manage future tasks and to-dos. When a task is marked as done, it automatically 
 
 | Command | Description |
 | --- | --- |
-| `dwriter todo` | Launch interactive todo board TUI |
+| `dwriter todo` | List pending tasks (CLI table) |
 | `dwriter todo "task"` | Add a new pending task |
 | `dwriter todo "task" -t TAG` | Add a task with tags |
 | `dwriter todo "task" -p PROJECT` | Add a task with a project |
-| `dwriter todo "task" --priority LEVEL` | Set task priority (low, normal, high, urgent) |
-| `dwriter todo list` | List all pending tasks (static table) |
+| `dwriter todo "task" --priority LEVEL` | Set task priority |
+| `dwriter todo list` | List pending tasks (CLI table) |
 | `dwriter todo list --all` | Show all tasks, including completed ones |
-| `dwriter todo list --tui` | Launch interactive TUI |
-| `dwriter done ID` | Mark a task as complete and log it to today's entries |
+| `dwriter done ID` | Mark a task as complete and log it |
 | `dwriter todo rm ID` | Delete a task entirely |
 | `dwriter todo edit ID` | Edit a task's content interactively |
 
@@ -148,11 +148,11 @@ dwriter done 5
 
 ### Timer
 
-Run a timer and log the result when finished. Launches an interactive TUI with pause/resume capability.
+Run a timer and log the result when finished.
 
 | Command | Description |
 | --- | --- |
-| `dwriter timer` | Start a 25-minute timer (interactive TUI) |
+| `dwriter timer` | Start a 25-minute timer (CLI progress bar) |
 | `dwriter timer MINUTES` | Start a custom duration timer |
 | `dwriter timer MINUTES -t TAG` | Add tags to the resulting entry |
 | `dwriter timer MINUTES -p PROJECT` | Add project to the resulting entry |
@@ -180,12 +180,13 @@ Fuzzy search your journal entries and to-do tasks. Forgiving of typos and partia
 
 | Command | Description |
 | --- | --- |
-| `dwriter search` | Launch interactive search TUI |
-| `dwriter search query` | Fuzzy search entries and todos (static output) |
-| `dwriter search query -p PROJECT` | Filter by project before searching |
-| `dwriter search query -t TAG` | Filter by tags before searching (can use multiple `-t`) |
-| `dwriter search query --type TYPE` | Restrict search to `entry`, `todo`, or `all` |
-| `dwriter search query -n LIMIT` | Limit number of results per category |
+| `dwriter search query` | Fuzzy search entries and todos (CLI output) |
+| `dwriter search query -p PROJECT` | Filter by project |
+| `dwriter search query -t TAG` | Filter by tags |
+| `dwriter search query --type TYPE` | Restrict search type |
+| `dwriter search query -n LIMIT` | Limit number of results |
+
+> **Tip:** For interactive search with live-filtering, run: `dwriter ui --search`
 
 #### Examples:
 

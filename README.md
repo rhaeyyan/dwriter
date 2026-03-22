@@ -134,39 +134,31 @@ uv tool upgrade dwriter
 
 Once installed with `uv tool install .`, the `dwriter` command is available from **anywhere** on your computer.
 
-To open the **unified TUI (Terminal User Interface)** and access all features in one place, simply run:
+To launch the **Unified TUI (Terminal User Interface)**—your primary command center for productivity—simply run:
 
 ```bash
 dwriter
 ```
 
-This will launch the interactive dashboard where you can:
-- **Manage Tasks:** View and complete todos.
-- **Track Time:** Use the built-in focus timer.
-- **Search:** Fuzzy search through your journal entries.
-- **Statistics:** View your contribution calendar and behavioral insights.
+This opens the interactive dashboard where you can manage your entire workflow in one place:
+- **✅ Daily Todos:** View, prioritize, and complete tasks.
+- **⏱️ Focus Timer:** Run Pomodoro sessions that auto-log your work.
+- **🔍 Deep Search:** Fuzzy-find any past entry or task instantly.
+- **📊 Pulse Panel:** View your activity heatmap and behavioral insights.
 
-### ✅ Your First Command
+### ✅ Your First Entry
 
-To see everything dwriter can do, just type:
-```bash
-dwriter help
-```
+While the TUI is the best way to manage your day, you can always capture a quick thought directly from your terminal:
 
-To start your first journal entry, just type:
 ```bash
 dwriter add "Just finished setting up dwriter! #goals"
 ```
 
-> **⚠️ Important: Shell Special Characters**
+> **⚠️ Pro-Tip: Shell Special Characters**
 >
-> If you are using `#tags` or `&projects` directly in your terminal, your shell (bash, zsh, etc.) might treat them as comments or background commands.
->
-> **Always quote your entry** to ensure everything is captured correctly:
+> If you are using `#tags` or `&projects` directly in your terminal, always **quote your entry** to ensure your shell doesn't treat them as comments:
 > - ✅ **Correct:** `dwriter add "fixed the bug #bug &engine"`
-> - ❌ **Incorrect:** `dwriter add fixed the bug #bug &engine` (The shell will ignore everything after `#`)
-
-> **Developer Note:** If you prefer running dwriter locally without installing it globally, you can always use `uv run dwriter` inside the project folder.
+> - ❌ **Incorrect:** `dwriter add fixed the bug #bug &engine`
 
 ---
 
@@ -174,8 +166,8 @@ dwriter add "Just finished setting up dwriter! #goals"
 
 To truly make `dwriter` a seamless part of your daily routine, it helps to adopt a few simple habits and workflows. Here are some pro tips to maximize your experience:
 
-### 1. The "CLI for Capture, TUI for Review" Rule
-The magic of `dwriter` is its hybrid design. To stay in your flow state, use the **headless CLI** for all your data entry (`dwriter add`, `dwriter todo`, `dwriter timer`). It takes two seconds and you never leave your prompt. Then, reserve the **interactive TUI** (`dwriter search`, `dwriter stats`, `dwriter edit`) for when you actually need to review your week, plan your sprint, or fix typos. 
+### 1. The TUI is your "Command Center"
+The most effective way to use `dwriter` is to keep the **interactive TUI** open in a dedicated terminal tab or window throughout the day. It acts as your dashboard for focus, task management, and reflection. Use the **headless CLI** (`dwriter add`) only for "surgical" data entry when you are in the middle of a coding session and don't want to switch tabs.
 
 ### 2. Establish a Tagging Convention Early
 Because `dwriter` relies heavily on `#tags` and `&projects` to generate summaries, consistency is key. Pick a handful of standard tags and stick to them. 
@@ -189,7 +181,7 @@ If you have a large project with multiple moving parts, you don't need to invent
 This syntax keeps your root projects organized while giving you granular control over what you are tracking. 
 
 ### 4. Let the Timer Do the Logging
-If you are sitting down for a focused session, don't just use `dwriter add` afterward. Use `dwriter timer 25 -p my_project`. Not only do you get a visual Pomodoro countdown to keep you accountable, but the TUI will automatically prompt you to log what you accomplished the second the timer finishes. It combines focus tracking and journaling into one step.
+If you are sitting down for a focused session, don't just use `dwriter add` afterward. Launch the **Timer** in the TUI (`dwriter timer 25 -p my_project`). Not only do you get a visual countdown to keep you accountable, but the TUI will automatically prompt you to log what you accomplished the second the timer finishes. It combines focus tracking and journaling into one step.
 
 ### 5. Leverage Natural Language Time-Traveling
 Don't stress if you forget to log a massive debugging session on a Friday afternoon. `dwriter` understands natural language. On Monday morning, just run `dwriter add "Fixed the memory leak" --date "last Friday"`. This keeps your timeline pristine for your weekly reviews and contribution calendar.
@@ -205,136 +197,36 @@ Now, logging an idea takes literally three keystrokes: `dw add "New idea!"`.
 
 ---
 
-## 🎨 Interactive TUI
+## 🎨 Visual Dashboard vs. Fast Command-Line
 
-dwriter now includes interactive TUI (Text User Interface) modes for enhanced workflow. These modes provide real-time, keyboard-driven interfaces for common tasks.
+**dwriter** is designed for speed. Most tasks can be done with a single command in your terminal, while the **Unified Dashboard (TUI)** provides a beautiful visual space for deep work and reflection.
 
-### 🔍 Interactive Search (`dwriter search`)
+To launch the full visual dashboard, simply run:
+```bash
+dwriter
+```
 
-Launch with `dwriter search` (no arguments).
+### 🔍 Finding Your Notes
 
-**Features:**
-- Real-time fuzzy filtering as you type
-- Color-coded match scores
-- Browse entries and todos in separate sections
-- Matching tag/project colors across entries and todos
+- **Fast Command:** `dwriter search "query"` lists matching notes directly in your terminal.
+- **Interactive:** `dwriter ui --search` opens a live search window where you can filter as you type.
 
-**Keybindings:**
+### 📋 Task Management
 
-| Key | Action |
-| --- | --- |
-| `j` / `k` | Navigate down / up |
-| `Enter` | Select item (copy content to clipboard) |
-| `/` | Focus search input |
-| `Ctrl+N` | Toggle search type (All / Entries / Todos) |
-| `q` / `Esc` | Quit
+- **Fast Command:** `dwriter todo list` shows your tasks in a simple table. `dwriter todo add "task"` adds a task instantly.
+- **Interactive:** `dwriter ui --todo` opens the visual task board for easy management with your keyboard.
 
-**Visual Features:**
-- 📝 **Entries section** - Journal entries with date/time stamps
-- ✅ **Todos section** - Tasks with priority labels
-- 🏷️ **Consistent colors** - Yellow tags (#tag) and purple projects across both sections
+### ⏱️ Focus Timer
 
-### 📋 Interactive Todo Board (`dwriter todo`)
+- **Fast Command:** `dwriter timer 25` runs a simple countdown in your current terminal window.
+- **Interactive:** `dwriter ui --timer` launches a large, full-screen timer that helps you stay "in the zone."
 
-Launch with `dwriter todo` (no arguments) or `dwriter todo list --tui`.
+### 📊 Productivity Insights
 
-**Features:**
-- View all pending tasks with priority colors
-- Mark tasks complete with automatic journal logging
-- Edit and delete tasks inline
-- Toast notifications for actions
+- **Fast Command:** `dwriter stats` prints a quick summary of your streaks and work habits.
+- **Interactive:** `dwriter ui` launches the full dashboard with activity maps and helpful suggestions.
 
-**Keybindings:**
-
-| Key | Action |
-| --- | --- |
-| `j` / `k` | Navigate down / up |
-| `Space` / `Enter` | Mark task complete (auto-logs to journal) |
-| `e` | Edit task content |
-| `d` | Delete task (with confirmation) |
-| `+` | Increase priority (e.g., normal → high) |
-| `-` | Decrease priority (e.g., high → normal) |
-| `t` | Edit tags (comma-separated) |
-| `p` | Edit project name |
-| `r` | Refresh list |
-| `q` / `Esc` | Quit |
-
-**Priority Colors:**
-- 🔴 **URGENT** (red)
-- 🟡 **HIGH** (yellow)
-- ⚪ **NORMAL** (white)
-- ⚫ **LOW** (dim)
-
-### ✏️ Edit Entries (`dwriter edit`)
-
-Launch with `dwriter edit` (no arguments).
-
-**Features:**
-- Edit today's entries in a clean table view
-- Modify content, tags, and project separately
-- Delete entries with confirmation
-- No more fragile pipe-delimited syntax
-
-**Keybindings:**
-
-| Key | Action |
-| --- | --- |
-| `j` / `k` | Navigate down / up |
-| `e` / `Enter` | Edit entry content |
-| `t` | Edit tags (comma-separated) |
-| `p` | Edit project name |
-| `d` | Delete entry (with confirmation) |
-| `r` | Refresh list |
-| `q` / `Esc` | Quit |
-
-### ⏱️ Timer (`dwriter timer`)
-
-Launch with `dwriter timer [MINUTES]`.
-
-**Features:**
-- Large digital countdown timer
-- Pause/resume with Space key
-- Adjust time on the fly with +/-
-- Progress bar visualization
-- Auto-prompt to log session on completion
-
-**Keybindings:**
-
-| Key | Action |
-| --- | --- |
-| `Space` | Pause/Resume timer |
-| `+` | Add 5 minutes |
-| `-` | Subtract 5 minutes |
-| `Enter` | Finish session early |
-| `q` / `Esc` | Quit (with confirmation) |
-
-> **Hybrid CLI/TUI Design:** Quick operations remain CLI-based (`dwriter add`, `dwriter todo "task"`) for frictionless use. TUI modes launch only when needed for interactive workflows.
-
-### 📊 Dashboard (`dwriter stats`)
-
-Launch with `dwriter stats` or access via the first tab in the main TUI.
-
-**Features:**
-- 📈 **Unified Pulse Panel** - A high-density 45-day activity heatmap that tracks your logging frequency.
-- 💡 **"Two-Cents" Insights** - AI-powered behavioral nudges that warn you about burnout risk, project friction, and context-switching patterns.
-- 📅 **History Calendar** - GitHub-style contribution calendar with streak tracking for the past year.
-- 📋 **Performance Reports** - Generate a detailed Markdown report of your productivity metrics.
-
-**Keybindings:**
-
-| Key | Action |
-| --- | --- |
-| `Tab` | Navigate between sections |
-| `c` | Copy Performance Report to clipboard |
-| `r` | Refresh all data |
-| `q` / `Esc` | Quit |
-
-**Visual Elements:**
-- **45-day Heatmap** - Shows your activity levels over the last month and a half with color-coded density.
-- **Current/Longest Streak** - Displays your logging streaks at the bottom of the calendar.
-- **Behavioral Nudges** - Real-time advice like "Watch Your Pace" or "Context Switcher" based on your actual work patterns.
-
-> **Hybrid CLI/TUI Design:** Quick operations remain CLI-based (`dwriter add`, `dwriter todo "task"`) for frictionless use. TUI modes launch only when needed for interactive workflows.
+> **Designed for Speed:** While the command-line is perfect for quick notes without leaving your work, the Visual Dashboard is your home base for planning and review.
 
 ---
 

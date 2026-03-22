@@ -87,20 +87,24 @@ def _edit_single_entry(ctx: AppContext, entry_id: int) -> None:
 
 
 def _bulk_edit_today(ctx: AppContext) -> None:
-    """Bulk edit today's entries using interactive TUI.
+    """List today's entries and suggest UI or ID-based editing.
 
     Args:
         ctx: The application context.
     """
-    from .edit_tui import EditApp
+    entries = ctx.db.get_entries_by_date(datetime.now())
+    
+    if not entries:
+        ctx.console.print("[yellow]No entries found for today.[/yellow]")
+        ctx.console.print("Run [bold]dwriter ui[/bold] to see your full history.")
+        return
 
-    today_date = datetime.now()
-    app = EditApp(
-        db=ctx.db,
-        console=ctx.console,
-        date=today_date,
-    )
-    app.run()
+    ctx.console.print("[bold cyan]Today's Entries:[/bold cyan]")
+    for entry in entries:
+        ctx.console.print(f"  [[magenta]{entry.id}[/magenta]] {entry.content}")
+    
+    ctx.console.print("\nTo edit a specific entry, run: [bold]dwriter edit --id <ID>[/bold]")
+    ctx.console.print("To use the interactive editor, run: [bold]dwriter ui --logs[/bold]")
 
 
 @click.command()
@@ -121,22 +125,14 @@ def _bulk_edit_today(ctx: AppContext) -> None:
 )
 @click.pass_obj
 def edit(ctx: AppContext, entry_id: int | None, search_query: str | None) -> None:
-    """Edit or delete entries interactively.
+    """Edit or delete entries.
 
-    Launches an interactive TUI for editing today's entries with
-    keyboard navigation, or edits a specific entry by ID or search.
-
-    Edit TUI Keybindings:
-      - j/k: Navigate down/up
-      - e/Enter: Edit content
-      - t: Edit tags (comma-separated)
-      - p: Edit project name
-      - d: Delete entry (with confirmation)
-      - r: Refresh list
-      - q/Esc: Quit
+    If no ID or search is provided, it lists today's entries.
+    To use the full interactive editor, run:
+      dwriter ui --logs
 
     Examples:
-      dwriter edit                  # Launch interactive TUI
+      dwriter edit                  # List today's entries
       dwriter edit --id 42          # Edit specific entry
       dwriter edit --search "redis cache"  # Search and edit
     """

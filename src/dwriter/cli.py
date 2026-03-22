@@ -68,33 +68,29 @@ def main(ctx: click.Context) -> None:
 
     Quick Start:
       dwriter                      # Launch unified TUI
-      dwriter add "fixed the race condition in auth"
-      dwriter add "implemented feature X" -t feature -p myapp
-      dwriter todo "write unit tests" --priority high
-      dwriter done 1
+      dwriter ui --timer           # Launch TUI directly to timer
+      dwriter add "fixed the bug"
+      dwriter todo "write tests"
       dwriter standup
-      dwriter review --days 7
 
     Interactive TUI:
-      Run 'dwriter' without arguments to launch the unified TUI with:
+      Run 'dwriter' or 'dwriter ui' to launch the unified TUI with:
       - Dashboard with statistics and calendar
       - Todo board for task management
-      - Timer for timer sessions
+      - Timer for focus sessions
       - Search for fuzzy finding entries
       - Global quick-add bar (press / to focus)
-      - Command palette (press Ctrl+P)
 
     Common Commands:
       add       - Log a new entry
-      todo      - Manage tasks (or use TUI)
+      todo      - Manage tasks (headless-first)
       done      - Complete a task
       standup   - Generate yesterday's summary
       review    - Review last N days
-      search    - Fuzzy search entries/todos (or use TUI)
-      timer     - Start timer-style timer (or use TUI)
-      stats     - View statistics dashboard (or use TUI)
-      edit      - Edit entries
-      config    - Manage settings
+      search    - Fuzzy search (headless-first)
+      timer     - Focus timer (headless-first)
+      stats     - Productivity summary (headless-first)
+      ui        - Launch the full interactive TUI
     """
     try:
         ctx.obj = AppContext()
@@ -104,29 +100,49 @@ def main(ctx: click.Context) -> None:
         ctx.exit(1)
 
     if ctx.invoked_subcommand is None:
-        import sys
-
-        # Force UTF-8 encoding for terminal output to prevent mojibake/character distortion
-        # Textual/Rich rely on Unicode box-drawing characters for borders and UI elements.
-        if hasattr(sys.stdout, "reconfigure"):
-            sys.stdout.reconfigure(encoding="utf-8")
-        if hasattr(sys.stderr, "reconfigure"):
-            sys.stderr.reconfigure(encoding="utf-8")
-
-        # Force terminal resize to exactly 42 rows by 88 columns (default size)
-        # ANSI escape sequence: \x1b[8;{height};{width}t
-        # Works on MacOS Terminal, iTerm2, Alacritty, and most X11 Linux terminals
-        sys.stdout.write("\x1b[8;42;88t")
-        sys.stdout.flush()
-
-        # Launch the unified TUI
-        from .tui.app import DWriterApp
-
-        app = DWriterApp(ctx.obj)
-        app.run()
+        _launch_tui(ctx.obj)
     else:
         # Commands are registered at the bottom but we ensure they are available
         pass
+
+
+def _launch_tui(ctx_obj: AppContext, starting_tab: str = "dashboard") -> None:
+    """Launch the unified TUI.
+
+    Args:
+        ctx_obj: Application context.
+        starting_tab: The screen to show on launch.
+    """
+    import sys
+
+    # Force UTF-8 encoding for terminal output to prevent mojibake/character distortion
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
+    if hasattr(sys.stderr, "reconfigure"):
+        sys.stderr.reconfigure(encoding="utf-8")
+
+    # Force terminal resize to exactly 42 rows by 88 columns (default size)
+    sys.stdout.write("\x1b[8;42;88t")
+    sys.stdout.flush()
+
+    # Launch the unified TUI
+    from .tui.app import DWriterApp
+
+    app = DWriterApp(ctx_obj, starting_tab=starting_tab)
+    app.run()
+
+
+@click.command()
+@click.option("--dashboard", "tab", flag_value="dashboard", help="Start on dashboard tab")
+@click.option("--logs", "tab", flag_value="logs", help="Start on logs tab")
+@click.option("--todo", "tab", flag_value="todo", help="Start on todo tab")
+@click.option("--timer", "tab", flag_value="timer", help="Start on timer tab")
+@click.option("--search", "tab", flag_value="logs", help="Start on search (logs) tab")
+@click.option("--settings", "tab", flag_value="settings", help="Start on settings tab")
+@click.pass_obj
+def ui(ctx: AppContext, tab: str | None) -> None:
+    """Launch the interactive Unified TUI."""
+    _launch_tui(ctx, starting_tab=tab or "dashboard")
 
 
 def _register_commands() -> None:
@@ -149,6 +165,7 @@ def _register_commands() -> None:
         undo,
     )
 
+    # Dispatch and register commands to the main group
     for cmd in [
         add,
         config,
@@ -164,6 +181,7 @@ def _register_commands() -> None:
         standup,
         today,
         todo,
+        ui,
         undo,
     ]:
         main.add_command(cmd)
