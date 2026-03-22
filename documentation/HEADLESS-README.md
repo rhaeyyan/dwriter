@@ -10,9 +10,17 @@ This document contains the full command-line reference for **dwriter**. For an o
 
 Use these commands to record your work and view your history.
 
+> **⚠️ Important: Shell Special Characters**
+>
+> If you are using `#tags` or `&projects` directly in your terminal, your shell (bash, zsh, etc.) might treat them as comments or background commands.
+>
+> **Always quote your entry** if it contains these markers to ensure everything is captured correctly:
+> - ✅ **Correct:** `dwriter add "fixed the bug #bug &engine"`
+> - ❌ **Incorrect:** `dwriter add fixed the bug #bug &engine` (The shell will ignore everything after `#`)
+
 | Command | Description |
 | --- | --- |
-| `dwriter add "message"` | Add a new log entry |
+| `dwriter add message` | Add a new log entry (multi-word support) |
 | `dwriter add "message" -t TAG` | Add an entry with tags (can use multiple `-t`) |
 | `dwriter add "message" -p PROJECT` | Add an entry with a project name |
 | `dwriter add "message" --date DATE` | Add an entry for a specific date |
@@ -23,28 +31,14 @@ Use these commands to record your work and view your history.
 #### Examples:
 
 ```bash
-dwriter add "Fixed the race condition in auth"
+# Multi-word entries work without quotes
+dwriter add Fixed the race condition in auth
 
-```
+# But must be quoted if using #tags or &projects
+dwriter add "Refactored database layer #refactor &myapp"
 
-```bash
-dwriter add "Refactored database layer" -t refactor -t backend -p myapp
-
-```
-
-```bash
-dwriter add "Finished report" --date yesterday
-
-```
-
-```bash
-dwriter add "Meeting notes" --date "last Friday"
-
-```
-
-```bash
-dwriter add "Completed sprint" --date "3 days ago"
-
+# Or quote the markers individually
+dwriter add Refactored database layer "#refactor" "&myapp"
 ```
 
 **Supported date formats:**
@@ -187,11 +181,11 @@ Fuzzy search your journal entries and to-do tasks. Forgiving of typos and partia
 | Command | Description |
 | --- | --- |
 | `dwriter search` | Launch interactive search TUI |
-| `dwriter search "query"` | Fuzzy search entries and todos (static output) |
-| `dwriter search "query" -p PROJECT` | Filter by project before searching |
-| `dwriter search "query" -t TAG` | Filter by tags before searching (can use multiple `-t`) |
-| `dwriter search "query" --type TYPE` | Restrict search to `entry`, `todo`, or `all` |
-| `dwriter search "query" -n LIMIT` | Limit number of results per category |
+| `dwriter search query` | Fuzzy search entries and todos (static output) |
+| `dwriter search query -p PROJECT` | Filter by project before searching |
+| `dwriter search query -t TAG` | Filter by tags before searching (can use multiple `-t`) |
+| `dwriter search query --type TYPE` | Restrict search to `entry`, `todo`, or `all` |
+| `dwriter search query -n LIMIT` | Limit number of results per category |
 
 #### Examples:
 
@@ -201,22 +195,22 @@ dwriter search
 ```
 
 ```bash
-dwriter search "auth bug"
+dwriter search auth bug
 
 ```
 
 ```bash
-dwriter search "refactor" -p my_project
+dwriter search refactor -p my_project
 
 ```
 
 ```bash
-dwriter search "cache" --type todo
+dwriter search cache --type todo
 
 ```
 
 ```bash
-dwriter search "meeting" -t work -t notes
+dwriter search meeting -t work -t notes
 
 ```
 

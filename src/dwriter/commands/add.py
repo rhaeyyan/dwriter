@@ -12,7 +12,7 @@ from ..ui_utils import display_entry
 
 
 @click.command()
-@click.argument("content")
+@click.argument("content", nargs=-1, required=True)
 @click.option(
     "-t",
     "--tag",
@@ -38,7 +38,7 @@ from ..ui_utils import display_entry
 @click.pass_obj
 def add(
     ctx: AppContext,
-    content: str,
+    content: tuple[str, ...],
     tags: tuple[Any, ...],
     project: str | None,
     date_str: str | None,
@@ -69,10 +69,15 @@ def add(
       dwriter add "Meeting notes" --date "last Friday"
 
       dwriter add "Completed sprint" --date "3 days ago"
+
+      dwriter add implemented feature X #backend &core
     """
+    # Join multiple content arguments into a single string
+    content_str = " ".join(content)
+
     # Extract tags/project from content if present
     from ..tui.parsers import parse_quick_add
-    parsed = parse_quick_add(content)
+    parsed = parse_quick_add(content_str)
     
     # Merge default tags, content-extracted tags, and explicitly provided tags
     all_tags = list(ctx.config.defaults.tags) + list(parsed.tags) + list(tags)
@@ -82,13 +87,13 @@ def add(
         project = parsed.project or ctx.config.defaults.project
 
     # Use the cleaned content (tags/project removed)
-    content = parsed.content
+    final_content = parsed.content
 
     # Parse the date (or use current time if not provided)
     entry_date = parse_date_or_default(date_str)
 
     entry = ctx.db.add_entry(
-        content=content, tags=all_tags, project=project, created_at=entry_date
+        content=final_content, tags=all_tags, project=project, created_at=entry_date
     )
 
     if ctx.config.display.show_confirmation:
