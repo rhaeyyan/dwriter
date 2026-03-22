@@ -63,7 +63,7 @@ Detailed documentation for advanced usage and development:
 
 ## 🚀 Quick Start (Installation)
 
-Getting dwriter running on your computer is quick and easy. Choose your operating system below to get started.
+Getting dwriter running on your computer is quick and easy. We use **uv**, a modern and lightning-fast tool for installing Python applications, which keeps dwriter isolated and tidy on your system.
 
 ---
 
@@ -81,7 +81,7 @@ Getting dwriter running on your computer is quick and easy. Choose your operatin
 3.  **Install dwriter:**
     *   Open the `dwriter` folder you downloaded/cloned.
     *   Right-click in any empty space inside the folder and select **Open in Terminal**.
-    *   Type `uv sync` and press Enter.
+    *   Type `uv tool install .` and press Enter.
 
 ---
 
@@ -96,9 +96,9 @@ Getting dwriter running on your computer is quick and easy. Choose your operatin
 2.  **Navigate to the folder:**
     *   Use `cd dwriter` to enter the project folder.
 3.  **Install dwriter:**
-    *   Run: `uv sync`
+    *   Run: `uv tool install .`
 
-> **Note:** For clipboard support, run: `sudo apt install xclip`
+> **Note:** For clipboard support, run: `sudo apt install xclip` or `sudo apt install xsel`
 
 ---
 
@@ -113,7 +113,7 @@ Getting dwriter running on your computer is quick and easy. Choose your operatin
 2.  **Navigate to the folder:**
     *   Use `cd dwriter` to enter the project folder.
 3.  **Install dwriter:**
-    *   Run: `uv sync`
+    *   Run: `uv tool install .`
 
 ---
 
@@ -124,37 +124,41 @@ To get the latest features and fixes, run these commands inside your `dwriter` f
 # Get the latest code
 git pull
 
-# Update the tools
-uv sync
+# Update the installation
+uv tool upgrade dwriter
 ```
 
 ---
 
 ## 🎮 Launching dwriter
 
-To open the **unified TUI (Terminal User Interface)** and access all of dwriter's interactive features in one place, simply run:
+Once installed with `uv tool install .`, the `dwriter` command is available from **anywhere** on your computer.
+
+To open the **unified TUI (Terminal User Interface)** and access all features in one place, simply run:
 
 ```bash
-uv run dwriter
+dwriter
 ```
 
 This will launch the interactive dashboard where you can:
 - **Manage Tasks:** View and complete todos.
 - **Track Time:** Use the built-in focus timer.
 - **Search:** Fuzzy search through your journal entries.
-- **Statistics:** View your contribution calendar and streaks.
+- **Statistics:** View your contribution calendar and behavioral insights.
 
 ### ✅ Your First Command
 
-Once installed, you can see everything dwriter can do by typing:
+To see everything dwriter can do, just type:
 ```bash
-uv run dwriter help
+dwriter help
 ```
 
 To start your first journal entry, just type:
 ```bash
-uv run dwriter add "Just finished setting up dwriter! #goals"
+dwriter add "Just finished setting up dwriter! #goals"
 ```
+
+> **Developer Note:** If you prefer running dwriter locally without installing it globally, you can always use `uv run dwriter` inside the project folder.
 
 ---
 
@@ -300,28 +304,27 @@ Launch with `dwriter timer [MINUTES]`.
 
 ### 📊 Dashboard (`dwriter stats`)
 
-Launch with `dwriter stats`.
+Launch with `dwriter stats` or access via the first tab in the main TUI.
 
 **Features:**
-- 📅 GitHub-style contribution calendar with streak tracking
-- 📊 Weekly activity bar chart
-- 📈 Statistics summary (total entries, tasks, tags, projects)
-- 🏷️ Top tags with usage bars
+- 📈 **Unified Pulse Panel** - A high-density 45-day activity heatmap that tracks your logging frequency.
+- 💡 **"Two-Cents" Insights** - AI-powered behavioral nudges that warn you about burnout risk, project friction, and context-switching patterns.
+- 📅 **History Calendar** - GitHub-style contribution calendar with streak tracking for the past year.
+- 📋 **Performance Reports** - Generate a detailed Markdown report of your productivity metrics.
 
 **Keybindings:**
 
 | Key | Action |
 | --- | --- |
-| `r` | Refresh all data |
 | `Tab` | Navigate between sections |
+| `c` | Copy Performance Report to clipboard |
+| `r` | Refresh all data |
 | `q` / `Esc` | Quit |
 
 **Visual Elements:**
-- **Contribution Calendar** - Shows your logging activity over the past year with color-coded squares (darker = more entries)
-- **Current/Longest Streak** - Displays your logging streaks at the top of the calendar
-- **Weekly Chart** - Bar chart showing entries per week for the last 8 weeks
-- **Stats Summary** - Total entries, completed tasks, unique tags, projects, and date range
-- **Top Tags** - Your 10 most-used tags with visual usage bars
+- **45-day Heatmap** - Shows your activity levels over the last month and a half with color-coded density.
+- **Current/Longest Streak** - Displays your logging streaks at the bottom of the calendar.
+- **Behavioral Nudges** - Real-time advice like "Watch Your Pace" or "Context Switcher" based on your actual work patterns.
 
 > **Hybrid CLI/TUI Design:** Quick operations remain CLI-based (`dwriter add`, `dwriter todo "task"`) for frictionless use. TUI modes launch only when needed for interactive workflows.
 

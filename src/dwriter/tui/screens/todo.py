@@ -173,8 +173,8 @@ class EditTodoModal(ModalScreen):  # type: ignore[type-arg]
             )
 
             with Container(id="edit-buttons"):
-                yield Button("\\[ SAVE \\]", id="save-btn", variant="primary")
-                yield Button("\\[ CANCEL \\]", id="cancel-btn", variant="default")
+                yield Button("\\[ SAVE ]", id="save-btn", variant="primary")
+                yield Button("\\[ CANCEL ]", id="cancel-btn", variant="default")
 
     def on_mount(self) -> None:
         """Focus the content input on mount."""
@@ -276,8 +276,8 @@ class AddTodoModal(ModalScreen):  # type: ignore[type-arg]
                 placeholder="Enter task content...",
             )
             with Container(id="add-buttons"):
-                yield Button("\\[ ADD \\]", id="add-btn", variant="primary")
-                yield Button("\\[ CANCEL \\]", id="cancel-btn", variant="default")
+                yield Button("\\[ ADD ]", id="add-btn", variant="primary")
+                yield Button("\\[ CANCEL ]", id="cancel-btn", variant="default")
 
     def on_mount(self) -> None:
         """Focus the input on mount."""
@@ -371,8 +371,8 @@ class EditTagsModal(ModalScreen):  # type: ignore[type-arg]
             )
             yield Label("Separate tags with commas", id="edit-hint")
             with Container(id="edit-buttons"):
-                yield Button("\\[ SAVE \\]", id="save-btn", variant="primary")
-                yield Button("\\[ CANCEL \\]", id="cancel-btn", variant="default")
+                yield Button("\\[ SAVE ]", id="save-btn", variant="primary")
+                yield Button("\\[ CANCEL ]", id="cancel-btn", variant="default")
 
     def on_mount(self) -> None:
         """Focus the input on mount."""
@@ -464,8 +464,8 @@ class EditProjectModal(ModalScreen):  # type: ignore[type-arg]
                 placeholder="Project name (optional)",
             )
             with Container(id="edit-buttons"):
-                yield Button("\\[ SAVE \\]", id="save-btn", variant="primary")
-                yield Button("\\[ CANCEL \\]", id="cancel-btn", variant="default")
+                yield Button("\\[ SAVE ]", id="save-btn", variant="primary")
+                yield Button("\\[ CANCEL ]", id="cancel-btn", variant="default")
 
     def on_mount(self) -> None:
         """Focus the input on mount."""
@@ -666,23 +666,7 @@ class TodoListView(ListView):
 
 
 class TodoScreen(Container):
-    """Todo board screen for managing tasks.
-
-    Provides a real-time interface for managing tasks with:
-    - Tabbed view for Pending/Completed/All tasks
-    - Add, edit, complete, and delete operations
-    - Priority management
-    - Due date tracking with visual indicators
-
-    Key bindings:
-        a: Add new task
-        j/k: Navigate up/down
-        Space/Enter: Mark task as complete
-        e: Edit task
-        d: Delete selected task
-        +/-: Change priority
-        1/2/3: Switch tabs
-    """
+    """Todo board screen."""
 
     DEFAULT_CSS = """
     TodoScreen {

@@ -148,17 +148,17 @@ class EntryResultsView(ListView):
             due_only = todo.due_date.replace(hour=0, minute=0, second=0, microsecond=0)
             days = (due_only - today).days
             if days < 0:
-                d_str = f"[{DUE_OVERDUE}]\\[OVD\\][/{DUE_OVERDUE}]"
+                d_str = f"[{DUE_OVERDUE}]\\[OVD][/{DUE_OVERDUE}]"
             elif days == 0:
-                d_str = f"[{DUE_TODAY}]\\[TDY\\][/{DUE_TODAY}]"
+                d_str = f"[{DUE_TODAY}]\\[TDY][/{DUE_TODAY}]"
             elif days == 1:
-                d_str = f"[{DUE_TOMORROW}]\\[TMR\\][/{DUE_TOMORROW}]"
+                d_str = f"[{DUE_TOMORROW}]\\[TMR][/{DUE_TOMORROW}]"
             elif days <= 9:
-                d_str = f"[{DUE_SOON}]\\[{days}d\\][/{DUE_SOON}]"
+                d_str = f"[{DUE_SOON}]\\[{days}d][/{DUE_SOON}]"
             elif days <= 99:
-                d_str = f"[{DUE_SOON}]\\[{days}d\\][/{DUE_SOON}]"
+                d_str = f"[{DUE_SOON}]\\[{days}d][/{DUE_SOON}]"
             else:
-                d_str = f"[{DUE_SOON}]\\[99+\\][/{DUE_SOON}]"
+                d_str = f"[{DUE_SOON}]\\[99+][/{DUE_SOON}]"
 
         # ESCAPE USER CONTENT! This stops user-typed brackets from crashing the app.
         safe_content = todo.content.replace("[", "\\[")
@@ -203,19 +203,7 @@ class EntryResultsView(ListView):
 
 
 class SearchScreen(Container):
-    """Search screen for fuzzy finding entries and todos.
-
-    Provides real-time fuzzy search across journal entries and to-dos.
-
-    Key bindings:
-        j/k: Navigate up/down
-        Enter: Select highlighted item (copy content)
-        e: Edit content
-        t: Edit tags
-        p: Edit project
-        +/-: Change priority (todos only)
-        /: Focus search input
-    """
+    """Search screen for entries and todos."""
 
     DEFAULT_CSS = """
     SearchScreen {

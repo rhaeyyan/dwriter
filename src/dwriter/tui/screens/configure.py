@@ -1,8 +1,4 @@
-"""Configure screen for dwriter TUI.
-
-This module provides the settings interface for updating application
-preferences like themes, time formats, and behavior.
-"""
+"""Configure screen for managing application settings."""
 
 from __future__ import annotations
 
@@ -31,7 +27,7 @@ class ConfigureScreen(Container):
         height: 1fr;
     }
 
-    #configure-scroll {
+    #settings-scroll {
         height: 1fr;
         padding: 1 4;
         overflow-y: scroll;
@@ -73,24 +69,24 @@ class ConfigureScreen(Container):
         margin-bottom: 1;
     }
 
-    #configure-footer {
+    #settings-footer {
         height: auto;
         padding: 0 2;
         background: $panel;
         border-top: solid $primary;
     }
 
-    #configure-buttons {
+    #settings-buttons {
         align: center middle;
         height: 3;
     }
 
-    #configure-buttons Button {
+    #settings-buttons Button {
         margin: 0 1;
         min-width: 18;
     }
 
-    #configure-path {
+    #settings-path {
         height: 1;
         text-align: center;
         color: $foreground 60%;
@@ -118,11 +114,11 @@ class ConfigureScreen(Container):
         self.ctx = ctx
 
     def compose(self) -> ComposeResult:
-        """Compose the configure UI layout."""
+        """Compose the settings UI layout."""
         cfg = self.ctx.config
         use_emojis = cfg.display.use_emojis
 
-        with Vertical(id="configure-scroll"):
+        with Vertical(id="settings-scroll"):
             # ── Appearance ─────────────────────────────────────────
             with Container(classes="section"):
                 yield Label(f"{get_icon('glance', use_emojis)} Appearance", classes="section-title")
@@ -201,18 +197,18 @@ class ConfigureScreen(Container):
                     )
 
         # ── Footer ──────────────────────────────────────────────────
-        with Container(id="configure-footer"):
-            with Horizontal(id="configure-buttons"):
-                yield Button("\\[ SAVE CHANGES \\]", id="save-config-btn", variant="success")
-                yield Button("\\[ RESET TO DEFAULTS \\]", id="reset-config-btn", variant="default")
-                yield Button("\\[ CLOSE APP \\]", id="close-app-btn", variant="error")
+        with Container(id="settings-footer"):
+            with Horizontal(id="settings-buttons"):
+                yield Button("\\[ SAVE CHANGES ]", id="save-config-btn", variant="success")
+                yield Button("\\[ RESET TO DEFAULTS ]", id="reset-config-btn", variant="default")
+                yield Button("\\[ CLOSE APP ]", id="close-app-btn", variant="error")
             yield Label(
                 "Some settings marked 'Requires restart' need a full app restart to take effect.",
                 classes="restart-note",
             )
             yield Label(
                 f"Config: {self.ctx.config_manager.get_config_path()}",
-                id="configure-path",
+                id="settings-path",
             )
 
     def on_button_pressed(self, event: Button.Pressed) -> None:

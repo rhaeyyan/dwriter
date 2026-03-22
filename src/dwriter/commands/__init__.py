@@ -6,14 +6,13 @@ from .delete import delete
 from .edit import edit
 from .examples import examples
 from .help import help_cmd
-from .mcp import mcp
 from .review import review
 from .search import search
 from .standup import standup
 from .stats import stats
 from .timer import timer
 from .today import today
-from .todo import done, todo
+from .todo import todo, done
 from .undo import undo
 
 __all__ = [
@@ -23,13 +22,12 @@ __all__ = [
     "done",
     "edit",
     "examples",
-    "timer",
     "help_cmd",
-    "mcp",
     "review",
     "search",
     "standup",
     "stats",
+    "timer",
     "today",
     "todo",
     "undo",

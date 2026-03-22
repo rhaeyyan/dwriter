@@ -20,20 +20,10 @@ if TYPE_CHECKING:
 def format_entry_datetime(entry: "Entry", config: "Optional[Config]" = None) -> tuple[str, Optional[str]]:
     """Format an entry's date and time for display.
 
-    If the time is exactly 00:00 (midnight), it is treated as a date-only
-    entry and time_str will be None.
-
-    Args:
-        entry: The Entry object to format.
-        config: Optional configuration object. If provided, uses clock_24hr
-                and date_format settings. Defaults to ISO date + 12hr time.
-
-    Returns:
-        A tuple of (date_str, time_str). time_str is None for midnight entries.
+    Returns (date_str, time_str). time_str is None for midnight entries.
     """
     dt = entry.created_at
 
-    # Determine date format
     date_fmt_setting = (config.display.date_format if config else "YYYY-MM-DD")
     if date_fmt_setting == "MM/DD/YYYY":
         date_str = dt.strftime("%m/%d/%Y")
@@ -42,51 +32,24 @@ def format_entry_datetime(entry: "Entry", config: "Optional[Config]" = None) -> 
     else:
         date_str = dt.strftime("%Y-%m-%d")
 
-    # Check if time is exactly midnight (00:00:00) — treat as date-only
     if dt.hour == 0 and dt.minute == 0 and dt.second == 0:
         return date_str, None
 
-    # Determine time format
     use_24hr = config.display.clock_24hr if config else False
     time_str = dt.strftime("%H:%M") if use_24hr else dt.strftime("%I:%M %p")
     return date_str, time_str
 
 
 def display_entry(console: "Console", entry: "Entry", config: "Config") -> None:
-    """Display a journal entry to the console.
-
-    Formats and prints a single journal entry with consistent styling,
-    including ID (if enabled), date/time, content, tags, and project.
-
-    Args:
-        console: The Rich console instance for output.
-        entry: The Entry object to display.
-        config: The configuration object for display preferences.
-
-    Returns:
-        None
-    """
+    """Display a single journal entry to the console."""
     date_str, time_str = format_entry_datetime(entry)
 
-    # Only show time if provided (non-midnight)
     if time_str is None:
-        if config.display.show_id:
-            console.print(
-                f"[magenta][{entry.id}][/magenta] {date_str}: {entry.content}"
-            )
-        else:
-            console.print(f"{date_str}: {entry.content}")
+        prefix = f"[magenta][{entry.id}][/magenta] " if config.display.show_id else ""
+        console.print(f"{prefix}{date_str}: {entry.content}")
     else:
-        # Today's entry - show time
-        if config.display.show_id:
-            id_display = f"[magenta][{entry.id}][/magenta] {date_str}"
-            console.print(
-                f"{id_display} | [#23c76b]{time_str}[/#23c76b]: {entry.content}"
-            )
-        else:
-            console.print(
-                f"{date_str} | [#23c76b]{time_str}[/#23c76b]: {entry.content}"
-            )
+        prefix = f"[magenta][{entry.id}][/magenta] {date_str}" if config.display.show_id else date_str
+        console.print(f"{prefix} | [#23c76b]{time_str}[/#23c76b]: {entry.content}")
 
     if entry.tag_names:
         tags_str = " ".join(f"[{TAG}]#[/]{t}" for t in entry.tag_names)
@@ -97,16 +60,7 @@ def display_entry(console: "Console", entry: "Entry", config: "Config") -> None:
 
 
 class HelpOverlay(ModalScreen[None]):
-    """Reusable contextual help overlay for TUI screens.
-
-    Displays keybindings and context-specific tips in a modal overlay.
-    Triggered by pressing '?' in any TUI screen.
-
-    Attributes:
-        title: The title shown at the top of the overlay.
-        bindings: List of (key, action, description) tuples to display.
-        tips: Optional list of contextual tips for the current screen.
-    """
+    """Contextual help overlay showing keybindings and tips."""
 
     DEFAULT_CSS = """
     HelpOverlay {
@@ -162,14 +116,7 @@ class HelpOverlay(ModalScreen[None]):
         tips: Optional[list[str]] = None,
         commands: Optional[list[tuple[str, str]]] = None,
     ) -> None:
-        """Initialize the help overlay.
-
-        Args:
-            title: Title displayed at the top of the overlay.
-            bindings: List of (key, action, description) tuples.
-            tips: Optional list of contextual tips.
-            commands: Optional list of (command, description) tuples to display.
-        """
+        """Initialize the help overlay."""
         super().__init__()
         self.title = title
         self.bindings = bindings or []
@@ -178,7 +125,6 @@ class HelpOverlay(ModalScreen[None]):
 
     def compose(self) -> ComposeResult:
         """Compose the help overlay layout."""
-        # Safety check for app.ctx.config
         use_emojis = True
         try:
             use_emojis = self.app.ctx.config.display.use_emojis
@@ -208,18 +154,17 @@ class HelpOverlay(ModalScreen[None]):
             yield Static(close_msg, classes="help-close")
 
     def on_mount(self) -> None:
-        """Focus the overlay for immediate keyboard capture."""
+        """Focus the overlay on mount."""
         self.focus()
 
     def on_key(self, event: Any) -> None:
-        """Handle key events to close the overlay."""
+        """Close overlay on escape, enter, or question mark."""
         if event.key in ("escape", "enter", "question_mark"):
             self.dismiss()
 
     def on_click(self) -> None:
-        """Close overlay on click outside."""
+        """Close overlay on click."""
         self.dismiss()
 
 
-# Re-export for convenience
 __all__ = ["display_entry", "HelpOverlay"]
