@@ -52,7 +52,7 @@ Detailed documentation for advanced usage and development:
 * **⚡ Ultra-Fast Logging:** Capture tasks in seconds without leaving your terminal.
 * **🤖 Standup Automation:** Instantly format yesterday's work for Slack, Jira, or Markdown.
 * **📅 Weekly Reviews:** Generate organized summaries for sprint retrospectives or timesheets.
-* **🏷️ Smart Organization:** Categorize entries with #tags and &projects.
+* **🏷️ Smart Organization:** Categorize entries with #tags and &projects or &project:subproject.
 * **🔥 Streak Tracking:** Keep your momentum high with a built-in logging streak counter.
 * **🔍 Fuzzy Search:** Find past entries and tasks with typo-tolerant fuzzy matching.
 * **🎨 Interactive TUI:** Real-time search and todo management with keyboard navigation.
