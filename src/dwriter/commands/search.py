@@ -23,7 +23,7 @@ def format_score(score: float) -> str:
 
 
 @click.command()
-@click.argument("query", required=False, default=None)
+@click.argument("query", nargs=-1)
 @click.option(
     "-p",
     "--project",
@@ -56,7 +56,7 @@ def format_score(score: float) -> str:
 @click.pass_obj
 def search(
     ctx: AppContext,
-    query: str | None,
+    query: tuple[str, ...],
     project: str | None,
     tags: tuple[Any, ...],
     search_type: str,
@@ -74,13 +74,16 @@ def search(
 
     Examples:
       dwriter search                    # Launch interactive TUI
-      dwriter search "auth bug"         # Fuzzy search all
-      dwriter search "refactor" -p my_project
-      dwriter search "cache" --type todo
-      dwriter search "meeting" -t work -t notes -n 5
+      dwriter search auth bug           # Fuzzy search all
+      dwriter search refactor -p my_project
+      dwriter search cache --type todo
+      dwriter search meeting -t work -t notes -n 5
     """
+    # Join multiple query arguments into a single string
+    query_str = " ".join(query) if query else None
+
     # Launch TUI if no query provided
-    if query is None:
+    if query_str is None:
         from .search_tui import SearchApp
 
         tag_list = list(tags) if tags else None
@@ -100,16 +103,16 @@ def search(
     matched_entries = []
     if search_type in ["all", "entry"]:
         entries = ctx.db.get_all_entries(project=project, tags=tag_list)
-        matched_entries = search_items(query, entries, limit=limit, threshold=60)
+        matched_entries = search_items(query_str, entries, limit=limit, threshold=60)
 
     # Search To-Dos
     matched_todos = []
     if search_type in ["all", "todo"]:
         todos = ctx.db.get_all_todos(project=project, tags=tag_list)
-        matched_todos = search_items(query, todos, limit=limit, threshold=60)
+        matched_todos = search_items(query_str, todos, limit=limit, threshold=60)
 
     # Display results
-    ctx.console.print(f'[bold blue]🔍 Search Results for "{query}"[/bold blue]\n')
+    ctx.console.print(f'[bold blue]🔍 Search Results for "{query_str}"[/bold blue]\n')
 
     if matched_entries:
         ctx.console.print("[bold magenta][ENTRIES][/bold magenta]")

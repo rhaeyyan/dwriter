@@ -158,6 +158,14 @@ To start your first journal entry, just type:
 dwriter add "Just finished setting up dwriter! #goals"
 ```
 
+> **⚠️ Important: Shell Special Characters**
+>
+> If you are using `#tags` or `&projects` directly in your terminal, your shell (bash, zsh, etc.) might treat them as comments or background commands.
+>
+> **Always quote your entry** to ensure everything is captured correctly:
+> - ✅ **Correct:** `dwriter add "fixed the bug #bug &engine"`
+> - ❌ **Incorrect:** `dwriter add fixed the bug #bug &engine` (The shell will ignore everything after `#`)
+
 > **Developer Note:** If you prefer running dwriter locally without installing it globally, you can always use `uv run dwriter` inside the project folder.
 
 ---
