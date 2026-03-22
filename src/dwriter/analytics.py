@@ -404,22 +404,22 @@ class InsightGenerator:
             )
         elif deep_ratio > 50.0:
             raw_insights.append(
-                "🔥 [bold #a6e3a1]In The Zone![/] [n]Excellent work—you're spending most of your time on deep, focused work.[/]"
+                "🔥 [bold #a6e3a1]High Focus:[/] [n]You are dedicating a significant portion of your time to deep work sessions.[/]"
             )
 
-        # 7. Popular Tags Insight
+        # Tag growth insights
         tag_velocity = self.engine.get_tag_velocity(days=45)
         if tag_velocity:
             top_tags = [f"#{t[0]}({t[1]})" for t in tag_velocity[:3]]
             tags_str = ", ".join(top_tags)
             raw_insights.append(
-                f"🏷️ [bold #89b4fa]Trending Topics:[/] [n]Lately, you've been focused on {tags_str}. Keep growing these areas![/]"
+                f"🏷️ [bold #89b4fa]Active Focus:[/] [n]Recent activity is concentrated in {tags_str}.[/]"
             )
 
-        # Default encouragement if no alerts
+        # Default summary if no specific alerts
         if not raw_insights:
             raw_insights.append(
-                "✨ [bold #a6e3a1]Everything looks balanced![/] [n]Your workload and focus are perfectly optimized. Keep it up![/]"
+                "✨ [bold #a6e3a1]Current Status:[/] [n]Your workload distribution appears consistent across active projects.[/]"
             )
 
         # Apply colorization to all insights

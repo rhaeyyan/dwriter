@@ -1,259 +1,176 @@
-# 📖 dwriter: 20 Creative Use Cases & Workflows
+# 📖 dwriter: 20 Creative Workflows
 
-**dwriter** is designed as a fast, low-friction terminal journaling tool centered around a **Unified TUI**. While it offers a powerful CLI for lightning-fast capture, the interactive dashboard is your primary command center for productivity.
+**dwriter** is a tool for reflection. While it shines in a developer's toolkit, its minimalist design makes it remarkably versatile for any hobby or profession where tracking progress matters.
 
-Whether you are a **freelance designer**, a **student**, a **maker**, or a **software engineer**, here are 20 creative ways to push `dwriter` beyond standard developer task management.
-
----
-
-## 📋 Table of Contents
-1. [The Fermenter's Tinkering Log (Brewing, Cheese, Sourdough)](#1-the-fermenters-tinkering-log-brewing-cheese-sourdough)
-2. [The Maker's Build Log (Woodworking, Gardening, Electronics)](#2-the-makers-build-log-woodworking-gardening-electronics)
-3. [The News Junkie's Personal Archive (Current Events Timeline)](#3-the-news-junkies-personal-archive-current-events-timeline)
-4. [The Travel Itinerary & Memory Journal](#4-the-travel-itinerary--memory-journal)
-5. [The Language Learner's Immersion Log](#5-the-language-learners-immersion-log)
-6. [The Fitness PR & Routine Tracker](#6-the-fitness-pr--routine-tracker)
-7. [The Media, Book, & Article Log](#7-the-media-book--article-log)
-8. [The Daily Gratitude & Evening Reflection Journal](#8-the-daily-gratitude--evening-reflection-journal)
-9. [The "Anti-Burnout" Protocol (Wellness & Breaks)](#9-the-anti-burnout-protocol-wellness--breaks)
-10. [The "Second Brain" Idea Inbox](#10-the-second-brain-idea-inbox)
-11. [Micro-Habit Stacking & Gamification](#11-micro-habit-stacking--gamification)
-12. [The Manager's 1-on-1 & Feedback Tracker](#12-the-managers-1-on-1--feedback-tracker)
-13. [The "Brag Document" & Performance Review Prep](#13-the-brag-document--performance-review-prep)
-14. [The Student's Focus & Assignment Tracker](#14-the-students-focus--assignment-tracker)
-15. [The Freelancer & Creative's Billing Engine](#15-the-freelancer--creatives-billing-engine)
-16. [The Job Hunter's Interview & Application Tracker](#16-the-job-hunters-interview--application-tracker)
-17. [The "Pre-Jira" Bug Scratchpad](#17-the-pre-jira-bug-scratchpad)
-18. [The Retroactive "Timesheet Savior" (Time-Traveling & Editing)](#18-the-retroactive-timesheet-savior-time-traveling--editing)
-19. [Minimalist Meeting Notes & Action Items](#19-minimalist-meeting-notes--action-items)
-20. [Expense & Subscription Auditing](#20-expense--subscription-auditing)
-21. [💡 How to Get the Most Out of dwriter](#-how-to-get-the-most-out-of-dwriter)
+Here are 20 ways to integrate **dwriter** into your life.
 
 ---
 
-## 1. The Fermenter's Tinkering Log (Brewing, Cheese, Sourdough)
-Baking sourdough, brewing beer, making cheese, or fermenting kimchi requires iterative experimentation and tracking variables over long periods. If you tweak a recipe or take a measurement (like specific gravity or pH), you need a reliable way to remember *exactly* what you did days, weeks, or even months later.
+## 🍲 1. The Fermenter's Log (Brewing & Sourdough)
+Baking and brewing are sciences of patience. Tracking temperatures and timings is the only way to replicate a masterpiece.
 
-* **Headless CLI:** Keep your laptop on the kitchen counter and use the lightning-fast CLI to log your ingredient tweaks, temperatures, or specific gravity readings using subprojects like `brew:dish` or `cheese:type`.
-  ```bash
-  dwriter add "Brew day: Mashed at 152F for 60 mins. Original Gravity: 1.054." -t measurement -p brew:pale_ale
-  dwriter add "Added mesophilic culture and rennet. Milk temp holding at 86F." -t culturing -p cheese:cheddar
-  dwriter todo "Rack kombucha to secondary fermentation and add blackberries" --priority high -p ferment:kombucha
-  ```
-* **Interactive TUI:** Three months later, when you finally crack open that aged wheel of cheddar or pour a pint of your homebrew and it tastes incredible, open `dwriter search` and filter by `cheese:cheddar` or `brew:pale_ale`. You'll have a complete, chronological history of every temperature change, failure, and tasting note, ensuring you can perfectly replicate your best batches.
+*   **Fast CLI:** Log a reading in seconds while your hands are busy in the kitchen.
+    ```bash
+    dwriter add "Brew Day: OG 1.054. Mashed at 152°F." -p brew:pale-ale
+    ```
+*   **Visual Dashboard:** Three months later, search `brew:pale-ale` to find the exact temperature that made that batch so crisp.
 
-## 2. The Maker's Build Log (Woodworking, Gardening, Electronics)
-Perfect for physical hobbies where your hands are dirty and you only have 5 seconds before walking away from the computer.
+## 🛠️ 2. The Maker's Build Log (Woodworking & Garden)
+Physical projects often span weeks. Keep a running narrative of your progress.
 
-* **Headless CLI:** Lightning-fast logging.
-  ```bash
-  dwriter add "Planted heirloom tomatoes, watered with 10ml fertilizer" -t planting -p garden_2024
-  ```
-* **Interactive TUI:** Three weeks later, when you can't remember when the seeds were planted, open `dwriter search` and type "tomato". The fuzzy-finder handles typos, instantly highlighting the exact timestamp you planted them.
+*   **Fast CLI:** Quickly log a milestone before putting your tools away.
+    ```bash
+    dwriter add "Applied first coat of tung oil to the desk." -p woodworking
+    ```
+*   **Visual Dashboard:** Use the **Activity Map** to see how much time you've dedicated to your craft this month.
 
-## 3. The News Junkie's Personal Archive (Current Events Timeline)
-Consuming the daily news can feel like drinking from a firehose. If you want to remember specific events, market shifts, or tech announcements—and your own thoughts on them—`dwriter` lets you build a personal, searchable historical timeline. By using the `&project:subproject` syntax, you can keep global events neatly categorized.
+## 📰 3. The News Junkie's Personal Archive
+Build a searchable historical timeline of world events and your reactions.
 
-* **Headless CLI:** When you read a major headline, instantly log the event, a URL, and your quick take using subcategories like `news:tech` or `news:finance`.
-  ```bash
-  dwriter add "Fed cuts interest rates by 0.5%. Market rallied immediately." -t economy -p news:finance
-  dwriter add "OpenAI releases new reasoning model. https://techcrunch..." -t ai -t release -p news:tech
-  dwriter add "Local city council passed the new zoning laws for downtown." -t local -p news:politics
-  ```
-* **Interactive TUI:** Three months later, when you are trying to remember exactly when a specific tech release happened or how the market reacted to a policy change, open `dwriter search` and type `news:tech`. 
-  
-  **Bonus Payoff:** If you write a weekly newsletter or just want to review the week's global events, use the CLI review command: `dwriter review --days 7 -p news -f markdown`. `dwriter` will instantly compile a chronological, bulleted summary of every major headline you tracked this week across all your news subprojects.
+*   **Fast CLI:** Bookmark a major headline and your quick take.
+    ```bash
+    dwriter add "Fed cuts interest rates. Market rallied." -t economy -p news
+    ```
+*   **Visual Dashboard:** At the end of the year, run `dwriter review --days 365 -p news` for a personal almanac.
 
-## 4. The Travel Itinerary & Memory Journal
-When you are traveling, you don't want to spend 20 minutes writing in a diary or fighting with a slow mobile app. You just want to capture a quick memory, log an expense, or track a reservation number and get back to your vacation.
+## ✈️ 4. The Traveler's Memory Journal
+When traveling, capturing small moments is better than writing long essays you'll never read.
 
-* **Headless CLI:** Use the CLI for rapid-fire logging of your trip as it happens, categorizing by your destination.
-  ```bash
-  dwriter add "Checked into the Airbnb. Door code is 4928." -t logistics -p trip:tokyo_2024
-  dwriter add "Ate at the tiny ramen shop in Shinjuku. Incredible broth." -t food -p trip:tokyo_2024
-  dwriter add "Bought train tickets to Kyoto: $85" -t expense -p trip:tokyo_2024
-  ```
-* **Interactive TUI (The Payoff):** When you get back home and want to share recommendations with a friend, use `dwriter review -p trip:tokyo_2024 -f markdown`. `dwriter` will instantly spit out a beautifully formatted, chronological travelogue of everywhere you went, what you ate, and how much you spent.
+*   **Fast CLI:** Log a restaurant name or a hidden beach location.
+    ```bash
+    dwriter add "Found the best ramen in Shinjuku. 5 stars." -p trip:tokyo
+    ```
+*   **Visual Dashboard:** Revisit your trip through a chronological log that feels like a film strip of your memories.
 
-## 5. The Language Learner's Immersion Log
-Keep track of your study hours, grammar rules, and maintain your daily consistency.
+## 🏮 5. The Language Learner's Immersion Log
+Consistency is the only secret to learning a language.
 
-* **Headless CLI:** Start a study timer directly from your shell.
-  ```bash
-  dwriter timer 30 -t listening_practice -p japanese_N4
-  ```
-* **Interactive TUI:** Launch the Dashboard (`dwriter stats`). The Weekly Chart and Contribution Calendar provide immediate visual feedback on your consistency, helping you visually identify if you've been skipping study days.
+*   **Fast CLI:** Start a 30-minute study session.
+    ```bash
+    dwriter timer 30 -p japanese -t listening
+    ```
+*   **Visual Dashboard:** Check your **Streak Counter** to stay motivated.
 
-## 6. The Fitness PR & Routine Tracker
-Typing out a workout log in a bulky fitness app between sets can be annoying. If your laptop is nearby, the terminal is faster.
+## 🏋️ 6. The Fitness PR & Routine Tracker
+Typing in a bulky app at the gym is annoying. If you work from home, the terminal is your fastest workout log.
 
-* **Headless CLI:** Quickly log your lifts or meal prep.
-  ```bash
-  dwriter add "Deadlift: 3x5 @ 315lbs. Felt heavy today." -t lifting -p fitness
-  ```
-* **Interactive TUI:** Made a typo on the weight? Launch the Edit TUI (`dwriter edit`). Navigate to the mistake with `j`/`k`, press `e` to fix the text, or `t` to adjust the tags without wrestling with complex commands.
+*   **Fast CLI:** Log your lifts between sets.
+    ```bash
+    dwriter add "Deadlift PR: 3x5 @ 315lbs." -t lifting -p fitness
+    ```
 
-## 7. The Media, Book, & Article Log
-Act as a lightweight bookmarking and review system for articles and books.
+## 📚 7. The Media, Book, & Article Log
+Create a "Second Brain" for everything you consume.
 
-* **Headless CLI:** Log what you read with a 1-sentence takeaway.
-  ```bash
-  dwriter add "Read Pragmatic Programmer Ch 2. Takeaway: use tracer bullets." -t book_notes
-  ```
-* **Interactive TUI:** If a coworker asks you about an architectural concept six months from now, launch `dwriter search`. The real-time filtering updates the results with every keystroke, helping you find your notes instantly even if you only remember a fraction of the title.
+*   **Fast CLI:** Log a one-sentence takeaway from a book chapter.
+    ```bash
+    dwriter add "Read Pragmatic Programmer Ch 2: Tracer bullets." -p books
+    ```
 
-## 8. The Daily Gratitude & Evening Reflection Journal
-`dwriter` is the perfect quiet environment for evening journaling and mood tracking.
+## 🧘 8. The Daily Gratitude & Reflection Journal
+A quiet space for evening reflection.
 
-* **Headless CLI:** Review today's work, then log your mental state.
-  ```bash
-  dwriter today
-  dwriter add "Grateful for the sunny weather today." -t gratitude -p personal
-  ```
-* **Interactive TUI:** When you're having a rough week, open `dwriter search` and type `gratitude`. Use `j` and `k` to read through a clean, distraction-free list of all the positive moments you've captured.
+*   **Fast CLI:** End your day by listing three things you're grateful for.
+    ```bash
+    dwriter add "Grateful for the sunny weather today." -t gratitude
+    ```
 
-## 9. The "Anti-Burnout" Protocol (Wellness & Breaks)
-It’s easy to hyperfocus and forget to step away from the keyboard. Use `dwriter` to enforce mandatory breaks and visualize your wellness over time.
+## ☕ 9. The "Anti-Burnout" Protocol
+Enforce mandatory breaks during long coding sessions.
 
-* **Headless CLI:** Quickly start a 15-minute break timer and automatically tag it when done.
-  ```bash
-  dwriter timer 15 -t screen-break -t walking -p health
-  ```
-* **Interactive TUI:** Launch `dwriter timer` to view the large visual countdown. You can hit `Space` to pause/resume or `+`/`-` to adjust time. At the end of the week, open `dwriter stats` to see if `#screen-break` made it into your "Top Tags" chart.
+*   **Fast CLI:** Launch a 15-minute break timer.
+    ```bash
+    dwriter timer 15 -t screen-break
+    ```
 
-## 10. The "Second Brain" Idea Inbox
-Don't let a random stroke of genius derail your current work session. 
+## 💡 10. The Idea Inbox
+Don't let a random stroke of genius derail your current work.
 
-* **Headless CLI:** Capture it in exactly 3 seconds.
-  ```bash
-  dwriter add "Idea: build a moisture sensor for the monstera plant" -t hardware -p someday
-  ```
-* **Interactive TUI:** Next time you are bored on a Sunday afternoon, open `dwriter search` and type `someday`. Your terminal instantly becomes a curated, easily scrollable list of past ideas ready to be built.
+*   **Fast CLI:** Capture the idea in 3 seconds.
+    ```bash
+    dwriter add "Idea: build a moisture sensor for the garden." -p someday
+    ```
 
-## 11. Micro-Habit Stacking & Gamification
-Turn `dwriter` into a minimalist, keyboard-driven habit tracker.
+## 💧 11. Micro-Habit Stacking
+Turn dwriter into a minimalist habit tracker.
 
-* **Headless CLI:** Add recurring habits as tasks.
-  ```bash
-  dwriter todo "Drink 2L of water" -t hydration -p habits
-  ```
-* **Interactive TUI:** Every morning, pop open `dwriter todo`. Simply hit `Space` on your habits to check them off. Because checking off a todo logs an entry, it counts toward your logging streak. Open `dwriter stats` to watch your GitHub-style contribution calendar grow!
+*   **Fast CLI:** Add recurring habits as tasks.
+    ```bash
+    dwriter todo "Drink 2L of water" -t habits
+    ```
 
-## 12. The Manager's 1-on-1 & Feedback Tracker
-If you manage a team, it is incredibly difficult to remember every small win, roadblock, or piece of feedback that occurs between weekly 1-on-1 meetings. `dwriter` can act as your secure, terminal-based leadership diary. By using subprojects for each direct report, you keep everything organized.
+## 🤝 12. The Manager's 1-on-1 Tracker
+Keep track of small wins and feedback for your team members.
 
-* **Headless CLI:** Throughout the week, whenever an employee does something great or mentions a blocker, log it instantly with their specific subproject tag.
-  ```bash
-  dwriter todo "Discuss the new Q3 architecture proposal" --priority high -p 1on1:sarah
-  dwriter add "Crushed the client presentation today! Remember to praise." -t feedback -p 1on1:david
-  dwriter add "Mentioned feeling blocked by the devops team." -t roadblock -p 1on1:sarah
-  ```
-* **Interactive TUI:** Five minutes before your meeting with Sarah, launch `dwriter search` and type `1on1:sarah`. Use `Ctrl+N` to toggle to **Todos** to see what you need to ask her, and toggle back to **Entries** to see the feedback you collected for her throughout the week.
+*   **Fast CLI:** Log a win for an employee the moment it happens.
+    ```bash
+    dwriter add "Sarah crushed the presentation today." -p team:sarah
+    ```
 
-## 13. The "Brag Document" & Performance Review Prep
-When performance reviews roll around, it is notoriously difficult to remember the impact you made 6 months ago. 
+## 🏆 13. The "Brag Document" for Performance Reviews
+When performance reviews arrive, you'll have a complete list of your impact.
 
-* **Headless CLI:** Whenever you complete a major milestone or receive praise, log it instantly without breaking context.
-  ```bash
-  dwriter add "Led the successful DB migration with zero downtime!" -t milestone -p brag_doc
-  ```
-* **Interactive TUI:** When it's time to write your self-reflection, launch `dwriter search`. Press `/` and type `brag_doc`. Use `j` and `k` to scroll through a beautifully color-coded, chronological list of your biggest accomplishments.
+*   **Fast CLI:** Log a successful deployment or solved bug.
+    ```bash
+    dwriter add "Led the zero-downtime DB migration." -t milestone -p career
+    ```
 
-## 14. The Student's Focus & Assignment Tracker
-Manage assignments and actually sit down to study with focused pomodoro sessions.
+## 🎓 14. The Student's Focus Tracker
+Manage assignments and study sessions without the clutter of a planner.
 
-* **Headless CLI:** Add your syllabus assignments from the terminal.
-  ```bash
-  dwriter todo "Write first draft of History term paper" --priority high -p history_101
-  ```
-* **Interactive TUI:** Open `dwriter todo`, select the assignment with `j`/`k`, and hit `+` to increase its priority to Red (Urgent). When you finish studying, hit `Space` to mark it complete and automatically log it to your daily journal.
+*   **Fast CLI:** Add a deadline to your todo list.
+    ```bash
+    dwriter todo "Submit History term paper" --priority urgent -p school
+    ```
 
-## 15. The Freelancer & Creative's Billing Engine
-Writers, designers, and consultants often juggle multiple clients and need to effortlessly log billable hours.
+## 💰 15. The Freelancer's Billing Engine
+Log your billable tasks as they happen.
 
-* **Headless CLI:** Generate a clean, markdown-formatted invoice payload for a specific client at the end of the week.
-  ```bash
-  dwriter review --days 7 -p client_acmecorp --format markdown
-  ```
-* **Interactive TUI:** Need to see what tasks are pending vs. completed for a client? Open `dwriter search`, filter by `client_acmecorp`, and press `Ctrl+N` to instantly toggle between your completed Entries and your pending Todos.
+*   **Fast CLI:** Generate a summary of work for a specific client.
+    ```bash
+    dwriter review --days 7 -p client:acme --format markdown
+    ```
 
-## 16. The Job Hunter's Interview & Application Tracker
-Searching for a job involves managing parallel threads: applications sent, assignments, and prep.
+## 💼 16. The Job Hunter's Application Tracker
+Manage multiple interview threads and application dates.
 
-* **Headless CLI:** Log submitted applications.
-  ```bash
-  dwriter add "Submitted application for Senior Backend Dev role" -p stripe_interview
-  ```
-* **Interactive TUI:** Ten minutes before your final round interview, open `dwriter search` and filter by the company name. You'll instantly see your past notes, submitted dates, and completed tasks right in your terminal, perfectly refreshing your memory.
+*   **Fast CLI:** Log a submitted application.
+    ```bash
+    dwriter add "Applied for Senior Backend role at Stripe." -p jobs
+    ```
 
-## 17. The "Pre-Jira" Bug Scratchpad
-Sometimes you spot a weird UI glitch, but you aren't ready to open a formal Jira ticket yet. 
+## 🐞 17. The "Pre-Jira" Bug Scratchpad
+Capture weird glitches before they become formal tickets.
 
-* **Headless CLI:** Throw it into your scratchpad without losing your train of thought.
-  ```bash
-  dwriter todo "Investigate random 500 error on checkout" -t bug_hunt -p scratchpad
-  ```
-* **Interactive TUI:** Keep `dwriter todo` open on a second monitor during sprint planning. If a scratchpad bug turns out to be real, graduate it to Jira, then hit `Space` to mark it done. If it's a duplicate, press `d` to delete it forever.
+*   **Fast CLI:** Drop a bug into your scratchpad.
+    ```bash
+    dwriter todo "Investigate the 500 error on checkout" -p bugs
+    ```
 
-## 18. The Retroactive "Timesheet Savior" (Time-Traveling & Editing)
-We all forget to log our work sometimes. `dwriter` lets you fix history.
+## 🕒 18. The "Timesheet Savior" (Backdating)
+Fix your history if you forgot to log a session.
 
-* **Headless CLI:** Use natural language dates to backdate entries if you completely forgot to log a weekend shift.
-  ```bash
-  dwriter add "Pushed hotfix for the database deadlock" --date "last Sunday" -p on_call
-  ```
-* **Interactive TUI:** If you logged something today but forgot to add the correct client project, open `dwriter edit`. Select the entry, press `p`, and type the correct project name.
+*   **Fast CLI:** Log work for a past date using natural language.
+    ```bash
+    dwriter add "Worked on auth hotfix" --date "last Sunday"
+    ```
 
-## 19. Minimalist Meeting Notes & Action Items
-Jumping from Zoom to Zoom leaves little time to organize notes. 
+## 📝 19. Minimalist Meeting Notes
+Capture decisions and action items the second a meeting ends.
 
-* **Headless CLI:** Log decisions and action items the second a meeting ends.
-  ```bash
-  dwriter add "Decision: We are pushing the v2 launch to Q3" -t decision -p weekly_sync
-  dwriter todo "Email the finalized API spec to frontend" --priority high -p weekly_sync
-  ```
-* **Interactive TUI:** Before your next sync, open `dwriter search` and type `weekly_sync`. Toggle between your Entries (last week's decisions) and Todos (your pending action items) using `Ctrl+N`.
+*   **Fast CLI:** Log a key decision.
+    ```bash
+    dwriter add "Decision: We are pushing the launch to Q3." -p meetings
+    ```
 
-## 20. Expense & Subscription Auditing
-Keep track of one-off business expenses, software subscriptions, or freelance write-offs.
+## 💳 20. Expense & Subscription Auditing
+Track business software expenses for tax season.
 
-* **Headless CLI:** Whenever you buy a tool, log it with the cost.
-  ```bash
-  dwriter add "Renewed GitHub Copilot for $100" -t software -p expenses_2024
-  ```
-* **Interactive TUI:** Come tax season, launch `dwriter search` and filter by `expenses_2024`. Hit `Enter` on any entry to instantly copy its full content to your clipboard so you can paste it into your tax spreadsheet.
+*   **Fast CLI:** Log a subscription renewal.
+    ```bash
+    dwriter add "Renewed GitHub Copilot for $100." -t software -p expenses
+    ```
 
 ---
 
-## 💡 How to Get the Most Out of dwriter
-
-To truly make `dwriter` a seamless part of your daily routine, it helps to adopt a few simple habits and workflows. Here are some pro tips to maximize your experience:
-
-### 1. The TUI is your "Command Center"
-The most effective way to use `dwriter` is to keep the **interactive TUI** open in a dedicated terminal tab or window throughout the day. It acts as your dashboard for focus, task management, and reflection. Use the **headless CLI** (`dwriter add`) only for "surgical" data entry when you are in the middle of a coding session and don't want to switch tabs.
-
-### 2. Establish a Tagging Convention Early
-Because `dwriter` relies heavily on `#tags` and `&projects` to generate summaries, consistency is key. Pick a handful of standard tags and stick to them. 
-* **Good convention:** Use `&projects` for the *context* or *client* (e.g., `&acmecorp`, `&personal`) and `#tags` for the *action* (e.g., `#bugfix`, `#meeting`, `#reading`). 
-
-### 3. Create Subcategories with Colons (`&project:subproject`)
-If you have a large project with multiple moving parts, you don't need to invent entirely new project names. You can create clean subcategories by using a colon in your project tag!
-* **For Freelancers:** `&client_acme:website` vs. `&client_acme:marketing`
-* **For Students:** `&cs_101:homework` vs. `&cs_101:labs`
-* **For Makers:** `&desk_build:woodworking` vs. `&desk_build:finishing`
-This syntax keeps your root projects organized while giving you granular control over what you are tracking. 
-
-### 4. Let the Timer Do the Logging
-If you are sitting down for a focused session, don't just use `dwriter add` afterward. Launch the **Timer** in the TUI (`dwriter timer 25 -p my_project`). Not only do you get a visual countdown to keep you accountable, but the TUI will automatically prompt you to log what you accomplished the second the timer finishes. It combines focus tracking and journaling into one step.
-
-### 5. Leverage Natural Language Time-Traveling
-Don't stress if you forget to log a massive debugging session on a Friday afternoon. `dwriter` understands natural language. On Monday morning, just run `dwriter add "Fixed the memory leak" --date "last Friday"`. This keeps your timeline pristine for your weekly reviews and contribution calendar.
-
-### 6. Alias it for Ultimate Speed
-If you are typing out `dwriter` 20 times a day, save your keystrokes! Add a simple alias to your `.bashrc` or `.zshrc` file:
-```bash
-alias dw="dwriter"
-alias dwt="dwriter todo"
-alias dws="dwriter search"
-```
-Now, logging an idea takes literally three keystrokes: `dw add "New idea!"`. 
+[⬅️ Back to README](../README.md)
