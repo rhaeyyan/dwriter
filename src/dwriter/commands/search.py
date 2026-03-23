@@ -24,7 +24,7 @@ def format_score(score: float) -> str:
         return f"[dim]{percentage}%[/dim]"
 
 
-@click.command()
+@click.command(context_settings={"help_option_names": ["-h", "--help"], "allow_interspersed_args": True})
 @click.argument("query", nargs=-1)
 @click.option(
     "-p",

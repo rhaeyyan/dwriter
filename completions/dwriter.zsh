@@ -1,5 +1,5 @@
 # Zsh completion for dwriter
-# Source this file: source completions/day.zsh
+# Source this file: source completions/dwriter.zsh
 
 #compdef dwriter
 

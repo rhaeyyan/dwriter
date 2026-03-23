@@ -16,7 +16,10 @@ from ..search_utils import find_multiple_matches
 from ..tui.colors import DUE_OVERDUE, DUE_SOON, DUE_TODAY, DUE_TOMORROW, PROJECT, TAG
 
 
-@click.group(invoke_without_command=True)
+@click.group(
+    invoke_without_command=True,
+    context_settings={"help_option_names": ["-h", "--help"], "allow_interspersed_args": True},
+)
 @click.argument("content", required=False, nargs=-1)
 @click.option(
     "-t",
@@ -44,6 +47,12 @@ from ..tui.colors import DUE_OVERDUE, DUE_SOON, DUE_TODAY, DUE_TOMORROW, PROJECT
     default=None,
     help="Set due date (e.g., 'tomorrow', '+5d', '+1w', '+1m', '2024-01-15')",
 )
+@click.option(
+    "--all",
+    "show_all",
+    is_flag=True,
+    help="Show all tasks, including completed ones (for 'list')",
+)
 @click.pass_context
 def todo(
     ctx: click.Context,
@@ -52,6 +61,7 @@ def todo(
     project: str | None,
     priority: str,
     due_date_str: str | None,
+    show_all: bool,
 ) -> None:
     """Manage future tasks and to-dos.
 
@@ -79,19 +89,44 @@ def todo(
       dwriter todo list                    # Show pending tasks
       dwriter todo list --all              # Include completed
     """
-    # Check if first content token is a known subcommand
-    if content and content[0] in todo.commands:
-        subcommand_name = content[0]
-        cmd = todo.commands[subcommand_name]
-        # Invoke with remaining args
-        rest = list(content[1:])
-        sub_ctx = cmd.make_context(ctx.info_name, rest, parent=ctx)
-        return sub_ctx.command.invoke(sub_ctx)  # type: ignore[no-any-return]
+    # If a subcommand was invoked, Click handles it automatically.
+    if ctx.invoked_subcommand is not None:
+        return
 
     # Get the AppContext from parent context
-    app_ctx = ctx.obj
+    app_ctx: AppContext = ctx.obj
 
-    # Default behavior - add task or show list
+    # Handle pseudo-subcommands from content
+    if content:
+        subcommand = content[0]
+        args = content[1:]
+
+        if subcommand == "list":
+            _execute_list(app_ctx, show_all)
+            return
+        elif subcommand == "rm" and args:
+            try:
+                task_id = int(args[0])
+                _execute_rm(app_ctx, task_id)
+            except ValueError:
+                app_ctx.console.print("[red]Error: 'rm' requires a numeric task ID.[/red]")
+            return
+        elif subcommand == "edit" and args:
+            try:
+                task_id = int(args[0])
+                _execute_edit(app_ctx, task_id)
+            except ValueError:
+                app_ctx.console.print("[red]Error: 'edit' requires a numeric task ID.[/red]")
+            return
+        elif subcommand == "add" and args:
+            # Shift content to remove 'add' and proceed to normal add logic
+            content = args
+        # If it's just 'add' with no args, show error or help
+        elif subcommand == "add" and not args:
+            app_ctx.console.print("[red]Error: 'add' requires task content.[/red]")
+            return
+
+    # Default behavior - add task or launch TUI
     content_str = " ".join(content) if content else None
 
     if content_str is not None:
@@ -160,8 +195,123 @@ def todo(
                 f"[{color}]{task.content}[/{color}]{tags_str}{proj_str}{due_str}"
             )
     else:
-        # No content - show list by default
-        ctx.invoke(todo_list)
+        # No content - launch TUI
+        from ..cli import _launch_tui
+        _launch_tui(app_ctx, starting_tab="todo")
+
+
+def _execute_list(ctx: AppContext, show_all: bool) -> None:
+    """Internal implementation of todo list."""
+    status_filter = None if show_all else "pending"
+    tasks = ctx.db.get_todos(status=status_filter)
+
+    if not tasks:
+        ctx.console.print(
+            "No tasks found. Relax or add one with [bold]dwriter todo[/bold]!"
+        )
+        return
+
+    table = Table(title="Your Tasks", show_header=True, header_style="bold blue")
+    table.add_column("ID", justify="right", style=PROJECT, no_wrap=True)
+    table.add_column("Priority", justify="center")
+    table.add_column("Task")
+    table.add_column("Project", style=PROJECT)
+    table.add_column("Tags", style=TAG)
+    table.add_column("Due", style="cyan", justify="center")
+
+    priority_styles = {
+        "urgent": ("[bold red]URGENT[/bold red]", "bold red"),
+        "high": ("[yellow]HIGH[/yellow]", "yellow"),
+        "normal": ("NORMAL", "white"),
+        "low": ("[dim]LOW[/dim]", "dim"),
+    }
+
+    for task in tasks:
+        p_label, p_style = priority_styles.get(task.priority, ("NORMAL", "white"))
+
+        content_str = (
+            f"[strike]{task.content}[/strike]"
+            if task.status == "completed"
+            else f"[{p_style}]{task.content}[/{p_style}]"
+        )
+
+        tags_str = ", ".join(task.tag_names) if task.tag_names else ""
+        project_str = f"&{task.project}" if task.project else ""
+
+        # Format due date
+        due_str = ""
+        if task.due_date:
+            due_date = task.due_date
+            today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+            due_date_only = due_date.replace(hour=0, minute=0, second=0, microsecond=0)
+            days_until = (due_date_only - today).days
+
+            if days_until < 0:
+                due_str = f"[{DUE_OVERDUE}]{due_date.strftime('%Y-%m-%d')}[/{DUE_OVERDUE}]"
+            elif days_until == 0:
+                due_str = f"[{DUE_TODAY}]TODAY[/{DUE_TODAY}]"
+            elif days_until == 1:
+                due_str = f"[{DUE_TOMORROW}]Tomorrow[/{DUE_TOMORROW}]"
+            elif days_until <= 7:
+                due_str = f"[{DUE_SOON}]{days_until}d[/{DUE_SOON}]"
+            else:
+                due_str = due_date.strftime("%Y-%m-%d")
+
+        table.add_row(
+            str(task.id),
+            p_label,
+            content_str,
+            project_str,
+            tags_str,
+            due_str,
+        )
+
+    ctx.console.print(table)
+
+
+def _execute_rm(ctx: AppContext, task_id: int) -> None:
+    """Internal implementation of todo rm."""
+    try:
+        ctx.db.get_todo(task_id)
+    except ValueError:
+        ctx.console.print(f"[red]![/red] Task {task_id} not found.")
+        return
+
+    if click.confirm(f"Are you sure you want to delete task {task_id}?"):
+        success = ctx.db.delete_todo(task_id)
+        if success:
+            ctx.console.print(f"[green]✅[/green] Task {task_id} deleted.")
+        else:
+            ctx.console.print(f"[red]![/red] Task {task_id} not found.")
+    else:
+        ctx.console.print("Cancelled.")
+
+
+def _execute_edit(ctx: AppContext, task_id: int) -> None:
+    """Internal implementation of todo edit."""
+    try:
+        task = ctx.db.get_todo(task_id)
+    except ValueError:
+        ctx.console.print(f"[red]![/red] Task {task_id} not found.")
+        return
+
+    edited_content = click.edit(task.content)
+
+    if edited_content is None:
+        ctx.console.print("No changes made.")
+        return
+
+    edited_content = edited_content.strip()
+
+    if not edited_content:
+        ctx.console.print("Task content cannot be empty. Use 'todo rm' to delete.")
+        return
+
+    if edited_content != task.content:
+        ctx.db.update_todo(task_id, content=edited_content)
+        ctx.console.print(f"[green]✅[/green] Task {task_id} updated.")
+    else:
+        ctx.console.print("No changes made.")
 
 
 @todo.command("add")
@@ -300,146 +450,24 @@ def todo_add(
 )
 @click.pass_obj
 def todo_list(ctx: AppContext, show_all: bool) -> None:
-    """List pending tasks.
-
-    Displays your tasks in a formatted table with priority colors.
-    By default, only pending tasks are shown.
-
-    Options:
-      --all: Include completed tasks (shown with strikethrough)
-
-    Examples:
-      dwriter todo list
-      dwriter todo list --all
-    """
-    status_filter = None if show_all else "pending"
-    tasks = ctx.db.get_todos(status=status_filter)
-
-    if not tasks:
-        ctx.console.print(
-            "No tasks found. Relax or add one with [bold]dwriter todo[/bold]!"
-        )
-        return
-
-    table = Table(title="Your Tasks", show_header=True, header_style="bold blue")
-    table.add_column("ID", justify="right", style=PROJECT, no_wrap=True)
-    table.add_column("Priority", justify="center")
-    table.add_column("Task")
-    table.add_column("Project", style=PROJECT)
-    table.add_column("Tags", style=TAG)
-    table.add_column("Due", style="cyan", justify="center")
-
-    priority_styles = {
-        "urgent": ("[bold red]URGENT[/bold red]", "bold red"),
-        "high": ("[yellow]HIGH[/yellow]", "yellow"),
-        "normal": ("NORMAL", "white"),
-        "low": ("[dim]LOW[/dim]", "dim"),
-    }
-
-    for task in tasks:
-        p_label, p_style = priority_styles.get(task.priority, ("NORMAL", "white"))
-
-        content_str = (
-            f"[strike]{task.content}[/strike]"
-            if task.status == "completed"
-            else f"[{p_style}]{task.content}[/{p_style}]"
-        )
-
-        tags_str = ", ".join(task.tag_names) if task.tag_names else ""
-        project_str = f"&{task.project}" if task.project else ""
-
-        # Format due date
-        due_str = ""
-        if task.due_date:
-            due_date = task.due_date
-            today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-            due_date_only = due_date.replace(hour=0, minute=0, second=0, microsecond=0)
-            days_until = (due_date_only - today).days
-
-            if days_until < 0:
-                due_str = f"[{DUE_OVERDUE}]{due_date.strftime('%Y-%m-%d')}[/{DUE_OVERDUE}]"
-            elif days_until == 0:
-                due_str = f"[{DUE_TODAY}]TODAY[/{DUE_TODAY}]"
-            elif days_until == 1:
-                due_str = f"[{DUE_TOMORROW}]Tomorrow[/{DUE_TOMORROW}]"
-            elif days_until <= 7:
-                due_str = f"[{DUE_SOON}]{days_until}d[/{DUE_SOON}]"
-            else:
-                due_str = due_date.strftime("%Y-%m-%d")
-
-        table.add_row(
-            str(task.id),
-            p_label,
-            content_str,
-            project_str,
-            tags_str,
-            due_str,
-        )
-
-    ctx.console.print(table)
+    """List pending tasks."""
+    _execute_list(ctx, show_all)
 
 
 @todo.command("rm")
 @click.argument("task_id", type=int)
 @click.pass_obj
 def todo_rm(ctx: AppContext, task_id: int) -> None:
-    """Delete a task entirely.
-
-    Removes a task from your todo list. Requires confirmation.
-
-    Examples:
-      dwriter todo rm 3
-    """
-    try:
-        ctx.db.get_todo(task_id)
-    except ValueError:
-        ctx.console.print(f"[red]![/red] Task {task_id} not found.")
-        return
-
-    if click.confirm(f"Are you sure you want to delete task {task_id}?"):
-        success = ctx.db.delete_todo(task_id)
-        if success:
-            ctx.console.print(f"[green]✅[/green] Task {task_id} deleted.")
-        else:
-            ctx.console.print(f"[red]![/red] Task {task_id} not found.")
-    else:
-        ctx.console.print("Cancelled.")
+    """Delete a task entirely."""
+    _execute_rm(ctx, task_id)
 
 
 @todo.command("edit")
 @click.argument("task_id", type=int)
 @click.pass_obj
 def todo_edit(ctx: AppContext, task_id: int) -> None:
-    """Edit a task's content interactively.
-
-    Opens the task content in your default editor for modification.
-
-    Examples:
-      dwriter todo edit 2
-    """
-    try:
-        task = ctx.db.get_todo(task_id)
-    except ValueError:
-        ctx.console.print(f"[red]![/red] Task {task_id} not found.")
-        return
-
-    edited_content = click.edit(task.content)
-
-    if edited_content is None:
-        ctx.console.print("No changes made.")
-        return
-
-    edited_content = edited_content.strip()
-
-    if not edited_content:
-        ctx.console.print("Task content cannot be empty. Use 'todo rm' to delete.")
-        return
-
-    if edited_content != task.content:
-        ctx.db.update_todo(task_id, content=edited_content)
-        ctx.console.print(f"[green]✅[/green] Task {task_id} updated.")
-    else:
-        ctx.console.print("No changes made.")
+    """Edit a task's content interactively."""
+    _execute_edit(ctx, task_id)
 
 
 @click.command()

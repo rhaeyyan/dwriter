@@ -83,10 +83,10 @@ def parse_quick_add(raw_input: str) -> ParsedEntry:
         ParsedEntry with extracted content, tags, project, and optional datetime.
     """
     # Extract tags (words prefixed with #)
-    tags: list[str] = re.findall(r"#([\w-]+)", raw_input)
+    tags: list[str] = re.findall(r"#([\w:-]+)", raw_input)
 
     # Extract project (text prefixed with &)
-    projects: list[str] = re.findall(r"&([\w-]+)", raw_input)
+    projects: list[str] = re.findall(r"&([\w:-]+)", raw_input)
 
     # Extract date suffixes (e.g., -yesterday, -2d, -2w, -2 days ago, -last Friday,
     # -2024-01-15, or standalone 2024-01-15)
@@ -120,8 +120,8 @@ def parse_quick_add(raw_input: str) -> ParsedEntry:
     )
     clean_text = re.sub(r"\b\d{4}-\d{2}-\d{2}\b", "", clean_text)
     # Then remove tags and projects (&)
-    clean_text = re.sub(r"#[\w-]+", "", clean_text)
-    clean_text = re.sub(r"&[\w-]+", "", clean_text)
+    clean_text = re.sub(r"#[\w:-]+", "", clean_text)
+    clean_text = re.sub(r"&[\w:-]+", "", clean_text)
 
     # Normalize whitespace
     clean_text = re.sub(r"\s+", " ", clean_text).strip()
@@ -250,18 +250,18 @@ def parse_todo_add(raw_input: str) -> ParsedTodo:
         due_date = due_match.group(1)
 
     # Extract tags (words prefixed with #)
-    tags: list[str] = re.findall(r"#([\w-]+)", raw_input)
+    tags: list[str] = re.findall(r"#([\w:-]+)", raw_input)
 
     # Extract project (text prefixed with &)
-    projects: list[str] = re.findall(r"&([\w-]+)", raw_input)
+    projects: list[str] = re.findall(r"&([\w:-]+)", raw_input)
 
     # Clean the input: remove all special syntax
     clean_text = re.sub(
         r"!(urgent|high|normal|low)\b", "", raw_input, flags=re.IGNORECASE
     )
     clean_text = re.sub(r"@due:\S+", "", clean_text)
-    clean_text = re.sub(r"#[\w-]+", "", clean_text)
-    clean_text = re.sub(r"&[\w-]+", "", clean_text)
+    clean_text = re.sub(r"#[\w:-]+", "", clean_text)
+    clean_text = re.sub(r"&[\w:-]+", "", clean_text)
 
     # Normalize whitespace
     clean_text = re.sub(r"\s+", " ", clean_text).strip()
@@ -309,14 +309,14 @@ def parse_timer(raw_input: str) -> ParsedTimer | None:
         return None
 
     # Extract tags (words prefixed with #)
-    tags: list[str] = re.findall(r"#([\w-]+)", raw_input)
+    tags: list[str] = re.findall(r"#([\w:-]+)", raw_input)
 
     # Extract project (text prefixed with &)
-    projects: list[str] = re.findall(r"&([\w-]+)", raw_input)
+    projects: list[str] = re.findall(r"&([\w:-]+)", raw_input)
 
     # Extract content (everything except tags, projects, and the minutes number)
-    clean_text = re.sub(r"#[\w-]+", "", raw_input)
-    clean_text = re.sub(r"&[\w-]+", "", clean_text)
+    clean_text = re.sub(r"#[\w:-]+", "", raw_input)
+    clean_text = re.sub(r"&[\w:-]+", "", clean_text)
     clean_text = re.sub(r"(?:^|\s)\d{1,3}(?=\s|$)", " ", clean_text, count=1)
     clean_text = re.sub(r"\s+", " ", clean_text).strip()
 

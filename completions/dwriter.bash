@@ -1,5 +1,5 @@
 # Bash completion for dwriter
-# Source this file: source completions/day.bash
+# Source this file: source completions/dwriter.bash
 
 _dwriter_completions() {
     local cur prev opts commands

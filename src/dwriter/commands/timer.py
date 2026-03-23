@@ -14,7 +14,7 @@ from rich.progress import Progress, BarColumn, TextColumn, TimeRemainingColumn
 
 
 
-@click.command()
+@click.command(context_settings={"help_option_names": ["-h", "--help"], "allow_interspersed_args": True})
 @click.argument("args", nargs=-1)
 @click.option(
     "-t",
@@ -119,10 +119,21 @@ def timer(
                 progress.update(task, advance=1)
                 time.sleep(1)
         
-        # Persistence: Auto-log session to database on completion
-        log_content = f"⏱️ Finished {minutes}-minute focus session"
-        if parsed_content:
-            log_content += f": {parsed_content}"
+        # Prompt user for what they accomplished
+        ctx.console.print("\n[bold green]✅ Session complete![/bold green]")
+        accomplishment = click.prompt(
+            "What did you accomplish? (Leave blank for default log)",
+            default="",
+            show_default=False
+        ).strip()
+
+        # Persistence: Log session to database
+        if accomplishment:
+            log_content = f"⏱️ {accomplishment}"
+        else:
+            log_content = f"⏱️ Finished {minutes}-minute focus session"
+            if parsed_content:
+                log_content += f": {parsed_content}"
             
         ctx.db.add_entry(
             content=log_content,
@@ -130,7 +141,7 @@ def timer(
             project=project,
             created_at=datetime.now()
         )
-        ctx.console.print("\n[bold green]✅ Session complete and logged to journal![/bold green]")
+        ctx.console.print("[green]✅ Session logged to journal![/green]")
         
     except KeyboardInterrupt:
         ctx.console.print("\n[yellow]Timer cancelled. Session not logged.[/yellow]")
