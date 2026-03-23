@@ -38,7 +38,7 @@ When traveling, capturing small moments is better than writing long essays you'l
 
 *   **Fast CLI:** Log a restaurant name or a hidden beach location.
     ```bash
-    dwriter add "Found the best ramen in Shinjuku. 5 stars." -p trip:tokyo
+    dwriter add "Visited Little Island at Pier 55" -p trip:nyc-2026
     ```
 *   **Visual Dashboard:** Revisit your trip through a chronological log that feels like a film strip of your memories.
 
@@ -47,7 +47,7 @@ Consistency is the only secret to learning a language.
 
 *   **Fast CLI:** Start a 30-minute study session.
     ```bash
-    dwriter timer 30 -p japanese -t listening
+    dwriter timer 30 -p bangla -t listening
     ```
 *   **Visual Dashboard:** Check your **Streak Counter** to stay motivated.
 
