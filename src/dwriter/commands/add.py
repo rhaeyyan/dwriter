@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from ..cli import AppContext
 
 import click
 
-from ..cli import AppContext
 from ..date_utils import parse_date_or_default
 from ..ui_utils import display_entry
+from ..tui.colors import TAG
 
 
 @click.command()
@@ -48,7 +51,7 @@ def add(
     Quickly capture tasks, notes, or accomplishments. You can use
     shorthand like #tag and &project directly in the content.
 
-    [bold yellow]Note:[/bold yellow] When using &project or #tag in your shell, wrap the
+    [{TAG}]Note:[/{TAG}] When using &project or #tag in your shell, wrap the
     content in quotes to avoid shell interpretation:
       dwriter add "Implemented feature X #backend &core"
 

@@ -7,7 +7,10 @@ marking them complete, and editing/deleting.
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from ...cli import AppContext
 
 from textual.app import ComposeResult
 from textual.binding import Binding
@@ -24,7 +27,6 @@ from textual.widgets import (
     TabPane,
 )
 
-from ...cli import AppContext
 from ...database import Todo
 from ..colors import (
     DUE_LATER,
@@ -32,6 +34,7 @@ from ..colors import (
     DUE_SOON,
     DUE_TODAY,
     DUE_TOMORROW,
+    PROJECT,
     TAG,
     get_icon,
 )
@@ -641,7 +644,7 @@ class TodoListView(ListView):
             f"[{TAG}]#{' #'.join(todo.tag_names)}[/{TAG}]" if todo.tag_names else ""
         )
         project_str = (
-            f" [magenta]&{safe_project}[/magenta]" if safe_project else ""
+            f" [{PROJECT}]&{safe_project}[/{PROJECT}]" if safe_project else ""
         )
 
         # Format: Due date priority | #tags : Project on first line, content on second line
@@ -678,6 +681,7 @@ class TodoScreen(Container):
         margin: 1 2;
         padding: 1 2;
         background: $panel;
+        border: solid $secondary;
     }
 
     #todo-title {
@@ -696,7 +700,8 @@ class TodoScreen(Container):
 
     TodoListView {
         height: 1fr;
-        border: solid #45475a;
+        border: solid $secondary;
+        background: $panel;
         padding: 0;
     }
 

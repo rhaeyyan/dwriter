@@ -126,6 +126,36 @@ DRACULA = Theme(
     panel="#44475a",
 )
 
+# Jamboree - Complete high-contrast palette
+JAMBOREE = Theme(
+    name="jamboree",
+    primary="#FE81D4",    # Hot Pink
+    secondary="#1A05A2",  # Deep Blue (Highlight only)
+    success="#ABDADC",    # Light Blue
+    warning="#FBC3C1",    # Peach
+    error="#FE81D4",      # Hot Pink
+    accent="#FE81D4",     # Hot Pink
+    foreground="#ffffff", # White (Primary text for clarity)
+    background="#0a0a0f", # Obsidian Blue
+    surface="#161625",    # Dark Navy Elevation
+    panel="#1c1c3c",      # High-Contrast Navy (For Log entries and Todo board)
+)
+
+# Ruby - "Cyberpunk Edition" (Red-Dominant Neon HUD)
+RUBY = Theme(
+    name="ruby",
+    primary="#D53E0F",    # Neon Ruby Red
+    secondary="#4a0e0e",  # Deep Merlot (Structural borders)
+    success="#A6E3A1",    # Terminal Green (Scannable logs)
+    warning="#FCBF49",    # Neon Gold
+    error="#9B0F06",      # Deep Blood Red
+    accent="#FCBF49",     # Neon Gold
+    foreground="#EED9B9", # Pale Cream (High readability)
+    background="#080202", # Obsidian Wine (Deep-dark depth)
+    surface="#120404",    # Neutral Dark Wine elevation
+    panel="#1a0505",      # Deep Wine Panels (Cyberpunk layering)
+)
+
 # Dictionary mapping theme names to Theme objects
 THEMES = {
     "cyberpunk": CYBERPUNK,
@@ -136,7 +166,12 @@ THEMES = {
     "gruvbox": GRUVBOX,
     "nord": NORD,
     "dracula": DRACULA,
+    "jamboree": JAMBOREE,
+    "ruby": RUBY,
 }
+# Theme sorting logic: Prioritize Cyberpunk, Jamboree, Ruby; then alphabetical
+_PRIORITY_THEMES = ["cyberpunk", "jamboree", "ruby"]
+_OTHER_THEMES = sorted([n for n in THEMES.keys() if n not in _PRIORITY_THEMES])
 
 # List of theme names for Select widget options
-THEME_OPTIONS = [(name.capitalize(), name) for name in THEMES.keys()]
+THEME_OPTIONS = [(name.capitalize(), name) for name in (_PRIORITY_THEMES + _OTHER_THEMES)]

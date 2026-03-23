@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from ..cli import AppContext
 
 import click
 
-from ..cli import AppContext
 from ..search_utils import search_items
-from ..tui.colors import TAG
+from ..tui.colors import PROJECT, TAG
 
 
 def format_score(score: float) -> str:
@@ -108,7 +110,7 @@ def search(
     ctx.console.print(f'[bold blue]🔍 Search Results for "{query_str}"[/bold blue]\n')
 
     if matched_entries:
-        ctx.console.print("[bold magenta][ENTRIES][/bold magenta]")
+        ctx.console.print(f"[{PROJECT}][ENTRIES][/{PROJECT}]")
         for entry, score in matched_entries:
             from ..ui_utils import format_entry_datetime
 
@@ -118,18 +120,18 @@ def search(
             if entry.tag_names:
                 tags_str = " ".join(f"[{TAG}]#[/]{t}" for t in entry.tag_names)
             if entry.project:
-                project_str = f" [purple]Project:[/purple] &{entry.project}"
+                project_str = f" [{PROJECT}]Project:[/{PROJECT}] &{entry.project}"
             else:
                 project_str = ""
 
             # Display with or without time based on whether it's a past date
             if time_str is None:
                 ctx.console.print(
-                    f"[magenta][{entry.id}][/magenta] {date_str}: {entry.content}"
+                    f"[{PROJECT}][{entry.id}][/{PROJECT}] {date_str}: {entry.content}"
                 )
             else:
                 ctx.console.print(
-                    f"[magenta][{entry.id}][/magenta] {date_str} | "
+                    f"[{PROJECT}][{entry.id}][/{PROJECT}] {date_str} | "
                     f"[#23c76b]{time_str}[/#23c76b]: {entry.content}"
                 )
             if tags_str:
@@ -140,7 +142,7 @@ def search(
         ctx.console.print()
 
     if matched_todos:
-        ctx.console.print("[bold magenta][TO-DOS][/bold magenta]")
+        ctx.console.print(f"[{PROJECT}][TO-DOS][/{PROJECT}]")
         for todo, score in matched_todos:
             priority_color = {
                 "urgent": "bold red",
@@ -151,7 +153,7 @@ def search(
             score_str = format_score(score)
             tags_str = ""
             if todo.tag_names:
-                tags_str = f" [dim]| [/{dim}][{TAG}]#{' #'.join(todo.tag_names)}[/{TAG}]"
+                tags_str = f" [dim]| [/dim][{TAG}]#{' #'.join(todo.tag_names)}[/{TAG}]"
             project_str = f" [dim]| &{todo.project}[/dim]" if todo.project else ""
             priority_label = (
                 f"[{priority_color}]{todo.priority.upper()}[/{priority_color}]"

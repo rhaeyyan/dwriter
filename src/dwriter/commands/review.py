@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from ..cli import AppContext
 
 import click
 
-from ..cli import AppContext
 from ..database import Entry
 from ..tui.colors import TAG
 

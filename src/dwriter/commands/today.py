@@ -1,12 +1,15 @@
 """Today command to view today's entries."""
 
 from __future__ import annotations
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..cli import AppContext
 
 from datetime import datetime
 
 import click
 
-from ..cli import AppContext
 from ..ui_utils import display_entry
 
 

@@ -7,7 +7,7 @@ from textual.binding import Binding
 from textual.containers import Container
 from textual.screen import Screen
 from textual.widgets import Footer, Header, Static, TabbedContent, TabPane
-from ..colors import get_icon
+from ..colors import PROJECT, TAG, get_icon
 
 
 class HelpScreen(Screen):  # type: ignore[type-arg]
@@ -147,8 +147,8 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
   [#89dceb]4[/#89dceb] → {get_icon('timer', use_emojis)} Focus Timer
 
 [bold #cba6f7]Omnibox Syntax (press / to focus):[/bold #cba6f7]
-  [bold yellow]#tag[/bold yellow]               → Categorize by tag
-  [magenta]&project[/magenta]           → Assign to project
+  [{TAG}]#tag[/{TAG}]               → Categorize by tag
+  [{PROJECT}]&project[/{PROJECT}]           → Assign to project
   [#89dceb]25[/#89dceb]                → Specify timer duration
 
 [dim]Press Tab to navigate help topics. Press q to close.[/dim]
@@ -189,21 +189,21 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
 [dim]The Omnibox is the input bar at the top of the screen. Press [cyan]/[/cyan] to focus.[/dim]
 
 [bold #cba6f7]Journal Entries:[/bold #cba6f7]
-  Format: [bold yellow]#tag[/bold yellow] [magenta]&project[/magenta] entry text
-  Example: [bold yellow]#refactor[/bold yellow] [magenta]&engine[/magenta] fixed database deadlock
+  Format: [{TAG}]#tag[/{TAG}] [{PROJECT}]&project[/{PROJECT}] entry text
+  Example: [{TAG}]#refactor[/{TAG}] [{PROJECT}]&engine[/{PROJECT}] fixed database deadlock
 
 [bold #cba6f7]Task Management (Todo):[/bold #cba6f7]
   From the [bold]Todo Board[/bold], entering text into the Omnibox starts a
   multi-step workflow to define priority and due dates.
 
 [bold #cba6f7]Focus Timer:[/bold #cba6f7]
-  Format: [bold yellow]#tag[/bold yellow] [magenta]&project[/magenta] [#89dceb]MINUTES[/#89dceb]
-  Example: [bold yellow]#deepwork[/bold yellow] [#89dceb]25[/#89dceb]
-  Example: [bold yellow]#meeting[/bold yellow] [magenta]&team[/magenta] [#89dceb]60[/#89dceb]
+  Format: [{TAG}]#tag[/{TAG}] [{PROJECT}]&project[/{PROJECT}] [#89dceb]MINUTES[/#89dceb]
+  Example: [{TAG}]#deepwork[/{TAG}] [#89dceb]25[/#89dceb]
+  Example: [{TAG}]#meeting[/{TAG}] [{PROJECT}]&team[/{PROJECT}] [#89dceb]60[/#89dceb]
 
 [bold #cba6f7]Metadata Syntax:[/bold #cba6f7]
-  [bold yellow]#tag[/bold yellow]         → Labels for categorization (e.g., #bug, #docs)
-  [magenta]&project[/magenta]     → Project or client context (e.g., &internal)
+  [{TAG}]#tag[/{TAG}]         → Labels for categorization (e.g., #bug, #docs)
+  [{PROJECT}]&project[/{PROJECT}]     → Project or client context (e.g., &internal)
   [#89dceb]NUMBER[/#89dceb]       → Focus session duration in minutes
 
 [dim]Tip: Press 'q' at any time during a multi-step workflow to cancel.[/dim]

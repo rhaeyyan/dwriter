@@ -1,8 +1,13 @@
 """Examples command - provides common usage examples."""
 
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..cli import AppContext
+
 import click
 
-from ..cli import AppContext
 
 
 @click.command()

@@ -6,7 +6,10 @@ This module provides a timer-style timer for focused work sessions.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from ...cli import AppContext
 
 from textual.app import ComposeResult
 from textual.binding import Binding
@@ -15,8 +18,7 @@ from textual.reactive import reactive
 from textual.screen import ModalScreen
 from textual.widgets import Button, Input, Label, Static, Switch
 
-from ...cli import AppContext
-from ..colors import TAG, get_icon, render_block_bar_rich
+from ..colors import PROJECT, TAG, get_icon, render_block_bar_rich
 from ..messages import EntryAdded, TimerStateChanged
 from ..parsers import parse_quick_add
 
@@ -124,7 +126,7 @@ class SessionCompleteModal(ModalScreen):  # type: ignore[type-arg]
                     tags_markup = " ".join([f"[bold yellow]#{tag}[/]" for tag in self.tags])
                     meta_parts.append(f"Tags: {tags_markup}")
                 if self.project:
-                    meta_parts.append(f"Project: [magenta]{self.project}[/]")
+                    meta_parts.append(f"Project: [{PROJECT}]{self.project}[/]")
                 yield Label(
                     " | ".join(meta_parts),
                     id="session-meta",
@@ -287,7 +289,7 @@ class TimerScreen(Container):
     #timer-title {
         text-align: left;
         text-style: bold;
-        color: $secondary;
+        color: $primary;
         width: 1fr;
         height: 1;
         padding: 0;
@@ -608,7 +610,7 @@ class TimerScreen(Container):
             mode_str = f"{get_icon('glance', use_emojis)} Break" if self.is_break_mode else f"{get_icon('streak', use_emojis)} Focus"
             timer_icon = get_icon("timer", use_emojis)
             if self.is_running:
-                timer_title.update(f"[bold $secondary]{timer_icon} Timer [{mode_str}][/bold $secondary]")
+                timer_title.update(f"[bold $primary]{timer_icon} Timer [{mode_str}][/bold $primary]")
             else:
                 timer_title.update(f"[dim]{timer_icon} Timer [{mode_str}][/dim]")
 
@@ -653,8 +655,8 @@ class TimerScreen(Container):
                 parts.append(f"Session: {tags_str}")
 
             if display_project:
-                # Magenta project like Todo Board
-                parts.append(f"[magenta]{display_project}[/magenta]")
+                # Theme-aware project label
+                parts.append(f"[{PROJECT}]{display_project}[/{PROJECT}]")
 
             if parts:
                 meta_label.update(" | ".join(parts))

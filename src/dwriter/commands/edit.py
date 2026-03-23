@@ -1,13 +1,17 @@
 """Edit command for managing entries interactively."""
 
 from __future__ import annotations
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..cli import AppContext
 
 from datetime import datetime
 
 import click
 
-from ..cli import AppContext
 from ..search_utils import find_multiple_matches
+from ..tui.colors import PROJECT
 
 
 def _handle_search_edit(ctx: AppContext, search_query: str) -> int | None:
@@ -101,7 +105,7 @@ def _bulk_edit_today(ctx: AppContext) -> None:
 
     ctx.console.print("[bold cyan]Today's Entries:[/bold cyan]")
     for entry in entries:
-        ctx.console.print(f"  [[magenta]{entry.id}[/magenta]] {entry.content}")
+        ctx.console.print(f"  [[{PROJECT}]{entry.id}[/{PROJECT}]] {entry.content}")
     
     ctx.console.print("\nTo edit a specific entry, run: [bold]dwriter edit --id <ID>[/bold]")
     ctx.console.print("To use the interactive editor, run: [bold]dwriter ui --logs[/bold]")

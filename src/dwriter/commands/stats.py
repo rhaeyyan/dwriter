@@ -1,15 +1,19 @@
 """Stats command - provides a text-based summary of your productivity."""
 
 from __future__ import annotations
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..cli import AppContext
 
 import click
 from rich.panel import Panel
 from rich.columns import Columns
 from rich.table import Table
 
-from ..cli import AppContext
 from ..stats_utils import calculate_streak
 from ..analytics import AnalyticsEngine, InsightGenerator
+from ..tui.colors import PROJECT, TAG
 
 
 @click.command()
@@ -54,7 +58,7 @@ def stats(ctx: AppContext) -> None:
         f"✅ [bold]{len(todos_completed)}[/bold] Completed\n"
         f"⏳ [bold]{len(todos_pending)}[/bold] Pending",
         title="📈 Activity",
-        border_style="magenta",
+        border_style=PROJECT,
         expand=False
     )
     
@@ -63,7 +67,7 @@ def stats(ctx: AppContext) -> None:
     
     # Display behavioral insights
     if insights:
-        ctx.console.print("[bold yellow]💡 Behavioral Insights[/bold yellow]")
+        ctx.console.print(f"[{TAG}]💡 Behavioral Insights[/{TAG}]")
         for insight in insights[:3]:  # Top-ranked insights
             # Standardize formatting for CLI output
             clean_insight = insight.replace("[n]", "[dim]").replace("[/n]", "[/dim]")
@@ -74,7 +78,7 @@ def stats(ctx: AppContext) -> None:
     tag_velocity = engine.get_tag_velocity(days=30)
     if tag_velocity:
         table = Table(title="🏷️ Top Tags (Last 30 Days)", box=None, show_header=False)
-        table.add_column("Tag", style="bold yellow")
+        table.add_column("Tag", style=TAG)
         table.add_column("Count", justify="right")
         table.add_column("Trend", justify="right")
         

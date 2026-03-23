@@ -1,13 +1,16 @@
 """Config command for managing dwriter configuration."""
 
 from __future__ import annotations
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..cli import AppContext
 
 import os
 import subprocess
 
 import click
 
-from ..cli import AppContext
 
 
 @click.group()

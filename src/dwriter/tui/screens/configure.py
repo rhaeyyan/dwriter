@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from ...cli import AppContext
 
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, Vertical
@@ -14,7 +17,6 @@ from textual.widgets import (
     Switch,
 )
 
-from ...cli import AppContext
 from ..colors import get_icon
 from ..themes import THEME_OPTIONS
 

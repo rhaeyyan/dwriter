@@ -1,7 +1,12 @@
 """Dashboard screen for dwriter TUI."""
 
+from __future__ import annotations
+
 from datetime import datetime, timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from ...cli import AppContext
 
 from textual import work
 from textual.app import ComposeResult
@@ -10,7 +15,6 @@ from textual.containers import Container, ScrollableContainer, Vertical
 from textual.widgets import LoadingIndicator, Static
 
 from ...analytics import AnalyticsEngine, InsightGenerator
-from ...cli import AppContext
 from ..colors import PROJECT, TAG, get_icon
 
 
@@ -19,7 +23,7 @@ class UnifiedPulsePanel(Static):
 
     DEFAULT_CSS = """
     UnifiedPulsePanel {
-        border: solid #45475a;
+        border: solid $secondary;
         border-title-color: $primary;
         background: $panel;
         padding: 0 2;
@@ -52,8 +56,14 @@ class UnifiedPulsePanel(Static):
                 # providing a subtle placeholder for the "Today" slot if empty.
                 spark_chars = "⠂⡀⣀⣄⣤⣦⣶⣷⣿" if use_emojis else "·.:-=+*#%"
                 max_val = max(self.sparkline_data)
-                # Map colors to btop palette (blue -> green -> yellow -> red)
-                colors = ["#45475a", "#a6e3a1", "#f9e2af", "#f38ba8"]
+                # Map colors dynamically from theme or fallback to defaults
+                theme = getattr(self.app, "theme_variables", {})
+                colors = [
+                    theme.get("surface", "#45475a"),
+                    theme.get("success", "#a6e3a1"),
+                    theme.get("warning", "#f9e2af"),
+                    theme.get("error", "#f38ba8"),
+                ]
 
                 # Centering calculation based on 45 characters
                 container_width = self.size.width if self.size.width > 10 else 80
@@ -103,7 +113,7 @@ class StreakCalendar(Static):
 
     DEFAULT_CSS = """
     StreakCalendar {
-        border: solid #45475a;
+        border: solid $secondary;
         border-title-color: $primary;
         background: $panel;
         padding: 1 2;
@@ -220,12 +230,13 @@ class StreakCalendar(Static):
         content.append(f"[dim bold]{month_line}[/dim bold]\n\n")
 
         day_names = ["   ", "Mon", "   ", "Wed", "   ", "Fri", "   "]
+        theme = getattr(self.app, "theme_variables", {})
         level_styles = {
-            0: f"[#313244]{'■' if use_emojis else '-'}[/]",
-            1: f"[#a6e3a1]{'■' if use_emojis else '#'}[/]",
-            2: f"[#f9e2af]{'■' if use_emojis else '#'}[/]",
-            3: f"[#fab387]{'■' if use_emojis else '#'}[/]",
-            4: f"[#f38ba8]{'■' if use_emojis else '#'}[/]",
+            0: f"[{theme.get('surface', '#313244')}]{'■' if use_emojis else '-'}[/]",
+            1: f"[{theme.get('success', '#a6e3a1')}]{'■' if use_emojis else '#'}[/]",
+            2: f"[{theme.get('warning', '#f9e2af')}]{'■' if use_emojis else '#'}[/]",
+            3: f"[{theme.get('accent', '#fab387')}]{'■' if use_emojis else '#'}[/]",
+            4: f"[{theme.get('error', '#f38ba8')}]{'■' if use_emojis else '#'}[/]",
         }
 
         for day_idx in range(7):

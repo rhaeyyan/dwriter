@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import re
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from ...cli import AppContext
 
 from textual.app import ComposeResult
 from textual.binding import Binding
@@ -12,9 +15,8 @@ from textual.containers import Container, Horizontal, Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Button, Header, Input, Label, ListItem, ListView
 
-from ...cli import AppContext
 from ...database import Entry
-from ..colors import TAG, get_icon
+from ..colors import PROJECT, TAG, get_icon
 from ...search_utils import search_items
 
 
@@ -542,7 +544,7 @@ class LogsResultsView(ListView):
             f"[{TAG}]#{' #'.join(entry.tag_names)}[/{TAG}]" if entry.tag_names else ""
         )
         project_str = (
-            f" [magenta]&{entry.project}[/magenta]"
+            f" [{PROJECT}]&{entry.project}[/{PROJECT}]"
             if entry.project
             else ""
         )
@@ -554,9 +556,14 @@ class LogsResultsView(ListView):
             score_str = f" [{score_color}]({int(score)}%)[/{score_color}]"
 
         # Format: date time | #tags : Project on first line, content on second line
+        theme = getattr(self.app, "theme_variables", {})
+        time_hex = theme.get("success", "#73E6CB")
+        # Ensure time_hex doesn't have double # and use universal closing tag
+        color_tag = time_hex if time_hex.startswith("#") else f"#{time_hex}"
+        
         datetime_str = f"[cyan]{date_str}[/cyan]"
         if time_str:
-            datetime_str = f"[cyan]{date_str}[/cyan] [#73E6CB]{time_str}[/#73E6CB]"
+            datetime_str = f"[cyan]{date_str}[/cyan] [{color_tag}]{time_str}[/]"
         else:
             datetime_str = f"[cyan]{date_str}[/cyan]"
 
@@ -608,7 +615,7 @@ class LogsScreen(Container):
 
     #search-input {
         width: 1fr;
-        border: solid #45475a;
+        border: solid $secondary;
     }
 
     #search-input:focus {
@@ -634,6 +641,7 @@ class LogsScreen(Container):
     LogsResultsView {
         height: 1fr;
         border: solid #45475a;
+        background: $panel;
         padding: 0;
     }
 
