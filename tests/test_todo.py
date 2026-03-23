@@ -223,6 +223,16 @@ class TestTodoCommands:
 
         assert result.exit_code == 0
 
+    def test_todo_add_interspersed_priority(self):
+        """Test adding a todo with priority flag AFTER the content."""
+        runner = CliRunner()
+        result = runner.invoke(main, ["todo", "Task description", "--priority", "urgent"])
+
+        assert result.exit_code == 0
+        assert "URGENT" in result.output
+        assert "Task description" in result.output
+        assert "--priority urgent" not in result.output
+
     def test_todo_add_invalid_priority(self):
         """Test adding a todo with invalid priority."""
         runner = CliRunner()
