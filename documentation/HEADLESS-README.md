@@ -43,13 +43,18 @@ Manage your future workload. When you mark a task as "done," it automatically lo
 | `dwriter done <id>` | Complete a task and automatically log it to your journal. |
 | `dwriter todo rm <id>` | Delete a task without logging it. |
 
-### Advanced Task Controls:
+### Advanced Task Controls (Frictionless Shorthand)
+The fastest way to manage tasks is to include metadata directly in the content string. **Always use "quotes" for shell safety.**
+
 ```bash
 # Set priority (low, normal, high, urgent)
-dwriter todo "Fix the auth bug" --priority urgent -p backend
+dwriter todo "Fix the auth bug !urgent &backend"
 
 # Add tags or project context
-dwriter todo "Write documentation" -t docs -p internal_tools
+dwriter todo "Write documentation #docs &internal_tools"
+
+# Set a due date with @due:date
+dwriter todo "Prepare presentation @due:friday #work"
 ```
 
 ---
@@ -61,12 +66,13 @@ Run a Pomodoro-style timer in your terminal. When the timer ends, you'll be prom
 | Command | Description |
 | :--- | :--- |
 | `dwriter timer` | Start a standard 25-minute focus session. |
-| `dwriter timer <mins>` | Start a session for a custom number of minutes. |
+| `dwriter timer "mins"` | Start a session for a custom number of minutes. |
 
 ### Automating the Result:
+Include your project and tags directly in the timer command string for instant logging.
 ```bash
 # Start a 45-minute deep work session pre-tagged with your project
-dwriter timer 45 -p "engine_overhaul" -t "deepwork"
+dwriter timer "45 &engine_overhaul #deepwork"
 ```
 
 ---
