@@ -1,6 +1,7 @@
 """Tests for CLI commands."""
 
 from click.testing import CliRunner
+from unittest.mock import patch
 
 from dwriter.cli import main
 
@@ -149,9 +150,21 @@ def test_examples_command():
     result = runner.invoke(main, ["examples"])
 
     assert result.exit_code == 0
-    assert "dwriter Examples & Workflows" in result.output
-    assert "Quick Logging" in result.output
-    assert "Task Management" in result.output
+    assert "dwriter: Common Workflows" in result.output
+
+
+def test_timer_command():
+    """Test the timer command with shorthand arguments."""
+    runner = CliRunner()
+    # Use a 1-minute timer for testing
+    # We'll mock the time.sleep to avoid waiting.
+    with patch("time.sleep", return_value=None):
+        result = runner.invoke(main, ["timer", "1", "&project-x", "#deepwork"])
+        
+    assert result.exit_code == 0
+    assert "Starting 1-minute focus timer..." in result.output
+    assert "Project: &project-x" in result.output
+    assert "Tags: #deepwork" in result.output
 
 
 def test_config_show_command():

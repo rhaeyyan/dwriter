@@ -53,11 +53,14 @@ def todo(
 ) -> None:
     """Manage future tasks and to-dos.
 
-    Add, review, and complete tasks. When a task is marked as done,
-    it automatically generates a daily log entry for your standup.
+    Add, review, and complete tasks. You can use shorthand like #tag
+    and &project directly in the content.
 
-    If invoked without arguments, launches the interactive todo board
-    with keyboard navigation for completing, editing, and managing tasks.
+    [bold yellow]Note:[/bold yellow] When using &project or #tag in your shell, wrap the
+    content in quotes to avoid shell interpretation:
+      dwriter todo "Write unit tests #testing &backend"
+
+    If invoked without arguments, launches the interactive todo board.
 
     Priority Levels:
       - low: Dimmed display, low visibility tasks
@@ -65,23 +68,14 @@ def todo(
       - high: Yellow highlight for important tasks
       - urgent: Red highlight for critical tasks
 
-    Due Date Formats:
-      - Relative: tomorrow, +5d, +1w, +1m
-      - Days/weeks: 3 days, 2 weeks
-      - Weekday: last Monday, Friday
-      - Standard: 2024-01-15, 01/15/2024
-
     Examples:
       dwriter todo                         # Launch interactive TUI
       dwriter todo "Draft new relic ideas" -p Mainframe_Mayhem
-      dwriter todo "Fix card draw bug" --priority urgent -t bug
-      dwriter todo --priority urgent -t bug "Fix card draw bug"
+      dwriter todo "Fix card draw bug" #bug &core
       dwriter todo "Write tests" --due tomorrow
       dwriter todo "Review PR" --due +5d -t code
-      dwriter todo add "Task" -p Project -t tag --due +3d  # Explicit subcommand
       dwriter todo list                    # Show pending tasks
       dwriter todo list --all              # Include completed
-      dwriter todo list --tui              # Interactive mode
     """
     # Check if first content token is a known subcommand
     if content and content[0] in todo.commands:

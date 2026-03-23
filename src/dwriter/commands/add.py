@@ -45,9 +45,12 @@ def add(
 ) -> None:
     """Add a new log entry.
 
-    Quickly capture tasks, notes, or accomplishments with optional
-    tags and project categorization. Supports backdated entries
-    using natural language dates.
+    Quickly capture tasks, notes, or accomplishments. You can use
+    shorthand like #tag and &project directly in the content.
+
+    [bold yellow]Note:[/bold yellow] When using &project or #tag in your shell, wrap the
+    content in quotes to avoid shell interpretation:
+      dwriter add "Implemented feature X #backend &core"
 
     Supported Date Formats:
       - Relative: today, yesterday, tomorrow
@@ -56,21 +59,12 @@ def add(
       - Standard: 2024-01-15, 01/15/2024
 
     Examples:
-      dwriter add "fixed the race condition in auth"
-
-      dwriter add "fixed login bug" -t bug -t backend
-
-      dwriter add "implemented feature X" --project myapp
-
-      dwriter add "refactored database layer" -t refactor -t backend -p myapp
-
+      dwriter add "Fixed the race condition in auth"
+      dwriter add "Fixed login bug" -t bug -t backend
+      dwriter add "Refactored database layer" -p myapp
+      dwriter add "Implementation complete #backend &core"
       dwriter add "Finished report" --date yesterday
-
       dwriter add "Meeting notes" --date "last Friday"
-
-      dwriter add "Completed sprint" --date "3 days ago"
-
-      dwriter add implemented feature X #backend &core
     """
     # Join multiple content arguments into a single string
     content_str = " ".join(content)
