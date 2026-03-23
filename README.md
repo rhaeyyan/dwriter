@@ -34,9 +34,11 @@ Choose your operating system and paste the command into your terminal:
     powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
     ```
 
-### 2. Install dwriter
-Navigate to the `dwriter` directory and run:
+### 2. Clone and Install dwriter
+Clone the repository, navigate to the `dwriter` directory, and run:
 ```bash
+git clone https://github.com/rhaeyyan/dwriter.git
+cd dwriter
 uv tool install .
 ```
 
