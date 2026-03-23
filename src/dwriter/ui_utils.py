@@ -8,7 +8,7 @@ from textual.containers import Container, ScrollableContainer
 from textual.screen import ModalScreen
 from textual.widgets import Static
 
-from .tui.colors import TAG, get_icon
+from .tui.colors import PROJECT, TAG, get_icon
 
 if TYPE_CHECKING:
     from rich.console import Console
@@ -45,10 +45,10 @@ def display_entry(console: "Console", entry: "Entry", config: "Config") -> None:
     date_str, time_str = format_entry_datetime(entry)
 
     if time_str is None:
-        prefix = f"[magenta][{entry.id}][/magenta] " if config.display.show_id else ""
+        prefix = f"[{PROJECT}][{entry.id}][/{PROJECT}] " if config.display.show_id else ""
         console.print(f"{prefix}{date_str}: {entry.content}")
     else:
-        prefix = f"[magenta][{entry.id}][/magenta] {date_str}" if config.display.show_id else date_str
+        prefix = f"[{PROJECT}][{entry.id}][/{PROJECT}] {date_str}" if config.display.show_id else date_str
         console.print(f"{prefix} | [#23c76b]{time_str}[/#23c76b]: {entry.content}")
 
     if entry.tag_names:
@@ -56,7 +56,7 @@ def display_entry(console: "Console", entry: "Entry", config: "Config") -> None:
         console.print(f"    [{TAG}]Tags:[/{TAG}] {tags_str}")
 
     if entry.project:
-        console.print(f"    [purple]Project:[/purple] &{entry.project}")
+        console.print(f"    [{PROJECT}]Project:[/{PROJECT}] &{entry.project}")
 
 
 class HelpOverlay(ModalScreen[None]):

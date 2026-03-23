@@ -1,10 +1,15 @@
 """Delete command for bulk deletion of entries."""
 
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..cli import AppContext
+
 from datetime import datetime
 
 import click
 
-from ..cli import AppContext
 
 
 def parse_date(date_str: str) -> datetime:

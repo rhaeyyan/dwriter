@@ -1,8 +1,13 @@
 """Standup & Review Screen for dwriter TUI."""
 
+from __future__ import annotations
+
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from ...cli import AppContext
 
 import pyperclip
 from textual.app import ComposeResult
@@ -20,7 +25,6 @@ from textual.widgets import (
     TextArea,
 )
 
-from ...cli import AppContext
 from ...ui_utils import format_entry_datetime
 from ..colors import get_icon
 

@@ -3,15 +3,17 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from ..cli import AppContext
 
 import click
 from rich.table import Table
 
-from ..cli import AppContext
 from ..date_utils import parse_natural_date
 from ..search_utils import find_multiple_matches
-from ..tui.colors import DUE_OVERDUE, DUE_SOON, DUE_TODAY, DUE_TOMORROW, TAG
+from ..tui.colors import DUE_OVERDUE, DUE_SOON, DUE_TODAY, DUE_TOMORROW, PROJECT, TAG
 
 
 @click.group(invoke_without_command=True)
@@ -56,7 +58,7 @@ def todo(
     Add, review, and complete tasks. You can use shorthand like #tag
     and &project directly in the content.
 
-    [bold yellow]Note:[/bold yellow] When using &project or #tag in your shell, wrap the
+    [{TAG}]Note:[/{TAG}] When using &project or #tag in your shell, wrap the
     content in quotes to avoid shell interpretation:
       dwriter todo "Write unit tests #testing &backend"
 
@@ -150,7 +152,7 @@ def todo(
 
             proj_str = ""
             if task.project:
-                proj_str = f" [purple]&{task.project}[/purple]"
+                proj_str = f" [{PROJECT}]&{task.project}[/{PROJECT}]"
 
             app_ctx.console.print(
                 f"[green]Added Task [{task.id}]:[/green] "
@@ -280,7 +282,7 @@ def todo_add(
         
         proj_str = ""
         if task.project:
-            proj_str = f" [purple]&{task.project}[/purple]"
+            proj_str = f" [{PROJECT}]&{task.project}[/{PROJECT}]"
 
         ctx.console.print(
             f"[green]Added Task [{task.id}]:[/green] "
@@ -320,11 +322,11 @@ def todo_list(ctx: AppContext, show_all: bool) -> None:
         return
 
     table = Table(title="Your Tasks", show_header=True, header_style="bold blue")
-    table.add_column("ID", justify="right", style="magenta", no_wrap=True)
+    table.add_column("ID", justify="right", style=PROJECT, no_wrap=True)
     table.add_column("Priority", justify="center")
     table.add_column("Task")
-    table.add_column("Project", style="#ff00ff")
-    table.add_column("Tags", style="#00ff00")
+    table.add_column("Project", style=PROJECT)
+    table.add_column("Tags", style=TAG)
     table.add_column("Due", style="cyan", justify="center")
 
     priority_styles = {

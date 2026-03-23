@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from ..cli import AppContext
 
 import click
 
-from ..cli import AppContext
-from ..tui.colors import TAG
+from ..tui.colors import PROJECT, TAG
 
 
 def format_standup_bullets(entries: Any) -> str:
@@ -20,7 +22,7 @@ def format_standup_bullets(entries: Any) -> str:
         if entry.tags:
             line += f" ({', '.join(f'[{TAG}]#[/]{tag.name}' for tag in entry.tags)})"
         if entry.project:
-            line += f" [magenta]&{entry.project}[/magenta]"
+            line += f" [{PROJECT}]&{entry.project}[/{PROJECT}]"
         lines.append(line)
     return "\n".join(lines)
 
@@ -34,7 +36,7 @@ def format_standup_slack(entries: Any) -> str:
         if entry.tags:
             line += f" ({', '.join(f'#{tag.name}' for tag in entry.tags)})"
         if entry.project:
-            line += f" [magenta]&{entry.project}[/magenta]"
+            line += f" [{PROJECT}]&{entry.project}[/{PROJECT}]"
         lines.append(line)
     return "\n".join(lines)
 
@@ -48,7 +50,7 @@ def format_standup_jira(entries: Any) -> str:
         if entry.tags:
             line += f" ({', '.join(f'#{tag.name}' for tag in entry.tags)})"
         if entry.project:
-            line += f" [magenta]&{entry.project}[/magenta]"
+            line += f" [{PROJECT}]&{entry.project}[/{PROJECT}]"
         lines.append(line)
     return "\n".join(lines)
 
@@ -62,7 +64,7 @@ def format_standup_markdown(entries: Any) -> str:
         if entry.tags:
             line += f" ({', '.join(f'#{tag.name}' for tag in entry.tags)})"
         if entry.project:
-            line += f" [magenta]&{entry.project}[/magenta]"
+            line += f" [{PROJECT}]&{entry.project}[/{PROJECT}]"
         lines.append(line)
     return "\n".join(lines)
 
@@ -91,7 +93,7 @@ def format_todos(todos: Any, output_format: str) -> str:
 
         if todo.project:
             if output_format in ["bullets", "markdown"]:
-                line += f" [magenta]&{todo.project}[/magenta]"
+                line += f" [{PROJECT}]&{todo.project}[/{PROJECT}]"
             else:
                 line += f" &{todo.project}"
 

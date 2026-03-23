@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 import time
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from ..cli import AppContext
 from datetime import datetime
 
 import click
 from rich.progress import Progress, BarColumn, TextColumn, TimeRemainingColumn
 
-from ..cli import AppContext
 
 
 @click.command()

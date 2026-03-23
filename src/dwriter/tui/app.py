@@ -6,7 +6,10 @@ and provides the global omnibox for quick entry logging.
 
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
+
+if TYPE_CHECKING:
+    from ..cli import AppContext
 
 from textual.app import App, ComposeResult
 from textual.binding import Binding
@@ -24,7 +27,6 @@ from textual.widgets import (
     Tabs,
 )
 
-from ..cli import AppContext
 from .command_palette import DWriterCommands
 from .messages import EntryAdded, TimerStateChanged, TodoUpdated
 from .parsers import (

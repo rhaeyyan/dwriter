@@ -17,58 +17,53 @@ from __future__ import annotations
 from rich.text import Text
 
 # Due date colors
-DUE_TODAY = "bold #fab387"
-DUE_TOMORROW = "#fab387"
-DUE_OVERDUE = "red"
-DUE_SOON = "cyan"  # Within 30 days
-DUE_LATER = "dim cyan"  # More than 30 days
-DUE_NONE = "dim"  # No due date
+DUE_TODAY = "bold #F77F00"      # Orange
+DUE_TOMORROW = "#FCBF49"        # Yellow
+DUE_OVERDUE = "bold #D53E0F"    # Vibrant Red
+DUE_SOON = "#66D0BC"            # Aquamarine
+DUE_LATER = "dim #66D0BC"       # Dimmed Aquamarine
+DUE_NONE = "dim"                # No due date
 
 # Tag colors
-TAG = "bold #e5ff00"  # Neon yellow
+TAG = "bold #66D0BC"            # Aquamarine tags pop against red
 
 # Project colors
-PROJECT = "bold #ff00ff"  # Magenta/fuchsia
+PROJECT = "bold #F77F00"        # Bright Orange projects
 
 # Priority colors
-PRIORITY_URGENT = "red"
-PRIORITY_HIGH = "yellow"
-PRIORITY_NORMAL = "white"
-PRIORITY_LOW = "dim"
+PRIORITY_URGENT = "#D53E0F"     # Vibrant Red
+PRIORITY_HIGH = "#FCBF49"       # Yellow
+PRIORITY_NORMAL = "#EED9B9"     # Cream
+PRIORITY_LOW = "#9B0F06"        # Deep red
 
 # Content colors
-CONTENT_ACTIVE = "#00e5ff"  # Bright cyan for active items
-CONTENT_COMPLETED = "dim"  # Dimmed for completed items
+CONTENT_ACTIVE = "#FCBF49"      # Golden Yellow for active text focus
+CONTENT_COMPLETED = "dim"       # Standard dimming for finished items
 
 # Status colors
-STATUS_RUNNING = "green"
-STATUS_PAUSED = "warning"  # Yellow/orange
+STATUS_RUNNING = "#66D0BC"      # Aquamarine
+STATUS_PAUSED = "#FCBF49"       # Yellow
 STATUS_FINISHED = "accent"
 
 # Border colors (btop-style: muted borders, bright data)
-BORDER_MUTED = "#45475a"  # Dim border for panels at rest
-BORDER_ACTIVE = "#00e5ff"  # Accent border for focused panels
-PANEL_HEADER = "#00e5ff"  # Section header color inside panels
+BORDER_MUTED = "#9B0F06"        # Deep red for inactive borders
+BORDER_ACTIVE = "#D53E0F"       # Vibrant Ruby for focused panels
+PANEL_HEADER = "#EED9B9"        # Cream headers for maximum clarity
 
-# Block bar gradient (8-step smooth for ▏▎▍▌▋▊▉█ bars)
+# Block bar gradient (transitioning from Aquamarine to Ruby Red)
 BLOCK_GRADIENT = [
-    "#00e5ff",  # Cyan
-    "#00ffcc",  # Teal-cyan
-    "#39ff14",  # Neon green
-    "#ccff00",  # Neon green-yellow
-    "#e5ff00",  # Neon yellow
-    "#ffea00",  # Bright yellow
-    "#ff7b00",  # Neon orange
-    "#ff003c",  # Neon red
+    "#66D0BC",  # Aquamarine
+    "#FCBF49",  # Golden Yellow
+    "#F77F00",  # Bright Orange
+    "#D53E0F",  # Vibrant Ruby Red
 ]
 
-# Progress bar gradient (green → yellow → orange → red)
+# Progress bar gradient (using Ruby palette)
 PROGRESS_COLORS = [
-    "#00e5ff",  # Cyan (0-25%)
-    "#ccff00",  # Neon green-yellow (25-40%)
-    "#ffea00",  # Yellow (40-60%)
-    "#ff7b00",  # Orange (60-75%)
-    "#ff003c",  # Red (75-100%)
+    "#66D0BC",  # Aquamarine (0-25%)
+    "#FCBF49",  # Golden Yellow (25-50%)
+    "#F77F00",  # Bright Orange (50-75%)
+    "#D53E0F",  # Vibrant Ruby Red (75-100%)
 ]
 
 # UI element colors
@@ -77,7 +72,7 @@ UI_BORDER_FOCUS = "$accent"
 UI_PANEL = "$panel"
 UI_SURFACE = "$surface"
 UI_TEXT = "$foreground"
-UI_TEXT_MUTED = "$text-muted"
+UI_TEXT_MUTED = "dim"
 UI_SUCCESS = "$success"
 UI_WARNING = "$warning"
 UI_ERROR = "$error"

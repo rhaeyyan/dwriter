@@ -6,14 +6,16 @@ This module provides fuzzy search across journal entries and todos.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from ...cli import AppContext
 
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Vertical
 from textual.widgets import Header, Input, Label, ListItem, ListView
 
-from ...cli import AppContext
 from ...database import Entry, Todo
 from ...search_utils import search_items
 from ..colors import (
@@ -169,7 +171,7 @@ class EntryResultsView(ListView):
             f"[{TAG}]#{' #'.join(todo.tag_names)}[/{TAG}]" if todo.tag_names else ""
         )
         project_str = (
-            f" [magenta]&{safe_project}[/magenta]" if safe_project else ""
+            f" [{PROJECT}]&{safe_project}[/{PROJECT}]" if safe_project else ""
         )
 
         score_str = f"[{score_color}]({int(score)}%)[/{score_color}]"

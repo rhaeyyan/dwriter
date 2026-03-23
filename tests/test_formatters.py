@@ -42,12 +42,13 @@ def test_format_bullets_with_tags():
 def test_format_bullets_with_project():
     """Test bullet formatting with project."""
     from dwriter.commands.standup import format_standup_bullets
+    from dwriter.tui.colors import PROJECT
 
     entries = [create_test_entry("Fixed bug", project="myapp")]
     result = format_standup_bullets(entries)
 
     assert "myapp" in result
-    assert "[magenta]" in result
+    assert f"[{PROJECT}]" in result
 
 
 def test_format_slack():
