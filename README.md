@@ -77,39 +77,32 @@ Inside the dashboard, you can:
 
 ---
 
-## 💡 Get the Most Out of dwriter
+## 💡 Mastering the Workflow
 
-**dwriter** is most effective when it becomes a natural extension of your workflow. Here are the best practices for power users:
+**dwriter** is designed to be your frictionless "brain-to-terminal" bridge. It adapts to your mental state, allowing you to capture everything from high-level project goals to fleeting creative sparks without breaking your momentum.
 
-### 1. Master the "Capture-to-Log" Pipeline
-Instead of just adding logs, use the **Todo system** to plan your day.
-- **Add a task:** `dwriter todo "Refactor auth &backend"`
-- **Complete it:** `dwriter done 1` (This automatically creates a journal entry!)
-- **Benefit:** This keeps your "Say-Do Ratio" high and ensures you're actually finishing what you start.
+### 🏃 Frictionless Capture (The "Keys-Down" Loop)
+*Jot down a note, thought, idea, reminder, or instruction in seconds.*
+- **Instant Entry:** `dwriter add "Idea: build a moisture sensor for the garden #someday"`
+- **Quick Planning:** `dwriter todo "Review the pull request &internal-tools !urgent @due:tomorrow"`
+- **Priority & Deadlines:** Use `!priority` (`!urgent`, `!high`, `!low`) and `@due:date` (`@due:friday`, `@due:2024-01-15`) directly in your text.
+- **Zero Double-Entry:** Use `dwriter done <id>` to complete a task; it's automatically moved to your journal with a timestamp.
+- **Instant Signal:** Run `dwriter stats` for a beautiful text-based productivity report without leaving your prompt.
 
-### 2. Embrace Deep Work with the Timer
-The `timer` command isn't just a stopwatch; it's a signal to the analytics engine that you are doing high-value work.
-- `dwriter timer "45 &project-x #deepwork"`
-- **Shorthand:** The timer accepts minutes, projects, and tags in a single quoted string for speed.
-- **Tip:** Aim for at least one 45-minute focus session daily. Check your **Deep Work Ratio** in `dwriter stats` to ensure you aren't stuck in "shallow" work.
+### 🎨 Creative Organization & Retrieval
+*You are the architect of your own history. There are no rigid categories—only your own imagination.*
+- **Total Freedom:** Use `#tags` and `&projects` however you like. Be as specific or as broad as your workflow demands (e.g., `#draft`, `&home:renovation`, `#aha-moment`).
+- **Fuzzy Search:** Don't worry about perfect spelling or exact matches. Use `/` in the TUI or `dwriter search "query"` to find that one obscure note from three months ago.
+- **Hierarchical Depth:** Use colons to organize complex structures like `&client:acme:q4-report`.
 
-### 3. Use Contextual Tagging
-Organize your thoughts so they are searchable months from now.
-- **Projects (`&`):** Use for broad workstreams (e.g., `&hiring`, `&backend`, `&marketing`).
-- **Sub-Projects:** Use colons to create hierarchies, like `&project:sub-task` (e.g., `&trip:nyc-2026`).
-- **Tags (`#`):** Use for types of activity (e.g., `#meeting`, `#bug`, `#learning`).
-
-### 4. The "Review & Reflect" Habit
-At the end of each week, spend 5 minutes reflecting on your progress.
-- `dwriter review --days 7` — See everything you accomplished.
-- `dwriter stats` — Look for **Behavioral Insights**. Are you switching contexts too often? Is your backlog getting stale?
-
-### 5. Balance Speed and Depth
-- **Fast CLI:** Use it for "in-the-moment" captures, starting timers, or marking tasks as done without leaving your current task.
-- **Visual TUI:** Launch `dwriter` (or `dwriter ui`) when you need to search through history, edit past logs, or manage your full todo board with keyboard navigation.
+### 🧘 Deep Reflection (The Visual Dashboard)
+*Switch to the TUI when you need perspective or a birds-eye view.*
+- **The Dashboard:** Run `dwriter` (or `dwriter ui`) to manage your todo board and activity map side-by-side.
+- **Visual History:** Revisit your trip through a chronological log that feels like a film strip of your memories.
+- **Easy Correction:** Use the interactive `dwriter edit` to quickly fix typos or add detail to past entries.
 
 > [!TIP]
-> **Shell Safety:** Always wrap commands containing `&` or `#` in quotes. Unquoted `#` can be ignored as a comment, and unquoted `&` might try to run the command in the background, leading to "Command not found" or incomplete logs.
+> **Shell Safety:** Always wrap commands containing `&` or `#` in quotes (e.g., `dwriter timer "25 &work #focus"`). This prevents your shell from misinterpreting symbols as background processes or comments.
 
 ---
 
