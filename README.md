@@ -77,6 +77,35 @@ Inside the dashboard, you can:
 
 ---
 
+## 💡 Get the Most Out of dwriter
+
+**dwriter** is most effective when it becomes a natural extension of your workflow. Here are the best practices for power users:
+
+### 1. Master the "Capture-to-Log" Pipeline
+Instead of just adding logs, use the **Todo system** to plan your day.
+- **Add a task:** `dwriter todo "Refactor auth" &backend`
+- **Complete it:** `dwriter done 1` (This automatically creates a journal entry!)
+- **Benefit:** This keeps your "Say-Do Ratio" high and ensures you're actually finishing what you start.
+
+### 2. Embrace Deep Work with the Timer
+The `timer` command isn't just a stopwatch; it's a signal to the analytics engine that you are doing high-value work.
+- `dwriter timer 45 &project-x #deepwork`
+- **Tip:** Aim for at least one 45-minute focus session daily. Check your **Deep Work Ratio** in `dwriter stats` to ensure you aren't stuck in "shallow" work.
+
+### 3. Use Contextual Tagging
+Organize your thoughts so they are searchable months from now.
+- **Projects (`&`):** Use for broad workstreams (e.g., `&hiring`, `&backend`, `&marketing`).
+- **Sub-Projects:** Use colons to create hierarchies, like `&project:sub-task` (e.g., `&trip:nyc-2026`).
+- **Tags (`#`):** Use for types of activity (e.g., `#meeting`, `#bug`, `#learning`).
+- **Safety:** Always wrap your entries in `"quotes"` (e.g., `"&project #tag"`) to prevent your shell from misinterpreting the symbols.
+
+### 4. The "Review & Reflect" Habit
+At the end of each week, spend 5 minutes reflecting on your progress.
+- `dwriter review --days 7` — See everything you accomplished.
+- `dwriter stats` — Look for **Behavioral Insights**. Are you switching contexts too often? Is your backlog getting stale?
+
+---
+
 ## 📖 Explore Further
 
 | Document | Description |
