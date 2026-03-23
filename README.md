@@ -42,6 +42,13 @@ cd dwriter
 uv tool install .
 ```
 
+### 3. Keep dwriter Current
+To pull the newest features and architectural improvements, navigate to your local `dwriter` directory and run:
+```bash
+git pull origin main
+uv tool install --upgrade .
+```
+
 ---
 
 ## 🎮 How to Use dwriter
