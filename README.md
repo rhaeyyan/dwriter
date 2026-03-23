@@ -94,7 +94,3 @@ Inside the dashboard, you can:
 *   **Customization:** Run `dwriter config edit` to tweak your default project or change your standup format to `slack` or `jira`.
 
 ---
-
-> *"The discipline of the written word is the best path to a clear mind."* 
-> 
-> **dwriter** helps you walk that path without losing your momentum.
