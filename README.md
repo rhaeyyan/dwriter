@@ -52,11 +52,11 @@ uv tool install .
 Capture your work the moment it happens. No switching windows, no distractions.
 
 ```bash
-# Log a quick entry (use quotes if using #tags or &projects)
+# Log a quick entry (Always use "quotes" for #tags or &projects)
 dwriter add "Refactored the auth layer #backend &project-x"
 
-# Start a 25-minute focus session with a minimal progress bar
-dwriter timer 25 -p feature-y
+# Start a 25-minute focus session with shorthand notation
+dwriter timer "25 &feature-y #deepwork"
 
 # Add a task to your todo list
 dwriter todo "Review the pull request" --priority urgent
@@ -83,13 +83,14 @@ Inside the dashboard, you can:
 
 ### 1. Master the "Capture-to-Log" Pipeline
 Instead of just adding logs, use the **Todo system** to plan your day.
-- **Add a task:** `dwriter todo "Refactor auth" &backend`
+- **Add a task:** `dwriter todo "Refactor auth &backend"`
 - **Complete it:** `dwriter done 1` (This automatically creates a journal entry!)
 - **Benefit:** This keeps your "Say-Do Ratio" high and ensures you're actually finishing what you start.
 
 ### 2. Embrace Deep Work with the Timer
 The `timer` command isn't just a stopwatch; it's a signal to the analytics engine that you are doing high-value work.
-- `dwriter timer 45 &project-x #deepwork`
+- `dwriter timer "45 &project-x #deepwork"`
+- **Shorthand:** The timer accepts minutes, projects, and tags in a single quoted string for speed.
 - **Tip:** Aim for at least one 45-minute focus session daily. Check your **Deep Work Ratio** in `dwriter stats` to ensure you aren't stuck in "shallow" work.
 
 ### 3. Use Contextual Tagging
@@ -97,7 +98,6 @@ Organize your thoughts so they are searchable months from now.
 - **Projects (`&`):** Use for broad workstreams (e.g., `&hiring`, `&backend`, `&marketing`).
 - **Sub-Projects:** Use colons to create hierarchies, like `&project:sub-task` (e.g., `&trip:nyc-2026`).
 - **Tags (`#`):** Use for types of activity (e.g., `#meeting`, `#bug`, `#learning`).
-- **Safety:** Always wrap your entries in `"quotes"` (e.g., `"&project #tag"`) to prevent your shell from misinterpreting the symbols.
 
 ### 4. The "Review & Reflect" Habit
 At the end of each week, spend 5 minutes reflecting on your progress.
@@ -107,6 +107,9 @@ At the end of each week, spend 5 minutes reflecting on your progress.
 ### 5. Balance Speed and Depth
 - **Fast CLI:** Use it for "in-the-moment" captures, starting timers, or marking tasks as done without leaving your current task.
 - **Visual TUI:** Launch `dwriter` (or `dwriter ui`) when you need to search through history, edit past logs, or manage your full todo board with keyboard navigation.
+
+> [!TIP]
+> **Shell Safety:** Always wrap commands containing `&` or `#` in quotes. Unquoted `#` can be ignored as a comment, and unquoted `&` might try to run the command in the background, leading to "Command not found" or incomplete logs.
 
 ---
 
