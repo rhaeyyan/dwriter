@@ -104,6 +104,10 @@ At the end of each week, spend 5 minutes reflecting on your progress.
 - `dwriter review --days 7` — See everything you accomplished.
 - `dwriter stats` — Look for **Behavioral Insights**. Are you switching contexts too often? Is your backlog getting stale?
 
+### 5. Balance Speed and Depth
+- **Fast CLI:** Use it for "in-the-moment" captures, starting timers, or marking tasks as done without leaving your current task.
+- **Visual TUI:** Launch `dwriter` (or `dwriter ui`) when you need to search through history, edit past logs, or manage your full todo board with keyboard navigation.
+
 ---
 
 ## 📖 Explore Further
