@@ -35,10 +35,15 @@ Choose your operating system and paste the command into your terminal:
     ```
 
 ### 2. Clone and Install dwriter
-Clone the repository, navigate to the `dwriter` directory, and run:
+Clone the repository, navigate to the `dwriter` directory, by running:
 ```bash
 git clone https://github.com/rhaeyyan/dwriter.git
+```
+> make sure to remember where you cloned the repository!
+```bash
 cd dwriter
+```
+```bash
 uv tool install .
 ```
 
@@ -52,6 +57,19 @@ uv tool install --upgrade .
 ---
 
 ## 🎮 How to Use dwriter
+
+### 📊 The Visual Dashboard (TUI)
+To **launch** the interface:
+
+```bash
+dwriter
+```
+
+Inside the dashboard, you can:
+- **✅ Add/Manage To-do's:** Keyboard-driven task board with priorities.
+- **⏱️ Focus Timer:** A full-screen countdown that auto-logs your progress.
+- **🔍 Search/Edit/Review:** Live-filtering fuzzy search across all your history.
+- **📈 Activity Map:** Visualize your productivity streaks and habits and generate reports.
 
 **dwriter** operates in two modes: the **Fast Command-Line** (for speed) and the **Visual Dashboard** (for depth).
 
@@ -68,20 +86,6 @@ dwriter timer "25 &feature-y #deepwork"
 # Add a task to your todo list
 dwriter todo "Review the pull request" --priority urgent
 ```
-
-### 📊 The Visual Dashboard (TUI)
-When you're ready for deep work or reflection, launch the full interactive environment:
-
-```bash
-dwriter
-```
-
-Inside the dashboard, you can:
-- **✅ Manage Todos:** Keyboard-driven task board with priorities.
-- **⏱️ Focus Timer:** A full-screen countdown that auto-logs your progress.
-- **🔍 Deep Search:** Live-filtering fuzzy search across all your history.
-- **📈 Activity Map:** Visualize your productivity streaks and habits.
-
 ---
 
 ## 💡 Mastering the Workflow
