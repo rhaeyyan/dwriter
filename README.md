@@ -43,6 +43,7 @@ git clone https://github.com/rhaeyyan/dwriter.git
 ```bash
 cd dwriter
 ```
+> Or navigate to where you cloned the repository (in terminal).
 ```bash
 uv tool install .
 ```
