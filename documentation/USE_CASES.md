@@ -24,7 +24,6 @@ Physical projects often span weeks. Keep a running narrative of your progress.
     ```
 *   **Visual Dashboard:** Use the **Activity Map** to see how much time you've dedicated to your craft this month.
 
-![Activity Map](../screenshots/interactive-tui.png)
 
 ## 🏆 3. The "Brag Document" for Performance Reviews
 When performance reviews arrive, you'll have a complete list of your impact.
@@ -59,8 +58,6 @@ When traveling, capturing small moments is better than writing long essays you'l
     dwriter add "Visited Little Island at Pier 55 &trip:nyc-2026"
     ```
 *   **Visual Dashboard:** Revisit your trip through a chronological log that feels like a film strip of your memories.
-
-![Log Viewer](../screenshots/log-tui.png)
 
 ## 🏮 7. The Language Learner's Immersion Log
 Consistency is the only secret to learning a language.
