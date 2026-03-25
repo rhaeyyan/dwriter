@@ -66,11 +66,20 @@ To **launch** the interface:
 dwriter
 ```
 
+![dwriter Dashboard](screenshots/interactive-tui.png)
+*The dwriter Unified Dashboard: High-contrast analytics meets chronological logging.*
+
 Inside the dashboard, you can:
 - **✅ Add/Manage To-do's:** Keyboard-driven task board with priorities.
 - **⏱️ Focus Timer:** A full-screen countdown that auto-logs your progress.
 - **🔍 Search/Edit/Review:** Live-filtering fuzzy search across all your history.
 - **📈 Activity Map:** Visualize your productivity streaks and habits and generate reports.
+
+![dwriter Focus Timer](screenshots/timer-tui_2.png)
+*Immersive Focus: The full-screen TUI timer designed for zero-distraction deep work.*
+
+![dwriter Logs](screenshots/log-tui.png)
+*Interactive History: Fuzzy-filtering through thousands of entries in real-time.*
 
 **dwriter** operates in two modes: the **Fast Command-Line** (for speed) and the **Visual Dashboard** (for depth).
 
