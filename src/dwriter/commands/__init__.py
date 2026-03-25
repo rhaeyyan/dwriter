@@ -12,7 +12,7 @@ from .standup import standup
 from .stats import stats
 from .timer import timer
 from .today import today
-from .todo import todo, done
+from .todo import todo, done, remind, snooze
 from .undo import undo
 
 __all__ = [
@@ -24,7 +24,9 @@ __all__ = [
     "examples",
     "help_cmd",
     "review",
+    "remind",
     "search",
+    "snooze",
     "standup",
     "stats",
     "timer",

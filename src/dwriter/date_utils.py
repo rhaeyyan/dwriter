@@ -9,201 +9,178 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 
-def parse_natural_date(date_str: str) -> datetime:
+def parse_natural_date(date_str: str, prefer_future: bool = False) -> datetime:
     """Parse a natural language date string into a datetime object.
 
     Args:
         date_str: A natural language date expression like "yesterday",
             "last Friday", "3 days ago", "today", etc.
+        prefer_future: If True, ambiguous dates (like "Friday") will prefer
+            future occurrences.
 
     Returns:
         A datetime object representing the parsed date.
 
     Raises:
         ValueError: If the date string cannot be parsed.
-
-    Examples:
-        >>> parse_natural_date("yesterday")
-        datetime(2024, 1, 15, 0, 0, 0)  # (assuming today is 2024-01-16)
-
-        >>> parse_natural_date("last Friday")
-        datetime(2024, 1, 12, 0, 0, 0)  # (assuming today is 2024-01-16)
-
-        >>> parse_natural_date("3 days ago")
-        datetime(2024, 1, 13, 0, 0, 0)  # (assuming today is 2024-01-16)
-
-        >>> parse_natural_date("+5d")
-        datetime(2024, 1, 21, 0, 0, 0)  # (assuming today is 2024-01-16)
-
-        >>> parse_natural_date("tomorrow")
-        datetime(2024, 1, 17, 0, 0, 0)  # (assuming today is 2024-01-16)
     """
     date_str = date_str.strip().lower()
 
-    # Handle "today"
-    if date_str == "today":
-        return datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    # Special handling for "at" prefix
+    if date_str.startswith("at "):
+        date_str = date_str[3:].strip()
 
-    # Handle "yesterday"
-    if date_str == "yesterday":
-        yesterday = datetime.now() - timedelta(days=1)
-        return yesterday.replace(hour=0, minute=0, second=0, microsecond=0)
+    now = datetime.now()
+    today_midnight = now.replace(hour=0, minute=0, second=0, microsecond=0)
 
-    # Handle "tomorrow"
-    if date_str == "tomorrow":
-        tomorrow = datetime.now() + timedelta(days=1)
-        return tomorrow.replace(hour=0, minute=0, second=0, microsecond=0)
+    # Handle relative offsets first: +Nh, +Nm (e.g., +2h, +30m)
+    rel_time_match = re.match(r"^\+(?P<value>\d+)(?P<unit>[hm])$", date_str)
+    if rel_time_match:
+        value = int(rel_time_match.group("value"))
+        unit = rel_time_match.group("unit")
+        if unit == "h":
+            return now + timedelta(hours=value)
+        else:
+            return now + timedelta(minutes=value)
 
-    # Handle "+Nd" shorthand pattern for future dates (e.g., "+3d", "+5d", "+10d")
-    future_days_match = re.match(r"^\+(\d+)d$", date_str)
-    if future_days_match:
-        days = int(future_days_match.group(1))
-        date = datetime.now() + timedelta(days=days)
-        return date.replace(hour=0, minute=0, second=0, microsecond=0)
+    # Handle "in N mins/hours"
+    in_rel_match = re.match(r"^in\s+(?P<value>\d+)\s*(?P<unit>min|mins|minute|minutes|hour|hours)$", date_str)
+    if in_rel_match:
+        value = int(in_rel_match.group("value"))
+        unit = in_rel_match.group("unit")
+        if unit.startswith("h"):
+            return now + timedelta(hours=value)
+        else:
+            return now + timedelta(minutes=value)
 
-    # Handle "+Nw" shorthand pattern for future weeks (e.g., "+2w", "+1w")
-    future_weeks_match = re.match(r"^\+(\d+)w$", date_str)
-    if future_weeks_match:
-        weeks = int(future_weeks_match.group(1))
-        date = datetime.now() + timedelta(weeks=weeks)
-        return date.replace(hour=0, minute=0, second=0, microsecond=0)
+    # Handle absolute times (e.g., "3pm", "14:00", "2:30pm")
+    time_match = re.match(r"^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$", date_str)
+    if time_match:
+        hour = int(time_match.group(1))
+        minute = int(time_match.group(2)) if time_match.group(2) else 0
+        meridiem = time_match.group(3)
 
-    # Handle "+Nm" shorthand pattern for future months (e.g., "+1m", "+3m")
-    # Note: Uses approximate 30-day months
-    future_months_match = re.match(r"^\+(\d+)m$", date_str)
-    if future_months_match:
-        months = int(future_months_match.group(1))
-        # Approximate months as 30 days each
-        days = months * 30
-        date = datetime.now() + timedelta(days=days)
-        return date.replace(hour=0, minute=0, second=0, microsecond=0)
+        if meridiem == "pm" and hour < 12:
+            hour += 12
+        elif meridiem == "am" and hour == 12:
+            hour = 0
 
-    # Handle "N days" pattern for future dates (e.g., "3 days", "1 day")
-    future_days_pattern = re.match(r"^(\d+)\s*days?$", date_str)
-    if future_days_pattern:
-        days = int(future_days_pattern.group(1))
-        date = datetime.now() + timedelta(days=days)
-        return date.replace(hour=0, minute=0, second=0, microsecond=0)
+        target = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+        # If the time has already passed today, and it's a bare time (not part of a combined pattern),
+        # assume tomorrow if prefer_future is set or if it's just a time like "2pm"
+        if target < now:
+            target += timedelta(days=1)
+        return target
 
-    # Handle "N weeks" pattern for future dates (e.g., "2 weeks", "1 week")
-    future_weeks_pattern = re.match(r"^(\d+)\s*weeks?$", date_str)
-    if future_weeks_pattern:
-        weeks = int(future_weeks_pattern.group(1))
-        date = datetime.now() + timedelta(weeks=weeks)
-        return date.replace(hour=0, minute=0, second=0, microsecond=0)
-
-    # Handle "N days ago" pattern (e.g., "3 days ago", "1 day ago")
-    days_ago_match = re.match(r"^(\d+)\s*days?\s*ago$", date_str)
-    if days_ago_match:
-        days = int(days_ago_match.group(1))
-        date = datetime.now() - timedelta(days=days)
-        return date.replace(hour=0, minute=0, second=0, microsecond=0)
-
-    # Handle "N weeks ago" pattern (e.g., "2 weeks ago", "1 week ago")
-    weeks_ago_match = re.match(r"^(\d+)\s*weeks?\s*ago$", date_str)
-    if weeks_ago_match:
-        weeks = int(weeks_ago_match.group(1))
-        date = datetime.now() - timedelta(weeks=weeks)
-        return date.replace(hour=0, minute=0, second=0, microsecond=0)
-
-    # Handle "-Nd" shorthand pattern (e.g., "-3d", "-5d", "-10d")
-    shorthand_match = re.match(r"^-(\d+)d$", date_str)
-    if shorthand_match:
-        days = int(shorthand_match.group(1))
-        date = datetime.now() - timedelta(days=days)
-        return date.replace(hour=0, minute=0, second=0, microsecond=0)
-
-    # Handle "-Nw" shorthand pattern for weeks (e.g., "-5w", "-2w")
-    weeks_shorthand_match = re.match(r"^-(\d+)w$", date_str)
-    if weeks_shorthand_match:
-        weeks = int(weeks_shorthand_match.group(1))
-        date = datetime.now() - timedelta(weeks=weeks)
-        return date.replace(hour=0, minute=0, second=0, microsecond=0)
-
-    # Handle "-Nm" shorthand pattern for months (e.g., "-1m", "-3m")
-    # Note: Uses approximate 30-day months
-    months_shorthand_match = re.match(r"^-(\d+)m$", date_str)
-    if months_shorthand_match:
-        months = int(months_shorthand_match.group(1))
-        # Approximate months as 30 days each
-        days = months * 30
-        date = datetime.now() - timedelta(days=days)
-        return date.replace(hour=0, minute=0, second=0, microsecond=0)
-
-    # Handle "last <weekday>" pattern (e.g., "last Friday", "last Monday")
+    # Weekday mapping
     weekdays = {
-        "monday": 0,
-        "mon": 0,
-        "tuesday": 1,
-        "tue": 1,
-        "wednesday": 2,
-        "wed": 2,
-        "thursday": 3,
-        "thu": 3,
-        "friday": 4,
-        "fri": 4,
-        "saturday": 5,
-        "sat": 5,
-        "sunday": 6,
-        "sun": 6,
+        "monday": 0, "mon": 0, "tuesday": 1, "tue": 1,
+        "wednesday": 2, "wed": 2, "thursday": 3, "thu": 3,
+        "friday": 4, "fri": 4, "saturday": 5, "sat": 5,
+        "sunday": 6, "sun": 6,
     }
 
-    last_weekday_match = re.match(r"^last\s+(\w+)$", date_str)
-    if last_weekday_match:
-        weekday_name = last_weekday_match.group(1).lower()
-        if weekday_name in weekdays:
-            target_weekday = weekdays[weekday_name]
-            today = datetime.now()
-            days_back = (today.weekday() - target_weekday) % 7
-            # If today is the same weekday, go back 7 days
-            if days_back == 0:
-                days_back = 7
-            date = today - timedelta(days=days_back)
-            return date.replace(hour=0, minute=0, second=0, microsecond=0)
+    # Handle combined patterns like "tomorrow 2pm" or "Friday at 3"
+    day_patterns = r"(?P<day>today|tomorrow|yesterday|monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|wed|thu|fri|sat|sun|last\s+\w+)"
+    time_patterns = r"(?P<time>\d{1,2}(?::\d{2})?\s*(?P<meridiem>am|pm)?)"
+    combined_match = re.match(rf"^{day_patterns}(?:\s+(?:at\s+)?{time_patterns})?$", date_str)
+    if combined_match:
+        day_str = combined_match.group("day")
+        time_part = combined_match.group("time")
 
-    # Handle "<weekday>" pattern (e.g., "Friday", "Monday")
-    # This refers to the most recent occurrence of that weekday
+        # Get base date
+        if day_str == "today":
+            base_date = today_midnight
+        elif day_str == "tomorrow":
+            base_date = today_midnight + timedelta(days=1)
+        elif day_str == "yesterday":
+            base_date = today_midnight - timedelta(days=1)
+        elif day_str.startswith("last "):
+            wd_name = day_str[5:]
+            target_wd = weekdays.get(wd_name)
+            if target_wd is not None:
+                days_back = (now.weekday() - target_wd) % 7
+                if days_back == 0: days_back = 7
+                base_date = today_midnight - timedelta(days=days_back)
+            else:
+                base_date = today_midnight
+        elif day_str in weekdays:
+            target_wd = weekdays[day_str]
+            if prefer_future:
+                days_ahead = (target_wd - now.weekday()) % 7
+                base_date = today_midnight + timedelta(days=days_ahead)
+            else:
+                days_back = (now.weekday() - target_wd) % 7
+                base_date = today_midnight - timedelta(days=days_back)
+        else:
+            base_date = today_midnight
+
+        if time_part:
+            # Parse time and apply to base_date
+            time_dt = parse_natural_date(time_part)
+            return base_date.replace(hour=time_dt.hour, minute=time_dt.minute)
+        return base_date
+
+    # Simple patterns
+    if date_str == "today":
+        return today_midnight
+    if date_str == "yesterday":
+        return today_midnight - timedelta(days=1)
+    if date_str == "tomorrow":
+        return today_midnight + timedelta(days=1)
+
+    # Shorthands
+    future_match = re.match(r"^\+(?P<val>\d+)(?P<unit>[dwm])$", date_str)
+    if future_match:
+        val = int(future_match.group("val"))
+        unit = future_match.group("unit")
+        if unit == "d": return today_midnight + timedelta(days=val)
+        if unit == "w": return today_midnight + timedelta(weeks=val)
+        if unit == "m": return today_midnight + timedelta(days=val * 30)
+
+    past_match = re.match(r"^-(?P<val>\d+)(?P<unit>[dwm])$", date_str)
+    if past_match:
+        val = int(past_match.group("val"))
+        unit = past_match.group("unit")
+        if unit == "d": return today_midnight - timedelta(days=val)
+        if unit == "w": return today_midnight - timedelta(weeks=val)
+        if unit == "m": return today_midnight - timedelta(days=val * 30)
+
+    # N days/weeks [ago]
+    ago_match = re.match(r"^(?P<val>\d+)\s+(?P<unit>day|days|week|weeks)(?P<ago>\s+ago)?$", date_str)
+    if ago_match:
+        val = int(ago_match.group("val"))
+        unit = ago_match.group("unit")
+        is_past = ago_match.group("ago") is not None
+        delta = timedelta(days=val) if unit.startswith("day") else timedelta(weeks=val)
+        if is_past:
+            return today_midnight - delta
+        return today_midnight + delta
+
+    # Weekdays alone
     if date_str in weekdays:
-        target_weekday = weekdays[date_str]
-        today = datetime.now()
-        days_back = (today.weekday() - target_weekday) % 7
-        # If today is the same weekday, interpret as today
-        if days_back == 0:
-            return today.replace(hour=0, minute=0, second=0, microsecond=0)
-        date = today - timedelta(days=days_back)
-        return date.replace(hour=0, minute=0, second=0, microsecond=0)
+        target_wd = weekdays[date_str]
+        if prefer_future:
+            days_ahead = (target_wd - now.weekday()) % 7
+            return today_midnight + timedelta(days=days_ahead)
+        else:
+            days_back = (now.weekday() - target_wd) % 7
+            return today_midnight - timedelta(days=days_back)
 
-    # Handle standard date formats
+    # Standard formats
     date_formats = [
-        "%Y-%m-%d",  # 2024-01-15
-        "%Y/%m/%d",  # 2024/01/15
-        "%d-%m-%Y",  # 15-01-2024
-        "%d/%m/%Y",  # 15/01/2024
-        "%m-%d-%Y",  # 01-15-2024
-        "%m/%d/%Y",  # 01/15/2024
-        "%B %d, %Y",  # January 15, 2024
-        "%b %d, %Y",  # Jan 15, 2024
-        "%d %B %Y",  # 15 January 2024
-        "%d %b %Y",  # 15 Jan 2024
+        "%Y-%m-%d", "%Y/%m/%d", "%d-%m-%Y", "%d/%m/%Y",
+        "%m-%d-%Y", "%m/%d/%Y", "%B %d, %Y", "%b %d, %Y",
+        "%d %B %Y", "%d %b %Y", "%Y-%m-%d %H:%M",
     ]
 
     for fmt in date_formats:
         try:
-            parsed = datetime.strptime(date_str, fmt)
-            return parsed.replace(hour=0, minute=0, second=0, microsecond=0)
+            return datetime.strptime(date_str, fmt)
         except ValueError:
             continue
 
-    raise ValueError(
-        f"Unable to parse date: '{date_str}'. "
-        "Supported formats: 'today', 'yesterday', 'tomorrow', "
-        "'N days ago', 'N weeks ago', '-Nd' (e.g., '-3d'), "
-        "'-Nw' (e.g., '-5w'), '-Nm' (e.g., '-1m'), "
-        "'+Nd' (e.g., '+5d'), '+Nw' (e.g., '+2w'), '+Nm' (e.g., '+1m'), "
-        "'N days', 'N weeks', "
-        "'last <weekday>', '<weekday>', "
-        "or standard dates (YYYY-MM-DD, MM/DD/YYYY, etc.)"
-    )
+    raise ValueError(f"Unable to parse: '{date_str}'")
 
 
 def parse_date_or_default(date_str: Optional[str]) -> datetime:

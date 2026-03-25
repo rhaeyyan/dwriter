@@ -57,6 +57,9 @@ class DisplayConfig:
         date_format: Date display format string.
         lock_mode: Whether to disable editing of date and time fields.
         color_scheme: Color blindness color scheme (normal, deuteranopia, protanopia, tritanopia).
+        notifications_enabled: Whether to enable system desktop notifications for reminders.
+        due_date_format: Format for displaying due dates (relative, YYYY-MM-DD, MM/DD/YYYY, DD/MM/YYYY).
+        todo_sorting_mode: Urgency hierarchy (priority_first, date_first).
     """
 
     show_confirmation: bool = True
@@ -69,6 +72,9 @@ class DisplayConfig:
     date_format: str = "YYYY-MM-DD"
     lock_mode: bool = False
     color_scheme: str = "normal"
+    notifications_enabled: bool = False
+    due_date_format: str = "relative"
+    todo_sorting_mode: str = "priority_first"
 
 
 @dataclass
@@ -204,6 +210,9 @@ class ConfigManager:
                 date_format=display_data.get("date_format", "YYYY-MM-DD"),
                 lock_mode=display_data.get("lock_mode", False),
                 color_scheme=display_data.get("color_scheme", "normal"),
+                notifications_enabled=display_data.get("notifications_enabled", False),
+                due_date_format=display_data.get("due_date_format", "relative"),
+                todo_sorting_mode=display_data.get("todo_sorting_mode", "priority_first"),
             ),
             defaults=DefaultsConfig(
                 tags=defaults_data.get("tags", []),
@@ -261,6 +270,11 @@ class ConfigManager:
         display_table["date_format"] = self._config.display.date_format
         display_table["lock_mode"] = self._config.display.lock_mode
         display_table["color_scheme"] = self._config.display.color_scheme
+        display_table["notifications_enabled"] = (
+            self._config.display.notifications_enabled
+        )
+        display_table["due_date_format"] = self._config.display.due_date_format
+        display_table["todo_sorting_mode"] = self._config.display.todo_sorting_mode
         doc.add("display", display_table)
 
         defaults_table = tomlkit.table()
@@ -331,6 +345,9 @@ class ConfigManager:
                 "date_format": config.display.date_format,
                 "lock_mode": config.display.lock_mode,
                 "color_scheme": config.display.color_scheme,
+                "notifications_enabled": config.display.notifications_enabled,
+                "due_date_format": config.display.due_date_format,
+                "todo_sorting_mode": config.display.todo_sorting_mode,
             },
             "defaults": {
                 "tags": config.defaults.tags,

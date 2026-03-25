@@ -14,8 +14,9 @@ if TYPE_CHECKING:
 
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Container, Vertical
+from textual.containers import Container, Horizontal, Vertical
 from textual.reactive import reactive
+from textual.message import Message
 from textual.screen import ModalScreen
 from textual.widgets import (
     Button,
@@ -23,6 +24,7 @@ from textual.widgets import (
     Label,
     ListItem,
     ListView,
+    Static,
     TabbedContent,
     TabPane,
 )
@@ -39,6 +41,137 @@ from ..colors import (
     get_icon,
 )
 from ..messages import EntryAdded, TodoUpdated
+
+
+class AddTodoForm(Vertical):
+    """A form for quickly adding a new todo directly from the board."""
+
+    DEFAULT_CSS = """
+    AddTodoForm {
+        padding: 1 4;
+        height: auto;
+        background: $surface;
+    }
+
+    #add-form-title {
+        text-style: bold;
+        padding-bottom: 1;
+        color: $primary;
+    }
+
+    .form-row {
+        height: auto;
+        margin-bottom: 1;
+    }
+
+    .form-col {
+        width: 1fr;
+        height: auto;
+    }
+
+    #add-buttons {
+        margin-top: 1;
+        width: 100%;
+        height: auto;
+    }
+
+    #add-buttons Button {
+        width: 1fr;
+    }
+
+    Label {
+        text-style: bold;
+        padding: 1 0 0 0;
+    }
+
+    Input {
+        margin-bottom: 1;
+    }
+    """
+
+    def compose(self) -> ComposeResult:
+        """Compose the form fields."""
+        yield Label("Quick Add Task", id="add-form-title")
+        
+        yield Label("Content:")
+        yield Input(id="add-content", placeholder="What needs to be done?")
+
+        with Horizontal(classes="form-row"):
+            with Vertical(classes="form-col"):
+                yield Label("Due Date:")
+                yield Input(id="add-date", placeholder="today, tomorrow, +5d...")
+            with Vertical(classes="form-col"):
+                yield Label("Time:")
+                yield Input(id="add-time", placeholder="2pm, 14:30, +2h...")
+        
+        yield Label("Tags:")
+        yield Input(id="add-tags", placeholder="work, personal, etc.")
+
+        yield Label("Project:")
+        yield Input(id="add-project", placeholder="Project name (optional)")
+
+        with Horizontal(id="add-buttons"):
+            yield Button("\\[ SAVE ]", id="add-save-btn", variant="primary")
+            yield Button("\\[ SAVE AS REMINDER ]", id="add-reminder-btn", variant="error")
+            yield Button("\\[ CANCEL ]", id="add-cancel-btn", variant="default")
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Handle save button press."""
+        if event.button.id == "add-save-btn":
+            self.action_save(is_reminder=False)
+        elif event.button.id == "add-reminder-btn":
+            self.action_save(is_reminder=True)
+        elif event.button.id == "add-cancel-btn":
+            self.action_cancel()
+
+    def action_cancel(self) -> None:
+        """Cancel and return to pending list."""
+        self.post_message(self.AddTodoCancel())
+
+    def action_save(self, is_reminder: bool = False) -> None:
+        """Save the new task and emit a message to parent."""
+        content_input = self.query_one("#add-content", Input)
+        date_input = self.query_one("#add-date", Input)
+        time_input = self.query_one("#add-time", Input)
+        tags_input = self.query_one("#add-tags", Input)
+        project_input = self.query_one("#add-project", Input)
+
+        content = content_input.value.strip()
+        if not content:
+            return
+
+        # Combine date and time
+        date_val = date_input.value.strip()
+        time_val = time_input.value.strip()
+        due_str = None
+        if date_val and time_val:
+            due_str = f"{date_val} {time_val}"
+        elif date_val:
+            due_str = date_val
+        elif time_val:
+            due_str = time_val
+
+        tags_raw = tags_input.value.strip()
+        tags = [t.strip() for t in tags_raw.split(",") if t.strip()] if tags_raw else []
+        project = project_input.value.strip() or None
+
+        # Post the message to the screen
+        self.post_message(self.AddTodoSignal(content, due_str, tags, project, is_reminder))
+
+    class AddTodoSignal(Message):
+        """Message sent when a todo is successfully added from the form."""
+        def __init__(self, content: str, due_str: str | None, tags: list[str], project: str|None, is_reminder: bool = False) -> None:
+            super().__init__()
+            self.content = content
+            self.due_str = due_str
+            self.tags = tags
+            self.project = project
+            self.is_reminder = is_reminder
+
+    class AddTodoCancel(Message):
+        """Signal to cancel add and go back."""
+        def __init__(self) -> None:
+            super().__init__()
 
 
 class TodoListItem(ListItem):
@@ -64,12 +197,14 @@ class EditTodoModal(ModalScreen):  # type: ignore[type-arg]
     }
 
     #edit-modal-container {
-        width: 90;
+        width: 85%;
+        max-width: 100;
         height: auto;
-        max-height: 90;
+        max-height: 90%;
         background: $surface;
         border: solid $primary;
         padding: 1 3;
+        overflow-y: auto;
     }
 
     #edit-modal-title {
@@ -78,7 +213,7 @@ class EditTodoModal(ModalScreen):  # type: ignore[type-arg]
         padding: 1 0;
     }
 
-    #edit-content-label, #edit-due-label, #edit-tags-label, #edit-project-label {
+    #edit-content-label, #edit-date-label, #edit-time-label, #edit-tags-label, #edit-project-label {
         text-style: bold;
         padding: 1 0 0 0;
     }
@@ -89,18 +224,35 @@ class EditTodoModal(ModalScreen):  # type: ignore[type-arg]
         margin: 0 0 1 0;
     }
 
-    #due-input, #tags-input, #project-input {
+    #date-input, #time-input, #tags-input, #project-input {
         width: 100%;
         margin: 0 0 1 0;
+    }
+
+    .horizontal-row {
+        height: 5;
+        width: 100%;
+    }
+
+    .col {
+        width: 1fr;
+        height: auto;
     }
 
     #edit-buttons {
         align: center middle;
         padding: 1 0;
+        height: 3;
+        width: 100%;
     }
 
     Button {
         margin: 0 1;
+    }
+
+    #save-as-reminder-btn {
+        background: $error;
+        color: white;
     }
 
     #help-text {
@@ -124,16 +276,18 @@ class EditTodoModal(ModalScreen):  # type: ignore[type-arg]
         """
         super().__init__(**kwargs)
         self.todo = todo
-        self.result: tuple[str | None, str | None, list[str] | None, str | None] = (
+        # Result: (content, due_date_str, tags, project, is_reminder)
+        self.result: tuple[str | None, str | None, list[str] | None, str | None, bool] = (
             None,
             None,
             None,
             None,
+            False,
         )
 
     def compose(self) -> ComposeResult:
         """Compose the modal UI."""
-        with Container(id="edit-modal-container"):
+        with Vertical(id="edit-modal-container"):
             yield Label(f"Edit Task #{self.todo.id}", id="edit-modal-title")
 
             yield Label("Content:", id="edit-content-label")
@@ -143,18 +297,30 @@ class EditTodoModal(ModalScreen):  # type: ignore[type-arg]
                 placeholder="Enter task content...",
             )
 
-            # Due date field
-            yield Label("Due Date:", id="edit-due-label")
-            due_date_str = ""
-            if self.todo.due_date:
-                due_date_str = self.todo.due_date.strftime("%Y-%m-%d")
-            yield Input(
-                value=due_date_str,
-                id="due-input",
-                placeholder="YYYY-MM-DD, tomorrow, +5d, +1w, etc.",
-            )
+            # Date and Time fields side-by-side
+            with Horizontal(classes="horizontal-row"):
+                with Vertical(classes="col"):
+                    yield Label("Due Date:", id="edit-date-label")
+                    date_str = ""
+                    if self.todo.due_date:
+                        date_str = self.todo.due_date.strftime("%Y-%m-%d")
+                    yield Input(
+                        value=date_str,
+                        id="date-input",
+                        placeholder="YYYY-MM-DD, tomorrow, etc.",
+                    )
+                with Vertical(classes="col"):
+                    yield Label("Time:", id="edit-time-label")
+                    time_str = ""
+                    if self.todo.due_date and (self.todo.due_date.hour != 0 or self.todo.due_date.minute != 0):
+                        time_str = self.todo.due_date.strftime("%H:%M")
+                    yield Input(
+                        value=time_str,
+                        id="time-input",
+                        placeholder="2pm, 14:30, +2h, etc.",
+                    )
             yield Label(
-                "Examples: 2024-01-15, tomorrow, +5d, +1w, +1m, 3 days",
+                "Examples: tomorrow, Friday, 2pm, +15m, in 1 hour",
                 id="help-text",
             )
 
@@ -175,23 +341,37 @@ class EditTodoModal(ModalScreen):  # type: ignore[type-arg]
                 placeholder="Project name (optional)",
             )
 
-            with Container(id="edit-buttons"):
+            with Horizontal(id="edit-buttons"):
                 yield Button("\\[ SAVE ]", id="save-btn", variant="primary")
+                yield Button("\\[ SAVE AS REMINDER ]", id="save-as-reminder-btn", variant="error")
                 yield Button("\\[ CANCEL ]", id="cancel-btn", variant="default")
 
     def on_mount(self) -> None:
         """Focus the content input on mount."""
         self.query_one("#edit-input", Input).focus()
 
-    def action_save(self) -> None:
+    def action_save(self, is_reminder: bool = False) -> None:
         """Save the edited content, due date, tags, and project."""
         content_widget = self.query_one("#edit-input", Input)
-        due_widget = self.query_one("#due-input", Input)
+        date_widget = self.query_one("#date-input", Input)
+        time_widget = self.query_one("#time-input", Input)
         tags_widget = self.query_one("#tags-input", Input)
         project_widget = self.query_one("#project-input", Input)
 
         content = content_widget.value.strip() or None
-        due_date_str = due_widget.value.strip() or None
+        
+        # Combine date and time
+        date_val = date_widget.value.strip()
+        time_val = time_widget.value.strip()
+        
+        due_date_str = None
+        if date_val and time_val:
+            due_date_str = f"{date_val} {time_val}"
+        elif date_val:
+            due_date_str = date_val
+        elif time_val:
+            due_date_str = time_val
+
         tags_str = tags_widget.value.strip() or None
         project = project_widget.value.strip() or None
 
@@ -200,18 +380,20 @@ class EditTodoModal(ModalScreen):  # type: ignore[type-arg]
         if tags_str is not None:
             tags = [t.strip() for t in tags_str.split(",") if t.strip()]
 
-        self.result = (content, due_date_str, tags, project)
+        self.result = (content, due_date_str, tags, project, is_reminder)
         self.dismiss(self.result)
 
     def action_cancel(self) -> None:
         """Cancel editing."""
-        self.result = (None, None, None, None)
-        self.dismiss(self.result)
+        self.result = (None, None, None, None, False)
+        self.dismiss(None)
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button presses."""
         if event.button.id == "save-btn":
-            self.action_save()
+            self.action_save(is_reminder=False)
+        elif event.button.id == "save-as-reminder-btn":
+            self.action_save(is_reminder=True)
         elif event.button.id == "cancel-btn":
             self.action_cancel()
 
@@ -507,13 +689,17 @@ class TodoListView(ListView):
         self._todos = todos or []
         self._loaded = False
 
-    @staticmethod
-    def _sort_todos(todos: list[Todo]) -> list[Todo]:
-        """Sort todos by priority and due date.
+    def _sort_todos(self, todos: list[Todo]) -> list[Todo]:
+        """Sort todos by priority and due date based on user configuration.
 
-        Sorting order for pending todos:
+        Sorting order for pending todos (priority_first):
         1. Priority (urgent → high → normal → low)
         2. Due date urgency (overdue → today → tomorrow → soonest → no date)
+        3. Creation date (newest first)
+
+        Sorting order for pending todos (date_first):
+        1. Due date urgency (overdue → today → tomorrow → soonest → no date)
+        2. Priority (urgent → high → normal → low)
         3. Creation date (newest first)
 
         Sorting order for completed todos:
@@ -527,21 +713,30 @@ class TodoListView(ListView):
         """
         priority_order = {"urgent": 0, "high": 1, "normal": 2, "low": 3}
         today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        sorting_mode = self.app.ctx.config.display.todo_sorting_mode
 
-        def sort_key(todo: Todo) -> tuple[int, int, float, float]:
+        def sort_key(todo: Todo) -> tuple[int, int, int, float]:
             # For completed todos, sort by completion date (most recent first)
             if todo.status == "completed":
                 completed_score = (
-                    -todo.completed_at.timestamp() if todo.completed_at else 0.0
+                    -int(todo.completed_at.timestamp()) if todo.completed_at else 0
                 )
-                # Put all completed todos after pending ones with a high priority score
-                return (999, 0, completed_score, 0.0)
+                # Put all completed todos after pending ones
+                return (999, 0, 0, float(completed_score))
+
+            # Active reminder score (0 if active, 1 otherwise)
+            is_active_reminder = 1
+            if (
+                todo.priority == "urgent"
+                and todo.due_date
+                and todo.due_date <= datetime.now() + timedelta(minutes=30)
+            ):
+                is_active_reminder = 0
 
             # Priority score (lower is higher priority)
             priority_score = priority_order.get(todo.priority, 2)
 
             # Due date score (lower is more urgent)
-            # OVERDUE items should appear ABOVE TODAY items
             due_score = 9999  # Default for no due date
             if todo.due_date:
                 due_date_only = todo.due_date.replace(
@@ -549,23 +744,23 @@ class TodoListView(ListView):
                 )
                 days_until = (due_date_only - today).days
                 if days_until < 0:
-                    # Overdue: sort by most overdue first (most negative)
-                    # Give overdue items a very low score so they appear first
                     due_score = days_until - 1000
                 elif days_until == 0:
-                    # Due today
                     due_score = 0
                 elif days_until == 1:
-                    # Due tomorrow
                     due_score = 1
                 else:
-                    # Due later: sort by soonest first
                     due_score = days_until
 
             # Creation date score (negative so newer comes first)
             created_score = -todo.created_at.timestamp() if todo.created_at else 0.0
 
-            return (priority_score, due_score, created_score, 0.0)
+            if sorting_mode == "date_first":
+                # Chronological first, then priority
+                return (is_active_reminder, due_score, priority_score, created_score)
+            else:
+                # Priority first (default), then chronological
+                return (is_active_reminder, priority_score, due_score, created_score)
 
         return sorted(todos, key=sort_key)
 
@@ -595,7 +790,7 @@ class TodoListView(ListView):
         self.append(list_item)
 
     def _format_todo(self, todo: Todo) -> str:
-        """Format a todo for display with ultra-compact metadata for 75-column terminals.
+        """Format a todo for display with configurable date format.
 
         Args:
             todo: Todo object to format.
@@ -613,27 +808,39 @@ class TodoListView(ListView):
         pri_str = priority_map.get(todo.priority, "[white]\\[N][/white]")
 
         d_str = "[dim]\\[---][/dim]"
+        due_date_format = self.app.ctx.config.display.due_date_format
 
         # If completed, swap the due-date block for the exact timestamp
         if todo.status == "completed" and todo.completed_at:
             dt_str = todo.completed_at.strftime("%m-%d %H:%M")
             d_str = f"[cyan]{dt_str}[/cyan]"
         elif todo.due_date:
-            today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-            due_only = todo.due_date.replace(hour=0, minute=0, second=0, microsecond=0)
-            days = (due_only - today).days
-            if days < 0:
-                d_str = f"[{DUE_OVERDUE}]Overdue[/{DUE_OVERDUE}]"
-            elif days == 0:
-                d_str = f"[{DUE_TODAY}]Today[/{DUE_TODAY}]"
-            elif days == 1:
-                d_str = f"[{DUE_TOMORROW}]Tomorrow[/{DUE_TOMORROW}]"
-            elif days <= 9:
-                d_str = f"[{DUE_SOON}]{days}d[/{DUE_SOON}]"
-            elif days <= 99:
-                d_str = f"[{DUE_SOON}]{days}d[/{DUE_SOON}]"
+            if due_date_format == "relative":
+                today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+                due_only = todo.due_date.replace(hour=0, minute=0, second=0, microsecond=0)
+                days = (due_only - today).days
+                if days < 0:
+                    d_str = f"[{DUE_OVERDUE}]Overdue[/{DUE_OVERDUE}]"
+                elif days == 0:
+                    d_str = f"[{DUE_TODAY}]Today[/{DUE_TODAY}]"
+                elif days == 1:
+                    d_str = f"[{DUE_TOMORROW}]Tomorrow[/{DUE_TOMORROW}]"
+                elif days <= 9:
+                    d_str = f"[{DUE_SOON}]{days}d[/{DUE_SOON}]"
+                elif days <= 99:
+                    d_str = f"[{DUE_SOON}]{days}d[/{DUE_SOON}]"
+                else:
+                    d_str = f"[{DUE_SOON}]99+[/{DUE_SOON}]"
             else:
-                d_str = f"[{DUE_SOON}]99+[/{DUE_SOON}]"
+                # Absolute date formats
+                # YYYY-MM-DD, MM/DD/YYYY, DD/MM/YYYY
+                fmt_map = {
+                    "YYYY-MM-DD": "%Y-%m-%d",
+                    "MM/DD/YYYY": "%m/%d/%Y",
+                    "DD/MM/YYYY": "%d/%m/%Y",
+                }
+                date_fmt = fmt_map.get(due_date_format, "%Y-%m-%d")
+                d_str = f"[{DUE_SOON}]{todo.due_date.strftime(date_fmt)}[/{DUE_SOON}]"
 
         # ESCAPE USER CONTENT! This stops user-typed brackets from crashing the app.
         safe_content = todo.content.replace("[", "\\[")
@@ -650,11 +857,23 @@ class TodoListView(ListView):
         # Format: Due date priority | #tags : Project on first line, content on second line
         first_line = f"{d_str} {pri_str} | {tags_str}{project_str}"
 
+        # Determine if this is an active reminder for highlighting
+        is_active_reminder = (
+            todo.status == "pending"
+            and todo.priority == "urgent"
+            and todo.due_date
+            and todo.due_date <= datetime.now() + timedelta(minutes=30)
+        )
+
         # Content on second line with reduced indentation - add check emoji for completed todos
         if todo.status == "completed":
             use_emojis = self.app.ctx.config.display.use_emojis
             check_icon = get_icon("check", use_emojis)
             return f"[dim]{first_line}\n  {check_icon} {safe_content}[/dim]"
+
+        if is_active_reminder:
+            # Ruby/Cyberpunk alert style: bold red on dark background with pulsing feel
+            return f"[bold #FF0000]{first_line}\n  🔔 {safe_content}[/bold #FF0000]"
 
         return f"{first_line}\n  [bold white]{safe_content}[/bold white]"
 
@@ -789,11 +1008,13 @@ class TodoScreen(Container):
                     id="todo-subtitle",
                 )
             # Use TabbedContent for filter switching with dynamic counts
-            with TabbedContent(initial="upcoming-pane", id="todo-tabs"):
-                with TabPane(f"{get_icon('history', use_emojis)} Upcoming (0)", id="upcoming-pane"):
-                    yield TodoListView(id="todos-upcoming")
+            with TabbedContent(initial="pending-pane", id="todo-tabs"):
+                with TabPane(" [+] ", id="add-pane"):
+                    yield AddTodoForm()
                 with TabPane(f"{get_icon('timer', use_emojis)} Pending (0)", id="pending-pane"):
                     yield TodoListView(id="todos")
+                with TabPane(f"{get_icon('history', use_emojis)} Upcoming (0)", id="upcoming-pane"):
+                    yield TodoListView(id="todos-upcoming")
                 with TabPane(f"{get_icon('check', use_emojis)} Completed (0)", id="completed-pane"):
                     yield TodoListView(id="todos-completed")
 
@@ -821,14 +1042,25 @@ class TodoScreen(Container):
             pass
 
         tabbed = self.query_one(TabbedContent)
+        # Re-map focus logic to avoid add-pane for initial list focus
         tabbed.active = "pending-pane"
         self._load_todos()
-        self._get_active_list_view().focus()
+        active_view = self._get_active_list_view()
+        if active_view is not None:
+            active_view.focus()
+        else:
+            # If no active list view (e.g. on add form), focus the first input
+            try:
+                self.query_one("#add-content", Input).focus()
+            except Exception:
+                pass
 
     def on_show(self) -> None:
         """Refresh data when the todo screen becomes visible."""
         self._load_todos()
-        self._get_active_list_view().focus()
+        active_view = self._get_active_list_view()
+        if active_view:
+            active_view.focus()
 
     def watch_filter_status(self, status: str) -> None:
         """Reactively update the todo list when filter changes.
@@ -846,16 +1078,16 @@ class TodoScreen(Container):
             tabbed.active = tab_map.get(status, "pending-pane")
         self._load_todos()
 
-    def _get_active_list_view(self) -> TodoListView:
+    def _get_active_list_view(self) -> TodoListView | None:
         """Get the TodoListView for the currently active tab."""
         tabbed = self.query_one(TabbedContent)
         if tabbed.active == "pending-pane":
             return self.query_one("#todos", TodoListView)
         elif tabbed.active == "completed-pane":
             return self.query_one("#todos-completed", TodoListView)
-        else:
-            # upcoming-pane
+        elif tabbed.active == "upcoming-pane":
             return self.query_one("#todos-upcoming", TodoListView)
+        return None
 
     def _get_status_for_active_tab(self) -> str | None:
         """Get the status filter for the active tab."""
@@ -868,10 +1100,51 @@ class TodoScreen(Container):
             return None
 
     def _load_todos(self) -> None:
-        """Load todos from the database based on active tab filter."""
-        status_filter = self._get_status_for_active_tab()
-        self._all_todos = self.ctx.db.get_todos(status=status_filter)
+        """Load todos from database and update all lists."""
+        # We always load all todos to update the counts in the tab labels
+        from ...database import Todo
+        self._all_todos = self.ctx.db.get_todos()
         self._update_all_lists()
+
+    def on_add_todo_form_add_todo_signal(self, message: AddTodoForm.AddTodoSignal) -> None:
+        """Handle signal from AddTodoForm to create a new task."""
+        from ...date_utils import parse_natural_date
+        
+        try:
+            due_date = parse_natural_date(message.due_str, prefer_future=True) if message.due_str else None
+            task = self.ctx.db.add_todo(
+                content=message.content,
+                due_date=due_date,
+                tags=message.tags,
+                project=message.project,
+                priority="urgent" if message.is_reminder else "normal",
+            )
+            self.notify(f"Added task: {task.content}")
+            
+            # Clear the form fields
+            form = self.query_one(AddTodoForm)
+            form.query_one("#add-content", Input).value = ""
+            form.query_one("#add-date", Input).value = ""
+            form.query_one("#add-time", Input).value = ""
+            form.query_one("#add-tags", Input).value = ""
+            form.query_one("#add-project", Input).value = ""
+            
+            # Refresh lists to show the new task in Pending/Upcoming
+            self._load_todos()
+            
+            # Switch back to the Pending tab to show the new task
+            self.query_one(TabbedContent).active = "pending-pane"
+            self.query_one("#todos", TodoListView).focus()
+            
+        except Exception as e:
+            self.notify(f"Error adding task: {e}", variant="error")
+
+    def on_add_todo_form_add_todo_cancel(self, message: AddTodoForm.AddTodoCancel) -> None:
+        """Handle cancel signal from AddTodoForm."""
+        self.query_one(TabbedContent).active = "pending-pane"
+        active_view = self._get_active_list_view()
+        if active_view:
+            active_view.focus()
 
     def _get_upcoming_todos(self) -> list[Todo]:
         """Get todos due today, tomorrow, and in the next 2 days.
@@ -891,7 +1164,12 @@ class TodoScreen(Container):
                 # Include today (0), tomorrow (1), and next 2 days (2)
                 if 0 <= days <= 2:
                     upcoming.append(todo)
-        return TodoListView._sort_todos(upcoming)
+
+        # Use the pending list view to sort if available, otherwise just return
+        pending_list = self.query("#todos").first(TodoListView)
+        if pending_list:
+            return pending_list._sort_todos(upcoming)
+        return upcoming
 
     def _update_all_lists(self) -> None:
         """Update all list views (pending, upcoming, completed)."""
@@ -917,7 +1195,11 @@ class TodoScreen(Container):
             completed_list.update_todos(completed_todos)
 
         # Also update the cached list with sorted pending todos
-        self._all_todos = TodoListView._sort_todos(pending_todos)
+        pending_list = self.query("#todos").first(TodoListView)
+        if pending_list:
+            self._all_todos = pending_list._sort_todos(pending_todos)
+        else:
+            self._all_todos = pending_todos
 
     def _update_tab_labels(
         self, pending_count: int, upcoming_count: int, completed_count: int
@@ -954,22 +1236,27 @@ class TodoScreen(Container):
     def _update_list(self) -> None:
         """Update the active todo list view."""
         list_view = self._get_active_list_view()
-        list_view.update_todos(self._all_todos)
+        if list_view is not None:
+            list_view.update_todos(self._all_todos)
 
     def _get_selected_todo(self) -> Todo | None:
         """Get the currently selected todo."""
         list_view = self._get_active_list_view()
-        return list_view.selected_todo
+        if list_view is not None:
+            return list_view.selected_todo
+        return None
 
     def action_cursor_down(self) -> None:
         """Move cursor down."""
         list_view = self._get_active_list_view()
-        list_view.action_cursor_down()
+        if list_view is not None:
+            list_view.action_cursor_down()
 
     def action_cursor_up(self) -> None:
         """Move cursor up."""
         list_view = self._get_active_list_view()
-        list_view.action_cursor_up()
+        if list_view is not None:
+            list_view.action_cursor_up()
 
     def action_toggle_complete(self) -> None:
         """Toggle the selected task as complete.
@@ -1022,18 +1309,22 @@ class TodoScreen(Container):
         self.post_message(TodoUpdated(todo_id=todo.id, action="updated"))
 
     def action_edit(self) -> None:
-        """Edit the selected task."""
-        todo = self._get_selected_todo()
-        if todo is None:
+        """Edit the selected todo."""
+        active_view = self._get_active_list_view()
+        if active_view is None:
+            return
+            
+        todo = active_view.selected_todo
+        if not todo:
             self.notify("No task selected", severity="warning", timeout=1.5)
             return
 
         def on_dismiss(
-            result: tuple[str | None, str | None, list[str] | None, str | None] | None,
+            result: tuple[str | None, str | None, list[str] | None, str | None, bool] | None,
         ) -> None:
             if result is None:
                 return
-            content, due_date_str, tags, project = result
+            content, due_date_str, tags, project, is_reminder = result
             if content is None:
                 return
 
@@ -1042,12 +1333,19 @@ class TodoScreen(Container):
             if due_date_str:
                 due_date = self._parse_due_date(due_date_str)
 
+            # If "Save as Reminder" was clicked, force priority to urgent
+            priority = todo.priority
+            if is_reminder:
+                priority = "urgent"
+
             self.ctx.db.update_todo(
                 todo.id,
                 content=content,
                 due_date=due_date,
                 tags=tags,
                 project=project,
+                priority=priority,
+                reminder_last_sent=None if is_reminder else todo.reminder_last_sent,
             )
             self.notify(f"Task #{todo.id} updated", timeout=1.5)
             self._load_todos()
@@ -1057,8 +1355,12 @@ class TodoScreen(Container):
 
     def action_delete(self) -> None:
         """Delete the selected task."""
-        todo = self._get_selected_todo()
-        if todo is None:
+        active_view = self._get_active_list_view()
+        if active_view is None:
+            return
+            
+        todo = active_view.selected_todo
+        if not todo:
             self.notify("No task selected", severity="warning", timeout=1.5)
             return
 
@@ -1068,16 +1370,17 @@ class TodoScreen(Container):
         self.post_message(TodoUpdated(todo_id=todo.id, action="deleted"))
 
     def action_increase_priority(self) -> None:
-        """Increase the priority of the selected task."""
-        todo = self._get_selected_todo()
-        if todo is None:
-            self.notify("No task selected", severity="warning", timeout=1.5)
+        """Increase priority of selected todo."""
+        active_view = self._get_active_list_view()
+        if active_view is None:
+            return
+            
+        todo = active_view.selected_todo
+        if not todo:
             return
 
         priorities = ["low", "normal", "high", "urgent"]
-        current_idx = (
-            priorities.index(todo.priority) if todo.priority in priorities else 1
-        )
+        current_idx = priorities.index(todo.priority) if todo.priority in priorities else 1
         new_idx = min(current_idx + 1, len(priorities) - 1)
 
         self.ctx.db.update_todo(todo.id, priority=priorities[new_idx])
@@ -1085,16 +1388,17 @@ class TodoScreen(Container):
         self._load_todos()
 
     def action_decrease_priority(self) -> None:
-        """Decrease the priority of the selected task."""
-        todo = self._get_selected_todo()
-        if todo is None:
-            self.notify("No task selected", severity="warning", timeout=1.5)
+        """Decrease priority of selected todo."""
+        active_view = self._get_active_list_view()
+        if active_view is None:
+            return
+            
+        todo = active_view.selected_todo
+        if not todo:
             return
 
         priorities = ["low", "normal", "high", "urgent"]
-        current_idx = (
-            priorities.index(todo.priority) if todo.priority in priorities else 1
-        )
+        current_idx = priorities.index(todo.priority) if todo.priority in priorities else 1
         new_idx = max(current_idx - 1, 0)
 
         self.ctx.db.update_todo(todo.id, priority=priorities[new_idx])
@@ -1127,56 +1431,20 @@ class TodoScreen(Container):
         self.filter_status = tab_map.get(tabs[next_idx], "upcoming")
 
     def _parse_due_date(self, due_str: str) -> datetime | None:
-        """Parse a due date string.
+        """Parse a due date string using the central date_utils parser.
 
         Args:
-            due_str: Due date string (e.g., "2024-01-15", "tomorrow", "+5d").
+            due_str: Due date string (e.g., "2024-01-15", "tomorrow", "2pm").
 
         Returns:
             Parsed datetime or None.
         """
-        today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-
-        # Try parsing as date
+        from ...date_utils import parse_natural_date
         try:
-            return datetime.strptime(due_str, "%Y-%m-%d")
+            # Prefer future for TUI-based todo editing
+            return parse_natural_date(due_str, prefer_future=True)
         except ValueError:
-            pass
-
-        # Handle relative dates
-        due_str_lower = due_str.lower().strip()
-
-        if due_str_lower == "tomorrow":
-            return today + timedelta(days=1)
-        elif due_str_lower == "today":
-            return today
-        elif due_str_lower.endswith("d"):
-            try:
-                days = int(due_str_lower[:-1])
-                return today + timedelta(days=days)
-            except ValueError:
-                pass
-        elif due_str_lower.endswith("w"):
-            try:
-                weeks = int(due_str_lower[:-1])
-                return today + timedelta(weeks=weeks)
-            except ValueError:
-                pass
-        elif due_str_lower.endswith("m"):
-            try:
-                months = int(due_str_lower[:-1])
-                # Approximate month as 30 days
-                return today + timedelta(days=months * 30)
-            except ValueError:
-                pass
-        elif "day" in due_str_lower:
-            try:
-                days = int(due_str_lower.split()[0])
-                return today + timedelta(days=days)
-            except ValueError:
-                pass
-
-        return None
+            return None
 
     def on_todo_updated(self, message: TodoUpdated) -> None:
         """Handle TodoUpdated messages from other screens.

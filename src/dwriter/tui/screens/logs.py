@@ -20,6 +20,172 @@ from ..colors import PROJECT, TAG, get_icon
 from ...search_utils import search_items
 
 
+class QuickAddEntryModal(ModalScreen):  # type: ignore[type-arg]
+    """Modal dialog for adding a new journal entry."""
+
+    CSS = """
+    QuickAddEntryModal {
+        align: center middle;
+    }
+
+    #edit-modal-container {
+        width: 80;
+        height: auto;
+        max-height: 40;
+        background: $surface;
+        border: solid $success;
+        padding: 1 2;
+    }
+
+    #edit-modal-title {
+        text-align: center;
+        text-style: bold;
+        padding: 1 0;
+    }
+
+    #edit-content-label, #edit-tags-label, #edit-project-label, #edit-datetime-label {
+        text-style: bold;
+        padding: 1 0 0 0;
+    }
+
+    #edit-input, #tags-input, #project-input {
+        width: 100%;
+        margin: 0 0 1 0;
+    }
+
+    .datetime-container {
+        height: auto;
+        width: 100%;
+        margin: 0 0 1 0;
+    }
+
+    #date-input {
+        width: 60%;
+        margin-right: 1;
+    }
+
+    #time-input {
+        width: 1fr;
+    }
+
+    #help-text {
+        color: $text-muted;
+        padding: 0 0 1 0;
+        text-style: italic;
+    }
+
+    #save-exit-btn {
+        dock: top;
+        width: auto;
+        margin: 0 1;
+    }
+
+    #edit-buttons {
+        align: center middle;
+        padding: 1 0;
+    }
+
+    Button {
+        margin: 0 1;
+    }
+    """
+
+    BINDINGS = [
+        ("escape", "cancel", "Cancel"),
+        ("enter", "save", "Save"),
+        ("ctrl+s", "save_and_exit", "Save & Exit"),
+    ]
+
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.result: tuple[
+            str | None, list[str] | None, str | None, datetime | None
+        ] = (None, None, None, None)
+
+    def compose(self) -> ComposeResult:
+        use_emojis = self.app.ctx.config.display.use_emojis
+        with Container(id="edit-modal-container"):
+            yield Button(f"{get_icon('save', use_emojis)} Save & Exit", id="save-exit-btn", variant="success")
+            yield Label(f"{get_icon('plus', use_emojis)} Quick Add Entry", id="edit-modal-title")
+
+            yield Label("Content:", id="edit-content-label")
+            yield Input(id="edit-input", placeholder="What's happening?")
+
+            yield Label("Tags:", id="edit-tags-label")
+            yield Input(id="tags-input", placeholder="work, personal, etc.")
+
+            yield Label("Project:", id="edit-project-label")
+            yield Input(id="project-input", placeholder="Project name (optional)")
+
+            lock_mode = self.app.ctx.config.display.lock_mode
+            yield Label("Date and Time:", id="edit-datetime-label")
+            with Horizontal(classes="datetime-container"):
+                yield Input(value=datetime.now().strftime("%Y-%m-%d"), id="date-input", placeholder="YYYY-MM-DD")
+                yield Input(value=datetime.now().strftime("%I:%M %p"), id="time-input", placeholder="HH:MM AM/PM")
+
+            yield Label("Date: yesterday, today | Time: 2pm, 14:30", id="help-text")
+
+            with Container(id="edit-buttons"):
+                yield Button("\\[ CANCEL ]", id="cancel-btn", variant="default")
+
+    def on_mount(self) -> None:
+        self.query_one("#edit-input", Input).focus()
+
+    def _parse_date(self, date_str: str) -> datetime | None:
+        from datetime import timedelta
+        date_str = date_str.strip().lower()
+        try:
+            return datetime.strptime(date_str, "%Y-%m-%d")
+        except ValueError:
+            pass
+        now = datetime.now()
+        if date_str == "yesterday": return now - timedelta(days=1)
+        if date_str == "today": return now
+        return None
+
+    def _parse_time(self, time_str: str) -> datetime | None:
+        time_str = time_str.strip().upper()
+        for fmt in ["%I:%M %p", "%I:%M%p", "%H:%M"]:
+            try:
+                parsed = datetime.strptime(time_str, fmt)
+                return datetime.now().replace(hour=parsed.hour, minute=parsed.minute, second=0, microsecond=0)
+            except ValueError:
+                pass
+        return None
+
+    def action_save(self) -> None: self._do_save()
+    def action_save_and_exit(self) -> None: self._do_save()
+
+    def _do_save(self) -> None:
+        content = self.query_one("#edit-input", Input).value.strip() or None
+        date_str = self.query_one("#date-input", Input).value.strip() or None
+        time_str = self.query_one("#time-input", Input).value.strip() or None
+        tags_str = self.query_one("#tags-input", Input).value.strip() or None
+        project = self.query_one("#project-input", Input).value.strip() or None
+
+        created_at: datetime | None = None
+        if date_str:
+            parsed_date = self._parse_date(date_str)
+            if parsed_date:
+                if time_str:
+                    parsed_time = self._parse_time(time_str)
+                    if parsed_time:
+                        created_at = parsed_date.replace(hour=parsed_time.hour, minute=parsed_time.minute)
+                else:
+                    created_at = parsed_date.replace(hour=0, minute=0)
+
+        tags = [t.strip() for t in tags_str.split(",") if t.strip()] if tags_str else None
+        self.result = (content, tags, project, created_at)
+        self.dismiss(self.result)
+
+    def action_cancel(self) -> None:
+        self.dismiss(None)
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "save-exit-btn": self.action_save_and_exit()
+        elif event.button.id == "cancel-btn": self.action_cancel()
+
+
 class EditEntryModal(ModalScreen):  # type: ignore[type-arg]
     """Modal dialog for editing a journal entry."""
 
@@ -595,20 +761,27 @@ class LogsScreen(Container):
         align: left middle;
     }
 
-    #btn-standup {
+    #btn-standup, #btn-quick-add {
         width: auto;
         min-width: 0;
         height: 1;
         min-height: 1;
         background: transparent;
         border: none;
-        color: $primary;
         padding: 0 1;
         margin: 1 1 0 0;
         content-align: center middle;
     }
 
-    #btn-standup:hover {
+    #btn-standup {
+        color: $primary;
+    }
+
+    #btn-quick-add {
+        color: $success;
+    }
+
+    #btn-standup:hover, #btn-quick-add:hover {
         background: $surface;
         text-style: bold;
     }
@@ -709,7 +882,8 @@ class LogsScreen(Container):
         with Vertical():
             with Container(id="search-container"):
                 with Horizontal():
-                    yield Button(f"\\[ {get_icon('standup', use_emojis)} STAND-UP ]", id="btn-standup", variant="primary")
+                    yield Button("\\[ + ]", id="btn-quick-add", variant="success")
+                    yield Button("\\[ STAND-UP ]", id="btn-standup", variant="primary")
                     yield Input(
                         placeholder="Search logs to edit/delete",
                         id="search-input",
@@ -780,6 +954,8 @@ class LogsScreen(Container):
             from .standup import StandupScreen
 
             self.app.push_screen(StandupScreen(self.ctx))
+        elif event.button.id == "btn-quick-add":
+            self.action_quick_add()
         elif event.button.id == "btn-load-more":
             self.action_load_more()
 
@@ -1012,6 +1188,30 @@ class LogsScreen(Container):
             self._display_recent_entries()
 
         self.app.push_screen(EditEntryModal(entry), on_dismiss)
+
+    def action_quick_add(self) -> None:
+        """Open modal to add a new journal entry."""
+        def on_dismiss(
+            result: tuple[str | None, list[str] | None, str | None, datetime | None]
+            | None,
+        ) -> None:
+            if result is None:
+                return
+            content, tags, project, created_at = result
+            if content is None:
+                return
+
+            self.ctx.db.add_entry(
+                content=content,
+                tags=tags,
+                project=project,
+                created_at=created_at,
+            )
+            self.notify("New entry added", timeout=1.5)
+            self._load_data()
+            self._display_recent_entries()
+
+        self.app.push_screen(QuickAddEntryModal(), on_dismiss)
 
     def on_entry_added(self, message: Any) -> None:
         """Handle EntryAdded messages from other screens.

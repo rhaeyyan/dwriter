@@ -167,4 +167,51 @@ class HelpOverlay(ModalScreen[None]):
         self.dismiss()
 
 
-__all__ = ["display_entry", "HelpOverlay"]
+
+
+def send_system_notification(title: str, message: str) -> None:
+    """Send a lightweight desktop notification based on the OS."""
+    import subprocess
+    import sys
+
+    try:
+        if sys.platform == "darwin":  # macOS
+            subprocess.run(
+                [
+                    "osascript",
+                    "-e",
+                    f'display notification "{message}" with title "{title}"',
+                ],
+                check=False,
+                capture_output=True,
+            )
+        elif sys.platform == "linux":  # Linux
+            subprocess.run(
+                ["notify-send", title, message], check=False, capture_output=True
+            )
+        elif sys.platform == "win32":  # Windows
+            # Standard Windows notification via PowerShell
+            powershell_cmd = (
+                f"$t = '{title}'; $m = '{message}'; "
+                "[registration.notification.toastnotificationmanager, "
+                "registration.notification, content=generic]::CreateToastNotifier()."
+                "Show([registration.notification.toastnotificationmanager]::"
+                "GetTemplateContent([registration.notification.toasttemplatetype]::"
+                "ToastText02))"
+            )
+            # This is a bit complex for a single line, so using a simpler alternative if possible
+            # or adhering to the prompt's suggested PowerShell command
+            subprocess.run(
+                [
+                    "powershell",
+                    "-Command",
+                    f"New-BurntToastNotification -Text '{title}', '{message}'",
+                ],
+                check=False,
+                capture_output=True,
+            )
+    except Exception:
+        pass  # Fail silently. We never want to crash for a notification failure.
+
+
+__all__ = ["display_entry", "HelpOverlay", "send_system_notification"]

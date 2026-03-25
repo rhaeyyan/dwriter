@@ -198,6 +198,35 @@ class ConfigureScreen(Container):
                         id="default-tags-input",
                     )
 
+            # ── To-Do Board ───────────────────────────────────────────
+            with Container(classes="section"):
+                yield Label(f"{get_icon('todo', use_emojis)} To-Do Board", classes="section-title")
+                yield Label("Customize how tasks are sorted and displayed.", classes="row-help")
+
+                with Horizontal(classes="row"):
+                    yield Label("Urgency Hierarchy", classes="row-label")
+                    yield Select(
+                        [
+                            ("Priority First (Default)", "priority_first"),
+                            ("Chronological (Date First)", "date_first"),
+                        ],
+                        value=cfg.display.todo_sorting_mode,
+                        id="todo-sorting-select",
+                    )
+
+                with Horizontal(classes="row"):
+                    yield Label("Due Date Format", classes="row-label")
+                    yield Select(
+                        [
+                            ("Relative (3d, 2w)", "relative"),
+                            ("YYYY-MM-DD", "YYYY-MM-DD"),
+                            ("MM/DD/YYYY", "MM/DD/YYYY"),
+                            ("DD/MM/YYYY", "DD/MM/YYYY"),
+                        ],
+                        value=cfg.display.due_date_format,
+                        id="todo-date-format-select",
+                    )
+
         # ── Footer ──────────────────────────────────────────────────
         with Container(id="settings-footer"):
             with Horizontal(id="settings-buttons"):
@@ -255,6 +284,15 @@ class ConfigureScreen(Container):
             tags_str = self.query_one("#default-tags-input", Input).value
             config.defaults.tags = [t.strip() for t in tags_str.split(",") if t.strip()]
 
+            # To-Do Board
+            sorting_val = self.query_one("#todo-sorting-select", Select).value
+            if sorting_val is not Select.BLANK:
+                config.display.todo_sorting_mode = str(sorting_val)
+
+            todo_date_val = self.query_one("#todo-date-format-select", Select).value
+            if todo_date_val is not Select.BLANK:
+                config.display.due_date_format = str(todo_date_val)
+
             # Save to disk
             self.ctx.config_manager.save(config)
 
@@ -287,6 +325,8 @@ class ConfigureScreen(Container):
         self.query_one("#auto-start-breaks-switch", Switch).value = config.timer.auto_start_breaks
         self.query_one("#default-project-input", Input).value = config.defaults.project or ""
         self.query_one("#default-tags-input", Input).value = ", ".join(config.defaults.tags)
+        self.query_one("#todo-sorting-select", Select).value = config.display.todo_sorting_mode
+        self.query_one("#todo-date-format-select", Select).value = config.display.due_date_format
 
         self.app.theme = config.display.theme
         self.app.notify("Configuration reset to defaults.", severity="warning")

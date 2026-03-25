@@ -62,6 +62,7 @@ class UnifiedPulsePanel(Static):
                     theme.get("surface", "#45475a"),
                     theme.get("success", "#a6e3a1"),
                     theme.get("warning", "#f9e2af"),
+                    theme.get("accent", "#fab387"),
                     theme.get("error", "#f38ba8"),
                 ]
 
