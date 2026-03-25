@@ -133,7 +133,7 @@ JAMBOREE = Theme(
     secondary="#1A05A2",  # Deep Blue (Highlight only)
     success="#ABDADC",    # Light Blue
     warning="#FBC3C1",    # Peach
-    error="#FE81D4",      # Hot Pink
+    error="#FF5555",      # Vibrant Red (Distinct from Pink)
     accent="#FE81D4",     # Hot Pink
     foreground="#ffffff", # White (Primary text for clarity)
     background="#0a0a0f", # Obsidian Blue
@@ -145,15 +145,15 @@ JAMBOREE = Theme(
 RUBY = Theme(
     name="ruby",
     primary="#D53E0F",    # Neon Ruby Red
-    secondary="#4a0e0e",  # Deep Merlot (Structural borders)
-    success="#A6E3A1",    # Terminal Green (Scannable logs)
-    warning="#FCBF49",    # Neon Gold
-    error="#9B0F06",      # Deep Blood Red
-    accent="#FCBF49",     # Neon Gold
+    secondary="#4a0e0e",  # Deep Merlot
+    success="#4a0e0e",    # Deep Merlot (Level 1 Activity)
+    warning="#D53E0F",    # Neon Ruby Red (Level 2 Activity)
+    error="#A6E3A1",      # Terminal Green (Level 4 Activity)
+    accent="#FCBF49",     # Neon Gold (Level 3 Activity)
     foreground="#EED9B9", # Pale Cream (High readability)
     background="#080202", # Obsidian Wine (Deep-dark depth)
-    surface="#120404",    # Neutral Dark Wine elevation
-    panel="#1a0505",      # Deep Wine Panels (Cyberpunk layering)
+    surface="#1a0505",    # Deep Wine (Level 0 Activity)
+    panel="#1a0505",      # Deep Wine Panels
 )
 
 # Dictionary mapping theme names to Theme objects

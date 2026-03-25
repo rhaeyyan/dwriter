@@ -100,6 +100,7 @@ class Todo(Base):
     priority: Mapped[str] = mapped_column(String, default="normal")
     status: Mapped[str] = mapped_column(String, default="pending")
     due_date: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    reminder_last_sent: Mapped[Optional[datetime]] = mapped_column(DateTime)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=func.now(), index=True
@@ -162,6 +163,11 @@ class Database:
                 if "due_date" not in columns:
                     sqlite_conn.execute(
                         "ALTER TABLE todos ADD COLUMN due_date DATETIME"
+                    )
+
+                if "reminder_last_sent" not in columns:
+                    sqlite_conn.execute(
+                        "ALTER TABLE todos ADD COLUMN reminder_last_sent DATETIME"
                     )
 
                 cursor = sqlite_conn.execute("PRAGMA table_info(entries)")
@@ -486,6 +492,7 @@ class Database:
         tags: Optional[list[str]] = None,
         completed_at: Optional[datetime] = None,
         due_date: Optional[datetime] = None,
+        reminder_last_sent: Optional[datetime] = None,
     ) -> Todo:
         """Update an existing task."""
         with self.Session() as session:
@@ -505,12 +512,31 @@ class Database:
                 todo.completed_at = completed_at
             if due_date is not None:
                 todo.due_date = due_date
+            if reminder_last_sent is not None:
+                todo.reminder_last_sent = reminder_last_sent
             if tags is not None:
                 todo.tags = [TodoTag(name=t) for t in tags]
 
             session.commit()
             session.refresh(todo)
             return todo
+
+    def get_reminders(
+        self, due_before: datetime, reminded_since: datetime
+    ) -> list[Todo]:
+        """Query for urgent tasks that need a reminder alert."""
+        with self.Session() as session:
+            stmt = (
+                select(Todo)
+                .where(Todo.status == "pending")
+                .where(Todo.priority == "urgent")
+                .where(Todo.due_date <= due_before)
+                .where(
+                    (Todo.reminder_last_sent == None)  # noqa: E711
+                    | (Todo.reminder_last_sent < reminded_since)
+                )
+            )
+            return list(session.scalars(stmt).all())
 
     def delete_todo(self, todo_id: int) -> bool:
         """Delete a task by ID."""

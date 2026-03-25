@@ -56,40 +56,75 @@ class AppContext:
             self.db = Database()
         except Exception as e:
             raise DatabaseError(f"Failed to initialize database: {e}") from e
+        
+        self._reminders_shown = False
+
+    def check_reminders(self, silent: bool = False, force: bool = False) -> None:
+        """Check for active reminders and print a footer alert.
+
+        Args:
+            silent: If True, only prints reminders, no header.
+            force: If True, ignores the 1-hour cooldown and shows all active reminders.
+        """
+        # Skip if already shown in this session (unless forced)
+        if self._reminders_shown and not force:
+            return
+
+        from datetime import datetime, timedelta
+
+        now = datetime.now()
+        # Find pending, urgent tasks with a due date in the past or next 30 mins
+        todos = self.db.get_todos(status="pending")
+        reminders = [
+            t
+            for t in todos
+            if t.priority == "urgent"
+            and t.due_date
+            and t.due_date <= now + timedelta(minutes=30)
+            and (
+                force
+                or t.reminder_last_sent is None
+                or t.reminder_last_sent < now - timedelta(hours=1)
+            )
+        ]
+
+        if reminders:
+            if not silent:
+                self.console.print("\n[bold red]🔔 ACTIVE REMINDERS:[/bold red]")
+            self._reminders_shown = True
+            for r in reminders:
+                if r.due_date.hour == 0 and r.due_date.minute == 0:
+                    due_str = r.due_date.strftime("%Y-%m-%d")
+                else:
+                    due_str = r.due_date.strftime("%I:%M %p")
+                
+                self.console.print(
+                    f"  [red]![/red] [{r.id}] {r.content} (Due: {due_str})"
+                )
+
+                # Update the database so we don't spam them repeatedly
+                if not force:
+                    self.db.update_todo(r.id, reminder_last_sent=now)
+
+            # Add OS notification check
+            if self.config.display.notifications_enabled and not force:
+                from .ui_utils import send_system_notification
+
+                for r in reminders:
+                    send_system_notification("dwriter Reminder", r.content)
+        elif not silent and force:
+            self.console.print("[green]No active reminders. You're all caught up![/green]")
 
 
 @click.group(invoke_without_command=True)
+@click.option(
+    "--check-only", is_flag=True, help="Run reminder checks silently and exit."
+)
 @click.pass_context
 @click.version_option(version=__version__, prog_name="dwriter")
-def main(ctx: click.Context) -> None:
+def main(ctx: click.Context, check_only: bool) -> None:
     """Dwriter - A minimalist journal for the terminal.
-
-    Capture your work without breaking your flow and generate summaries for
-    standups or reviews.
-
-    Quick Start:
-      dwriter                      # Launch the Unified TUI
-      dwriter add "fixed the bug"  # Headless CLI: Quick log
-      dwriter todo "write tests"   # Headless CLI: Add task
-      dwriter standup              # Generate yesterday's summary
-
-    Unified TUI:
-      Run 'dwriter' to launch the interactive dashboard with:
-      - Statistics and activity maps
-      - Todo board for task management
-      - Focus timer for deep work sessions
-      - Live fuzzy search across history
-
-    Common Commands:
-      add       - Log a new journal entry
-      todo      - Manage tasks (Headless CLI)
-      done      - Complete a task and log it
-      standup   - Generate a summary of yesterday's work
-      review    - Review entries from the last N days
-      search    - Fuzzy search history (Headless CLI)
-      timer     - Focus timer (Headless CLI)
-      stats     - Productivity summary (Headless CLI)
-      ui        - Launch the interactive dashboard
+... (rest of docstring)
     """
     try:
         ctx.obj = AppContext()
@@ -97,6 +132,13 @@ def main(ctx: click.Context) -> None:
         console = Console()
         console.print(f"[bold red]Error:[/bold red] {e}")
         ctx.exit(1)
+
+    if check_only:
+        ctx.obj.check_reminders(silent=True)
+        ctx.exit()
+
+    # We use Click's call_on_close to ensure it prints AFTER the main command output
+    ctx.call_on_close(lambda: ctx.obj.check_reminders())
 
     if ctx.invoked_subcommand is None:
         _launch_tui(ctx.obj)
@@ -144,6 +186,13 @@ def ui(ctx: AppContext, tab: str | None) -> None:
     _launch_tui(ctx, starting_tab=tab or "dashboard")
 
 
+@click.command()
+@click.pass_obj
+def reminders(ctx: AppContext) -> None:
+    """Show active reminders (urgent tasks due soon)."""
+    ctx.check_reminders(silent=False, force=True)
+
+
 def _register_commands() -> None:
     """Register all CLI commands."""
     from .commands import (
@@ -155,7 +204,9 @@ def _register_commands() -> None:
         examples,
         help_cmd,
         review,
+        remind,
         search,
+        snooze,
         standup,
         stats,
         timer,
@@ -175,7 +226,10 @@ def _register_commands() -> None:
         timer,
         help_cmd,
         review,
+        remind,
+        reminders,
         search,
+        snooze,
         stats,
         standup,
         today,

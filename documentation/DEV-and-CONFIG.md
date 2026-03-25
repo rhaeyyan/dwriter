@@ -28,6 +28,7 @@ format = "markdown"
 [display]
 show_confirmation = true
 colors = true
+notifications_enabled = false  # Toggle desktop push notifications
 ```
 
 ### Configuration Options:
@@ -38,6 +39,31 @@ colors = true
 | `[standup]` | `format` | Your preferred layout for daily summaries. |
 | `[review]` | `format` | The layout used for long-term reports. |
 | `[display]` | `colors` | Toggle terminal color support. |
+| `[display]` | `notifications_enabled` | Opt-in to OS-level desktop push notifications for reminders. |
+
+---
+
+## 🔔 Reminder System & Shell Integration
+
+The **Reminder System** is "headless-first." It checks for urgent tasks whenever you run a `dwriter` command. For truly hands-off reminders, you can add a silent check to your shell configuration (e.g., `.zshrc` or `.bashrc`).
+
+### 1. The `remind` command
+Create a high-priority, time-sensitive task:
+```bash
+dwriter remind "Submit the report" --at "17:00"
+```
+
+### 2. Silent Shell Hook
+Add this to your `.zshrc` or `.bashrc` to trigger a reminder check every time you open a terminal or run any command:
+```bash
+# dwriter silent reminder check
+# Only runs if the binary exists, ensures zero impact on shell speed
+if command -v dwriter >/dev/null 2>&1; then
+    dwriter --check-only >/dev/null 2>&1 &
+fi
+```
+> [!NOTE]
+> The `--check-only` flag (implemented via the silent footer logic) ensures that `dwriter` performs its lookup and notification logic without printing any normal output, keeping your terminal clean.
 
 ---
 

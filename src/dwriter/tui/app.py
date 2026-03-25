@@ -683,18 +683,21 @@ class DWriterApp(App[None]):
 
         # Normal single-line input handling
         if value:
-            # Check for timer command syntax (works from any screen)
-            parsed_timer: ParsedTimer | None = parse_timer(value)
+            # Check for timer command syntax
+            # IMPORTANT: Only allow starting a timer from the omnibox IF we are on the timer screen
+            # to avoid misidentifying journal entries with numbers (e.g. "submit module 9 reflections")
+            if self._current_screen == "timer":
+                parsed_timer: ParsedTimer | None = parse_timer(value)
 
-            if parsed_timer:
-                # Start timer with parsed parameters
-                self._start_timer(
-                    minutes=parsed_timer.minutes,
-                    tags=parsed_timer.tags,
-                    project=parsed_timer.project,
-                )
-                message.input.value = ""
-                return
+                if parsed_timer:
+                    # Start timer with parsed parameters
+                    self._start_timer(
+                        minutes=parsed_timer.minutes,
+                        tags=parsed_timer.tags,
+                        project=parsed_timer.project,
+                    )
+                    message.input.value = ""
+                    return
 
             # On Todo screen, start multi-step workflow; otherwise create journal entry
             if self._current_screen == "todo":
