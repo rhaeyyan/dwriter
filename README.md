@@ -11,7 +11,7 @@ Whether you are a software engineer tracking "deep work," a freelancer logging b
 
 Modern productivity apps are often cluttered with distractions. **dwriter** is designed to prioritize your focus:
 
-*   **⚡ Immediate Capture:** Use the "Headless CLI" to log thoughts, tasks, or focus sessions in milliseconds without leaving your terminal environment.
+*   **⚡ Immediate Capture:** Use the "Headless CLI" to log thoughts, tasks, or focus sessions in seconds without leaving your terminal environment.
 *   **🎨 Unified Dashboard:** Launch the Terminal User Interface (TUI) to reflect, search your history, or manage a visual todo board.
 *   **🤖 Standup Automation:** Instantly transform your raw logs into formatted summaries for Slack, Jira, or Markdown.
 *   **📅 Natural Language:** Talk to your journal like a human. `dwriter add "Fixed the bug" --date "last Friday"` just works.
