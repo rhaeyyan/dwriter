@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 
-def parse_natural_date(date_str: str, prefer_future: bool = False) -> datetime:
+def parse_natural_date(date_str: str, prefer_future: bool = False, format_hint: Optional[str] = None) -> datetime:
     """Parse a natural language date string into a datetime object.
 
     Args:
@@ -17,6 +17,7 @@ def parse_natural_date(date_str: str, prefer_future: bool = False) -> datetime:
             "last Friday", "3 days ago", "today", etc.
         prefer_future: If True, ambiguous dates (like "Friday") will prefer
             future occurrences.
+        format_hint: Optional format string to try first (e.g., "%m/%d/%Y").
 
     Returns:
         A datetime object representing the parsed date.
@@ -25,6 +26,12 @@ def parse_natural_date(date_str: str, prefer_future: bool = False) -> datetime:
         ValueError: If the date string cannot be parsed.
     """
     date_str = date_str.strip().lower()
+
+    if format_hint:
+        try:
+            return datetime.strptime(date_str, format_hint)
+        except ValueError:
+            pass
 
     # Special handling for "at" prefix
     if date_str.startswith("at "):
@@ -183,11 +190,12 @@ def parse_natural_date(date_str: str, prefer_future: bool = False) -> datetime:
     raise ValueError(f"Unable to parse: '{date_str}'")
 
 
-def parse_date_or_default(date_str: Optional[str]) -> datetime:
+def parse_date_or_default(date_str: Optional[str], format_hint: Optional[str] = None) -> datetime:
     """Parse a date string or return current datetime if None.
 
     Args:
         date_str: A natural language date expression or None.
+        format_hint: Optional format string to try first (e.g., "%m/%d/%Y").
 
     Returns:
         A datetime object. If date_str is None, returns current datetime.
@@ -195,4 +203,4 @@ def parse_date_or_default(date_str: Optional[str]) -> datetime:
     if date_str is None:
         return datetime.now()
 
-    return parse_natural_date(date_str)
+    return parse_natural_date(date_str, format_hint=format_hint)

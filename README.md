@@ -49,7 +49,7 @@ uv tool install .
 ```
 
 ### 3. Keep dwriter Current
-To pull the newest features and architectural improvements, navigate to your local `dwriter` directory and run:
+To pull the newest features and architectural improvements (see **[Update Notes](documentation/update-notes.md)**), navigate to your local `dwriter` directory and run:
 ```bash
 git pull origin main
 uv tool install --upgrade .
@@ -131,6 +131,7 @@ dwriter todo "Review the pull request" --priority urgent
 
 | Document | Description |
 | :--- | :--- |
+| 🚀 **[Update Notes](documentation/update-notes.md)** | **New in v3.7.0:** 7-Day Weekly Pulse, enhanced analytics, and --weekly CLI flags. |
 | 🛠️ **[Command Reference](documentation/HEADLESS-README.md)** | A complete guide to every CLI command and flag. |
 | 📖 **[Creative Use Cases](documentation/USE_CASES.md)** | 20 ways to use dwriter for brewing, fitness, travel, and more. |
 | ⚙️ **[Dev & Config Guide](documentation/DEV-and-CONFIG.md)** | Customizing your themes, default projects, and dev setup. |

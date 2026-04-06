@@ -118,12 +118,20 @@ class QuickAddEntryModal(ModalScreen):  # type: ignore[type-arg]
             yield Input(id="project-input", placeholder="Project name (optional)")
 
             lock_mode = self.app.ctx.config.display.lock_mode
+            date_fmt = self.app.ctx.config.display.date_format
+            fmt_map = {
+                "YYYY-MM-DD": "%Y-%m-%d",
+                "MM/DD/YYYY": "%m/%d/%Y",
+                "DD/MM/YYYY": "%d/%m/%Y",
+            }
+            hint = fmt_map.get(date_fmt, "%Y-%m-%d")
+            
             yield Label("Date and Time:", id="edit-datetime-label")
             with Horizontal(classes="datetime-container"):
-                yield Input(value=datetime.now().strftime("%Y-%m-%d"), id="date-input", placeholder="YYYY-MM-DD")
+                yield Input(value=datetime.now().strftime(hint), id="date-input", placeholder=date_fmt)
                 yield Input(value=datetime.now().strftime("%I:%M %p"), id="time-input", placeholder="HH:MM AM/PM")
 
-            yield Label("Date: yesterday, today | Time: 2pm, 14:30", id="help-text")
+            yield Label(f"Date: yesterday, today, {date_fmt} | Time: 2pm, 14:30", id="help-text")
 
             with Container(id="edit-buttons"):
                 yield Button("\\[ CANCEL ]", id="cancel-btn", variant="default")
@@ -132,16 +140,18 @@ class QuickAddEntryModal(ModalScreen):  # type: ignore[type-arg]
         self.query_one("#edit-input", Input).focus()
 
     def _parse_date(self, date_str: str) -> datetime | None:
-        from datetime import timedelta
-        date_str = date_str.strip().lower()
+        from ...date_utils import parse_natural_date
         try:
-            return datetime.strptime(date_str, "%Y-%m-%d")
+            date_fmt = self.app.ctx.config.display.date_format
+            fmt_map = {
+                "YYYY-MM-DD": "%Y-%m-%d",
+                "MM/DD/YYYY": "%m/%d/%Y",
+                "DD/MM/YYYY": "%d/%m/%Y",
+            }
+            hint = fmt_map.get(date_fmt)
+            return parse_natural_date(date_str, format_hint=hint)
         except ValueError:
-            pass
-        now = datetime.now()
-        if date_str == "yesterday": return now - timedelta(days=1)
-        if date_str == "today": return now
-        return None
+            return None
 
     def _parse_time(self, time_str: str) -> datetime | None:
         time_str = time_str.strip().upper()
@@ -319,20 +329,28 @@ class EditEntryModal(ModalScreen):  # type: ignore[type-arg]
 
             # Date and Time fields on the same line
             lock_mode = self.app.ctx.config.display.lock_mode
+            date_fmt = self.app.ctx.config.display.date_format
+            fmt_map = {
+                "YYYY-MM-DD": "%Y-%m-%d",
+                "MM/DD/YYYY": "%m/%d/%Y",
+                "DD/MM/YYYY": "%d/%m/%Y",
+            }
+            hint = fmt_map.get(date_fmt, "%Y-%m-%d")
+
             yield Label(
                 "Date and Time:" + (" [yellow](Locked)[/]" if lock_mode else ""),
                 id="edit-datetime-label"
             )
             with Horizontal(classes="datetime-container"):
-                date_str = (
-                    self.entry.created_at.strftime("%Y-%m-%d")
+                date_val = (
+                    self.entry.created_at.strftime(hint)
                     if self.entry.created_at
                     else ""
                 )
                 yield Input(
-                    value=date_str,
+                    value=date_val,
                     id="date-input",
-                    placeholder="YYYY-MM-DD",
+                    placeholder=date_fmt,
                     disabled=lock_mode,
                 )
 
@@ -361,7 +379,7 @@ class EditEntryModal(ModalScreen):  # type: ignore[type-arg]
         self.query_one("#edit-input", Input).focus()
 
     def _parse_date(self, date_str: str) -> datetime | None:
-        """Parse a date string with support for relative dates.
+        """Parse a date string using the central date_utils parser.
 
         Args:
             date_str: Date string in various formats.
@@ -369,58 +387,19 @@ class EditEntryModal(ModalScreen):  # type: ignore[type-arg]
         Returns:
             Parsed datetime or None.
         """
-        from datetime import timedelta
+        from ...date_utils import parse_natural_date
 
-        date_str = date_str.strip().lower()
-
-        # Try standard format first: YYYY-MM-DD
         try:
-            return datetime.strptime(date_str, "%Y-%m-%d")
+            date_fmt = self.app.ctx.config.display.date_format
+            fmt_map = {
+                "YYYY-MM-DD": "%Y-%m-%d",
+                "MM/DD/YYYY": "%m/%d/%Y",
+                "DD/MM/YYYY": "%d/%m/%Y",
+            }
+            hint = fmt_map.get(date_fmt)
+            return parse_natural_date(date_str, format_hint=hint)
         except ValueError:
-            pass
-
-        now = datetime.now()
-
-        # Handle "yesterday"
-        if date_str == "yesterday":
-            return now - timedelta(days=1)
-
-        # Handle "today"
-        if date_str == "today":
-            return now
-
-        # Handle "X days ago"
-        days_ago_match = re.match(r"(\d+)\s*days?\s*ago", date_str)
-        if days_ago_match:
-            days = int(days_ago_match.group(1))
-            return now - timedelta(days=days)
-
-        # Handle "X weeks ago"
-        weeks_ago_match = re.match(r"(\d+)\s*weeks?\s*ago", date_str)
-        if weeks_ago_match:
-            weeks = int(weeks_ago_match.group(1))
-            return now - timedelta(weeks=weeks)
-
-        # Handle "last Monday", "last Friday", etc.
-        weekday_map = {
-            "monday": 0,
-            "tuesday": 1,
-            "wednesday": 2,
-            "thursday": 3,
-            "friday": 4,
-            "saturday": 5,
-            "sunday": 6,
-        }
-        if date_str.startswith("last "):
-            day_name = date_str[5:]
-            if day_name in weekday_map:
-                target_weekday = weekday_map[day_name]
-                days_back = (now.weekday() - target_weekday) % 7
-                if days_back == 0:
-                    days_back = 7  # Go to previous week
-                return now - timedelta(days=days_back)
-
-        return None
+            return None
 
     def _parse_time(self, time_str: str) -> datetime | None:
         """Parse a time string in 12 or 24-hour format.
@@ -768,9 +747,10 @@ class LogsScreen(Container):
         min-height: 1;
         background: transparent;
         border: none;
-        padding: 0 1;
-        margin: 1 1 0 0;
+        padding: 0;
+        margin: 1 0 0 0;
         content-align: center middle;
+        text-style: bold;
     }
 
     #btn-standup {
@@ -781,7 +761,12 @@ class LogsScreen(Container):
         color: $success;
     }
 
-    #btn-standup:hover, #btn-quick-add:hover {
+    #btn-quick-add:hover {
+        background: $success 20%;
+        text-style: bold;
+    }
+
+    #btn-standup:hover {
         background: $surface;
         text-style: bold;
     }
@@ -789,6 +774,7 @@ class LogsScreen(Container):
     #search-input {
         width: 1fr;
         border: solid $secondary;
+        margin: 0 1;
     }
 
     #search-input:focus {
@@ -882,12 +868,12 @@ class LogsScreen(Container):
         with Vertical():
             with Container(id="search-container"):
                 with Horizontal():
-                    yield Button("\\[ + ]", id="btn-quick-add", variant="success")
-                    yield Button("\\[ STAND-UP ]", id="btn-standup", variant="primary")
+                    yield Button("\\[+]", id="btn-quick-add", variant="success")
                     yield Input(
                         placeholder="Search logs to edit/delete",
                         id="search-input",
                     )
+                    yield Button("\\[ STAND-UP ]", id="btn-standup", variant="primary")
             with Container(id="results-container"):
                 yield LogsResultsView(id="logs-results")
                 with Horizontal(id="load-more-container"):

@@ -40,7 +40,7 @@ class UnifiedPulsePanel(Static):
 
     def on_mount(self) -> None:
         use_emojis = self.ctx.config.display.use_emojis
-        self.border_title = f"{get_icon('tips', use_emojis)} Two-Cents"
+        self.border_title = f"{get_icon('tips', use_emojis)} 7-Day Pulse"
 
     def update_data(self, nudges: list[str], sparkline_data: list[int]) -> None:
         try:
@@ -343,9 +343,9 @@ class DashboardScreen(Container):
         try:
             engine = AnalyticsEngine(self.ctx.db)
             
-            # 1. Fetch Insights
+            # 1. Fetch Weekly Pulse Wrap-up
             insight_gen = InsightGenerator(engine)
-            nudges = insight_gen.generate_insights()
+            nudges = insight_gen.generate_weekly_wrapup()
 
             # 2. Fetch Sparkline Data (45 days)
             today = datetime.now()

@@ -17,8 +17,9 @@ from ..tui.colors import PROJECT, TAG
 
 
 @click.command()
+@click.option("--weekly", is_flag=True, help="Show the 7-day Weekly Pulse wrap-up summary.")
 @click.pass_obj
-def stats(ctx: AppContext) -> None:
+def stats(ctx: AppContext, weekly: bool) -> None:
     """View a text-based summary of your productivity.
 
     Displays your current streaks, total counts, and behavioral insights
@@ -36,10 +37,16 @@ def stats(ctx: AppContext) -> None:
     entry_dates = [e.created_at for e in entries]
     current_streak, longest_streak = calculate_streak(entry_dates)
     
-    # Initialize analytics engine and generate behavioral insights
+    # Initialize analytics engine and generate insights
     engine = AnalyticsEngine(ctx.db)
     insight_gen = InsightGenerator(engine)
-    insights = insight_gen.generate_insights()
+    
+    if weekly:
+        insights = insight_gen.generate_weekly_wrapup()
+        insights_title = "🎭 Weekly Pulse Wrap-up"
+    else:
+        insights = insight_gen.generate_insights()
+        insights_title = "💡 Behavioral Insights"
     
     # Render summary to the console
     ctx.console.print("[bold blue]📊 Productivity Summary[/bold blue]\n")
@@ -65,10 +72,10 @@ def stats(ctx: AppContext) -> None:
     ctx.console.print(Columns([streak_panel, counts_panel]))
     ctx.console.print()
     
-    # Display behavioral insights
+    # Display insights
     if insights:
-        ctx.console.print(f"[{TAG}]💡 Behavioral Insights[/{TAG}]")
-        for insight in insights[:3]:  # Top-ranked insights
+        ctx.console.print(f"[{TAG}]{insights_title}[/{TAG}]")
+        for insight in (insights if weekly else insights[:3]):
             # Standardize formatting for CLI output
             clean_insight = insight.replace("[n]", "[dim]").replace("[/n]", "[/dim]")
             ctx.console.print(f" {clean_insight}")

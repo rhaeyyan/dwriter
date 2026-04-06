@@ -400,15 +400,16 @@ class DWriterApp(App[None]):
         yield Header(show_clock=True)
 
         # Omnibox - Top command palette for frictionless entry
+        date_fmt = self.ctx.config.display.date_format
         with Horizontal(id="omnibox-container"):
             yield Input(
-                placeholder="#tag &project YOUR-ENTRY | #tag &project YOUR-ENTRY YYYY-MM-DD",
+                placeholder=f"#tag &project YOUR-ENTRY | #tag &project YOUR-ENTRY {date_fmt}",
                 id="quick-add",
             )
         
         with Horizontal(id="omnibox-footer"):
             yield Label(
-                "#tag &project YOUR-ENTRY | #tag &project YOUR-ENTRY YYYY-MM-DD",
+                f"#tag &project YOUR-ENTRY | #tag &project YOUR-ENTRY {date_fmt}",
                 id="omnibox-hint",
             )
             yield Button("Help", id="help-btn", variant="default")
@@ -594,8 +595,9 @@ class DWriterApp(App[None]):
                             f"Task: {self._todo_state.content[:40]}... {bullet} 'q' to cancel"
                         )
                     elif step == "due_date":
+                        date_fmt = self.ctx.config.display.date_format
                         omnibox.placeholder = (
-                            "Due date: YYYY-MM-DD, today, tomorrow, 5d, 2w, 3m "
+                            f"Due date: {date_fmt}, today, tomorrow, 5d, 2w, 3m "
                             "(or Enter for none)"
                         )
                         hint.update(
@@ -614,9 +616,10 @@ class DWriterApp(App[None]):
                     f"Press / to focus {bullet} Enter: #tag &project 15 starts 15min timer"
                 )
             else:
-                omnibox.placeholder = "#tag &project YOUR-ENTRY | #tag &project YOUR-ENTRY YYYY-MM-DD"
+                date_fmt = self.ctx.config.display.date_format
+                omnibox.placeholder = f"#tag &project YOUR-ENTRY | #tag &project YOUR-ENTRY {date_fmt}"
                 hint.update(
-                    f"#tag &project YOUR-ENTRY {bullet} #tag &project YOUR-ENTRY YYYY-MM-DD"
+                    f"#tag &project YOUR-ENTRY {bullet} #tag &project YOUR-ENTRY {date_fmt}"
                 )
         except Exception:
             pass
@@ -811,7 +814,8 @@ class DWriterApp(App[None]):
             value: Input value with content, tags, and project.
             message: Input submitted event.
         """
-        parsed_entry: ParsedEntry = parse_quick_add(value)
+        date_format = self.ctx.config.display.date_format
+        parsed_entry: ParsedEntry = parse_quick_add(value, date_format=date_format)
 
         # Combine parsed tags with config defaults
         default_tags = list(self.ctx.config.defaults.tags)
@@ -889,37 +893,19 @@ class DWriterApp(App[None]):
         Returns:
             Parsed datetime or None.
         """
-        from datetime import datetime, timedelta
+        from ..date_utils import parse_natural_date
 
-        today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-
-        # Try parsing as date
         try:
-            return datetime.strptime(due_str, "%Y-%m-%d")
+            date_fmt = self.ctx.config.display.date_format
+            fmt_map = {
+                "YYYY-MM-DD": "%Y-%m-%d",
+                "MM/DD/YYYY": "%m/%d/%Y",
+                "DD/MM/YYYY": "%d/%m/%Y",
+            }
+            hint = fmt_map.get(date_fmt)
+            return parse_natural_date(due_str, prefer_future=True, format_hint=hint)
         except ValueError:
-            pass
-
-        # Handle relative dates
-        due_str_lower = due_str.lower().strip()
-
-        if due_str_lower == "tomorrow":
-            return today + timedelta(days=1)
-        elif due_str_lower == "today":
-            return today
-        elif due_str_lower.endswith("d"):
-            try:
-                days = int(due_str_lower[:-1])
-                return today + timedelta(days=days)
-            except ValueError:
-                pass
-        elif due_str_lower.endswith("w"):
-            try:
-                weeks = int(due_str_lower[:-1])
-                return today + timedelta(weeks=weeks)
-            except ValueError:
-                pass
-
-        return None
+            return None
 
     def on_entry_added(self, message: EntryAdded) -> None:
         """Handle EntryAdded messages from the omnibox.

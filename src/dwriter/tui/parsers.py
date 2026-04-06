@@ -67,7 +67,7 @@ class ParsedTimer:
     content: str | None = None
 
 
-def parse_quick_add(raw_input: str) -> ParsedEntry:
+def parse_quick_add(raw_input: str, date_format: str = "YYYY-MM-DD") -> ParsedEntry:
     """Parse an omnibox string into content, tags, and project.
 
     Format: "Completed the auth flow #backend #security &core-engine"
@@ -78,6 +78,7 @@ def parse_quick_add(raw_input: str) -> ParsedEntry:
 
     Args:
         raw_input: Raw input string from the omnibox.
+        date_format: User's preferred date format (YYYY-MM-DD, MM/DD/YYYY, DD/MM/YYYY).
 
     Returns:
         ParsedEntry with extracted content, tags, project, and optional datetime.
@@ -88,37 +89,52 @@ def parse_quick_add(raw_input: str) -> ParsedEntry:
     # Extract project (text prefixed with &)
     projects: list[str] = re.findall(r"&([\w:-]+)", raw_input)
 
-    # Extract date suffixes (e.g., -yesterday, -2d, -2w, -2 days ago, -last Friday,
-    # -2024-01-15, or standalone 2024-01-15)
+    # Extract date suffixes
     created_at: datetime | None = None
 
-    # Match hyphen-prefixed date patterns (including short forms like 2d, 2w)
+    # Mapping for strftime/strptime
+    fmt_map = {
+        "YYYY-MM-DD": "%Y-%m-%d",
+        "MM/DD/YYYY": "%m/%d/%Y",
+        "DD/MM/YYYY": "%d/%m/%Y",
+    }
+    hint = fmt_map.get(date_format, "%Y-%m-%d")
+
+    # Construct regex for absolute dates based on format
+    # YYYY-MM-DD: \d{4}-\d{2}-\d{2}
+    # MM/DD/YYYY: \d{2}/\d{2}/\d{4}
+    # DD/MM/YYYY: \d{2}/\d{2}/\d{4}
+    abs_date_pattern = r"\d{4}-\d{2}-\d{2}"
+    if date_format in ("MM/DD/YYYY", "DD/MM/YYYY"):
+        abs_date_pattern = r"\d{1,2}/\d{1,2}/\d{4}"
+
+    # Match hyphen-prefixed date patterns
     date_regex = (
-        r"\s+-(yesterday|today|\d+d|\d+w|\d+\s*days?\s*ago|\d+\s*weeks?\s*ago|"
-        r"last\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)|"
-        r"\d{4}-\d{2}-\d{2})"
+        rf"\s+-(yesterday|today|\d+d|\d+w|\d+\s*days?\s*ago|\d+\s*weeks?\s*ago|"
+        rf"last\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)|"
+        rf"{abs_date_pattern})"
     )
     date_match = re.search(date_regex, raw_input, re.IGNORECASE)
     if date_match:
         date_str = date_match.group(1)
-        created_at = _parse_date_suffix(date_str)
+        created_at = _parse_date_suffix(date_str, hint)
     else:
-        # Check for standalone YYYY-MM-DD dates
-        date_match = re.search(r"\b(\d{4}-\d{2}-\d{2})\b", raw_input)
+        # Check for standalone absolute dates
+        date_match = re.search(rf"\b({abs_date_pattern})\b", raw_input)
         if date_match:
             date_str = date_match.group(1)
-            created_at = _parse_date_suffix(date_str)
+            created_at = _parse_date_suffix(date_str, hint)
 
     # Clean the input: remove tags, project blocks, and date suffix
     clean_text = raw_input
-    # Remove date suffixes first (before removing tags/projects to avoid conflicts)
+    # Remove date suffixes first
     clean_text = re.sub(
-        r"\s+-(yesterday|today|\d+d|\d+w|\d+\s*days?\s*ago|\d+\s*weeks?\s*ago|last\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)|\d{4}-\d{2}-\d{2})",
+        rf"\s+-(yesterday|today|\d+d|\d+w|\d+\s*days?\s*ago|\d+\s*weeks?\s*ago|last\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)|{abs_date_pattern})",
         "",
         clean_text,
         flags=re.IGNORECASE,
     )
-    clean_text = re.sub(r"\b\d{4}-\d{2}-\d{2}\b", "", clean_text)
+    clean_text = re.sub(rf"\b{abs_date_pattern}\b", "", clean_text)
     # Then remove tags and projects (&)
     clean_text = re.sub(r"#[\w:-]+", "", clean_text)
     clean_text = re.sub(r"&[\w:-]+", "", clean_text)
@@ -134,24 +150,34 @@ def parse_quick_add(raw_input: str) -> ParsedEntry:
     )
 
 
-def _parse_date_suffix(date_str: str) -> datetime | None:
+def _parse_date_suffix(date_str: str, format_hint: str = "%Y-%m-%d") -> datetime | None:
     """Parse a date suffix string.
 
     Args:
         date_str: Date string (e.g., "yesterday", "2 days ago", "2024-01-15").
+        format_hint: Standard format string to try first.
 
     Returns:
         Parsed datetime or None.
     """
     date_str = date_str.lower().strip()
 
-    # Try standard format first: YYYY-MM-DD
+    # Try hinted format first
     try:
-        return datetime.strptime(date_str, "%Y-%m-%d").replace(
+        return datetime.strptime(date_str, format_hint).replace(
             hour=0, minute=0, second=0, microsecond=0
         )
     except ValueError:
         pass
+
+    # Try fallback standard format if different
+    if format_hint != "%Y-%m-%d":
+        try:
+            return datetime.strptime(date_str, "%Y-%m-%d").replace(
+                hour=0, minute=0, second=0, microsecond=0
+            )
+        except ValueError:
+            pass
 
     now = datetime.now()
 
