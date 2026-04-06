@@ -83,20 +83,20 @@ Stop wasting time trying to remember what you did yesterday for your morning sta
 
 | Command | Description |
 | :--- | :--- |
-| `dwriter standup` | Generate a summary of yesterday's tasks. |
+| `dwriter standup` | Generate a summary of yesterday's tasks. Supports `--weekly` for a 7-day wrap-up. |
 | `dwriter review --days 7` | Generate a weekly report of all work. |
-| `dwriter stats` | View your streaks, activity counts, and habits. |
+| `dwriter stats` | View your streaks, activity counts, and habits. Supports `--weekly` for high-signal insights. |
 
 ### Formats for Every Platform:
 ```bash
 # Markdown for your personal notes
 dwriter standup --format markdown
 
-# Slack-friendly bullets
-dwriter standup --format slack
+# Include the 7-day Weekly Pulse retrospective
+dwriter standup --weekly
 
-# Jira-style formatting
-dwriter standup --format jira
+# View your weekly productivity summary (headless)
+dwriter stats --weekly
 ```
 
 ---

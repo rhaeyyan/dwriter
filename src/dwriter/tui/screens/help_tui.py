@@ -227,17 +227,17 @@ class HelpScreen(Screen):  # type: ignore[type-arg]
   → [bold]Streak & Record:[/bold] Real-time tracking of your current and all-time 
     longest logging streaks.
 
-[bold #cba6f7]Two-Cents (Behavioral Insights):[/bold #cba6f7]
-  [dim]The dashboard automatically analyzes your patterns to provide context.[/dim]
+[bold #cba6f7]7-Day Weekly Pulse (Behavioral Insights):[/bold #cba6f7]
+  [dim]The dashboard automatically analyzes your patterns to provide a 7-day retrospective.[/dim]
 
-  → [bold]Active Focus:[/bold] Highlights the tags and projects that have 
-    occupied most of your time over the last 30 days.
-  → [bold]High Focus Ratio:[/bold] Identifies when you are successfully 
-    maintaining deep work sessions.
-  → [bold]Project Fragmentation:[/bold] Alerts you when frequent context 
-    switching between too many projects may be impacting your throughput.
-  → [bold]Task Staleness:[/bold] Flags pending tasks that have been sitting 
-    unattended for more than 14 days.
+  → [bold]Archetypes:[/bold] Categorizes your productivity style (e.g., "The Deep Diver",
+    "The Closer") based on your rolling 7-day activity.
+  → [bold]Golden Hour:[/bold] Identifies your peak performance window—the time 
+    of day when you are most focused and productive.
+  → [bold]Velocity Delta:[/bold] Tracks your task clearing rate compared to 
+    the previous week to measure your current momentum.
+  → [bold]Project Spotlight:[/bold] Automatically detects the "Big Rock" project 
+    that consumed the majority of your bandwidth this week.
 
 [bold #cba6f7]Controls & Actions:[/bold #cba6f7]
   [cyan]c[/cyan]              → Copy Performance Report (Markdown format)
