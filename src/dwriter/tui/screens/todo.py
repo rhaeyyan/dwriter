@@ -98,8 +98,9 @@ class AddTodoForm(Vertical):
 
         with Horizontal(classes="form-row"):
             with Vertical(classes="form-col"):
+                date_fmt = self.app.ctx.config.display.due_date_format
                 yield Label("Due Date:")
-                yield Input(id="add-date", placeholder="today, tomorrow, +5d...")
+                yield Input(id="add-date", placeholder=f"today, {date_fmt}, +5d...")
             with Vertical(classes="form-col"):
                 yield Label("Time:")
                 yield Input(id="add-time", placeholder="2pm, 14:30, +2h...")
@@ -298,16 +299,24 @@ class EditTodoModal(ModalScreen):  # type: ignore[type-arg]
             )
 
             # Date and Time fields side-by-side
+            date_fmt = self.app.ctx.config.display.due_date_format
+            fmt_map = {
+                "YYYY-MM-DD": "%Y-%m-%d",
+                "MM/DD/YYYY": "%m/%d/%Y",
+                "DD/MM/YYYY": "%d/%m/%Y",
+            }
+            hint = fmt_map.get(date_fmt, "%Y-%m-%d")
+
             with Horizontal(classes="horizontal-row"):
                 with Vertical(classes="col"):
                     yield Label("Due Date:", id="edit-date-label")
-                    date_str = ""
+                    date_val = ""
                     if self.todo.due_date:
-                        date_str = self.todo.due_date.strftime("%Y-%m-%d")
+                        date_val = self.todo.due_date.strftime(hint)
                     yield Input(
-                        value=date_str,
+                        value=date_val,
                         id="date-input",
-                        placeholder="YYYY-MM-DD, tomorrow, etc.",
+                        placeholder=f"{date_fmt}, tomorrow, etc.",
                     )
                 with Vertical(classes="col"):
                     yield Label("Time:", id="edit-time-label")
@@ -832,15 +841,28 @@ class TodoListView(ListView):
                 else:
                     d_str = f"[{DUE_SOON}]99+[/{DUE_SOON}]"
             else:
-                # Absolute date formats
-                # YYYY-MM-DD, MM/DD/YYYY, DD/MM/YYYY
+                # Absolute date formats with day of week coloring
+                DAY_COLORS = {
+                    "Monday": "#6A9FE8",
+                    "Tuesday": "#56C8C8",
+                    "Wednesday": "#72C472",
+                    "Thursday": "#E8A84A",
+                    "Friday": "#B57FE8",
+                    "Saturday": "#E87FA0",
+                    "Sunday": "#E86060",
+                }
+                day_name = todo.due_date.strftime("%A")
+                day_color = DAY_COLORS.get(day_name, "#FFFFFF")
+
+                # Mapping our config keys to strftime formats
                 fmt_map = {
                     "YYYY-MM-DD": "%Y-%m-%d",
                     "MM/DD/YYYY": "%m/%d/%Y",
                     "DD/MM/YYYY": "%d/%m/%Y",
                 }
-                date_fmt = fmt_map.get(due_date_format, "%Y-%m-%d")
-                d_str = f"[{DUE_SOON}]{todo.due_date.strftime(date_fmt)}[/{DUE_SOON}]"
+                base_fmt = fmt_map.get(due_date_format, "%Y-%m-%d")
+                formatted_date = todo.due_date.strftime(f"%A, {base_fmt}")
+                d_str = f"[{day_color}]\\[{formatted_date}][/{day_color}]"
 
         # ESCAPE USER CONTENT! This stops user-typed brackets from crashing the app.
         safe_content = todo.content.replace("[", "\\[")
@@ -963,6 +985,27 @@ class TodoScreen(Container):
     TabbedContent > TabPane {
         padding: 0;
     }
+
+    /* Use Textual's auto-generated ID for the tab to guarantee maximum CSS specificity */
+    #todo-tabs #tab-add-pane {
+        color: $success;
+        text-style: bold;
+        background: transparent;
+        padding: 0 1;
+        min-width: 0;
+    }
+
+    #todo-tabs #tab-add-pane:hover {
+        background: $success 20%;
+        color: $success;
+        text-style: bold;
+    }
+
+    #todo-tabs #tab-add-pane.-active {
+        background: $success;
+        color: $background;
+        text-style: bold;
+    }
     """
 
     BINDINGS = [
@@ -1009,7 +1052,7 @@ class TodoScreen(Container):
                 )
             # Use TabbedContent for filter switching with dynamic counts
             with TabbedContent(initial="pending-pane", id="todo-tabs"):
-                with TabPane(" [+] ", id="add-pane"):
+                with TabPane("\\[+]", id="add-pane"):
                     yield AddTodoForm()
                 with TabPane(f"{get_icon('timer', use_emojis)} Pending (0)", id="pending-pane"):
                     yield TodoListView(id="todos")
@@ -1111,7 +1154,14 @@ class TodoScreen(Container):
         from ...date_utils import parse_natural_date
         
         try:
-            due_date = parse_natural_date(message.due_str, prefer_future=True) if message.due_str else None
+            due_date_format = self.ctx.config.display.due_date_format
+            fmt_map = {
+                "YYYY-MM-DD": "%Y-%m-%d",
+                "MM/DD/YYYY": "%m/%d/%Y",
+                "DD/MM/YYYY": "%d/%m/%Y",
+            }
+            hint = fmt_map.get(due_date_format)
+            due_date = parse_natural_date(message.due_str, prefer_future=True, format_hint=hint) if message.due_str else None
             task = self.ctx.db.add_todo(
                 content=message.content,
                 due_date=due_date,
@@ -1441,8 +1491,17 @@ class TodoScreen(Container):
         """
         from ...date_utils import parse_natural_date
         try:
+            # Use configuration to hint at preferred input format
+            due_date_format = self.app.ctx.config.display.due_date_format
+            fmt_map = {
+                "YYYY-MM-DD": "%Y-%m-%d",
+                "MM/DD/YYYY": "%m/%d/%Y",
+                "DD/MM/YYYY": "%d/%m/%Y",
+            }
+            hint = fmt_map.get(due_date_format)
+            
             # Prefer future for TUI-based todo editing
-            return parse_natural_date(due_str, prefer_future=True)
+            return parse_natural_date(due_str, prefer_future=True, format_hint=hint)
         except ValueError:
             return None
 

@@ -130,12 +130,19 @@ FORMATTERS = {
     default=False,
     help="Append your pending tasks as a 'Plan for Today' section",
 )
+@click.option(
+    "--weekly",
+    is_flag=True,
+    default=False,
+    help="Include the 7-day Weekly Pulse wrap-up summary",
+)
 @click.pass_obj
 def standup(
     ctx: AppContext,
     output_format: str,
     no_copy: bool,
     with_todos: bool,
+    weekly: bool,
 ) -> None:
     """Generate yesterday's standup.
 
@@ -155,6 +162,7 @@ def standup(
       dwriter standup --format jira
       dwriter standup --no-copy
       dwriter standup --with-todos    # Include pending tasks
+      dwriter standup --weekly        # Include 7-day Pulse Wrap-up
     """
     # Use config defaults if not specified
     if output_format is None:
@@ -175,7 +183,7 @@ def standup(
         pending_todos = ctx.db.get_todos(status="pending")
 
     # Handle empty state
-    if not entries and not pending_todos:
+    if not entries and not pending_todos and not weekly:
         ctx.console.print("No entries found for yesterday and no pending tasks.")
         return
 
@@ -200,6 +208,29 @@ def standup(
             output += f"{todo_header}\n{todo_text}"
         else:
             output += "\n\nPlan for Today:\n(No pending tasks)"
+
+    # Append weekly wrap-up if requested
+    if weekly:
+        from ..analytics import AnalyticsEngine, InsightGenerator
+        import re
+
+        engine = AnalyticsEngine(ctx.db)
+        insight_gen = InsightGenerator(engine)
+        wrapup = insight_gen.generate_weekly_wrapup()
+
+        wrapup_header = "\n\n7-Day Weekly Pulse:"
+        if output_format in ["slack", "jira"]:
+            wrapup_header = f"\n\n*{wrapup_header.strip()}*"
+        elif output_format == "markdown":
+            wrapup_header = f"\n\n### {wrapup_header.strip()}"
+
+        clean_wrapup = []
+        for n in wrapup:
+            # Strip Rich tags but keep the text
+            clean_n = re.sub(r"\[.*?\]", "", n)
+            clean_wrapup.append(f"- {clean_n}")
+        
+        output += f"{wrapup_header}\n" + "\n".join(clean_wrapup)
 
     # Copy to clipboard if enabled
     if should_copy:

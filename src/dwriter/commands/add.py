@@ -74,7 +74,8 @@ def add(
 
     # Extract tags/project from content if present
     from ..tui.parsers import parse_quick_add
-    parsed = parse_quick_add(content_str)
+    date_format = ctx.config.display.date_format
+    parsed = parse_quick_add(content_str, date_format=date_format)
     
     # Merge default tags, content-extracted tags, and explicitly provided tags
     all_tags = list(ctx.config.defaults.tags) + list(parsed.tags) + list(tags)
@@ -87,7 +88,13 @@ def add(
     final_content = parsed.content
 
     # Parse the date (or use current time if not provided)
-    entry_date = parse_date_or_default(date_str)
+    fmt_map = {
+        "YYYY-MM-DD": "%Y-%m-%d",
+        "MM/DD/YYYY": "%m/%d/%Y",
+        "DD/MM/YYYY": "%d/%m/%Y",
+    }
+    hint = fmt_map.get(date_format)
+    entry_date = parse_date_or_default(date_str, format_hint=hint)
 
     entry = ctx.db.add_entry(
         content=final_content, tags=all_tags, project=project, created_at=entry_date

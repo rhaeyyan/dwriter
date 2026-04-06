@@ -155,8 +155,17 @@ def todo(
         
         if final_due_str is not None:
             try:
+                # Use configuration to hint at preferred input format
+                due_date_format = app_ctx.config.display.due_date_format
+                fmt_map = {
+                    "YYYY-MM-DD": "%Y-%m-%d",
+                    "MM/DD/YYYY": "%m/%d/%Y",
+                    "DD/MM/YYYY": "%d/%m/%Y",
+                }
+                hint = fmt_map.get(due_date_format)
+                
                 # For todos, we generally prefer future dates
-                due_date = parse_natural_date(final_due_str, prefer_future=True)
+                due_date = parse_natural_date(final_due_str, prefer_future=True, format_hint=hint)
             except ValueError as e:
                 app_ctx.console.print(f"[red]Error:[/red] {e}")
                 return
@@ -407,8 +416,17 @@ def todo_add(
     
     if final_due_str is not None:
         try:
+            # Use configuration to hint at preferred input format
+            due_date_format = ctx.config.display.due_date_format
+            fmt_map = {
+                "YYYY-MM-DD": "%Y-%m-%d",
+                "MM/DD/YYYY": "%m/%d/%Y",
+                "DD/MM/YYYY": "%d/%m/%Y",
+            }
+            hint = fmt_map.get(due_date_format)
+            
             # For todos, we generally prefer future dates
-            due_date = parse_natural_date(final_due_str, prefer_future=True)
+            due_date = parse_natural_date(final_due_str, prefer_future=True, format_hint=hint)
         except ValueError as e:
             ctx.console.print(f"[red]Error:[/red] {e}")
             return
@@ -601,8 +619,17 @@ def remind(ctx: AppContext, content: tuple[Any, ...], due_date_str: str) -> None
 
     # Use existing natural language parser
     try:
+        # Use configuration to hint at preferred input format
+        due_date_format = ctx.config.display.due_date_format
+        fmt_map = {
+            "YYYY-MM-DD": "%Y-%m-%d",
+            "MM/DD/YYYY": "%m/%d/%Y",
+            "DD/MM/YYYY": "%d/%m/%Y",
+        }
+        hint = fmt_map.get(due_date_format)
+        
         # Reminders explicitly prefer future dates
-        due_date = parse_natural_date(due_date_str, prefer_future=True)
+        due_date = parse_natural_date(due_date_str, prefer_future=True, format_hint=hint)
     except ValueError as e:
         ctx.console.print(f"[red]Error:[/red] {e}")
         return
@@ -659,8 +686,17 @@ def snooze(
         return
 
     try:
+        # Use configuration to hint at preferred input format
+        due_date_format = ctx.config.display.due_date_format
+        fmt_map = {
+            "YYYY-MM-DD": "%Y-%m-%d",
+            "MM/DD/YYYY": "%m/%d/%Y",
+            "DD/MM/YYYY": "%d/%m/%Y",
+        }
+        hint = fmt_map.get(due_date_format)
+        
         # Snooze always prefers future
-        new_due = parse_natural_date(due_str, prefer_future=True)
+        new_due = parse_natural_date(due_str, prefer_future=True, format_hint=hint)
     except ValueError as e:
         ctx.console.print(f"[red]Error:[/red] {e}")
         return
