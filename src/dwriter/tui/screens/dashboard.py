@@ -19,7 +19,7 @@ from ..colors import PROJECT, TAG, get_icon
 
 
 class UnifiedPulsePanel(Static):
-    """Unified panel for activity heatmap and 'Two-Cents' insights."""
+    """Unified panel for activity heatmap and '7-Day Pulse' insights."""
 
     DEFAULT_CSS = """
     UnifiedPulsePanel {

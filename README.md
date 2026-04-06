@@ -73,7 +73,8 @@ Inside the dashboard, you can:
 - **✅ Add/Manage To-do's:** Keyboard-driven task board with priorities.
 - **⏱️ Focus Timer:** A full-screen countdown that auto-logs your progress.
 - **🔍 Search/Edit/Review:** Live-filtering fuzzy search across all your history.
-- **📈 Activity Map:** Visualize your productivity streaks and habits and generate reports.
+- **📈 7-Day Weekly Pulse:** High-signal behavioral analytics (Archetypes, Golden Hour, Velocity Delta) updated every 24 hours.
+- **📅 Activity Map:** Visualize your productivity streaks and habits and generate reports.
 
 ![dwriter Focus Timer](screenshots/timer-tui_2.png)
 *Immersive Focus: The full-screen TUI timer designed for zero-distraction deep work.*
