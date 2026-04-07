@@ -77,6 +77,31 @@ dwriter timer "45 &engine_overhaul #deepwork"
 
 ---
 
+## 🤖 AI & Intelligence
+
+Harness your historical data for deeper insights. These features require an Ollama-compatible AI backend.
+
+| Command | Description |
+| :--- | :--- |
+| `dwriter ask "query"` | Ask natural language questions about your history or productivity. |
+| `dwriter compress` | Generate a structured weekly retrospective from your activity logs. |
+
+### Querying your 2nd-Brain
+Ask for summaries, trend analysis, or advice based on your own data:
+
+```bash
+# Query recent wins
+dwriter ask "What were my biggest wins this week?"
+
+# Analyze project time
+dwriter ask "How much progress did I make on &project-x?"
+
+# Strategic advice
+dwriter ask "Based on my history, what is my most productive time of day?"
+```
+
+---
+
 ## 🤖 Summaries & Standups
 
 Stop wasting time trying to remember what you did yesterday for your morning standup.

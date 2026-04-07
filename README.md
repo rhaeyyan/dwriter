@@ -12,6 +12,7 @@ Whether you are a software engineer tracking "deep work," a freelancer logging b
 Modern productivity apps are often cluttered with distractions. **dwriter** is designed to prioritize your focus:
 
 *   **⚡ Immediate Capture:** Use the "Headless CLI" to log thoughts, tasks, or focus sessions in seconds without leaving your terminal environment.
+*   **🧠 AI-Powered 2nd-Brain:** Reflect on your history with an interactive chat that understands your long-term goals and recent activity.
 *   **🎨 Unified Dashboard:** Launch the Terminal User Interface (TUI) to reflect, search your history, or manage a visual todo board.
 *   **🤖 Standup Automation:** Instantly transform your raw logs into formatted summaries for Slack, Jira, or Markdown.
 *   **📅 Natural Language:** Talk to your journal like a human. `dwriter add "Fixed the bug" --date "last Friday"` just works.
@@ -59,22 +60,26 @@ uv tool install --upgrade .
 
 ## 🎮 How to Use dwriter
 
-### 📊 The Visual Dashboard (TUI)
-To **launch** the interface:
+### 🧠 The AI 2nd-Brain (Reflection)
+To **launch** the interactive chat:
 
 ```bash
 dwriter
 ```
 
-![dwriter Dashboard](screenshots/interactive-tui.png)
-*The dwriter Unified Dashboard: High-contrast analytics meets chronological logging.*
+**dwriter** features a context-aware "2nd-Brain" designed for deep reflection. It uses a three-tier memory system to help you uncover patterns in your work:
+- **Long-Term Memory:** AI-generated weekly retrospectives that identify your biggest wins and friction points.
+- **Short-Term Memory:** Seamless access to your last 72 hours of activity.
+- **Targeted History:** On-demand retrieval of past entries when you mention specific `&projects` or `#tags`.
 
-Inside the dashboard, you can:
-- **✅ Add/Manage To-do's:** Keyboard-driven task board with priorities.
+### 📊 The Visual Dashboard (TUI)
+Navigate between screens using the tab bar:
+
+- **🧠 2nd-Brain:** Query your history and get productivity advice.
+- **✅ To-do Board:** Keyboard-driven task board with priorities.
 - **⏱️ Focus Timer:** A full-screen countdown that auto-logs your progress.
-- **🔍 Search/Edit/Review:** Live-filtering fuzzy search across all your history.
-- **📈 7-Day Weekly Pulse:** High-signal behavioral analytics (Archetypes, Golden Hour, Velocity Delta) updated every 24 hours.
-- **📅 Activity Map:** Visualize your productivity streaks and habits and generate reports.
+- **🔍 Search/Edit:** Live-filtering fuzzy search across all your history.
+- **📈 Weekly Pulse:** Behavioral analytics (Archetypes, Golden Hour, Velocity Delta) updated every 24 hours.
 
 ![dwriter Focus Timer](screenshots/timer-tui_2.png)
 *Immersive Focus: The full-screen TUI timer designed for zero-distraction deep work.*

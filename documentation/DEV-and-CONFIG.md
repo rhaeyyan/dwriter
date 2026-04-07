@@ -43,6 +43,31 @@ notifications_enabled = false  # Toggle desktop push notifications
 
 ---
 
+## 🧠 Configuring the AI Engine (Ollama)
+
+The **2nd-Brain** and **Weekly Summary** features require a local or remote AI backend. We recommend using [Ollama](https://ollama.com/) for a private, high-speed local experience.
+
+### 1. Install Ollama
+Download and install Ollama from [ollama.com](https://ollama.com/).
+
+### 2. Pull the Recommended Model
+We recommend **Llama 3.1** for its strong reasoning and context handling:
+```bash
+ollama pull llama3.1
+```
+
+### 3. Update your dwriter config
+Add an `[ai]` section to your `~/.dwriter/config.toml` (or use `dwriter config edit`):
+
+```toml
+[ai]
+enabled = true
+base_url = "http://localhost:11434/v1"  # Default Ollama API endpoint
+model = "llama3.1"                      # Or your preferred model
+```
+
+---
+
 ## 🔔 Reminder System & Shell Integration
 
 The **Reminder System** is "headless-first." It checks for urgent tasks whenever you run a `dwriter` command. For truly hands-off reminders, you can add a silent check to your shell configuration (e.g., `.zshrc` or `.bashrc`).

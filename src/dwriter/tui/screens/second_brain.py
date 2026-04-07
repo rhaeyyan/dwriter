@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 import re
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from ...cli import AppContext
@@ -22,9 +22,6 @@ from textual.widgets import Input, RichLog, Static
 
 from ...ai.engine import get_ai_client, get_raw_ai_client, get_system_prompt
 from ...ai.schemas.router import ActionRouter
-from ...ai.schemas.tasks import AddTodoIntent, LogEntryIntent, ProjectBreakdownIntent
-from ...ai.schemas.triage import BulkSnoozeIntent, TriageReview
-from ..messages import EntryAdded, TodoUpdated
 
 
 class SecondBrainScreen(Container):
@@ -245,7 +242,7 @@ class SecondBrainScreen(Container):
 
     @work(thread=True)
     def _run_ai_chat(self, user_input: str) -> None:
-        """Executes the AI chat workflow including intent routing and action dispatch.
+        """Executes the AI chat workflow focusing on historical retrieval and analysis.
 
         Args:
             user_input (str): The raw text query from the user.
@@ -266,84 +263,12 @@ class SecondBrainScreen(Container):
                         "role": "system",
                         "content": get_system_prompt(
                             "Categorize the user's request into a functional domain. "
-                            "Functional areas: task_management, log_entry, triage, reflection, analytics, context_restore."
+                            "Functional areas: reflection, analytics, context_restore, unknown."
                         ),
                     },
                     {"role": "user", "content": user_input},
                 ],
             )
-
-            # Automated action dispatch phase
-            if route.category == "log_entry":
-                self.app.call_from_thread(status.update, "[bold #cba6f7]Logging entry...[/bold #cba6f7]")
-                intent = client_structured.chat.completions.create(
-                    model=self.ctx.config.ai.model,
-                    response_model=LogEntryIntent,
-                    messages=[
-                        {
-                            "role": "system",
-                            "content": get_system_prompt(f"Extract log entry metadata. Current time: {datetime.now().isoformat()}"),
-                        },
-                        {"role": "user", "content": user_input},
-                    ],
-                )
-                
-                entry = self.ctx.db.add_entry(
-                    content=intent.content,
-                    project=intent.project,
-                    tags=intent.tags,
-                    created_at=intent.created_at.replace(tzinfo=None) if intent.created_at else None
-                )
-                
-                self.app.call_from_thread(log.write, "[bold black on yellow] SYSTEM [/bold black on yellow]")
-                self.app.call_from_thread(log.write, f"[dim]Logged new entry #{entry.id}.[/dim]\n")
-                self.app.post_message(EntryAdded(entry.id, entry.content, entry.created_at))
-                self.app.call_from_thread(status.update, "")
-                return
-
-            elif route.category == "task_management":
-                self.app.call_from_thread(status.update, "[bold #cba6f7]Creating task...[/bold #cba6f7]")
-                intent = client_structured.chat.completions.create(
-                    model=self.ctx.config.ai.model,
-                    response_model=Union[AddTodoIntent, ProjectBreakdownIntent],
-                    messages=[
-                        {
-                            "role": "system",
-                            "content": get_system_prompt(
-                                "Extract task management metadata. "
-                                "Use AddTodoIntent for single tasks and ProjectBreakdownIntent for project-level requests. "
-                                f"Current time: {datetime.now().isoformat()}"
-                            ),
-                        },
-                        {"role": "user", "content": user_input},
-                    ],
-                )
-                
-                if hasattr(intent, "tasks"): # ProjectBreakdown
-                    for task in intent.tasks:
-                        due = datetime.now() + timedelta(days=task.estimated_days_out)
-                        t = self.ctx.db.add_todo(
-                            content=task.content,
-                            priority=task.priority,
-                            project=intent.project_name,
-                            due_date=due
-                        )
-                        self.app.post_message(TodoUpdated(t.id, "added"))
-                    self.app.call_from_thread(log.write, "[bold black on yellow] SYSTEM [/bold black on yellow]")
-                    self.app.call_from_thread(log.write, f"[dim]Added {len(intent.tasks)} tasks to &{intent.project_name}.[/dim]\n")
-                else: # AddTodo
-                    t = self.ctx.db.add_todo(
-                        content=intent.content,
-                        priority=intent.priority,
-                        project=intent.project,
-                        tags=intent.tags,
-                        due_date=intent.due_date.replace(tzinfo=None) if intent.due_date else None
-                    )
-                    self.app.call_from_thread(log.write, "[bold black on yellow] SYSTEM [/bold black on yellow]")
-                    self.app.call_from_thread(log.write, f"[dim]Added task #{t.id} to board.[/dim]\n")
-                    self.app.post_message(TodoUpdated(t.id, "added"))
-                self.app.call_from_thread(status.update, "")
-                return
 
             # Conversational refinement phase
             self.app.call_from_thread(status.update, "[bold #cba6f7]Thinking...[/bold #cba6f7]")
@@ -356,8 +281,9 @@ class SecondBrainScreen(Container):
                     "content": (
                         "You are dwriter 2nd-Brain, a productivity assistant. "
                         "You have access to historical summaries and recent activity logs. "
-                        "Instructions: You provide conversational assistance and analysis. "
-                        "You do not have direct write access to the database in this mode."
+                        "IMPORTANT: You are an analytical assistant. You CANNOT perform actions "
+                        "like adding tasks, logging entries, or changing due dates. If asked "
+                        "to do so, explain that you are designed for reflection and analysis only."
                         f"\n\n{self._context_data}"
                         f"{targeted_context}"
                     ),

@@ -212,6 +212,20 @@ Track business software expenses for tax season.
 
 **The Benefit: Financial Awareness.** Small subscriptions are "death by a thousand cuts." Tracking them centrally makes it easy to audit your burn rate at the end of the quarter.
 
+## 🧠 21. The Strategic Retrospective (AI 2nd-Brain)
+Identify long-term patterns and friction points across your entire history.
+
+*   **2nd-Brain (TUI):** Ask your 2nd-Brain for a high-level summary.
+    ```text
+    "Looking at my weekly summaries from the last month, what has been my biggest friction point?"
+    ```
+*   **Fast CLI:** Generate a new summary to update your long-term memory.
+    ```bash
+    dwriter compress
+    ```
+
+**The Benefit: Pattern Discovery.** We often miss the "forest for the trees" when logging day-to-day. The 2nd-Brain uses your archived weekly summaries to surface recurring struggles or peak performance windows that aren't obvious in a chronological log.
+
 > **Note:** For robust accounting, we recommend dedicated tools like hledger.
 
 ---

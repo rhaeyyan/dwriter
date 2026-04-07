@@ -16,9 +16,6 @@ class ActionRouter(BaseModel):
     """
 
     category: Literal[
-        "task_management",
-        "log_entry",
-        "triage",
         "reflection",
         "analytics",
         "context_restore",

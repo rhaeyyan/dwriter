@@ -1,13 +1,13 @@
 """AI Natural Language Command for dwriter.
 
 This module implements the 'ask' command, which utilizes a routing architecture
-to interpret natural language requests and execute corresponding database operations.
+to interpret natural language queries for historical analysis and reflection.
 """
 
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from ..cli import AppContext
@@ -21,8 +21,6 @@ from rich.table import Table
 from ..ai.engine import get_ai_client, get_system_prompt
 from ..ai.schemas.reflection import ContextRestore, ReflectionPrompt
 from ..ai.schemas.router import ActionRouter
-from ..ai.schemas.tasks import AddTodoIntent, ProjectBreakdownIntent
-from ..ai.schemas.triage import BulkSnoozeIntent, TriageReview
 from ..tui.colors import PROJECT, TAG
 
 
@@ -30,23 +28,19 @@ from ..tui.colors import PROJECT, TAG
 @click.argument("content", nargs=-1)
 @click.pass_obj
 def ask(ctx: AppContext, content: tuple[str, ...]) -> None:
-    """Interprets and executes natural language commands using AI.
+    """Queries the AI 2nd-Brain for insights and retrospective data.
 
-    The command employs a multi-stage routing architecture to categorize user
-    intent and extract relevant parameters for task management, triage,
-    reflection, and analytics.
+    Utilizes a routing architecture to interpret user queries and extract
+    parameters for historical retrieval, task summarization, and reflection.
 
     Args:
-        ctx: The application context containing configuration and database access.
-        content: The raw natural language input from the user.
+        ctx: Application context.
+        content: Natural language query string.
 
     Examples:
-        dwriter ask "Remind me to call John tomorrow at 2pm"
-        dwriter ask "Break down the 'Website Redesign' project into tasks"
-        dwriter ask "I'm overwhelmed, help me triage my tasks"
-        dwriter ask "Snooze all overdue tasks until Monday"
-        dwriter ask "I'm back from vacation, what did I miss?"
-        dwriter ask "Give me a reflection prompt for my journal"
+        dwriter ask "What were my biggest wins this week?"
+        dwriter ask "How much time did I spend on &project-x?"
+        dwriter ask "I'm overwhelmed, help me summarize my pending tasks"
         dwriter ask "Analyze my productivity patterns for the last month"
     """
     if not ctx.config.ai.enabled:
@@ -87,54 +81,6 @@ def ask(ctx: AppContext, content: tuple[str, ...]) -> None:
                 ],
             )
 
-            # Task management execution
-            if route.category == "task_management":
-                status.update("Extracting task details...")
-                intent = client.chat.completions.create(
-                    model=ctx.config.ai.model,
-                    response_model=Union[AddTodoIntent, ProjectBreakdownIntent],
-                    max_retries=2,
-                    messages=[
-                        {
-                            "role": "system",
-                            "content": get_system_prompt(
-                                "Extract structured task management intent. "
-                                "For single tasks, use AddTodoIntent. "
-                                "For multiple tasks or project breakdowns, use ProjectBreakdownIntent. "
-                                f"Current time: {datetime.now().isoformat()}"
-                            ),
-                        },
-                        {"role": "user", "content": query_text},
-                    ],
-                )
-                status.stop()
-                _handle_task_management(ctx, intent)
-                return
-
-            # Triage and intervention execution
-            if route.category == "triage":
-                status.update("Analyzing tasks for triage...")
-                intent = client.chat.completions.create(
-                    model=ctx.config.ai.model,
-                    response_model=Union[BulkSnoozeIntent, TriageReview],
-                    max_retries=2,
-                    messages=[
-                        {
-                            "role": "system",
-                            "content": get_system_prompt(
-                                "Identify if the user wants a bulk snooze or a triage review (intervention). "
-                                "BulkSnoozeIntent is for snoozing overdue or low priority tasks. "
-                                "TriageReview is for when the user is overwhelmed or asks for help/review of stale tasks. "
-                                f"Current time: {datetime.now().isoformat()}"
-                            ),
-                        },
-                        {"role": "user", "content": query_text},
-                    ],
-                )
-                status.stop()
-                _handle_triage(ctx, client, intent)
-                return
-
             # Reflection and context restoration
             if route.category == "reflection":
                 status.update("Generating reflection prompt...")
@@ -152,6 +98,10 @@ def ask(ctx: AppContext, content: tuple[str, ...]) -> None:
                 _execute_analytics(ctx, client)
                 return
 
+            # If category is unknown, fallback to a conversational analysis
+            status.update("Generating response...")
+            _execute_general_query(ctx, client, query_text)
+
         except (ConnectionError, openai.APIConnectionError):
             status.stop()
             ctx.console.print(
@@ -164,218 +114,46 @@ def ask(ctx: AppContext, content: tuple[str, ...]) -> None:
             ctx.console.print(f"\n[bold red]AI Error:[/bold red] {e}")
             return
 
-    # Fallback for unhandled categories
-    ctx.console.print(f"[bold yellow]Detected Category:[/bold yellow] {route.category.replace('_', ' ').title()}")
 
-
-def _handle_task_management(
-    ctx: AppContext, intent: AddTodoIntent | ProjectBreakdownIntent
-) -> None:
-    """Dispatches task management intents to specific execution handlers.
+def _execute_general_query(ctx: AppContext, client: Any, query: str) -> None:
+    """Handles general conversational queries about history or productivity.
 
     Args:
-        ctx: The application context.
-        intent: The extracted task management intent.
+        ctx: Application context.
+        client: AI client.
+        query: User's natural language question.
     """
-    if isinstance(intent, AddTodoIntent):
-        _execute_add_todo(ctx, intent)
-    elif isinstance(intent, ProjectBreakdownIntent):
-        _execute_project_breakdown(ctx, intent)
-
-
-def _execute_add_todo(ctx: AppContext, intent: AddTodoIntent) -> None:
-    """Persists a single todo item to the database.
-
-    Args:
-        ctx: The application context.
-        intent: The structured data for the new todo.
-    """
-    due_date = intent.due_date
-    if due_date and due_date.tzinfo:
-        due_date = due_date.replace(tzinfo=None)
-
-    todo = ctx.db.add_todo(
-        content=intent.content,
-        priority=intent.priority,
-        project=intent.project,
-        tags=intent.tags,
-        due_date=due_date,
-    )
-
-    priority_colors = {
-        "urgent": "bold red",
-        "high": "yellow",
-        "normal": "white",
-        "low": "dim",
-    }
-    color = priority_colors.get(intent.priority, "white")
-
-    due_str = ""
-    if due_date:
-        due_str = f" [dim](due: {due_date.strftime('%Y-%m-%d %H:%M')})[/dim]"
-
-    tags_str = f" [{TAG}]#{' #'.join(intent.tags)}[/{TAG}]" if intent.tags else ""
-    proj_str = f" [{PROJECT}]&{intent.project}[/{PROJECT}]" if intent.project else ""
-
-    ctx.console.print(
-        f"[green]Added Task [{todo.id}]:[/green] "
-        f"[{color}]{intent.priority.upper()}[/{color}] | "
-        f"[{color}]{intent.content}[/{color}]{tags_str}{proj_str}{due_str}"
-    )
-
-
-def _execute_project_breakdown(ctx: AppContext, intent: ProjectBreakdownIntent) -> None:
-    """Decomposes a project into multiple tasks and persists them.
-
-    Args:
-        ctx: The application context.
-        intent: The structured breakdown of the project.
-    """
-    ctx.console.print(
-        f"[bold green]Breaking down project:[/bold green] [{PROJECT}]&{intent.project_name}[/{PROJECT}]"
-    )
-
-    table = Table(show_header=True, header_style="bold blue")
-    table.add_column("ID", justify="right", style=PROJECT)
-    table.add_column("Priority", justify="center")
-    table.add_column("Task")
-    table.add_column("Due (est)", style="cyan")
-
-    now = datetime.now()
-    for task in intent.tasks:
-        due_date = now + timedelta(days=task.estimated_days_out)
-
-        todo = ctx.db.add_todo(
-            content=task.content,
-            priority=task.priority,
-            project=intent.project_name,
-            due_date=due_date,
-        )
-
-        priority_colors = {
-            "urgent": "bold red",
-            "high": "yellow",
-            "normal": "white",
-            "low": "dim",
-        }
-        p_label = task.priority.upper()
-        p_style = priority_colors.get(task.priority, "white")
-
-        due_str = due_date.strftime("%Y-%m-%d") if task.estimated_days_out > 0 else "Today"
-        table.add_row(str(todo.id), f"[{p_style}]{p_label}[/{p_style}]", task.content, due_str)
-
-    ctx.console.print(table)
-    ctx.console.print(f"[green]Successfully added {len(intent.tasks)} tasks to &{intent.project_name}[/green]")
-
-
-def _handle_triage(
-    ctx: AppContext, client: Any, intent: BulkSnoozeIntent | TriageReview
-) -> None:
-    """Dispatches triage intents to specific execution handlers.
-
-    Args:
-        ctx: The application context.
-        client: The AI client for further interactions.
-        intent: The extracted triage intent.
-    """
-    if isinstance(intent, BulkSnoozeIntent):
-        _execute_bulk_snooze(ctx, intent)
-    elif isinstance(intent, TriageReview):
-        _execute_anti_procrastination(ctx, client)
-
-
-def _execute_bulk_snooze(ctx: AppContext, intent: BulkSnoozeIntent) -> None:
-    """Updates due dates for a batch of tasks based on criteria.
-
-    Args:
-        ctx: The application context.
-        intent: The structured snooze criteria and target date.
-    """
+    # Fetch some basic context to help the model answer
+    seven_days_ago = datetime.now() - timedelta(days=7)
+    entries = ctx.db.get_all_entries()
+    recent_entries = [e for e in entries if e.created_at >= seven_days_ago]
     todos = ctx.db.get_todos(status="pending")
-    now = datetime.now()
 
-    to_snooze = []
-    if intent.target_tasks == "all_overdue":
-        to_snooze = [t for t in todos if t.due_date and t.due_date < now]
-    elif intent.target_tasks == "low_priority":
-        to_snooze = [t for t in todos if t.priority == "low"]
+    activity_context = "RECENT ACTIVITY (7 DAYS):\n"
+    activity_context += "\n".join([f"- {e.content}" for e in recent_entries[:15]])
+    activity_context += "\n\nPENDING TASKS:\n"
+    activity_context += "\n".join([f"- {t.content}" for t in todos[:10]])
 
-    if not to_snooze:
-        ctx.console.print("[yellow]No tasks matching the criteria to snooze.[/yellow]")
-        return
-
-    snooze_date = intent.snooze_until
-    if snooze_date.tzinfo:
-        snooze_date = snooze_date.replace(tzinfo=None)
-
-    for t in to_snooze:
-        ctx.db.update_todo(t.id, due_date=snooze_date)
-
-    ctx.console.print(
-        f"[green]Successfully snoozed {len(to_snooze)} tasks until {snooze_date.strftime('%Y-%m-%d')}.[/green]"
-    )
-    ctx.console.print(f"[dim]Reasoning: {intent.reasoning}[/dim]")
-
-
-def _execute_anti_procrastination(ctx: AppContext, client: Any) -> None:
-    """Identifies stale tasks and generates AI-driven micro-interventions.
-
-    Args:
-        ctx: The application context.
-        client: The AI client.
-    """
-    todos = ctx.db.get_todos(status="pending")
-    now = datetime.now()
-    stale_limit = now - timedelta(days=14)
-
-    stale_tasks = [t for t in todos if t.created_at < stale_limit]
-
-    if not stale_tasks:
-        ctx.console.print("[green]No stale tasks found! Your list is looking fresh.[/green]")
-        return
-
-    tasks_data = "\n".join([f"ID: {t.id} | Task: {t.content} | Created: {t.created_at.strftime('%Y-%m-%d')}" for t in stale_tasks])
-
-    with Status("Generating interventions for stale tasks...", console=ctx.console) as status:
-        try:
-            review = client.chat.completions.create(
-                model=ctx.config.ai.model,
-                response_model=TriageReview,
-                max_retries=2,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": get_system_prompt(
-                            "Provide gentle interventions for these stale tasks. "
-                            "Create micro-tasks that take < 2 minutes. "
-                            "Recommend deletion if the task seems no longer relevant."
-                        ),
-                    },
-                    {"role": "user", "content": tasks_data},
-                ],
-            )
-        except Exception as e:
-            status.stop()
-            ctx.console.print(f"[red]Error generating triage review:[/red] {e}")
-            return
-
-    table = Table(title="Anti-Procrastination Triage", show_header=True, header_style="bold red")
-    table.add_column("ID", justify="right", style=PROJECT)
-    table.add_column("Observation")
-    table.add_column("Micro-Task (2 min)")
-    table.add_column("Action", justify="center")
-
-    for intervention in review.interventions:
-        action_str = "[bold red]DELETE?[/bold red]" if intervention.recommend_delete else "[cyan]KEEP[/cyan]"
-        table.add_row(
-            str(intervention.task_id),
-            intervention.user_friendly_callout,
-            f"[italic]{intervention.suggested_micro_task}[/italic]",
-            action_str
+    try:
+        response = client.chat.completions.create(
+            model=ctx.config.ai.model,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are dwriter 2nd-Brain. Answer the user's question using the provided context. "
+                        "IMPORTANT: You are an analytical assistant. You CANNOT perform actions like adding tasks, "
+                        "logging entries, or changing due dates. If asked to do so, politely explain that you are "
+                        "designed for reflection and analysis only."
+                    ),
+                },
+                {"role": "user", "content": f"Context:\n{activity_context}\n\nQuestion: {query}"},
+            ],
         )
-
-    ctx.console.print(table)
-    ctx.console.print("\n[dim]Use 'dwriter edit <id>' to update or 'dwriter delete <id>' to remove tasks.[/dim]")
+        ctx.console.print("\n[bold cyan]2nd-Brain Response:[/bold cyan]")
+        ctx.console.print(Panel(response.choices[0].message.content, border_style="cyan"))
+    except Exception as e:
+        ctx.console.print(f"[red]Error generating response:[/red] {e}")
 
 
 def _execute_reflection(ctx: AppContext, client: Any) -> None:

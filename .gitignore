@@ -64,6 +64,8 @@ Thumbs.db
 ~/.day-writer/
 gemini.md
 GEMINI.md
+.geminiignore
+.gemini/
 
 # Stitch prototypes
 stitch/
