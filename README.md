@@ -1,5 +1,6 @@
 # dwriter 📝
-### *The minimalist journal for those who live in the terminal.*
+Experimental beta: v3.9.0
+### *The minimalist journal for those who live in the terminal powered by llama 3.1:8b.*
 
 **dwriter** is a high-signal, low-friction journaling tool designed to capture your work without breaking your flow. It bridges the gap between the raw speed of a command-line interface and the visual clarity of a modern dashboard.
 
