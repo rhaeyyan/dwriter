@@ -142,7 +142,7 @@ The 2nd-Brain acts as a specialized analytical layer over your logs. It excels a
 
 | Document | Description |
 | :--- | :--- |
-| 🚀 **[Update Notes](documentation/update-notes.md)** | **New in v3.7.0:** 7-Day Weekly Pulse, enhanced analytics, and --weekly CLI flags. |
+| 🚀 **[Update Notes](documentation/update-notes.md)** | **New in v3.9.0:** 2nd-Brain Integration. |
 | 🛠️ **[Command Reference](documentation/HEADLESS-README.md)** | A complete guide to every CLI command and flag. |
 | 📖 **[Creative Use Cases](documentation/USE_CASES.md)** | 20 ways to use dwriter for brewing, fitness, travel, and more. |
 | ⚙️ **[Dev & Config Guide](documentation/DEV-and-CONFIG.md)** | Customizing your themes, default projects, and dev setup. |
