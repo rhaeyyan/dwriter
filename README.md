@@ -81,12 +81,6 @@ Navigate between screens using the tab bar:
 - **🔍 Search/Edit:** Live-filtering fuzzy search across all your history.
 - **📈 Weekly Pulse:** Behavioral analytics (Archetypes, Golden Hour, Velocity Delta) updated every 24 hours.
 
-![dwriter Focus Timer](screenshots/timer-tui_2.png)
-*Immersive Focus: The full-screen TUI timer designed for zero-distraction deep work.*
-
-![dwriter Logs](screenshots/log-tui.png)
-*Interactive History: Fuzzy-filtering through thousands of entries in real-time.*
-
 **dwriter** operates in two modes: the **Fast Command-Line** (for speed) and the **Visual Dashboard** (for depth).
 
 ### ✍️ The Fast Command-Line (Headless)
