@@ -19,7 +19,6 @@ from textual.widgets import Header, Input, Label, ListItem, ListView
 from ...database import Entry, Todo
 from ...search_utils import search_items
 from ..colors import (
-    DUE_LATER,
     DUE_OVERDUE,
     DUE_SOON,
     DUE_TODAY,

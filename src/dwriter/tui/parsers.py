@@ -308,7 +308,7 @@ def parse_timer(raw_input: str) -> ParsedTimer | None:
     The timer command is detected when the input contains a standalone number
     (representing minutes) along with optional tags and project.
 
-    IMPORTANT: Date patterns (YYYY-MM-DD) are NOT timer commands.
+    Note: Date patterns (YYYY-MM-DD) are NOT interpreted as timer commands.
 
     Args:
         raw_input: Raw input string from the omnibox.

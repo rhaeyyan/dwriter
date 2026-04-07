@@ -6,7 +6,7 @@ stored in TOML format.
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import tomlkit
 
@@ -89,7 +89,7 @@ class DefaultsConfig:
     """
 
     tags: list[str] = field(default_factory=list)
-    project: Optional[str] = None
+    project: str | None = None
     default_priority: str = "normal"
     default_due_days: int = 1
 
@@ -116,6 +116,40 @@ class TimerConfig:
 
 
 @dataclass
+class AIFeaturesConfig:
+    """AI feature-specific configuration.
+
+    Attributes:
+        auto_tagging: Whether to enable background auto-tagging.
+        reflection_prompts: Whether to enable AI reflection prompts.
+        burnout_detection: Whether to enable weekly burnout detection checks.
+    """
+
+    auto_tagging: bool = False
+    reflection_prompts: bool = True
+    burnout_detection: bool = True
+
+
+@dataclass
+class AIConfig:
+    """AI configuration.
+
+    Attributes:
+        enabled: Whether AI features are enabled.
+        provider: AI provider (ollama, openai).
+        model: Model name.
+        base_url: Base URL for the AI provider.
+        features: Feature-specific settings.
+    """
+
+    enabled: bool = True
+    provider: str = "ollama"
+    model: str = "llama3.1:8b"
+    base_url: str = "http://localhost:11434/v1"
+    features: AIFeaturesConfig = field(default_factory=AIFeaturesConfig)
+
+
+@dataclass
 class Config:
     """Main configuration container.
 
@@ -125,6 +159,7 @@ class Config:
         display: Display-related settings.
         defaults: Default values for entries.
         timer: Timer (Timer) settings.
+        ai: AI-related settings.
     """
 
     standup: StandupConfig = field(default_factory=StandupConfig)
@@ -132,6 +167,7 @@ class Config:
     display: DisplayConfig = field(default_factory=DisplayConfig)
     defaults: DefaultsConfig = field(default_factory=DefaultsConfig)
     timer: TimerConfig = field(default_factory=TimerConfig)
+    ai: AIConfig = field(default_factory=AIConfig)
 
 
 class ConfigManager:
@@ -146,7 +182,7 @@ class ConfigManager:
 
     DEFAULT_CONFIG = Config()
 
-    def __init__(self, config_path: Optional[Path] = None):
+    def __init__(self, config_path: Path | None = None):
         """Initialize the configuration manager.
 
         Args:
@@ -159,7 +195,7 @@ class ConfigManager:
             config_path = data_dir / "config.toml"
 
         self.config_path = config_path
-        self._config: Optional[Config] = None
+        self._config: Config | None = None
 
     def load(self) -> Config:
         """Load configuration from file.
@@ -187,6 +223,8 @@ class ConfigManager:
         display_data = data.get("display", {})
         defaults_data = data.get("defaults", {})
         timer_data = data.get("timer", {})  # May not exist in old configs
+        ai_data = data.get("ai", {})
+        ai_features_data = ai_data.get("features", {})
 
         self._config = Config(
             standup=StandupConfig(
@@ -230,11 +268,22 @@ class ConfigManager:
                 auto_start_breaks=timer_data.get("auto_start_breaks", False),
                 sound_enabled=timer_data.get("sound_enabled", True),
             ),
+            ai=AIConfig(
+                enabled=ai_data.get("enabled", True),
+                provider=ai_data.get("provider", "ollama"),
+                model=ai_data.get("model", "llama3.1:8b"),
+                base_url=ai_data.get("base_url", "http://localhost:11434/v1"),
+                features=AIFeaturesConfig(
+                    auto_tagging=ai_features_data.get("auto_tagging", False),
+                    reflection_prompts=ai_features_data.get("reflection_prompts", True),
+                    burnout_detection=ai_features_data.get("burnout_detection", True),
+                ),
+            ),
         )
 
         return self._config
 
-    def save(self, config: Optional[Config] = None) -> None:
+    def save(self, config: Config | None = None) -> None:
         """Save configuration to file.
 
         Args:
@@ -296,6 +345,19 @@ class ConfigManager:
         timer_table["auto_start_breaks"] = self._config.timer.auto_start_breaks
         timer_table["sound_enabled"] = self._config.timer.sound_enabled
         doc.add("timer", timer_table)
+
+        ai_table = tomlkit.table()
+        ai_table["enabled"] = self._config.ai.enabled
+        ai_table["provider"] = self._config.ai.provider
+        ai_table["model"] = self._config.ai.model
+        ai_table["base_url"] = self._config.ai.base_url
+
+        ai_features = tomlkit.table()
+        ai_features["auto_tagging"] = self._config.ai.features.auto_tagging
+        ai_features["reflection_prompts"] = self._config.ai.features.reflection_prompts
+        ai_features["burnout_detection"] = self._config.ai.features.burnout_detection
+        ai_table["features"] = ai_features
+        doc.add("ai", ai_table)
 
         with open(self.config_path, "w") as f:
             f.write(tomlkit.dumps(doc))
@@ -362,5 +424,16 @@ class ConfigManager:
                 "sessions_before_long_break": config.timer.sessions_before_long_break,
                 "auto_start_breaks": config.timer.auto_start_breaks,
                 "sound_enabled": config.timer.sound_enabled,
+            },
+            "ai": {
+                "enabled": config.ai.enabled,
+                "provider": config.ai.provider,
+                "model": config.ai.model,
+                "base_url": config.ai.base_url,
+                "features": {
+                    "auto_tagging": config.ai.features.auto_tagging,
+                    "reflection_prompts": config.ai.features.reflection_prompts,
+                    "burnout_detection": config.ai.features.burnout_detection,
+                },
             },
         }

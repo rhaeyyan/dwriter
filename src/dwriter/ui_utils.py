@@ -1,7 +1,6 @@
 """UI utilities for consistent output formatting."""
 
-from datetime import datetime
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from textual.app import ComposeResult
 from textual.containers import Container, ScrollableContainer
@@ -17,7 +16,7 @@ if TYPE_CHECKING:
     from .database import Entry
 
 
-def format_entry_datetime(entry: "Entry", config: "Optional[Config]" = None) -> tuple[str, Optional[str]]:
+def format_entry_datetime(entry: "Entry", config: "Config | None" = None) -> tuple[str, str | None]:
     """Format an entry's date and time for display.
 
     Returns (date_str, time_str). time_str is None for midnight entries.
@@ -112,9 +111,9 @@ class HelpOverlay(ModalScreen[None]):
     def __init__(
         self,
         title: str = "Help",
-        bindings: Optional[list[tuple[str, str, str]]] = None,
-        tips: Optional[list[str]] = None,
-        commands: Optional[list[tuple[str, str]]] = None,
+        bindings: list[tuple[str, str, str]] | None = None,
+        tips: list[str] | None = None,
+        commands: list[tuple[str, str]] | None = None,
     ) -> None:
         """Initialize the help overlay."""
         super().__init__()

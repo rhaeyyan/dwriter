@@ -1,6 +1,8 @@
 """CLI commands for dwriter."""
 
 from .add import add
+from .ask import ask
+from .compress import compress
 from .config import config
 from .delete import delete
 from .edit import edit
@@ -12,11 +14,13 @@ from .standup import standup
 from .stats import stats
 from .timer import timer
 from .today import today
-from .todo import todo, done, remind, snooze
+from .todo import done, remind, snooze, todo
 from .undo import undo
 
 __all__ = [
     "add",
+    "ask",
+    "compress",
     "config",
     "delete",
     "done",

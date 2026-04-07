@@ -159,7 +159,7 @@ def test_timer_command():
     # Use a 1-minute timer for testing
     # We'll mock the time.sleep to avoid waiting.
     with patch("time.sleep", return_value=None):
-        result = runner.invoke(main, ["timer", "1", "&project-x", "#deepwork"])
+        result = runner.invoke(main, ["timer", "1", "&project-x", "#deepwork"], input="\n")
         
     assert result.exit_code == 0
     assert "Starting 1-minute focus timer..." in result.output

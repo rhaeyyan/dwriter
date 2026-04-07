@@ -1,8 +1,7 @@
-"""Logs screen for viewing journal entries."""
+"""Logs screen for viewing and managing journal entries."""
 
 from __future__ import annotations
 
-import re
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
@@ -16,12 +15,12 @@ from textual.screen import ModalScreen
 from textual.widgets import Button, Header, Input, Label, ListItem, ListView
 
 from ...database import Entry
-from ..colors import PROJECT, TAG, get_icon
 from ...search_utils import search_items
+from ..colors import PROJECT, TAG, get_icon
 
 
 class QuickAddEntryModal(ModalScreen):  # type: ignore[type-arg]
-    """Modal dialog for adding a new journal entry."""
+    """Modal dialog for rapid journal entry creation."""
 
     CSS = """
     QuickAddEntryModal {
@@ -97,12 +96,14 @@ class QuickAddEntryModal(ModalScreen):  # type: ignore[type-arg]
     ]
 
     def __init__(self, **kwargs: Any) -> None:
+        """Initializes the quick add modal."""
         super().__init__(**kwargs)
         self.result: tuple[
             str | None, list[str] | None, str | None, datetime | None
         ] = (None, None, None, None)
 
     def compose(self) -> ComposeResult:
+        """Composes the modal layout."""
         use_emojis = self.app.ctx.config.display.use_emojis
         with Container(id="edit-modal-container"):
             yield Button(f"{get_icon('save', use_emojis)} Save & Exit", id="save-exit-btn", variant="success")
@@ -117,7 +118,6 @@ class QuickAddEntryModal(ModalScreen):  # type: ignore[type-arg]
             yield Label("Project:", id="edit-project-label")
             yield Input(id="project-input", placeholder="Project name (optional)")
 
-            lock_mode = self.app.ctx.config.display.lock_mode
             date_fmt = self.app.ctx.config.display.date_format
             fmt_map = {
                 "YYYY-MM-DD": "%Y-%m-%d",
@@ -137,9 +137,18 @@ class QuickAddEntryModal(ModalScreen):  # type: ignore[type-arg]
                 yield Button("\\[ CANCEL ]", id="cancel-btn", variant="default")
 
     def on_mount(self) -> None:
+        """Focuses the content input on mount."""
         self.query_one("#edit-input", Input).focus()
 
     def _parse_date(self, date_str: str) -> datetime | None:
+        """Parses a date string using configured date format hints.
+
+        Args:
+            date_str (str): The date string to parse.
+
+        Returns:
+            datetime | None: The parsed datetime or None if parsing fails.
+        """
         from ...date_utils import parse_natural_date
         try:
             date_fmt = self.app.ctx.config.display.date_format
@@ -154,6 +163,14 @@ class QuickAddEntryModal(ModalScreen):  # type: ignore[type-arg]
             return None
 
     def _parse_time(self, time_str: str) -> datetime | None:
+        """Parses a time string in 12 or 24-hour formats.
+
+        Args:
+            time_str (str): The time string to parse.
+
+        Returns:
+            datetime | None: A datetime object with the parsed time for the current day.
+        """
         time_str = time_str.strip().upper()
         for fmt in ["%I:%M %p", "%I:%M%p", "%H:%M"]:
             try:
@@ -163,10 +180,16 @@ class QuickAddEntryModal(ModalScreen):  # type: ignore[type-arg]
                 pass
         return None
 
-    def action_save(self) -> None: self._do_save()
-    def action_save_and_exit(self) -> None: self._do_save()
+    def action_save(self) -> None:
+        """Executes the save operation."""
+        self._do_save()
+
+    def action_save_and_exit(self) -> None:
+        """Executes the save operation and closes the modal."""
+        self._do_save()
 
     def _do_save(self) -> None:
+        """Assembles input data and dismisses the modal with the result."""
         content = self.query_one("#edit-input", Input).value.strip() or None
         date_str = self.query_one("#date-input", Input).value.strip() or None
         time_str = self.query_one("#time-input", Input).value.strip() or None
@@ -189,15 +212,17 @@ class QuickAddEntryModal(ModalScreen):  # type: ignore[type-arg]
         self.dismiss(self.result)
 
     def action_cancel(self) -> None:
+        """Dismisses the modal without saving."""
         self.dismiss(None)
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Dispatches button press events to corresponding actions."""
         if event.button.id == "save-exit-btn": self.action_save_and_exit()
         elif event.button.id == "cancel-btn": self.action_cancel()
 
 
 class EditEntryModal(ModalScreen):  # type: ignore[type-arg]
-    """Modal dialog for editing a journal entry."""
+    """Modal dialog for modifying existing journal entries."""
 
     CSS = """
     EditEntryModal {
@@ -277,11 +302,11 @@ class EditEntryModal(ModalScreen):  # type: ignore[type-arg]
         entry: Entry,
         **kwargs: Any,
     ) -> None:
-        """Initialize the edit modal.
+        """Initializes the edit modal.
 
         Args:
-            entry: Entry object to edit.
-            **kwargs: Additional arguments passed to ModalScreen.
+            entry (Entry): The database entry object to modify.
+            **kwargs (Any): Additional arguments passed to ModalScreen.
         """
         super().__init__(**kwargs)
         self.entry = entry
@@ -295,12 +320,10 @@ class EditEntryModal(ModalScreen):  # type: ignore[type-arg]
         )
 
     def compose(self) -> ComposeResult:
-        """Compose the modal UI."""
+        """Composes the modal UI components."""
         use_emojis = self.app.ctx.config.display.use_emojis
         with Container(id="edit-modal-container"):
-            # Save & Exit button in top-right corner
             yield Button(f"{get_icon('save', use_emojis)} Save & Exit", id="save-exit-btn", variant="success")
-
             yield Label(f"{get_icon('edit', use_emojis)} Edit Entry #{self.entry.id}", id="edit-modal-title")
 
             yield Label("Content:", id="edit-content-label")
@@ -310,16 +333,14 @@ class EditEntryModal(ModalScreen):  # type: ignore[type-arg]
                 placeholder="Entry content...",
             )
 
-            # Tags field
             yield Label("Tags:", id="edit-tags-label")
             tags_str = ", ".join(self.entry.tag_names) if self.entry.tag_names else ""
             yield Input(
                 value=tags_str,
                 id="tags-input",
-                placeholder="Comma-separated tags (e.g., work, urgent)",
+                placeholder="Comma-separated tags",
             )
 
-            # Project field
             yield Label("Project:", id="edit-project-label")
             yield Input(
                 value=self.entry.project or "",
@@ -327,7 +348,6 @@ class EditEntryModal(ModalScreen):  # type: ignore[type-arg]
                 placeholder="Project name (optional)",
             )
 
-            # Date and Time fields on the same line
             lock_mode = self.app.ctx.config.display.lock_mode
             date_fmt = self.app.ctx.config.display.date_format
             fmt_map = {
@@ -356,7 +376,7 @@ class EditEntryModal(ModalScreen):  # type: ignore[type-arg]
 
                 dt = self.entry.created_at
                 if dt and dt.hour == 0 and dt.minute == 0 and dt.second == 0:
-                    time_str = ""  # Leave blank for midnight times
+                    time_str = ""
                 else:
                     time_str = dt.strftime("%I:%M %p") if dt else ""
                 yield Input(
@@ -367,7 +387,7 @@ class EditEntryModal(ModalScreen):  # type: ignore[type-arg]
                 )
 
             yield Label(
-                "Date: yesterday, 2 days ago, last Friday | Time: 2:30 PM, 14:30 (or leave blank)",
+                "Date: yesterday, 2 days ago, last Friday | Time: 2:30 PM, 14:30",
                 id="help-text",
             )
 
@@ -375,17 +395,17 @@ class EditEntryModal(ModalScreen):  # type: ignore[type-arg]
                 yield Button("\\[ CANCEL ]", id="cancel-btn", variant="default")
 
     def on_mount(self) -> None:
-        """Focus the content input on mount."""
+        """Focuses the primary content input."""
         self.query_one("#edit-input", Input).focus()
 
     def _parse_date(self, date_str: str) -> datetime | None:
-        """Parse a date string using the central date_utils parser.
+        """Parses a date string with configuration-based format hints.
 
         Args:
-            date_str: Date string in various formats.
+            date_str (str): The date string to parse.
 
         Returns:
-            Parsed datetime or None.
+            datetime | None: Parsed datetime or None.
         """
         from ...date_utils import parse_natural_date
 
@@ -402,17 +422,15 @@ class EditEntryModal(ModalScreen):  # type: ignore[type-arg]
             return None
 
     def _parse_time(self, time_str: str) -> datetime | None:
-        """Parse a time string in 12 or 24-hour format.
+        """Parses a time string in 12 or 24-hour format.
 
         Args:
-            time_str: Time string (e.g., "02:30 PM", "14:30", "2:30pm").
+            time_str (str): The time string to parse.
 
         Returns:
-            Parsed datetime with today's date or None.
+            datetime | None: Parsed time as a datetime object for the current day.
         """
         time_str = time_str.strip().upper()
-
-        # Try 12-hour format: HH:MM AM/PM
         for fmt in ["%I:%M %p", "%I:%M%p", "%I:%M %P", "%I:%M%P"]:
             try:
                 parsed = datetime.strptime(time_str, fmt)
@@ -425,7 +443,6 @@ class EditEntryModal(ModalScreen):  # type: ignore[type-arg]
             except ValueError:
                 pass
 
-        # Try 24-hour format: HH:MM
         try:
             parsed = datetime.strptime(time_str, "%H:%M")
             return datetime.now().replace(
@@ -440,63 +457,42 @@ class EditEntryModal(ModalScreen):  # type: ignore[type-arg]
         return None
 
     def action_save(self) -> None:
-        """Save the edited content, tags, project, and datetime."""
+        """Executes the save operation."""
         self._do_save()
 
     def action_save_and_exit(self) -> None:
-        """Save and exit the modal."""
+        """Executes the save operation and closes the modal."""
         self._do_save()
 
     def _do_save(self) -> None:
-        """Perform the save operation."""
-        content_widget = self.query_one("#edit-input", Input)
-        date_widget = self.query_one("#date-input", Input)
-        time_widget = self.query_one("#time-input", Input)
-        tags_widget = self.query_one("#tags-input", Input)
-        project_widget = self.query_one("#project-input", Input)
+        """Assembles data from inputs and dismisses the modal."""
+        content = self.query_one("#edit-input", Input).value.strip() or None
+        date_str = self.query_one("#date-input", Input).value.strip() or None
+        time_str = self.query_one("#time-input", Input).value.strip() or None
+        tags_str = self.query_one("#tags-input", Input).value.strip() or None
+        project = self.query_one("#project-input", Input).value.strip() or None
 
-        content = content_widget.value.strip() or None
-        date_str = date_widget.value.strip() or None
-        time_str = time_widget.value.strip() or None
-        tags_str = tags_widget.value.strip() or None
-        project = project_widget.value.strip() or None
-
-        # Parse date and time
         created_at: datetime | None = None
-
         if date_str:
             parsed_date = self._parse_date(date_str)
             if parsed_date is None:
-                self.notify(
-                    "Invalid date format. Use YYYY-MM-DD", severity="error", timeout=2
-                )
+                self.notify("Invalid date format", severity="error", timeout=2)
                 return
 
-            # Parse time if provided (time is optional)
             if time_str:
                 parsed_time = self._parse_time(time_str)
                 if parsed_time is None:
-                    self.notify(
-                        "Invalid time format. Use HH:MM AM/PM",
-                        severity="error",
-                        timeout=2,
-                    )
+                    self.notify("Invalid time format", severity="error", timeout=2)
                     return
-                # Combine date and time
                 created_at = parsed_date.replace(
                     hour=parsed_time.hour,
                     minute=parsed_time.minute,
                 )
             else:
-                # Use date only (midnight) - time is optional
                 created_at = parsed_date.replace(hour=0, minute=0)
         elif time_str:
-            # Time only without date - use today
-            parsed_time = self._parse_time(time_str)
-            if parsed_time:
-                created_at = parsed_time
+            created_at = self._parse_time(time_str)
 
-        # Parse tags from comma-separated string
         tags: list[str] | None = None
         if tags_str is not None:
             tags = [t.strip() for t in tags_str.split(",") if t.strip()]
@@ -505,22 +501,19 @@ class EditEntryModal(ModalScreen):  # type: ignore[type-arg]
         self.dismiss(self.result)
 
     def action_cancel(self) -> None:
-        """Cancel editing."""
+        """Closes the modal without modifications."""
         self.result = (None, None, None, None)
         self.dismiss(self.result)
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
-        """Handle button presses."""
-        if event.button.id == "save-btn":
-            self.action_save()
-        elif event.button.id == "cancel-btn":
-            self.action_cancel()
-        elif event.button.id == "save-exit-btn":
-            self.action_save_and_exit()
+        """Handles button interaction events."""
+        if event.button.id == "save-btn": self.action_save()
+        elif event.button.id == "cancel-btn": self.action_cancel()
+        elif event.button.id == "save-exit-btn": self.action_save_and_exit()
 
 
 class DeleteConfirmModal(ModalScreen):  # type: ignore[type-arg]
-    """Modal dialog for confirming entry deletion."""
+    """Modal dialog for confirming the permanent deletion of an entry."""
 
     CSS = """
     DeleteConfirmModal {
@@ -573,12 +566,12 @@ class DeleteConfirmModal(ModalScreen):  # type: ignore[type-arg]
         entry_content: str,
         **kwargs: Any,
     ) -> None:
-        """Initialize the delete confirm modal.
+        """Initializes the confirmation modal.
 
         Args:
-            entry_id: ID of the entry to delete.
-            entry_content: Preview of entry content.
-            **kwargs: Additional arguments passed to ModalScreen.
+            entry_id (int): The identifier of the entry to be deleted.
+            entry_content (str): Content preview for the confirmation message.
+            **kwargs (Any): Additional arguments passed to ModalScreen.
         """
         super().__init__(**kwargs)
         self.entry_id = entry_id
@@ -586,7 +579,7 @@ class DeleteConfirmModal(ModalScreen):  # type: ignore[type-arg]
         self.result: int | None = None
 
     def compose(self) -> ComposeResult:
-        """Compose the modal UI."""
+        """Composes the modal layout."""
         use_emojis = self.app.ctx.config.display.use_emojis
         with Container(id="delete-modal-container"):
             yield Label(f"{get_icon('warning', use_emojis)} Delete Entry?", id="delete-modal-title")
@@ -599,43 +592,41 @@ class DeleteConfirmModal(ModalScreen):  # type: ignore[type-arg]
                 yield Button("\\[ CANCEL ]", id="cancel-btn", variant="default")
 
     def action_confirm(self) -> None:
-        """Confirm deletion."""
+        """Confirms deletion and dismisses the modal with the entry identifier."""
         self.result = self.entry_id
         self.dismiss(self.entry_id)
 
     def action_cancel(self) -> None:
-        """Cancel deletion."""
+        """Cancels deletion and dismisses the modal."""
         self.result = None
         self.dismiss(None)
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
-        """Handle button presses."""
-        if event.button.id == "delete-btn":
-            self.action_confirm()
-        elif event.button.id == "cancel-btn":
-            self.action_cancel()
+        """Handles button interaction events."""
+        if event.button.id == "delete-btn": self.action_confirm()
+        elif event.button.id == "cancel-btn": self.action_cancel()
 
 
 class LogsResultsView(ListView):
-    """ListView for displaying journal entry search results."""
+    """Component for displaying and interacting with a collection of journal entries."""
 
     def __init__(
         self, items: list[tuple[Entry, float]] | None = None, **kwargs: Any
     ) -> None:
-        """Initialize the logs results view.
+        """Initializes the logs view.
 
         Args:
-            items: Optional list of (entry, score) tuples to display.
-            **kwargs: Additional arguments passed to ListView.
+            items (list[tuple[Entry, float]], optional): Initial collection of entries.
+            **kwargs (Any): Additional arguments passed to ListView.
         """
         super().__init__(**kwargs)
         self._items = items or []
 
     def update_items(self, items: list[tuple[Entry, float]]) -> None:
-        """Update the displayed items.
+        """Replaces the current collection of entries and refreshes the display.
 
         Args:
-            items: List of (entry, score) tuples to display.
+            items (list[tuple[Entry, float]]): The new collection of entries.
         """
         self._items = items
         self.clear()
@@ -643,11 +634,11 @@ class LogsResultsView(ListView):
             self.append_item(entry, score)
 
     def append_item(self, entry: Entry, score: float | None = None) -> None:
-        """Append a single entry to the list.
+        """Appends a single entry to the view.
 
         Args:
-            entry: Entry object to display.
-            score: Optional match score (0-100) for search results.
+            entry (Entry): The database entry object.
+            score (float, optional): Match relevance score for search results.
         """
         label = self._format_entry(entry, score)
         list_item = ListItem(Label(label, markup=True))
@@ -655,73 +646,51 @@ class LogsResultsView(ListView):
         self.append(list_item)
 
     def _format_entry(self, entry: Entry, score: float | None = None) -> str:
-        """Format an entry for display.
+        """Formats an entry into a markup string for UI presentation.
 
         Args:
-            entry: Entry object to format.
-            score: Optional match score for search results.
+            entry (Entry): The database entry object.
+            score (float, optional): Match relevance score.
 
         Returns:
-            Formatted string with markup.
+            str: The formatted markup string.
         """
         from ...ui_utils import format_entry_datetime
 
         date_str, time_str = format_entry_datetime(entry, self.app.ctx.config)
-
-        # Clean up content - remove check emoji/mark from completed todos
         content = entry.content
         
         use_emojis = self.app.ctx.config.display.use_emojis
         check_icon = get_icon("check", use_emojis)
         timer_icon = get_icon("timer", use_emojis)
         
-        if content.startswith("✅ "):
-            content = content.replace("✅ ", f"{check_icon} ", 1)
-        elif content.startswith("✓ "):
-            content = content.replace("✓ ", f"{check_icon} ", 1)
-        
-        # Ensure timer session icon is correct
-        if "⏱️" in content:
-            content = content.replace("⏱️", timer_icon)
+        # Replace legacy ASCII markers with theme-aware icons
+        if content.startswith("✅ "): content = content.replace("✅ ", f"{check_icon} ", 1)
+        elif content.startswith("✓ "): content = content.replace("✓ ", f"{check_icon} ", 1)
+        if "⏱️" in content: content = content.replace("⏱️", timer_icon)
 
-        # Format tags and project on first line
-        tags_str = (
-            f"[{TAG}]#{' #'.join(entry.tag_names)}[/{TAG}]" if entry.tag_names else ""
-        )
-        project_str = (
-            f" [{PROJECT}]&{entry.project}[/{PROJECT}]"
-            if entry.project
-            else ""
-        )
+        tags_str = f"[{TAG}]#{' #'.join(entry.tag_names)}[/{TAG}]" if entry.tag_names else ""
+        project_str = f" [{PROJECT}]&{entry.project}[/{PROJECT}]" if entry.project else ""
 
-        # Add score if this is a search result
         score_str = ""
         if score is not None:
             score_color = "green" if score >= 90 else "yellow" if score >= 75 else "dim"
             score_str = f" [{score_color}]({int(score)}%)[/{score_color}]"
 
-        # Format: date time | #tags : Project on first line, content on second line
         theme = getattr(self.app, "theme_variables", {})
         time_hex = theme.get("success", "#73E6CB")
-        # Ensure time_hex doesn't have double # and use universal closing tag
         color_tag = time_hex if time_hex.startswith("#") else f"#{time_hex}"
         
         datetime_str = f"[cyan]{date_str}[/cyan]"
         if time_str:
             datetime_str = f"[cyan]{date_str}[/cyan] [{color_tag}]{time_str}[/]"
-        else:
-            datetime_str = f"[cyan]{date_str}[/cyan]"
 
         first_line = f"{datetime_str} | {tags_str}{project_str}{score_str}"
-
-        if content:
-            return f"{first_line}\n  {content}"
-        else:
-            return first_line
+        return f"{first_line}\n  {content}" if content else first_line
 
 
 class LogsScreen(Container):
-    """Logs screen for viewing and searching journal entries."""
+    """Primary interface for browsing, searching, and managing journal entries."""
 
     DEFAULT_CSS = """
     LogsScreen {
@@ -846,11 +815,11 @@ class LogsScreen(Container):
         ctx: AppContext,
         **kwargs: Any,
     ) -> None:
-        """Initialize the logs screen.
+        """Initializes the logs screen.
 
         Args:
-            ctx: Application context with database and configuration.
-            **kwargs: Additional arguments passed to Container.
+            ctx (AppContext): Application context.
+            **kwargs (Any): Additional arguments passed to Container.
         """
         super().__init__(**kwargs)
         self.ctx = ctx
@@ -860,7 +829,7 @@ class LogsScreen(Container):
         self._has_more = True
 
     def compose(self) -> ComposeResult:
-        """Compose the logs UI layout."""
+        """Composes the logs UI layout."""
         from textual.containers import Horizontal
 
         yield Header()
@@ -884,10 +853,10 @@ class LogsScreen(Container):
         )
 
     def _load_data(self, reset: bool = True) -> None:
-        """Load entries from the database using pagination.
+        """Retrieves entries from the database using a paginated strategy.
         
         Args:
-            reset: If True, reset offset and clear current list.
+            reset (bool): If True, resets pagination state and clears current results.
         """
         if reset:
             self._offset = 0
@@ -908,83 +877,67 @@ class LogsScreen(Container):
         self._offset += len(new_entries)
 
     def on_mount(self) -> None:
-        """Load data and display recent entries on mount."""
+        """Loads initial dataset and focuses the results view."""
         self._load_data(reset=True)
         self._display_recent_entries()
         self.query_one("#logs-results", LogsResultsView).focus()
 
     def on_show(self) -> None:
-        """Refresh data when the logs screen becomes visible."""
+        """Refreshes the dataset when the screen is shown."""
         self._load_data(reset=True)
         self._display_recent_entries()
 
     def on_input_changed(self, event: Input.Changed) -> None:
-        """Handle search input changes.
+        """Handles changes in the search input to filter entries.
 
         Args:
-            event: Input change event containing the query.
+            event (Input.Changed): The input change event.
         """
         if event.input.id == "search-input":
             query = event.value.strip()
-            # Hide load more during search
             self.query_one("#btn-load-more").display = not bool(query)
             self._perform_search(event.value)
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
-        """Handle button presses.
-
-        Args:
-            event: Button pressed event.
-        """
+        """Handles button interaction events."""
         if event.button.id == "btn-standup":
             from .standup import StandupScreen
-
             self.app.push_screen(StandupScreen(self.ctx))
-        elif event.button.id == "btn-quick-add":
-            self.action_quick_add()
-        elif event.button.id == "btn-load-more":
-            self.action_load_more()
+        elif event.button.id == "btn-quick-add": self.action_quick_add()
+        elif event.button.id == "btn-load-more": self.action_load_more()
 
     def action_load_more(self) -> None:
-        """Load the next page of entries."""
-        if not self._has_more:
-            return
-            
+        """Retrieves and appends the next page of entries."""
+        if not self._has_more: return
         self._load_data(reset=False)
         self._display_recent_entries(append=True)
 
     def _perform_search(self, query: str) -> None:
-        """Execute fuzzy search and update results.
+        """Executes a fuzzy search against loaded entries.
 
         Args:
-            query: Search query string.
+            query (str): The search query.
         """
         results_view = self.query_one("#logs-results", LogsResultsView)
-        
         query = query.strip()
 
         if not query:
-            # Show recent entries when search is empty
             self._display_recent_entries()
             return
 
         results_view.clear()
-        
-        # Search across the entries loaded in the current session.
-        # Note: Large databases may eventually require FTS5 or background fetching.
         matched_entries = search_items(query, self._all_entries, limit=50, threshold=50)
 
-        # Display results
         for entry, score in matched_entries:
             results_view.append_item(entry, score)
 
         self._update_status_bar(len(matched_entries), is_search=True)
 
     def _display_recent_entries(self, append: bool = False) -> None:
-        """Display the entries from the loaded cache.
+        """Updates the UI with the current collection of loaded entries.
 
         Args:
-            append: If True, only append new entries instead of clearing.
+            append (bool): If True, appends the latest page instead of clearing.
         """
         results_view = self.query_one("#logs-results", LogsResultsView)
         
@@ -992,13 +945,11 @@ class LogsScreen(Container):
             results_view.clear()
             entries_to_show = self._all_entries
         else:
-            # Only append the most recent batch
             entries_to_show = self._all_entries[-self._page_size:]
 
         for entry in entries_to_show:
             results_view.append_item(entry, score=None)
 
-        # Update button visibility
         load_more_btn = self.query_one("#btn-load-more")
         load_more_btn.display = self._has_more
         if not self._has_more:
@@ -1011,200 +962,126 @@ class LogsScreen(Container):
         self._update_status_bar(len(self._all_entries), is_search=False)
 
     def _update_status_bar(self, count: int, is_search: bool) -> None:
-        """Update the status bar with result counts.
+        """Updates the status bar with result metrics.
 
         Args:
-            count: Number of displayed entries.
-            is_search: Whether this is a search result or recent entries view.
+            count (int): Number of entries displayed.
+            is_search (bool): Indicates if the results are from a search query.
         """
         use_emojis = self.ctx.config.display.use_emojis
         bullet = get_icon("bullet", use_emojis)
-        if is_search:
-            self.query_one("#logs-status-bar", Label).update(
-                f"Found {count} matches  {bullet}  "
-                f"j/k: Navigate  {bullet}  e: Edit  {bullet}  d: Delete  {bullet}  t: Tags  {bullet}  p: Project  {bullet}  /: Search  {bullet}  q: Quit"
-            )
-        else:
-            self.query_one("#logs-status-bar", Label).update(
-                f"Showing {count} recent entries  {bullet}  "
-                f"j/k: Navigate  {bullet}  e: Edit  {bullet}  d: Delete  {bullet}  t: Tags  {bullet}  p: Project  {bullet}  /: Search  {bullet}  q: Quit"
-            )
+        label = f"Found {count} matches" if is_search else f"Showing {count} recent entries"
+        self.query_one("#logs-status-bar", Label).update(
+            f"{label}  {bullet}  j/k: Navigate  {bullet}  e: Edit  {bullet}  d: Delete  {bullet}  t: Tags  {bullet}  p: Project  {bullet}  /: Search  {bullet}  q: Quit"
+        )
 
     def _get_selected_entry(self) -> Entry | None:
-        """Get the currently selected entry.
+        """Retrieves the entry currently highlighted in the results view.
 
         Returns:
-            Selected Entry or None.
+            Entry | None: The selected entry or None if no selection exists.
         """
         results_view = self.query_one("#logs-results", LogsResultsView)
-        if results_view.highlighted_child is None:
-            return None
+        if results_view.highlighted_child is None: return None
         item_data = results_view.highlighted_child.item_data  # type: ignore[attr-defined]
-        if not item_data:
-            return None
-        return item_data["item"]
+        return item_data.get("item") if item_data else None
 
     def action_cursor_down(self) -> None:
-        """Move cursor down in results list."""
-        results_view = self.query_one("#logs-results", LogsResultsView)
-        results_view.action_cursor_down()
+        """Moves focus to the next item in the results list."""
+        self.query_one("#logs-results", LogsResultsView).action_cursor_down()
 
     def action_cursor_up(self) -> None:
-        """Move cursor up in results list."""
-        results_view = self.query_one("#logs-results", LogsResultsView)
-        results_view.action_cursor_up()
+        """Moves focus to the previous item in the results list."""
+        self.query_one("#logs-results", LogsResultsView).action_cursor_up()
 
     def action_focus_search(self) -> None:
-        """Focus the search input."""
+        """Transfers focus to the search input field."""
         self.query_one("#search-input", Input).focus()
 
     def action_select(self) -> None:
-        """Select the highlighted item and copy its content."""
+        """Copies the content of the selected entry to the system clipboard."""
         entry = self._get_selected_entry()
         if entry is None:
             self.notify("No entry selected", severity="warning", timeout=1.5)
             return
 
-        content = entry.content
         try:
             import pyperclip
-
-            pyperclip.copy(content)
-            self.notify(f"Copied: {content[:50]}...", timeout=2)
+            pyperclip.copy(entry.content)
+            self.notify(f"Copied: {entry.content[:50]}...", timeout=2)
         except Exception:
-            self.notify(f"Content: {content}", timeout=3)
+            self.notify(f"Content: {entry.content}", timeout=3)
 
     def action_edit_content(self) -> None:
-        """Edit content of selected entry."""
+        """Opens the edit modal for the selected entry."""
         entry = self._get_selected_entry()
-        if entry is None:
-            self.notify("No entry selected", severity="warning", timeout=1.5)
-            return
+        if entry is None: return
 
-        def on_dismiss(
-            result: tuple[str | None, list[str] | None, str | None, datetime | None]
-            | None,
-        ) -> None:
-            if result is None:
-                return
+        def on_dismiss(result: Any) -> None:
+            if result is None or result[0] is None: return
             content, tags, project, created_at = result
-            if content is None:
-                return
-
-            self.ctx.db.update_entry(
-                entry.id,
-                content=content,
-                tags=tags,
-                project=project,
-                created_at=created_at,
-            )
-            self.notify(f"Entry #{entry.id} updated", timeout=1.5)
+            self.ctx.db.update_entry(entry.id, content=content, tags=tags, project=project, created_at=created_at)
+            self.notify(f"Entry #{entry.id} updated")
             self._load_data()
             self._display_recent_entries()
 
         self.app.push_screen(EditEntryModal(entry), on_dismiss)
 
     def action_delete_entry(self) -> None:
-        """Delete selected entry."""
+        """Confirms and executes deletion of the selected entry."""
         entry = self._get_selected_entry()
-        if entry is None:
-            self.notify("No entry selected", severity="warning", timeout=1.5)
-            return
+        if entry is None: return
 
         def on_dismiss(result: int | None) -> None:
             if result is not None:
                 self.ctx.db.delete_entry(result)
-                self.notify(f"Entry #{result} deleted", timeout=1.5)
+                self.notify(f"Entry #{result} deleted")
                 self._load_data()
                 self._display_recent_entries()
 
-        self.app.push_screen(
-            DeleteConfirmModal(entry.id, entry.content),
-            on_dismiss,
-        )
+        self.app.push_screen(DeleteConfirmModal(entry.id, entry.content), on_dismiss)
 
     def action_edit_tags(self) -> None:
-        """Edit tags of selected entry."""
+        """Opens the edit modal specifically for modifying tags."""
         entry = self._get_selected_entry()
-        if entry is None:
-            self.notify("No entry selected", severity="warning", timeout=1.5)
-            return
+        if entry is None: return
 
-        def on_dismiss(
-            result: tuple[str | None, list[str] | None, str | None] | None,
-        ) -> None:
-            if result is None:
-                return
-            content, tags, project = result
-            if tags is None:
-                return
-
-            self.ctx.db.update_entry(
-                entry.id,
-                tags=tags,
-            )
-            self.notify(f"Entry #{entry.id} tags updated", timeout=1.5)
+        def on_dismiss(result: Any) -> None:
+            if result is None or result[1] is None: return
+            self.ctx.db.update_entry(entry.id, tags=result[1])
+            self.notify(f"Entry #{entry.id} tags updated")
             self._load_data()
             self._display_recent_entries()
 
         self.app.push_screen(EditEntryModal(entry), on_dismiss)
 
     def action_edit_project(self) -> None:
-        """Edit project of selected entry."""
+        """Opens the edit modal specifically for modifying the project."""
         entry = self._get_selected_entry()
-        if entry is None:
-            self.notify("No entry selected", severity="warning", timeout=1.5)
-            return
+        if entry is None: return
 
-        def on_dismiss(
-            result: tuple[str | None, list[str] | None, str | None] | None,
-        ) -> None:
-            if result is None:
-                return
-            content, tags, project = result
-            if project is None:
-                return
-
-            self.ctx.db.update_entry(
-                entry.id,
-                project=project,
-            )
-            self.notify(f"Entry #{entry.id} project updated", timeout=1.5)
+        def on_dismiss(result: Any) -> None:
+            if result is None or result[2] is None: return
+            self.ctx.db.update_entry(entry.id, project=result[2])
+            self.notify(f"Entry #{entry.id} project updated")
             self._load_data()
             self._display_recent_entries()
 
         self.app.push_screen(EditEntryModal(entry), on_dismiss)
 
     def action_quick_add(self) -> None:
-        """Open modal to add a new journal entry."""
-        def on_dismiss(
-            result: tuple[str | None, list[str] | None, str | None, datetime | None]
-            | None,
-        ) -> None:
-            if result is None:
-                return
+        """Opens the modal for creating a new journal entry."""
+        def on_dismiss(result: Any) -> None:
+            if result is None or result[0] is None: return
             content, tags, project, created_at = result
-            if content is None:
-                return
-
-            self.ctx.db.add_entry(
-                content=content,
-                tags=tags,
-                project=project,
-                created_at=created_at,
-            )
-            self.notify("New entry added", timeout=1.5)
+            self.ctx.db.add_entry(content=content, tags=tags, project=project, created_at=created_at)
+            self.notify("New entry added")
             self._load_data()
             self._display_recent_entries()
 
         self.app.push_screen(QuickAddEntryModal(), on_dismiss)
 
     def on_entry_added(self, message: Any) -> None:
-        """Handle EntryAdded messages from other screens.
-
-        Args:
-            message: EntryAdded message.
-        """
-        # Refresh the logs when entries are added elsewhere
+        """Responds to EntryAdded events by refreshing the view."""
         self._load_data()
         self._display_recent_entries()

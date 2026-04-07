@@ -133,10 +133,10 @@ def todo(
         # Extract metadata from content if present
         from ..tui.parsers import parse_todo_add
         parsed = parse_todo_add(content_str)
-        
+
         # Merge default tags, content-extracted tags, and explicitly provided tags
         all_tags = list(app_ctx.config.defaults.tags) + list(parsed.tags) + list(tags)
-        
+
         # Merge content-extracted priority if not explicitly set to non-default
         if priority == "normal" and parsed.priority != "normal":
             priority = parsed.priority
@@ -152,7 +152,7 @@ def todo(
         due_date = None
         # Use content-extracted due date if not explicitly provided
         final_due_str = due_date_str or parsed.due_date
-        
+
         if final_due_str is not None:
             try:
                 # Use configuration to hint at preferred input format
@@ -163,7 +163,7 @@ def todo(
                     "DD/MM/YYYY": "%d/%m/%Y",
                 }
                 hint = fmt_map.get(due_date_format)
-                
+
                 # For todos, we generally prefer future dates
                 due_date = parse_natural_date(final_due_str, prefer_future=True, format_hint=hint)
             except ValueError as e:
@@ -394,7 +394,7 @@ def todo_add(
     # Extract metadata from content if present
     from ..tui.parsers import parse_todo_add
     parsed = parse_todo_add(content_str)
-    
+
     # Merge default tags, content-extracted tags, and explicitly provided tags
     all_tags = list(ctx.config.defaults.tags) + list(parsed.tags) + list(tags)
 
@@ -413,7 +413,7 @@ def todo_add(
     due_date = None
     # Use content-extracted due date if not explicitly provided
     final_due_str = due_date_str or parsed.due_date
-    
+
     if final_due_str is not None:
         try:
             # Use configuration to hint at preferred input format
@@ -424,7 +424,7 @@ def todo_add(
                 "DD/MM/YYYY": "%d/%m/%Y",
             }
             hint = fmt_map.get(due_date_format)
-            
+
             # For todos, we generally prefer future dates
             due_date = parse_natural_date(final_due_str, prefer_future=True, format_hint=hint)
         except ValueError as e:
@@ -454,11 +454,11 @@ def todo_add(
                 due_str = f" [dim](due: {due_date.strftime('%Y-%m-%d')})[/dim]"
             else:
                 due_str = f" [dim](due: {due_date.strftime('%Y-%m-%d %H:%M')})[/dim]"
-        
+
         tags_str = ""
         if task.tag_names:
             tags_str = f" [{TAG}]#{' #'.join(task.tag_names)}[/{TAG}]"
-        
+
         proj_str = ""
         if task.project:
             proj_str = f" [{PROJECT}]&{task.project}[/{PROJECT}]"
@@ -627,7 +627,7 @@ def remind(ctx: AppContext, content: tuple[Any, ...], due_date_str: str) -> None
             "DD/MM/YYYY": "%d/%m/%Y",
         }
         hint = fmt_map.get(due_date_format)
-        
+
         # Reminders explicitly prefer future dates
         due_date = parse_natural_date(due_date_str, prefer_future=True, format_hint=hint)
     except ValueError as e:
@@ -667,7 +667,7 @@ def snooze(
     Reschedules the task's due date. If the task wasn't already 'urgent',
     it will be marked as such to ensure it stays in the reminder loop.
 
-    EXAMPLES:
+    Examples:
       dwriter snooze 42 --for 15m
       dwriter snooze 42 --at 5pm
     """
@@ -694,7 +694,7 @@ def snooze(
             "DD/MM/YYYY": "%d/%m/%Y",
         }
         hint = fmt_map.get(due_date_format)
-        
+
         # Snooze always prefers future
         new_due = parse_natural_date(due_str, prefer_future=True, format_hint=hint)
     except ValueError as e:

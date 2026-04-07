@@ -2,7 +2,7 @@
 
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from sqlalchemy import (
     DateTime,
@@ -27,13 +27,23 @@ from sqlalchemy.pool import NullPool
 
 
 class Base(DeclarativeBase):
-    """Base class for SQLAlchemy models."""
+    """Base class for all SQLAlchemy models in the application.
+
+    Inherits from DeclarativeBase to provide a foundation for model definitions.
+    """
 
     pass
 
 
 class Tag(Base):
-    """Tag associated with a journal entry."""
+    """Represents a tag associated with a journal entry.
+
+    Attributes:
+        id (int): Unique identifier for the tag.
+        entry_id (int): Foreign key referencing the associated journal entry.
+        name (str): The string name of the tag, indexed for faster retrieval.
+        entry (Entry): Relationship mapping back to the associated Entry object.
+    """
 
     __tablename__ = "tags"
 
@@ -45,13 +55,23 @@ class Tag(Base):
 
 
 class Entry(Base):
-    """Journal entry model."""
+    """Represents a discrete journal entry in the database.
+
+    Attributes:
+        id (int): Primary key for the entry.
+        content (str): The textual content of the journal entry.
+        project (str | None): Optional project name associated with the entry.
+        created_at (datetime): Timestamp when the entry was created.
+        updated_at (datetime): Timestamp when the entry was last modified.
+        todo_id (int | None): Optional link to a related todo task.
+        tags (list[Tag]): Collection of tags associated with this entry.
+    """
 
     __tablename__ = "entries"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    project: Mapped[Optional[str]] = mapped_column(String)
+    project: Mapped[str | None] = mapped_column(String)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=func.now(), index=True
     )
@@ -59,7 +79,7 @@ class Entry(Base):
         DateTime, default=func.now(), onupdate=func.now()
     )
 
-    todo_id: Mapped[Optional[int]] = mapped_column(
+    todo_id: Mapped[int | None] = mapped_column(
         ForeignKey("todos.id", ondelete="CASCADE"), nullable=True
     )
 
@@ -71,14 +91,25 @@ class Entry(Base):
 
     @property
     def tag_names(self) -> list[str]:
-        """Return tag names, using cache if available."""
+        """Retrieves the list of tag names associated with this entry.
+
+        Returns:
+            list[str]: A list of tag names.
+        """
         if hasattr(self, "_tag_names_cache"):
             return self._tag_names_cache
         return [tag.name for tag in self.tags]
 
 
 class TodoTag(Base):
-    """Tag associated with a todo task."""
+    """Represents a tag specifically associated with a todo task.
+
+    Attributes:
+        id (int): Unique identifier for the todo tag.
+        todo_id (int): Foreign key referencing the associated todo task.
+        name (str): The name of the tag, indexed for searching.
+        todo (Todo): Relationship mapping back to the associated Todo object.
+    """
 
     __tablename__ = "todo_tags"
 
@@ -90,22 +121,35 @@ class TodoTag(Base):
 
 
 class Todo(Base):
-    """Task model."""
+    """Represents a task or todo item.
+
+    Attributes:
+        id (int): Primary key for the todo task.
+        content (str): Description of the task.
+        project (str | None): Optional project identifier.
+        priority (str): Urgency level (e.g., 'urgent', 'high', 'normal', 'low').
+        status (str): Task completion status (e.g., 'pending', 'completed').
+        due_date (datetime | None): Optional deadline for the task.
+        reminder_last_sent (datetime | None): Timestamp of the last reminder notification.
+        created_at (datetime): Creation timestamp.
+        completed_at (datetime | None): Completion timestamp.
+        tags (list[TodoTag]): Collection of tags for this task.
+    """
 
     __tablename__ = "todos"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    project: Mapped[Optional[str]] = mapped_column(String)
+    project: Mapped[str | None] = mapped_column(String)
     priority: Mapped[str] = mapped_column(String, default="normal")
     status: Mapped[str] = mapped_column(String, default="pending")
-    due_date: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    reminder_last_sent: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    due_date: Mapped[datetime | None] = mapped_column(DateTime)
+    reminder_last_sent: Mapped[datetime | None] = mapped_column(DateTime)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=func.now(), index=True
     )
-    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     tags: Mapped[list["TodoTag"]] = relationship(
         back_populates="todo",
@@ -115,17 +159,56 @@ class Todo(Base):
 
     @property
     def tag_names(self) -> list[str]:
-        """Return tag names, using cache if available."""
+        """Retrieves the list of tag names associated with this todo task.
+
+        Returns:
+            list[str]: A list of tag names.
+        """
         if hasattr(self, "_tag_names_cache"):
             return self._tag_names_cache
         return [tag.name for tag in self.tags]
 
 
-class Database:
-    """Manager for SQLite database operations."""
+class Summary(Base):
+    """Represents an AI-generated activity summary for long-term memory.
 
-    def __init__(self, db_path: Optional[Path] = None):
-        """Initialize database connection and schema."""
+    Attributes:
+        id (int): Primary key for the summary.
+        content (str): The summarized data, typically stored as JSON.
+        period_start (datetime): The start date of the summarized period.
+        period_end (datetime): The end date of the summarized period.
+        summary_type (str): Category of summary (e.g., 'weekly').
+        created_at (datetime): Timestamp when the summary was generated.
+    """
+
+    __tablename__ = "summaries"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    content: Mapped[str] = mapped_column(Text)
+    period_start: Mapped[datetime] = mapped_column(DateTime, index=True)
+    period_end: Mapped[datetime] = mapped_column(DateTime, index=True)
+    summary_type: Mapped[str] = mapped_column(String, default="weekly")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
+
+
+
+class Database:
+    """Manager for SQLite database operations.
+
+    Handles initialization, migrations, and CRUD operations for entries, todos,
+    tags, and AI summaries.
+    """
+
+    def __init__(self, db_path: Path | None = None):
+        """Initializes the database connection and ensures schema creation.
+
+        Sets up the SQLAlchemy engine with optimized SQLite settings (WAL mode,
+        foreign keys enabled).
+
+        Args:
+            db_path (Path | None): Custom path to the SQLite database file.
+                Defaults to ~/.dwriter/entries.db if None.
+        """
         if db_path is None:
             data_dir = Path.home() / ".dwriter"
             data_dir.mkdir(parents=True, exist_ok=True)
@@ -151,7 +234,11 @@ class Database:
         self._migrate()
 
     def _migrate(self) -> None:
-        """Run schema migrations."""
+        """Executes manual schema migrations to maintain database compatibility.
+
+        Checks for missing columns and applies ALTER TABLE statements as needed.
+        Also performs maintenance tasks like cleaning up orphaned tags.
+        """
         with self.engine.connect():
             import sqlite3
 
@@ -189,7 +276,11 @@ class Database:
                 sqlite_conn.commit()
 
     def connection(self) -> Any:
-        """Return a raw SQLite connection."""
+        """Provides a raw SQLite connection for low-level operations.
+
+        Returns:
+            Any: A standard sqlite3.Connection object with Row factory enabled.
+        """
         import sqlite3
         conn = sqlite3.connect(str(self.engine.url.database))
         conn.row_factory = sqlite3.Row
@@ -198,12 +289,24 @@ class Database:
     def add_entry(
         self,
         content: str,
-        tags: Optional[list[str]] = None,
-        project: Optional[str] = None,
-        created_at: Optional[datetime] = None,
-        todo_id: Optional[int] = None,
+        tags: list[str] | None = None,
+        project: str | None = None,
+        created_at: datetime | None = None,
+        todo_id: int | None = None,
     ) -> Entry:
-        """Add a new journal entry."""
+        """Persists a new journal entry to the database.
+
+        Args:
+            content (str): The text content of the entry.
+            tags (list[str] | None): Optional list of tag names to associate.
+            project (str | None): Optional project name.
+            created_at (datetime | None): Explicit creation timestamp.
+                Defaults to now if None.
+            todo_id (int | None): Link to an existing todo task ID.
+
+        Returns:
+            Entry: The newly created Entry object.
+        """
         with self.Session() as session:
             entry = Entry(content=content, project=project, todo_id=todo_id)
 
@@ -221,7 +324,17 @@ class Database:
             return entry
 
     def get_entry(self, entry_id: int) -> Entry:
-        """Retrieve a single entry by ID."""
+        """Fetches a specific entry by its unique ID.
+
+        Args:
+            entry_id (int): The ID of the entry to retrieve.
+
+        Returns:
+            Entry: The retrieved Entry object.
+
+        Raises:
+            ValueError: If no entry is found with the given ID.
+        """
         with self.Session() as session:
             entry = session.get(Entry, entry_id)
             if not entry:
@@ -229,7 +342,14 @@ class Database:
             return entry
 
     def get_entries_by_date(self, date: datetime) -> list[Entry]:
-        """Retrieve all entries for a specific date."""
+        """Retrieves all entries recorded on a specific calendar date.
+
+        Args:
+            date (datetime): The target date.
+
+        Returns:
+            list[Entry]: A list of entries matching the date.
+        """
         with self.Session() as session:
             date_str = date.strftime("%Y-%m-%d")
             stmt = (
@@ -242,7 +362,15 @@ class Database:
     def get_entries_in_range(
         self, start_date: datetime, end_date: datetime
     ) -> list[Entry]:
-        """Retrieve entries within a date range."""
+        """Retrieves entries that fall within a specified date range.
+
+        Args:
+            start_date (datetime): The beginning of the range (inclusive).
+            end_date (datetime): The end of the range (inclusive).
+
+        Returns:
+            list[Entry]: A list of entries within the period.
+        """
         with self.Session() as session:
             stmt = (
                 select(Entry)
@@ -251,40 +379,40 @@ class Database:
             )
             return list(session.scalars(stmt).all())
 
-    def get_latest_entry(self) -> Optional[Entry]:
-        """Retrieve the most recent entry."""
+    def get_latest_entry(self) -> Entry | None:
+        """Retrieves the single most recently created journal entry.
+
+        Returns:
+            Entry | None: The newest Entry object, or None if the database is empty.
+        """
         with self.Session() as session:
             return session.scalars(
                 select(Entry).order_by(Entry.created_at.desc()).limit(1)
             ).first()
 
-    def delete_entry(self, entry_id: int) -> bool:
-        """Delete an entry by ID."""
-        with self.Session() as session:
-            entry = session.get(Entry, entry_id)
-            if entry:
-                session.delete(entry)
-                session.commit()
-                return True
-            return False
-
-    def delete_entry_by_todo_id(self, todo_id: int) -> None:
-        """Delete entry linked to a todo ID."""
-        with self.Session() as session:
-            session.query(Entry).filter(Entry.todo_id == todo_id).delete(
-                synchronize_session=False
-            )
-            session.commit()
-
     def update_entry(
         self,
         entry_id: int,
-        content: Optional[str] = None,
-        tags: Optional[list[str]] = None,
-        project: Optional[str] = None,
-        created_at: Optional[datetime] = None,
+        content: str | None = None,
+        tags: list[str] | None = None,
+        project: str | None = None,
+        created_at: datetime | None = None,
     ) -> Entry:
-        """Update an existing entry."""
+        """Modifies attributes of an existing journal entry.
+
+        Args:
+            entry_id (int): ID of the entry to update.
+            content (str | None): New text content.
+            tags (list[str] | None): New list of tags (replaces existing tags).
+            project (str | None): New project name.
+            created_at (datetime | None): Modified creation timestamp.
+
+        Returns:
+            Entry: The updated Entry object.
+
+        Raises:
+            ValueError: If no entry is found with the given ID.
+        """
         with self.Session() as session:
             entry = session.get(Entry, entry_id)
             if not entry:
@@ -303,8 +431,44 @@ class Database:
             session.refresh(entry)
             return entry
 
+    def delete_entry(self, entry_id: int) -> bool:
+        """Removes an entry from the database.
+
+        Args:
+            entry_id (int): ID of the entry to delete.
+
+        Returns:
+            bool: True if the entry was found and deleted, False otherwise.
+        """
+        with self.Session() as session:
+            entry = session.get(Entry, entry_id)
+            if entry:
+                session.delete(entry)
+                session.commit()
+                return True
+            return False
+
+    def delete_entry_by_todo_id(self, todo_id: int) -> None:
+        """Deletes any journal entries linked to a specific todo task ID.
+
+        Args:
+            todo_id (int): The ID of the todo task.
+        """
+        with self.Session() as session:
+            session.query(Entry).filter(Entry.todo_id == todo_id).delete(
+                synchronize_session=False
+            )
+            session.commit()
+
     def delete_entries_before(self, before_date: datetime) -> int:
-        """Delete all entries before a specific date."""
+        """Deletes all journal entries recorded before a given date.
+
+        Args:
+            before_date (datetime): Threshold date for deletion.
+
+        Returns:
+            int: The number of entries removed.
+        """
         with self.Session() as session:
             stmt = delete(Entry).where(Entry.created_at < before_date)
             result = session.execute(stmt)
@@ -312,7 +476,11 @@ class Database:
             return int(result.rowcount) if result.rowcount is not None else 0  # type: ignore[attr-defined]
 
     def get_all_entries_count(self) -> int:
-        """Get the total count of all entries."""
+        """Calculates the total number of journal entries in the database.
+
+        Returns:
+            int: The total entry count.
+        """
         with self.Session() as session:
             return session.scalar(select(func.count(Entry.id))) or 0
 
@@ -320,22 +488,38 @@ class Database:
         self,
         limit: int = 50,
         offset: int = 0,
-        project: Optional[str] = None,
-        tags: Optional[list[str]] = None,
+        project: str | None = None,
+        tags: list[str] | None = None,
     ) -> list[Entry]:
-        """Retrieve a page of entries, optionally filtered."""
+        """Retrieves a subset of entries with optional filtering and pagination.
+
+        Args:
+            limit (int): Maximum number of entries to return. Defaults to 50.
+            offset (int): Number of entries to skip. Defaults to 0.
+            project (str | None): Filter by project name.
+            tags (list[str] | None): Filter by associated tag names.
+
+        Returns:
+            list[Entry]: A list of matching Entry objects.
+        """
         with self.Session() as session:
             stmt = select(Entry).order_by(Entry.created_at.desc())
             if project:
                 stmt = stmt.where(Entry.project == project)
             if tags:
                 stmt = stmt.join(Tag).where(Tag.name.in_(tags))
-            
+
             stmt = stmt.limit(limit).offset(offset)
             return list(session.scalars(stmt).all())
 
     def get_entries_with_streaks(self) -> list[datetime]:
-        """Get unique dates with entries."""
+        """Retrieves a unique list of dates on which entries were recorded.
+
+        Used for calculating productivity streaks.
+
+        Returns:
+            list[datetime]: A list of distinct dates, ordered descending.
+        """
         with self.Session() as session:
             stmt = (
                 select(func.distinct(func.date(Entry.created_at)))
@@ -345,7 +529,11 @@ class Database:
             return [datetime.strptime(row[0], "%Y-%m-%d") for row in result if row[0]]
 
     def get_project_stats(self) -> dict[str, int]:
-        """Get entry counts grouped by project."""
+        """Aggregates entry counts for each project.
+
+        Returns:
+            dict[str, int]: A mapping of project names to their entry counts.
+        """
         with self.Session() as session:
             stmt = (
                 select(Entry.project, func.count(Entry.id))
@@ -358,7 +546,15 @@ class Database:
     def get_entries_count_by_date(
         self, start_date: datetime, end_date: datetime
     ) -> dict[str, int]:
-        """Get entry counts grouped by date."""
+        """Counts journal entries per day within a specific time range.
+
+        Args:
+            start_date (datetime): Start of the aggregation period.
+            end_date (datetime): End of the aggregation period.
+
+        Returns:
+            dict[str, int]: A mapping of date strings (YYYY-MM-DD) to entry counts.
+        """
         with self.Session() as session:
             stmt = (
                 select(func.date(Entry.created_at), func.count(Entry.id))
@@ -369,8 +565,13 @@ class Database:
             results = session.execute(stmt).all()
             return {str(date): count for date, count in results if date}
 
-    def get_date_range(self) -> tuple[Optional[datetime], Optional[datetime]]:
-        """Get the date range of all entries."""
+    def get_date_range(self) -> tuple[datetime | None, datetime | None]:
+        """Determines the earliest and latest entry timestamps in the database.
+
+        Returns:
+            tuple[datetime | None, datetime | None]: A tuple containing the
+                (min_date, max_date), or (None, None) if empty.
+        """
         with self.Session() as session:
             stmt = select(func.min(Entry.created_at), func.max(Entry.created_at))
             result = session.execute(stmt).first()
@@ -380,10 +581,18 @@ class Database:
 
     def get_all_entries(
         self,
-        project: Optional[str] = None,
-        tags: Optional[list[str]] = None,
+        project: str | None = None,
+        tags: list[str] | None = None,
     ) -> list[Entry]:
-        """Retrieve all entries, optionally filtered."""
+        """Fetches all journal entries with optional filtering.
+
+        Args:
+            project (str | None): Optional project filter.
+            tags (list[str] | None): Optional tag filter.
+
+        Returns:
+            list[Entry]: A list of all matching entries, ordered by creation date.
+        """
         with self.Session() as session:
             stmt = select(Entry).order_by(Entry.created_at.desc())
             if project:
@@ -394,10 +603,18 @@ class Database:
 
     def get_all_todos(
         self,
-        project: Optional[str] = None,
-        tags: Optional[list[str]] = None,
+        project: str | None = None,
+        tags: list[str] | None = None,
     ) -> list[Todo]:
-        """Retrieve all todos, optionally filtered."""
+        """Fetches all todo tasks with optional filtering.
+
+        Args:
+            project (str | None): Optional project filter.
+            tags (list[str] | None): Optional tag filter.
+
+        Returns:
+            list[Todo]: A list of all matching todos.
+        """
         with self.Session() as session:
             stmt = select(Todo).order_by(Todo.created_at.desc())
             if project:
@@ -407,7 +624,11 @@ class Database:
             return list(session.scalars(stmt).all())
 
     def get_entries_with_tags_count(self) -> dict[str, int]:
-        """Get entry counts grouped by tag."""
+        """Aggregates usage counts for each tag across all entries.
+
+        Returns:
+            dict[str, int]: A mapping of tag names to their total usage count.
+        """
         with self.Session() as session:
             stmt = (
                 select(Tag.name, func.count(Tag.id))
@@ -421,11 +642,22 @@ class Database:
         self,
         content: str,
         priority: str = "normal",
-        project: Optional[str] = None,
-        tags: Optional[list[str]] = None,
-        due_date: Optional[datetime] = None,
+        project: str | None = None,
+        tags: list[str] | None = None,
+        due_date: datetime | None = None,
     ) -> Todo:
-        """Add a new task."""
+        """Creates and persists a new todo task.
+
+        Args:
+            content (str): Task description.
+            priority (str): Urgency level. Defaults to 'normal'.
+            project (str | None): Optional project name.
+            tags (list[str] | None): Optional list of tags.
+            due_date (datetime | None): Optional deadline.
+
+        Returns:
+            Todo: The newly created Todo object.
+        """
         with self.Session() as session:
             todo = Todo(
                 content=content,
@@ -446,15 +678,32 @@ class Database:
             return todo
 
     def get_todo(self, todo_id: int) -> Todo:
-        """Retrieve a single todo by ID."""
+        """Fetches a specific todo task by its unique ID.
+
+        Args:
+            todo_id (int): The ID of the task to retrieve.
+
+        Returns:
+            Todo: The retrieved Todo object.
+
+        Raises:
+            ValueError: If no task is found with the given ID.
+        """
         with self.Session() as session:
             todo = session.get(Todo, todo_id)
             if not todo:
                 raise ValueError(f"Todo with id {todo_id} not found")
             return todo
 
-    def get_todos(self, status: Optional[str] = "pending") -> list[Todo]:
-        """Retrieve tasks, ordered by priority and urgency."""
+    def get_todos(self, status: str | None = "pending") -> list[Todo]:
+        """Retrieves tasks sorted by priority, urgency (due date), and creation time.
+
+        Args:
+            status (str | None): Filter by task status. Defaults to 'pending'.
+
+        Returns:
+            list[Todo]: A sorted list of Todo tasks.
+        """
         with self.Session() as session:
             stmt = select(Todo)
 
@@ -485,16 +734,34 @@ class Database:
     def update_todo(
         self,
         todo_id: int,
-        content: Optional[str] = None,
-        status: Optional[str] = None,
-        priority: Optional[str] = None,
-        project: Optional[str] = None,
-        tags: Optional[list[str]] = None,
-        completed_at: Optional[datetime] = None,
-        due_date: Optional[datetime] = None,
-        reminder_last_sent: Optional[datetime] = None,
+        content: str | None = None,
+        status: str | None = None,
+        priority: str | None = None,
+        project: str | None = None,
+        tags: list[str] | None = None,
+        completed_at: datetime | None = None,
+        due_date: datetime | None = None,
+        reminder_last_sent: datetime | None = None,
     ) -> Todo:
-        """Update an existing task."""
+        """Modifies attributes of an existing todo task.
+
+        Args:
+            todo_id (int): ID of the task to update.
+            content (str | None): New task description.
+            status (str | None): New task status.
+            priority (str | None): New priority level.
+            project (str | None): New project name.
+            tags (list[str] | None): New list of tags (replaces existing).
+            completed_at (datetime | None): Timestamp when completed.
+            due_date (datetime | None): New deadline.
+            reminder_last_sent (datetime | None): Updated reminder timestamp.
+
+        Returns:
+            Todo: The updated Todo object.
+
+        Raises:
+            ValueError: If no task is found with the given ID.
+        """
         with self.Session() as session:
             todo = session.get(Todo, todo_id)
             if not todo:
@@ -524,7 +791,15 @@ class Database:
     def get_reminders(
         self, due_before: datetime, reminded_since: datetime
     ) -> list[Todo]:
-        """Query for urgent tasks that need a reminder alert."""
+        """Identifies urgent tasks that require notification alerts.
+
+        Args:
+            due_before (datetime): Deadline threshold for reminders.
+            reminded_since (datetime): Cooldown threshold to avoid spamming.
+
+        Returns:
+            list[Todo]: A list of tasks meeting reminder criteria.
+        """
         with self.Session() as session:
             stmt = (
                 select(Todo)
@@ -539,7 +814,14 @@ class Database:
             return list(session.scalars(stmt).all())
 
     def delete_todo(self, todo_id: int) -> bool:
-        """Delete a task by ID."""
+        """Permanently removes a todo task from the database.
+
+        Args:
+            todo_id (int): ID of the task to delete.
+
+        Returns:
+            bool: True if deleted, False otherwise.
+        """
         with self.Session() as session:
             todo = session.get(Todo, todo_id)
             if todo:
@@ -547,3 +829,77 @@ class Database:
                 session.commit()
                 return True
             return False
+
+    # --- Summary (Long-Term Memory) Methods ---
+
+    def add_summary(
+        self,
+        content: str,
+        period_start: datetime,
+        period_end: datetime,
+        summary_type: str = "weekly",
+    ) -> Summary:
+        """Stores a new AI-generated period summary.
+
+        Args:
+            content (str): The summarized data (usually JSON).
+            period_start (datetime): Start of the summarized window.
+            period_end (datetime): End of the summarized window.
+            summary_type (str): Type of summary. Defaults to 'weekly'.
+
+        Returns:
+            Summary: The newly created Summary object.
+        """
+        with self.Session() as session:
+            summary = Summary(
+                content=content,
+                period_start=period_start,
+                period_end=period_end,
+                summary_type=summary_type,
+            )
+            session.add(summary)
+            session.commit()
+            session.refresh(summary)
+            return summary
+
+    def get_summaries(
+        self, summary_type: str = "weekly", limit: int = 4
+    ) -> list[Summary]:
+        """Retrieves recent summaries for historical context.
+
+        Args:
+            summary_type (str): Type of summaries to fetch.
+            limit (int): Maximum number of summaries. Defaults to 4.
+
+        Returns:
+            list[Summary]: A list of recent Summary objects.
+        """
+        with self.Session() as session:
+            stmt = (
+                select(Summary)
+                .where(Summary.summary_type == summary_type)
+                .order_by(Summary.period_end.desc())
+                .limit(limit)
+            )
+            return list(session.scalars(stmt).all())
+
+    def get_latest_summary(
+        self, summary_type: str = "weekly"
+    ) -> Summary | None:
+        """Fetches the single most recent summary of a given type.
+
+        Args:
+            summary_type (str): The summary category.
+
+        Returns:
+            Summary | None: The newest summary or None.
+        """
+        with self.Session() as session:
+            stmt = (
+                select(Summary)
+                .where(Summary.summary_type == summary_type)
+                .order_by(Summary.period_end.desc())
+                .limit(1)
+            )
+            return session.scalars(stmt).first()
+

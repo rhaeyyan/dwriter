@@ -292,8 +292,8 @@ class TestFutureDates:
         assert result == expected
 
     def test_plus_months_shorthand(self):
-        """Test parsing '+3m' shorthand (approximate 30-day months)."""
-        result = parse_natural_date("+3m")
+        """Test parsing '+3mo' shorthand (approximate 30-day months)."""
+        result = parse_natural_date("+3mo")
         expected = (datetime.now() + timedelta(days=90)).replace(
             hour=0, minute=0, second=0, microsecond=0
         )

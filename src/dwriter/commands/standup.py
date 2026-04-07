@@ -211,8 +211,9 @@ def standup(
 
     # Append weekly wrap-up if requested
     if weekly:
-        from ..analytics import AnalyticsEngine, InsightGenerator
         import re
+
+        from ..analytics import AnalyticsEngine, InsightGenerator
 
         engine = AnalyticsEngine(ctx.db)
         insight_gen = InsightGenerator(engine)
@@ -229,7 +230,7 @@ def standup(
             # Strip Rich tags but keep the text
             clean_n = re.sub(r"\[.*?\]", "", n)
             clean_wrapup.append(f"- {clean_n}")
-        
+
         output += f"{wrapup_header}\n" + "\n".join(clean_wrapup)
 
     # Copy to clipboard if enabled

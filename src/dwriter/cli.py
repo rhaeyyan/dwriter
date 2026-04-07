@@ -14,19 +14,19 @@ from .database import Database
 
 
 class DWriterError(Exception):
-    """Base exception for dwriter errors."""
+    """Base exception class for all dwriter-specific errors."""
 
     pass
 
 
 class DatabaseError(DWriterError):
-    """Exception raised for database-related errors."""
+    """Exception raised when a database operation fails."""
 
     pass
 
 
 class ConfigError(DWriterError):
-    """Exception raised for configuration-related errors."""
+    """Exception raised when configuration loading or validation fails."""
 
     pass
 
@@ -34,17 +34,24 @@ class ConfigError(DWriterError):
 class AppContext:
     """Application context for dependency injection.
 
-    This class holds shared instances of Console, ConfigManager, and Database
-    that are injected into CLI commands via Click's context mechanism.
+    Maintains shared instances of the console, configuration, and database
+    access layers. This context is passed to Click commands to ensure consistent
+    resource usage across the CLI.
 
     Attributes:
-        console: Rich console for formatted output.
-        config: Configuration manager instance.
-        db: Database instance.
+        console (Console): Rich console instance for formatted terminal output.
+        config_manager (ConfigManager): Manager for loading and saving settings.
+        config (Config): The active application configuration.
+        db (Database): Database interface for entries and tasks.
     """
 
     def __init__(self) -> None:
-        """Initialize the application context."""
+        """Initializes the application context and core services.
+
+        Raises:
+            ConfigError: If the configuration cannot be loaded.
+            DatabaseError: If the database cannot be initialized.
+        """
         self.console = Console()
         try:
             self.config_manager = ConfigManager()
@@ -56,15 +63,19 @@ class AppContext:
             self.db = Database()
         except Exception as e:
             raise DatabaseError(f"Failed to initialize database: {e}") from e
-        
+
         self._reminders_shown = False
 
     def check_reminders(self, silent: bool = False, force: bool = False) -> None:
-        """Check for active reminders and print a footer alert.
+        """Evaluates pending urgent tasks and displays reminder alerts.
+
+        Scans for 'urgent' priority tasks that are past due or due within the
+        next 30 minutes. Prevents spam by enforcing a 1-hour cooldown between
+        reminders unless forced.
 
         Args:
-            silent: If True, only prints reminders, no header.
-            force: If True, ignores the 1-hour cooldown and shows all active reminders.
+            silent (bool): If True, suppresses the header and only shows tasks.
+            force (bool): If True, bypasses the cooldown and shows all matches.
         """
         # Skip if already shown in this session (unless forced)
         if self._reminders_shown and not force:
@@ -97,7 +108,7 @@ class AppContext:
                     due_str = r.due_date.strftime("%Y-%m-%d")
                 else:
                     due_str = r.due_date.strftime("%I:%M %p")
-                
+
                 self.console.print(
                     f"  [red]![/red] [{r.id}] {r.content} (Due: {due_str})"
                 )
@@ -123,8 +134,17 @@ class AppContext:
 @click.pass_context
 @click.version_option(version=__version__, prog_name="dwriter")
 def main(ctx: click.Context, check_only: bool) -> None:
-    """Dwriter - A minimalist journal for the terminal.
-... (rest of docstring)
+    """dwriter - A minimalist journal and productivity tool for the terminal.
+
+    Supports natural language date parsing, hashtags (#tag), and project
+    tagging (&project).
+
+    Example Usage (Headless CLI):
+      dwriter add "Refactored the database layer #dev &dwriter"
+      dwriter todo "Complete project documentation @due Friday"
+
+    Example Usage (Visual Dashboard):
+      dwriter (no arguments launches the TUI)
     """
     try:
         ctx.obj = AppContext()
@@ -147,22 +167,24 @@ def main(ctx: click.Context, check_only: bool) -> None:
         pass
 
 
-def _launch_tui(ctx_obj: AppContext, starting_tab: str = "dashboard") -> None:
-    """Launch the unified TUI.
+def _launch_tui(ctx_obj: AppContext, starting_tab: str = "second-brain") -> None:
+    """Initializes and runs the Textual-based User Interface (TUI).
+
+    Configures the terminal environment and launches the unified application.
 
     Args:
-        ctx_obj: Application context.
-        starting_tab: The screen to show on launch.
+        ctx_obj (AppContext): The application context.
+        starting_tab (str): The initial screen to display. Defaults to "second-brain".
     """
     import sys
 
-    # Force UTF-8 encoding for terminal output to prevent mojibake/character distortion
+    # Force UTF-8 encoding for terminal output to prevent character distortion
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
     if hasattr(sys.stderr, "reconfigure"):
         sys.stderr.reconfigure(encoding="utf-8")
 
-    # Force terminal resize to exactly 42 rows by 88 columns (default size)
+    # Set terminal dimensions to recommended default size
     sys.stdout.write("\x1b[8;42;88t")
     sys.stdout.flush()
 
@@ -174,7 +196,8 @@ def _launch_tui(ctx_obj: AppContext, starting_tab: str = "dashboard") -> None:
 
 
 @click.command()
-@click.option("--dashboard", "tab", flag_value="dashboard", help="Start on dashboard tab")
+@click.option("--dashboard", "tab", flag_value="second-brain", help="Start on 2nd-Brain screen")
+@click.option("--2brain", "tab", flag_value="second-brain", help="Start on 2nd-Brain screen")
 @click.option("--logs", "tab", flag_value="logs", help="Start on logs tab")
 @click.option("--todo", "tab", flag_value="todo", help="Start on todo tab")
 @click.option("--timer", "tab", flag_value="timer", help="Start on timer tab")
@@ -182,29 +205,31 @@ def _launch_tui(ctx_obj: AppContext, starting_tab: str = "dashboard") -> None:
 @click.option("--settings", "tab", flag_value="settings", help="Start on settings tab")
 @click.pass_obj
 def ui(ctx: AppContext, tab: str | None) -> None:
-    """Launch the interactive Unified TUI."""
-    _launch_tui(ctx, starting_tab=tab or "dashboard")
+    """Launches the interactive Visual Dashboard (TUI)."""
+    _launch_tui(ctx, starting_tab=tab or "second-brain")
 
 
 @click.command()
 @click.pass_obj
 def reminders(ctx: AppContext) -> None:
-    """Show active reminders (urgent tasks due soon)."""
+    """Displays all active reminders for urgent tasks."""
     ctx.check_reminders(silent=False, force=True)
 
 
 def _register_commands() -> None:
-    """Register all CLI commands."""
+    """Registers all available subcommands to the main Click group."""
     from .commands import (
         add,
+        ask,
+        compress,
         config,
         delete,
         done,
         edit,
         examples,
         help_cmd,
-        review,
         remind,
+        review,
         search,
         snooze,
         standup,
@@ -215,9 +240,12 @@ def _register_commands() -> None:
         undo,
     )
 
+
     # Dispatch and register commands to the main group
     for cmd in [
         add,
+        ask,
+        compress,
         config,
         delete,
         done,
@@ -238,6 +266,7 @@ def _register_commands() -> None:
         undo,
     ]:
         main.add_command(cmd)
+
 
 
 # Register commands immediately after definition to make them available for the group

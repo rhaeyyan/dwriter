@@ -1,7 +1,7 @@
 """Theme definitions for dwriter TUI.
 
 This module contains all available themes for the application,
-defined using Textual's Theme object for seamless switching.
+defined using Textual's Theme object for consistent switching.
 """
 
 from textual.theme import Theme

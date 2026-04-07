@@ -4,7 +4,7 @@ This module provides fuzzy matching capabilities for searching
 journal entries and to-do tasks.
 """
 
-from typing import Any, Optional
+from typing import Any
 
 from rapidfuzz import fuzz, process
 
@@ -60,7 +60,7 @@ def find_best_match(
     query: str,
     items: list[Any],
     threshold: int = 75,
-) -> Optional[tuple[Any, float]]:
+) -> tuple[Any, float] | None:
     """Find the single best matching item for a query.
 
     Args:

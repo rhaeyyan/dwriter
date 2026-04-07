@@ -1,13 +1,13 @@
 """Help command - provides CLI help and TUI guidance."""
 
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ..cli import AppContext
 
 import click
-
 
 
 @click.command()
@@ -20,8 +20,8 @@ def help_cmd(ctx: AppContext) -> None:
       dwriter
     """
     from ..cli import main
-    
+
     ctx.console.print("[bold blue]Dwriter Help[/bold blue]\n")
     click.echo(main.get_help(click.Context(main)))
-    
+
     ctx.console.print("\n[dim]Tip: Run [bold]dwriter ui[/bold] for the interactive TUI command center.[/dim]")

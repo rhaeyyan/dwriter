@@ -21,7 +21,7 @@ class AnalyticsEngine:
         now = datetime.now()
         three_days_ago = now - timedelta(days=3)
         fourteen_days_ago = now - timedelta(days=14)
-        
+
         with self.db.Session() as session:
             fresh = session.query(Todo).filter(Todo.status == "pending", Todo.created_at >= three_days_ago).count()
             stale = session.query(Todo).filter(Todo.status == "pending", Todo.created_at < three_days_ago, Todo.created_at >= fourteen_days_ago).count()
@@ -83,7 +83,7 @@ class AnalyticsEngine:
                 Entry.created_at >= cutoff,
                 func.strftime("%H", Entry.created_at) >= "22"
             ).count()
-            
+
             return round((after_hours / total) * 100, 1)
 
     def get_priority_fulfillment(self) -> dict[str, float]:
@@ -189,7 +189,7 @@ class AnalyticsEngine:
                 Entry.created_at >= cutoff,
                 Entry.content.like("⏱️%")
             ).count()
-            
+
             regular = total - focus_sessions
 
             return (
@@ -280,37 +280,37 @@ class AnalyticsEngine:
                 Entry.created_at >= cutoff,
                 Entry.content.like("⏱️%")
             ).count()
-            
+
             shallow_entries = session.query(Entry).filter(
                 Entry.created_at >= cutoff,
                 ~Entry.content.like("⏱️%")
             ).count()
-            
+
             shallow_todos = session.query(Todo).filter(
                 Todo.created_at >= cutoff
             ).count()
-            
+
             shallow_work = shallow_entries + shallow_todos
             total_work = deep_work + shallow_work
-            
+
             if total_work == 0:
                 return 0, 0, 0.0
-                
+
             return deep_work, shallow_work, round((deep_work / total_work) * 100, 1)
 
     def get_rolling_burnout_score(self, days: int = 7) -> float:
         """Calculate a normalized burnout risk score (0.0 to 1.0)."""
         after_hours_pct = self.get_after_hours_percentage(days=days)
         added, done = self.get_say_do_ratio(days=days)
-        
+
         base_score = min(after_hours_pct / 50.0, 1.0) * 0.5
-        
+
         overload_score = 0.0
         if added > 0:
             completion_rate = done / added
             if completion_rate < 0.5:
                 overload_score = (0.5 - completion_rate) * 2 * 0.5
-                
+
         total_score = min(base_score + overload_score, 1.0)
         return round(total_score, 2)
 
@@ -318,7 +318,7 @@ class AnalyticsEngine:
         """Determine the user's productivity persona for the last 7 days."""
         now = datetime.now()
         cutoff = now - timedelta(days=days)
-        
+
         with self.db.Session() as session:
             # 1. Check for Deep Diver (Focus Ratio)
             total_entries = session.query(Entry).filter(Entry.created_at >= cutoff).count()
@@ -326,66 +326,66 @@ class AnalyticsEngine:
                 Entry.created_at >= cutoff,
                 Entry.content.like("⏱️%")
             ).count()
-            
+
             if total_entries > 0 and (focus_entries / total_entries) > 0.4:
                 return "The Deep Diver"
-                
+
             # 2. Check for The Closer (Completions vs Creations)
             created_todos = session.query(Todo).filter(Todo.created_at >= cutoff).count()
             completed_todos = session.query(Todo).filter(
                 Todo.status == "completed",
                 Todo.completed_at >= cutoff
             ).count()
-            
+
             if completed_todos > created_todos and completed_todos >= 3:
                 return "The Closer"
-                
+
             # 3. Check for The Archivist (Journaling vs Tasks)
             if total_entries > (created_todos * 3) and total_entries >= 10:
                 return "The Archivist"
-                
+
             # 4. Check for The Firefighter (High Priority Focus)
             urgent_completed = session.query(Todo).filter(
                 Todo.status == "completed",
                 Todo.completed_at >= cutoff,
                 Todo.priority.in_(["urgent", "high"])
             ).count()
-            
+
             if completed_todos > 0 and (urgent_completed / completed_todos) > 0.5:
                 return "The Firefighter"
-                
+
             return "The Steady Builder"
 
     def get_golden_hour(self, days: int = 7) -> str:
         """Identify the hour with peak activity density."""
         now = datetime.now()
         cutoff = now - timedelta(days=days)
-        
+
         with self.db.Session() as session:
             # Combined query for Entry and Todo activity by hour
             entry_stats = session.query(
                 func.strftime("%H", Entry.created_at),
                 func.count(Entry.id)
             ).filter(Entry.created_at >= cutoff).group_by(func.strftime("%H", Entry.created_at)).all()
-            
+
             todo_stats = session.query(
                 func.strftime("%H", Todo.created_at),
                 func.count(Todo.id)
             ).filter(Todo.created_at >= cutoff).group_by(func.strftime("%H", Todo.created_at)).all()
-            
+
             hourly_counts: dict[str, int] = {}
             for hour, count in entry_stats + todo_stats:
                 hourly_counts[hour] = hourly_counts.get(hour, 0) + count
-                
+
             if not hourly_counts:
                 return "N/A"
-                
+
             peak_hour = max(hourly_counts, key=hourly_counts.get) # type: ignore
             hour_int = int(peak_hour)
             suffix = "AM" if hour_int < 12 else "PM"
             display_hour = hour_int if hour_int <= 12 else hour_int - 12
             if display_hour == 0: display_hour = 12
-            
+
             return f"{display_hour}:00 {suffix}"
 
     def get_velocity_delta(self) -> tuple[int, int]:
@@ -393,40 +393,40 @@ class AnalyticsEngine:
         now = datetime.now()
         current_cutoff = now - timedelta(days=7)
         previous_cutoff = now - timedelta(days=14)
-        
+
         with self.db.Session() as session:
             current_done = session.query(Todo).filter(
                 Todo.status == "completed",
                 Todo.completed_at >= current_cutoff
             ).count()
-            
+
             previous_done = session.query(Todo).filter(
                 Todo.status == "completed",
                 Todo.completed_at >= previous_cutoff,
                 Todo.completed_at < current_cutoff
             ).count()
-            
+
             if previous_done == 0:
                 delta = 100 if current_done > 0 else 0
             else:
                 delta = int(((current_done - previous_done) / previous_done) * 100)
-                
+
             return current_done, delta
 
     def get_big_rock(self, days: int = 7) -> tuple[str, float] | None:
         """Find the project with the highest activity share."""
         now = datetime.now()
         cutoff = now - timedelta(days=days)
-        
+
         with self.db.Session() as session:
             total_activity = session.query(Entry).filter(
                 Entry.created_at >= cutoff,
                 Entry.project.isnot(None)
             ).count()
-            
+
             if total_activity == 0:
                 return None
-                
+
             project_counts = session.query(
                 Entry.project,
                 func.count(Entry.id)
@@ -434,10 +434,10 @@ class AnalyticsEngine:
                 Entry.created_at >= cutoff,
                 Entry.project.isnot(None)
             ).group_by(Entry.project).order_by(func.count(Entry.id).desc()).first()
-            
+
             if not project_counts:
                 return None
-                
+
             project, count = project_counts
             percentage = (count / total_activity) * 100
             return project, round(percentage, 1)
@@ -469,7 +469,7 @@ class InsightGenerator:
 
         # This regex matches: (1) Rich tags OR (2) #tags OR (3) &projects OR (4) numbers in parentheses
         pattern = r"(\[.*?\])|#(\w+)|&(\w+)|\((\d+)\)"
-        
+
         return re.sub(pattern, replacer, text)
 
     def generate_insights(self) -> list[str]:
