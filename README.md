@@ -116,6 +116,17 @@ dwriter todo "Review the pull request" --priority urgent
 - **Fuzzy Search:** Don't worry about perfect spelling or exact matches. Use `/` in the TUI or `dwriter search "query"` to find that one obscure note from three months ago.
 - **Hierarchical Depth:** Use colons to organize complex structures like `&client:acme:q4-report`.
 
+### 🧠 AI-Augmented Reflection (The 2nd-Brain)
+*Leverage your historical data for strategic insights and context restoration.*
+The 2nd-Brain acts as a specialized analytical layer over your logs. It excels at identifying long-term trends and helping you resume deep work sessions.
+
+**Example Prompts:**
+- **Retrospective:** `"Summarize my biggest wins and friction points from the last three weekly summaries."`
+- **Context Restoration:** `"What was my last known state on &project-alpha before I went on vacation?"`
+- **Pattern Discovery:** `"Based on my #deepwork logs, what time of day am I most likely to complete complex tasks?"`
+- **Strategic Advice:** `"I'm feeling overwhelmed with &client-work. Analyze my pending tasks and suggest a focus area for today."`
+- **Generative Reflection:** `"Give me a personalized journaling prompt based on my activity from the last 72 hours."`
+
 ### 🧘 Deep Reflection (The Visual Dashboard)
 *Switch to the TUI when you need perspective or a birds-eye view.*
 - **The Dashboard:** Run `dwriter` (or `dwriter ui`) to manage your todo board and activity map side-by-side.
