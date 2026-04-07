@@ -24,8 +24,8 @@ Modern productivity apps are often cluttered with distractions. **dwriter** is d
 
 Getting started is as simple as a single command. We use **uv**, the fastest Python package manager, to keep your installation clean and isolated.
 
-### 1. Install the tool (uv)
-Choose your operating system and paste the command into your terminal:
+### 1. Install uv
+If you haven't already, install the **uv** package manager:
 
 *   **Linux / macOS:**
     ```bash
@@ -37,23 +37,20 @@ Choose your operating system and paste the command into your terminal:
     ```
 
 ### 2. Clone and Install dwriter
-Clone the repository, navigate to the `dwriter` directory, by running:
+Clone the repository and switch to the **`dwriter-ai`** branch. This branch is required to access the 2nd-Brain AI features.
+
 ```bash
 git clone https://github.com/rhaeyyan/dwriter.git
-```
-> make sure to remember where you cloned the repository!
-```bash
 cd dwriter
-```
-> Or navigate to where you cloned the repository (in terminal).
-```bash
+git checkout dwriter-ai
 uv tool install .
 ```
 
 ### 3. Keep dwriter Current
-To pull the newest features and architectural improvements (see **[Update Notes](documentation/update-notes.md)**), navigate to your local `dwriter` directory and run:
+To pull the newest features and AI refinements (see **[Update Notes](documentation/update-notes.md)**), navigate to your local directory and run:
+
 ```bash
-git pull origin main
+git pull origin dwriter-ai
 uv tool install --upgrade .
 ```
 
