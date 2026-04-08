@@ -1,10 +1,17 @@
 """Database layer for dwriter."""
 
 import json
+import os
+import queue
+import shutil
+import sys
+import threading
+import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
+from rich.console import Console
 from sqlalchemy import (
     DateTime,
     ForeignKey,
@@ -62,6 +69,8 @@ class Entry(Base):
 
     Attributes:
         id (int): Primary key for the entry.
+        uuid (str): Unique identifier for synchronization.
+        lamport_clock (int): Logical clock for conflict resolution.
         content (str): The textual content of the journal entry.
         project (str | None): Optional project name associated with the entry.
         created_at (datetime): Timestamp when the entry was created.
@@ -77,6 +86,8 @@ class Entry(Base):
     __tablename__ = "entries"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    uuid: Mapped[str] = mapped_column(String, unique=True, index=True)
+    lamport_clock: Mapped[int] = mapped_column(Integer, default=0)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     project: Mapped[str | None] = mapped_column(String)
     created_at: Mapped[datetime] = mapped_column(
@@ -137,6 +148,8 @@ class Todo(Base):
 
     Attributes:
         id (int): Primary key for the todo task.
+        uuid (str): Unique identifier for synchronization.
+        lamport_clock (int): Logical clock for conflict resolution.
         content (str): Description of the task.
         project (str | None): Optional project identifier.
         priority (str): Urgency level (e.g., 'urgent', 'high', 'normal', 'low').
@@ -151,6 +164,8 @@ class Todo(Base):
     __tablename__ = "todos"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    uuid: Mapped[str] = mapped_column(String, unique=True, index=True)
+    lamport_clock: Mapped[int] = mapped_column(Integer, default=0)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     project: Mapped[str | None] = mapped_column(String)
     priority: Mapped[str] = mapped_column(String, default="normal")
@@ -203,12 +218,28 @@ class Summary(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
 
 
+class SyncMetadata(Base):
+    """Metadata for distributed synchronization.
+
+    Attributes:
+        key (str): Configuration key (e.g., 'device_id', 'lamport_clock').
+        value (str): Configuration value.
+    """
+
+    __tablename__ = "sync_metadata"
+
+    key: Mapped[str] = mapped_column(String, primary_key=True)
+    value: Mapped[str] = mapped_column(String)
+
 
 class Database:
     """Manager for SQLite database operations.
 
     Handles initialization, migrations, and CRUD operations for entries, todos,
     tags, and AI summaries.
+
+    All write operations are funneled through a single background worker thread
+    to prevent SQLite locking and ensure thread-safety for async consumers.
     """
 
     def __init__(self, db_path: Path | None = None):
@@ -245,67 +276,182 @@ class Database:
         self.Session = sessionmaker(bind=self.engine, expire_on_commit=False)
         self._migrate()
 
+        # Initialize background writer queue and thread
+        self._write_queue: queue.Queue[
+            tuple[Callable[..., Any], tuple[Any, ...], dict[str, Any], queue.Queue[Any]]
+        ] = queue.Queue()
+        self._worker_thread = threading.Thread(target=self._db_worker, daemon=True)
+        self._worker_thread.start()
+
+    def _db_worker(self) -> None:
+        """Background thread that executes all database write operations."""
+        while True:
+            item = self._write_queue.get()
+            if item is None:
+                break
+
+            func, args, kwargs, resp_queue = item
+            try:
+                result = func(*args, **kwargs)
+                resp_queue.put((result, None))
+            except Exception as e:
+                resp_queue.put((None, e))
+            finally:
+                self._write_queue.task_done()
+
+    def _queued_write(self, func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
+        """Enqueues a write operation and waits for the result.
+
+        This maintains a synchronous interface for the caller while ensuring
+        the actual write happens in the background thread.
+        """
+        resp_queue: queue.Queue[tuple[Any, Exception | None]] = queue.Queue()
+        self._write_queue.put((func, args, kwargs, resp_queue))
+        result, error = resp_queue.get()
+        if error:
+            raise error
+        return result
+
+    def _get_next_lamport(self) -> int:
+        """Increments and returns the global Lamport clock."""
+        with self.Session() as session:
+            stmt = select(SyncMetadata).where(SyncMetadata.key == "lamport_clock")
+            meta = session.scalar(stmt)
+            if not meta:
+                meta = SyncMetadata(key="lamport_clock", value="0")
+                session.add(meta)
+
+            current = int(meta.value)
+            next_val = current + 1
+            meta.value = str(next_val)
+            session.commit()
+            return next_val
+
     def _migrate(self) -> None:
         """Executes manual schema migrations to maintain database compatibility.
 
         Checks for missing columns and applies ALTER TABLE statements as needed.
         Also performs maintenance tasks like cleaning up orphaned tags.
+
+        Includes automated backup and rollback safeguards to prevent journal
+        corruption during failed migrations.
         """
-        with self.engine.connect():
-            import sqlite3
+        db_path = str(self.engine.url.database)
+        if not os.path.exists(db_path):
+            return
 
-            db_path = str(self.engine.url.database)
-            with sqlite3.connect(db_path) as sqlite_conn:
-                cursor = sqlite_conn.execute("PRAGMA table_info(todos)")
-                columns = [row[1] for row in cursor.fetchall()]
+        # Create a timestamped backup before migration
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        backup_path = f"{db_path}.{timestamp}.bak"
+        shutil.copy2(db_path, backup_path)
 
-                if "due_date" not in columns:
+        try:
+            with self.engine.connect():
+                import sqlite3
+
+                with sqlite3.connect(db_path) as sqlite_conn:
+                    # SyncMetadata table
                     sqlite_conn.execute(
-                        "ALTER TABLE todos ADD COLUMN due_date DATETIME"
+                        "CREATE TABLE IF NOT EXISTS sync_metadata "
+                        "(key TEXT PRIMARY KEY, value TEXT)"
                     )
 
-                if "reminder_last_sent" not in columns:
+                    cursor = sqlite_conn.execute("PRAGMA table_info(todos)")
+                    columns = [row[1] for row in cursor.fetchall()]
+
+                    if "uuid" not in columns:
+                        sqlite_conn.execute("ALTER TABLE todos ADD COLUMN uuid TEXT")
+                        # Initialize existing records with UUIDs
+                        cursor = sqlite_conn.execute(
+                            "SELECT id FROM todos WHERE uuid IS NULL"
+                        )
+                        for row in cursor.fetchall():
+                            sqlite_conn.execute(
+                                "UPDATE todos SET uuid = ? WHERE id = ?",
+                                (str(uuid.uuid4()), row[0]),
+                            )
+
+                    if "lamport_clock" not in columns:
+                        sqlite_conn.execute(
+                            "ALTER TABLE todos ADD COLUMN lamport_clock INTEGER DEFAULT 0"
+                        )
+
+                    if "due_date" not in columns:
+                        sqlite_conn.execute(
+                            "ALTER TABLE todos ADD COLUMN due_date DATETIME"
+                        )
+
+                    if "reminder_last_sent" not in columns:
+                        sqlite_conn.execute(
+                            "ALTER TABLE todos ADD COLUMN reminder_last_sent DATETIME"
+                        )
+
+                    cursor = sqlite_conn.execute("PRAGMA table_info(entries)")
+                    entry_columns = [row[1] for row in cursor.fetchall()]
+
+                    if "uuid" not in entry_columns:
+                        sqlite_conn.execute("ALTER TABLE entries ADD COLUMN uuid TEXT")
+                        # Initialize existing records with UUIDs
+                        cursor = sqlite_conn.execute(
+                            "SELECT id FROM entries WHERE uuid IS NULL"
+                        )
+                        for row in cursor.fetchall():
+                            sqlite_conn.execute(
+                                "UPDATE entries SET uuid = ? WHERE id = ?",
+                                (str(uuid.uuid4()), row[0]),
+                            )
+
+                    if "lamport_clock" not in entry_columns:
+                        sqlite_conn.execute(
+                            "ALTER TABLE entries ADD COLUMN lamport_clock INTEGER DEFAULT 0"
+                        )
+
+                    if "todo_id" not in entry_columns:
+                        sqlite_conn.execute(
+                            "ALTER TABLE entries ADD COLUMN todo_id "
+                            "INTEGER REFERENCES todos(id) ON DELETE CASCADE"
+                        )
+
+                    if "implicit_mood" not in entry_columns:
+                        sqlite_conn.execute(
+                            "ALTER TABLE entries ADD COLUMN implicit_mood STRING"
+                        )
+
+                    if "life_domain" not in entry_columns:
+                        sqlite_conn.execute(
+                            "ALTER TABLE entries ADD COLUMN life_domain STRING"
+                        )
+
+                    if "energy_level" not in entry_columns:
+                        sqlite_conn.execute(
+                            "ALTER TABLE entries ADD COLUMN energy_level INTEGER"
+                        )
+
+                    if "embedding" not in entry_columns:
+                        sqlite_conn.execute(
+                            "ALTER TABLE entries ADD COLUMN embedding LARGEBINARY"
+                        )
+
+                    # Clean up orphaned tags
                     sqlite_conn.execute(
-                        "ALTER TABLE todos ADD COLUMN reminder_last_sent DATETIME"
+                        "DELETE FROM tags WHERE entry_id NOT IN (SELECT id FROM entries)"
+                    )
+                    sqlite_conn.execute(
+                        "DELETE FROM todo_tags WHERE todo_id NOT IN (SELECT id FROM todos)"
                     )
 
-                cursor = sqlite_conn.execute("PRAGMA table_info(entries)")
-                entry_columns = [row[1] for row in cursor.fetchall()]
-                if "todo_id" not in entry_columns:
-                    sqlite_conn.execute(
-                        "ALTER TABLE entries ADD COLUMN todo_id "
-                        "INTEGER REFERENCES todos(id) ON DELETE CASCADE"
-                    )
+                    sqlite_conn.commit()
 
-                if "implicit_mood" not in entry_columns:
-                    sqlite_conn.execute(
-                        "ALTER TABLE entries ADD COLUMN implicit_mood STRING"
-                    )
-
-                if "life_domain" not in entry_columns:
-                    sqlite_conn.execute(
-                        "ALTER TABLE entries ADD COLUMN life_domain STRING"
-                    )
-
-                if "energy_level" not in entry_columns:
-                    sqlite_conn.execute(
-                        "ALTER TABLE entries ADD COLUMN energy_level INTEGER"
-                    )
-
-                if "embedding" not in entry_columns:
-                    sqlite_conn.execute(
-                        "ALTER TABLE entries ADD COLUMN embedding LARGEBINARY"
-                    )
-
-                # Clean up orphaned tags
-                sqlite_conn.execute(
-                    "DELETE FROM tags WHERE entry_id NOT IN (SELECT id FROM entries)"
-                )
-                sqlite_conn.execute(
-                    "DELETE FROM todo_tags WHERE todo_id NOT IN (SELECT id FROM todos)"
-                )
-
-                sqlite_conn.commit()
+            # If successful, we could remove the backup, but keeping it for a short time is safer.
+        except Exception as e:
+            # Restore the backup on failure
+            shutil.copy2(backup_path, db_path)
+            console = Console()
+            console.print(
+                f"[bold red]FATAL DATABASE ERROR:[/bold red] Migration failed. {e}"
+            )
+            console.print("[yellow]Database has been rolled back from backup.[/yellow]")
+            sys.exit(1)
 
     def connection(self) -> Any:
         """Provides a raw SQLite connection for low-level operations.
@@ -314,6 +460,7 @@ class Database:
             Any: A standard sqlite3.Connection object with Row factory enabled.
         """
         import sqlite3
+
         conn = sqlite3.connect(str(self.engine.url.database))
         conn.row_factory = sqlite3.Row
         return conn
@@ -330,25 +477,38 @@ class Database:
         energy_level: int | None = None,
         embedding: list[float] | None = None,
     ) -> Entry:
-        """Persists a new journal entry to the database.
+        """Persists a new journal entry to the database."""
+        return self._queued_write(
+            self._add_entry_sync,
+            content,
+            tags=tags,
+            project=project,
+            created_at=created_at,
+            todo_id=todo_id,
+            implicit_mood=implicit_mood,
+            life_domain=life_domain,
+            energy_level=energy_level,
+            embedding=embedding,
+        )
 
-        Args:
-            content (str): The text content of the entry.
-            tags (list[str] | None): Optional list of tag names to associate.
-            project (str | None): Optional project name.
-            created_at (datetime | None): Explicit creation timestamp.
-                Defaults to now if None.
-            todo_id (int | None): Link to an existing todo task ID.
-            implicit_mood (str | None): Inferred emotional tone.
-            life_domain (str | None): Category of life domain.
-            energy_level (int | None): Inferred energy level.
-            embedding (list[float] | None): Vector embedding of the content.
-
-        Returns:
-            Entry: The newly created Entry object.
-        """
+    def _add_entry_sync(
+        self,
+        content: str,
+        tags: list[str] | None = None,
+        project: str | None = None,
+        created_at: datetime | None = None,
+        todo_id: int | None = None,
+        implicit_mood: str | None = None,
+        life_domain: str | None = None,
+        energy_level: int | None = None,
+        embedding: list[float] | None = None,
+    ) -> Entry:
+        """Synchronous implementation of add_entry."""
+        next_clock = self._get_next_lamport()
         with self.Session() as session:
             entry = Entry(
+                uuid=str(uuid.uuid4()),
+                lamport_clock=next_clock,
                 content=content,
                 project=project,
                 todo_id=todo_id,
@@ -429,14 +589,14 @@ class Database:
         """
         with self.Session() as session:
             stmt = select(Entry).where(Entry.created_at.between(start_date, end_date))
-            
+
             if exclude_projects:
                 stmt = stmt.where(Entry.project.not_in(exclude_projects))
-            
+
             if exclude_tags:
                 # To exclude entries with specific tags, we check that none of the entry's tags are in the excluded list
-                # This logic excludes an entry if ANY of its tags match the exclusion list.
                 from sqlalchemy import not_
+
                 stmt = stmt.where(not_(Entry.tags.any(Tag.name.in_(exclude_tags))))
 
             stmt = stmt.order_by(Entry.created_at)
@@ -484,27 +644,36 @@ class Database:
         tags: list[str] | None = None,
         project: str | None = None,
         created_at: datetime | None = None,
+        embedding: list[float] | None = None,
     ) -> Entry:
-        """Modifies attributes of an existing journal entry.
+        """Modifies attributes of an existing journal entry."""
+        return self._queued_write(
+            self._update_entry_sync,
+            entry_id,
+            content=content,
+            tags=tags,
+            project=project,
+            created_at=created_at,
+            embedding=embedding,
+        )
 
-        Args:
-            entry_id (int): ID of the entry to update.
-            content (str | None): New text content.
-            tags (list[str] | None): New list of tags (replaces existing tags).
-            project (str | None): New project name.
-            created_at (datetime | None): Modified creation timestamp.
-
-        Returns:
-            Entry: The updated Entry object.
-
-        Raises:
-            ValueError: If no entry is found with the given ID.
-        """
+    def _update_entry_sync(
+        self,
+        entry_id: int,
+        content: str | None = None,
+        tags: list[str] | None = None,
+        project: str | None = None,
+        created_at: datetime | None = None,
+        embedding: list[float] | None = None,
+    ) -> Entry:
+        """Synchronous implementation of update_entry."""
+        next_clock = self._get_next_lamport()
         with self.Session() as session:
             entry = session.get(Entry, entry_id)
             if not entry:
                 raise ValueError(f"Entry {entry_id} not found")
 
+            entry.lamport_clock = next_clock
             if content is not None:
                 entry.content = content
             if project is not None:
@@ -513,20 +682,19 @@ class Database:
                 entry.tags = [Tag(name=t) for t in tags]
             if created_at is not None:
                 entry.created_at = created_at
+            if embedding is not None:
+                entry.embedding = json.dumps(embedding).encode("utf-8")
 
             session.commit()
             session.refresh(entry)
             return entry
 
     def delete_entry(self, entry_id: int) -> bool:
-        """Removes an entry from the database.
+        """Removes an entry from the database."""
+        return self._queued_write(self._delete_entry_sync, entry_id)
 
-        Args:
-            entry_id (int): ID of the entry to delete.
-
-        Returns:
-            bool: True if the entry was found and deleted, False otherwise.
-        """
+    def _delete_entry_sync(self, entry_id: int) -> bool:
+        """Synchronous implementation of delete_entry."""
         with self.Session() as session:
             entry = session.get(Entry, entry_id)
             if entry:
@@ -536,11 +704,11 @@ class Database:
             return False
 
     def delete_entry_by_todo_id(self, todo_id: int) -> None:
-        """Deletes any journal entries linked to a specific todo task ID.
+        """Deletes any journal entries linked to a specific todo task ID."""
+        self._queued_write(self._delete_entry_by_todo_id_sync, todo_id)
 
-        Args:
-            todo_id (int): The ID of the todo task.
-        """
+    def _delete_entry_by_todo_id_sync(self, todo_id: int) -> None:
+        """Synchronous implementation of delete_entry_by_todo_id."""
         with self.Session() as session:
             session.query(Entry).filter(Entry.todo_id == todo_id).delete(
                 synchronize_session=False
@@ -548,19 +716,18 @@ class Database:
             session.commit()
 
     def delete_entries_before(self, before_date: datetime) -> int:
-        """Deletes all journal entries recorded before a given date.
+        """Deletes all journal entries recorded before a given date."""
+        return self._queued_write(self._delete_entries_before_sync, before_date)
 
-        Args:
-            before_date (datetime): Threshold date for deletion.
-
-        Returns:
-            int: The number of entries removed.
-        """
+    def _delete_entries_before_sync(self, before_date: datetime) -> int:
+        """Synchronous implementation of delete_entries_before."""
         with self.Session() as session:
             stmt = delete(Entry).where(Entry.created_at < before_date)
             result = session.execute(stmt)
             session.commit()
-            return int(result.rowcount) if result.rowcount is not None else 0  # type: ignore[attr-defined]
+            return (
+                int(result.rowcount) if result.rowcount is not None else 0
+            )  # type: ignore[attr-defined]
 
     def get_all_entries_count(self) -> int:
         """Calculates the total number of journal entries in the database.
@@ -767,20 +934,30 @@ class Database:
         tags: list[str] | None = None,
         due_date: datetime | None = None,
     ) -> Todo:
-        """Creates and persists a new todo task.
+        """Creates and persists a new todo task."""
+        return self._queued_write(
+            self._add_todo_sync,
+            content,
+            priority=priority,
+            project=project,
+            tags=tags,
+            due_date=due_date,
+        )
 
-        Args:
-            content (str): Task description.
-            priority (str): Urgency level. Defaults to 'normal'.
-            project (str | None): Optional project name.
-            tags (list[str] | None): Optional list of tags.
-            due_date (datetime | None): Optional deadline.
-
-        Returns:
-            Todo: The newly created Todo object.
-        """
+    def _add_todo_sync(
+        self,
+        content: str,
+        priority: str = "normal",
+        project: str | None = None,
+        tags: list[str] | None = None,
+        due_date: datetime | None = None,
+    ) -> Todo:
+        """Synchronous implementation of add_todo."""
+        next_clock = self._get_next_lamport()
         with self.Session() as session:
             todo = Todo(
+                uuid=str(uuid.uuid4()),
+                lamport_clock=next_clock,
                 content=content,
                 priority=priority,
                 project=project,
@@ -864,30 +1041,40 @@ class Database:
         due_date: datetime | None = None,
         reminder_last_sent: datetime | None = None,
     ) -> Todo:
-        """Modifies attributes of an existing todo task.
+        """Modifies attributes of an existing todo task."""
+        return self._queued_write(
+            self._update_todo_sync,
+            todo_id,
+            content=content,
+            status=status,
+            priority=priority,
+            project=project,
+            tags=tags,
+            completed_at=completed_at,
+            due_date=due_date,
+            reminder_last_sent=reminder_last_sent,
+        )
 
-        Args:
-            todo_id (int): ID of the task to update.
-            content (str | None): New task description.
-            status (str | None): New task status.
-            priority (str | None): New priority level.
-            project (str | None): New project name.
-            tags (list[str] | None): New list of tags (replaces existing).
-            completed_at (datetime | None): Timestamp when completed.
-            due_date (datetime | None): New deadline.
-            reminder_last_sent (datetime | None): Updated reminder timestamp.
-
-        Returns:
-            Todo: The updated Todo object.
-
-        Raises:
-            ValueError: If no task is found with the given ID.
-        """
+    def _update_todo_sync(
+        self,
+        todo_id: int,
+        content: str | None = None,
+        status: str | None = None,
+        priority: str | None = None,
+        project: str | None = None,
+        tags: list[str] | None = None,
+        completed_at: datetime | None = None,
+        due_date: datetime | None = None,
+        reminder_last_sent: datetime | None = None,
+    ) -> Todo:
+        """Synchronous implementation of update_todo."""
+        next_clock = self._get_next_lamport()
         with self.Session() as session:
             todo = session.get(Todo, todo_id)
             if not todo:
                 raise ValueError(f"Todo {todo_id} not found")
 
+            todo.lamport_clock = next_clock
             if content is not None:
                 todo.content = content
             if status is not None:
@@ -935,14 +1122,11 @@ class Database:
             return list(session.scalars(stmt).all())
 
     def delete_todo(self, todo_id: int) -> bool:
-        """Permanently removes a todo task from the database.
+        """Permanently removes a todo task from the database."""
+        return self._queued_write(self._delete_todo_sync, todo_id)
 
-        Args:
-            todo_id (int): ID of the task to delete.
-
-        Returns:
-            bool: True if deleted, False otherwise.
-        """
+    def _delete_todo_sync(self, todo_id: int) -> bool:
+        """Synchronous implementation of delete_todo."""
         with self.Session() as session:
             todo = session.get(Todo, todo_id)
             if todo:
@@ -960,17 +1144,23 @@ class Database:
         period_end: datetime,
         summary_type: str = "weekly",
     ) -> Summary:
-        """Stores a new AI-generated period summary.
+        """Stores a new AI-generated period summary."""
+        return self._queued_write(
+            self._add_summary_sync,
+            content,
+            period_start,
+            period_end,
+            summary_type=summary_type,
+        )
 
-        Args:
-            content (str): The summarized data (usually JSON).
-            period_start (datetime): Start of the summarized window.
-            period_end (datetime): End of the summarized window.
-            summary_type (str): Type of summary. Defaults to 'weekly'.
-
-        Returns:
-            Summary: The newly created Summary object.
-        """
+    def _add_summary_sync(
+        self,
+        content: str,
+        period_start: datetime,
+        period_end: datetime,
+        summary_type: str = "weekly",
+    ) -> Summary:
+        """Synchronous implementation of add_summary."""
         with self.Session() as session:
             summary = Summary(
                 content=content,
@@ -1004,9 +1194,7 @@ class Database:
             )
             return list(session.scalars(stmt).all())
 
-    def get_latest_summary(
-        self, summary_type: str = "weekly"
-    ) -> Summary | None:
+    def get_latest_summary(self, summary_type: str = "weekly") -> Summary | None:
         """Fetches the single most recent summary of a given type.
 
         Args:
@@ -1023,4 +1211,3 @@ class Database:
                 .limit(1)
             )
             return session.scalars(stmt).first()
-

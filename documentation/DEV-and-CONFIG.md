@@ -16,6 +16,8 @@ dwriter config edit
 [defaults]
 project = "core-engine"
 tags = ["dev", "internal"]
+git_auto_tag = true        # Automatically apply git branch/repo tags
+auto_sync = true           # Enable background sync via Git
 
 [standup]
 format = "slack"           # Options: bullets, slack, jira, markdown
@@ -36,10 +38,26 @@ notifications_enabled = false  # Toggle desktop push notifications
 | Section | Option | Description |
 | :--- | :--- | :--- |
 | `[defaults]` | `project` | The project name automatically applied to new entries. |
+| `[defaults]` | `git_auto_tag` | Toggle automatic Git branch and repository tagging. |
+| `[defaults]` | `auto_sync` | Enable/disable non-blocking background synchronization. |
 | `[standup]` | `format` | Your preferred layout for daily summaries. |
 | `[review]` | `format` | The layout used for long-term reports. |
 | `[display]` | `colors` | Toggle terminal color support. |
 | `[display]` | `notifications_enabled` | Opt-in to OS-level desktop push notifications for reminders. |
+
+---
+
+## 🏗️ Workspace Awareness (`.dwriter-ignore`)
+
+To prevent project-namespace pollution in massive monorepos or specific directories, you can drop a `.dwriter-ignore` file into your repository root.
+
+**Example `.dwriter-ignore`:**
+```ini
+# Prevent dwriter from auto-tagging in this repo
+disable_auto_tag=true
+```
+
+When this file is present and `disable_auto_tag=true` is set, `dwriter` will silently bypass the Git branch/repo injection for all entries logged within that workspace.
 
 ---
 
@@ -135,4 +153,4 @@ This project is licensed under the **MIT License**. Feel free to use, modify, an
 
 ---
 
-[⬅️ Back to README](../README.md)
+[⬅️ Back to README](../README.md) | [📘 User Manual](./USER-MANUAL.md)

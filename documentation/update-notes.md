@@ -1,5 +1,51 @@
 # dwriter Update Notes
 
+## Version 4.2.0 - April 8, 2026
+
+### 🚀 Key Features
+
+#### 1. Background Sync Daemon
+- **Auto-Sync Automation**: Introduced a non-blocking background sync system. `dwriter` now automatically performs a `pull` on startup and a debounced `push` 10 seconds after any data write (entries or todos).
+- **Sync Telemetry**: Added a real-time sync status indicator to the TUI footer (`[✅ Synced]`, `[🧠 Syncing...]`, `[❌ Sync Failed]`).
+- **Silent Logging**: All background sync operations now log to `~/.dwriter/logs/sync.log` to prevent UI disruption during network timeouts or conflicts.
+
+#### 2. Omnibox "Ghost Text" & AI Polish
+- **Predictive Suggestions**: AI recommendations for projects and tags are now injected as dim gray "ghost text" directly into the Omnibox.
+- **Selective Tab-Acceptance**: Users can now use the `Tab` key to selectively accept suggested tokens (e.g., accept the project but skip the tags) without being forced into a bulk `Ctrl+A` application.
+- **Greeting Throttling**: The heavy 7-Day Pulse analytics greeting in the 2nd-Brain is now throttled to once per day. Subsequent launches provide a fast, minimalist welcome message.
+
+#### 3. Workspace Awareness & Scoping
+- **Git Auto-Tagging Control**: Added a global `git_auto_tag` configuration to toggle environment-aware metadata injection.
+- **`.dwriter-ignore` Support**: Repositories can now include a `.dwriter-ignore` file with `disable_auto_tag=true` to prevent project-namespace pollution in monorepos.
+- **Visual Hierarchy**: Automatically inherited Git tags are now rendered in a distinct, muted style (`dim #8c92a6`) to distinguish them from user-typed "Intent" tags.
+
+### 🛠 Improvements & Fixes
+- **Omnibox Refactor**: Decoupled the Omnibox into a standalone reusable widget with built-in suggestion logic.
+- **Config Hardening**: Updated the configuration schema to support `auto_sync` and `last_pulse_greeting` state.
+
+## Version 4.1.0 - April 8, 2026
+
+### 🚀 Key Features
+
+#### 1. Headless Observability (Machine-Readable State)
+- **JSON Output Mode**: Introduced the `--json` flag for core data retrieval commands (`stats`, `today`, `todo list`). This enables downstream orchestration and automated tooling by emitting raw, structured JSON instead of human-readable terminal prose.
+- **Git Context Awareness**: The `add` command now automatically detects if it is running within a Git repository. It intelligently appends the repository name as a project tag and includes the current branch as a metadata tag (e.g., `#git-main`), ensuring seamless workspace cross-contamination prevention.
+
+#### 2. Proactive AI Intelligence
+- **Smart Suggestions**: Implemented a proactive AI notification loop. After logging an entry, the background engine analyzes semantic similarity against past work and suggests relevant projects and tags.
+- **Non-Disruptive TUI Toasts**: AI suggestions now appear as non-focus-stealing Textual notifications. Users can globally apply these suggestions with a single `Ctrl+A` keystroke.
+- **Graceful Degradation**: Background AI threads are now hardened to handle local LLM timeouts and validation errors silently, ensuring the primary journaling flow remains uninterrupted.
+
+#### 3. Distributed State & Hardening
+- **Atomic Sync Writes**: Hardened the synchronization engine to use temporary file swaps (`os.replace`) for JSONL serialization. This eliminates the risk of sync file corruption during unexpected process termination.
+- **CRDT Conflict Resolution**: Implemented and verified Lamport clock-based merging for cross-device state synchronization. Higher logical clocks now correctly resolve edit conflicts during `dwriter sync` operations.
+- **Background HUD**: Added a persistent status bar to the TUI providing real-time observability. Displays the active Git branch and a spinning processing indicator (`[🧠 Processing...]`) for background AI tasks.
+
+### 🛠 Improvements & Fixes
+- **Off-Thread Database Queue**: Refactored the database layer to funnel all write operations through a dedicated background thread. This solves SQLite locking bottlenecks and ensures the Textual event loop remains stutter-free during complex saves.
+- **Schema Rollback Safeguards**: Added automated database backups before manual migrations. If a schema upgrade fails, the system now automatically restores from the backup to prevent journal corruption.
+- **Syntax & Indentation Guard**: Conducted a comprehensive audit of the TUI's primary application class, resolving structural regressions and ensuring full Python 3.10+ compatibility.
+
 ## Version 4.0.0 - April 8, 2026
 
 ### 🚀 Key Features

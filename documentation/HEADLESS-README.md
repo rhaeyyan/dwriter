@@ -16,19 +16,32 @@ Capture your work without leaving the flow.
 | `dwriter undo` | Instantly delete the most recent entry. |
 | `dwriter edit` | Search or select an entry to correct (interactive). |
 
+### 🔍 Headless Observability (JSON Output)
+For integration with external tools and scripts, several commands support a `--json` flag to emit raw, machine-readable data:
+
+```bash
+# Get today's logs as a JSON array
+dwriter today --json
+
+# Get your current productivity metrics and insights
+dwriter stats --json
+
+# Get your pending task list as JSON
+dwriter todo list --json
+```
+
 ### 📅 Time-Traveling with Natural Language
 You don't have to log things the moment they happen. **dwriter** understands human dates:
 
 ```bash
-# Log for yesterday
+# Log for yesterday (auto-tags with current Git context)
 dwriter add "Finished the report" --date yesterday
-
-# Log for last Friday
-dwriter add "Completed the migration" --date "last Friday"
-
-# Log for a specific date
-dwriter add "Drafted the proposal" --date 2024-11-20
 ```
+
+###  Git Integration
+If you are working inside a Git repository, `dwriter add` will automatically detect your context:
+- **Project:** Sets the project name to the repository's root folder name (if no project is specified).
+- **Metadata:** Appends a tag matching your current branch (e.g., `#git-main`).
 
 ---
 
@@ -85,6 +98,7 @@ Harness your historical data for deeper insights. These features require an Olla
 | :--- | :--- |
 | `dwriter ask "query"` | Ask natural language questions about your history or productivity. |
 | `dwriter compress` | Generate a structured weekly retrospective from your activity logs. |
+| `dwriter sync` | Synchronize your journal data across devices via Git. |
 
 ### Querying your 2nd-Brain
 Ask for summaries, trend analysis, or advice based on your own data:

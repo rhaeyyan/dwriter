@@ -153,30 +153,53 @@ class SecondBrainScreen(Container):
 
     @work(thread=True)
     def _display_welcome_message(self) -> None:
-        """Fetches 7-day wrap info and displays it as a welcome message."""
+        """Fetches 7-day wrap info and displays it as a welcome message.
+
+        Throttles the heavy 7-Day Pulse wrap-up to once per day. If already
+        shown today, returns a fast, minimalist greeting.
+        """
         from ...analytics import AnalyticsEngine, InsightGenerator
         
         try:
-            engine = AnalyticsEngine(self.ctx.db)
-            insight_gen = InsightGenerator(engine)
-            nudges = insight_gen.generate_weekly_wrapup()
+            today = datetime.now().date().isoformat()
+            last_pulse = self.ctx.config.ai.last_pulse_greeting
             
-            if nudges:
-                # Add extra newline between nudge items for better "Dashboard" separation
-                wrap_text = "\n\n".join(nudges)
+            # Check if we should show the full pulse or a minimalist greeting
+            if last_pulse == today:
                 welcome_content = (
-                    "Welcome back! Here's your [bold #cba6f7]7-Day Pulse[/bold #cba6f7] wrap-up:\n\n"
-                    f"{wrap_text}\n\n"
+                    "Welcome back. [bold #cba6f7]Ready to log or retrieve?[/bold #cba6f7]\n\n"
                     "How can I help you optimize your focus today?"
                 )
+            else:
+                engine = AnalyticsEngine(self.ctx.db)
+                insight_gen = InsightGenerator(engine)
+                nudges = insight_gen.generate_weekly_wrapup()
                 
-                # We want this to look like an AI message
-                # Skip _format_ai_response because welcome_content is already Rich-formatted
-                ai_msg = AIChatMessage(welcome_content)
-                log = self.query_one("#second-brain-log", Vertical)
-                
-                self.app.call_from_thread(log.mount, ai_msg)
-                self.app.call_from_thread(ai_msg.scroll_visible)
+                if nudges:
+                    # Add extra newline between nudge items for better "Dashboard" separation
+                    wrap_text = "\n\n".join(nudges)
+                    welcome_content = (
+                        "Welcome back! Here's your [bold #cba6f7]7-Day Pulse[/bold #cba6f7] wrap-up:\n\n"
+                        f"{wrap_text}\n\n"
+                        "How can I help you optimize your focus today?"
+                    )
+                    
+                    # Update the last_pulse_greeting timestamp
+                    self.ctx.config.ai.last_pulse_greeting = today
+                    self.ctx.save_config()
+                else:
+                    welcome_content = (
+                        "Welcome back. [bold #cba6f7]Ready to log or retrieve?[/bold #cba6f7]\n\n"
+                        "How can I help you optimize your focus today?"
+                    )
+            
+            # We want this to look like an AI message
+            # Skip _format_ai_response because welcome_content is already Rich-formatted
+            ai_msg = AIChatMessage(welcome_content)
+            log = self.query_one("#second-brain-log", Vertical)
+            
+            self.app.call_from_thread(log.mount, ai_msg)
+            self.app.call_from_thread(ai_msg.scroll_visible)
         except Exception:
             pass
 

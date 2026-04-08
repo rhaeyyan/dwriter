@@ -13,6 +13,7 @@ from .review import review
 from .search import search
 from .standup import standup
 from .stats import stats
+from .sync import sync
 from .timer import timer
 from .today import today
 from .todo import done, remind, snooze, todo
@@ -35,6 +36,7 @@ __all__ = [
     "snooze",
     "standup",
     "stats",
+    "sync",
     "timer",
     "today",
     "todo",

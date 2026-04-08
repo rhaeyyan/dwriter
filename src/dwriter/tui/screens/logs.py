@@ -669,7 +669,18 @@ class LogsResultsView(ListView):
         elif content.startswith("✓ "): content = content.replace("✓ ", f"{check_icon} ", 1)
         if "⏱️" in content: content = content.replace("⏱️", timer_icon)
 
-        tags_str = f"[{TAG}]#{' #'.join(entry.tag_names)}[/{TAG}]" if entry.tag_names else ""
+        # Split tags into Git context vs User defined
+        user_tags = [t for t in entry.tag_names if not t.startswith("git-")]
+        git_tags = [t for t in entry.tag_names if t.startswith("git-")]
+
+        tags_parts = []
+        if user_tags:
+            tags_parts.append(f"[{TAG}]#{' #'.join(user_tags)}[/{TAG}]")
+        if git_tags:
+            # Context tags (Git) are rendered in a muted, dim style
+            tags_parts.append(f"[dim #8c92a6]#{' #'.join(git_tags)}[/dim #8c92a6]")
+        
+        tags_str = " ".join(tags_parts)
         project_str = f" [{PROJECT}]&{entry.project}[/{PROJECT}]" if entry.project else ""
 
         score_str = ""
@@ -1020,10 +1031,14 @@ class LogsScreen(Container):
         def on_dismiss(result: Any) -> None:
             if result is None or result[0] is None: return
             content, tags, project, created_at = result
-            self.ctx.db.update_entry(entry.id, content=content, tags=tags, project=project, created_at=created_at)
-            self.notify(f"Entry #{entry.id} updated")
-            self._load_data()
-            self._display_recent_entries()
+            
+            async def edit_worker() -> None:
+                self.ctx.db.update_entry(entry.id, content=content, tags=tags, project=project, created_at=created_at)
+                self.notify(f"Entry #{entry.id} updated")
+                self._load_data()
+                self._display_recent_entries()
+
+            self.run_worker(edit_worker())
 
         self.app.push_screen(EditEntryModal(entry), on_dismiss)
 
@@ -1034,10 +1049,13 @@ class LogsScreen(Container):
 
         def on_dismiss(result: int | None) -> None:
             if result is not None:
-                self.ctx.db.delete_entry(result)
-                self.notify(f"Entry #{result} deleted")
-                self._load_data()
-                self._display_recent_entries()
+                async def delete_worker() -> None:
+                    self.ctx.db.delete_entry(result)
+                    self.notify(f"Entry #{result} deleted")
+                    self._load_data()
+                    self._display_recent_entries()
+
+                self.run_worker(delete_worker())
 
         self.app.push_screen(DeleteConfirmModal(entry.id, entry.content), on_dismiss)
 
@@ -1048,10 +1066,14 @@ class LogsScreen(Container):
 
         def on_dismiss(result: Any) -> None:
             if result is None or result[1] is None: return
-            self.ctx.db.update_entry(entry.id, tags=result[1])
-            self.notify(f"Entry #{entry.id} tags updated")
-            self._load_data()
-            self._display_recent_entries()
+            
+            async def tags_worker() -> None:
+                self.ctx.db.update_entry(entry.id, tags=result[1])
+                self.notify(f"Entry #{entry.id} tags updated")
+                self._load_data()
+                self._display_recent_entries()
+
+            self.run_worker(tags_worker())
 
         self.app.push_screen(EditEntryModal(entry), on_dismiss)
 
@@ -1062,10 +1084,14 @@ class LogsScreen(Container):
 
         def on_dismiss(result: Any) -> None:
             if result is None or result[2] is None: return
-            self.ctx.db.update_entry(entry.id, project=result[2])
-            self.notify(f"Entry #{entry.id} project updated")
-            self._load_data()
-            self._display_recent_entries()
+            
+            async def project_worker() -> None:
+                self.ctx.db.update_entry(entry.id, project=result[2])
+                self.notify(f"Entry #{entry.id} project updated")
+                self._load_data()
+                self._display_recent_entries()
+
+            self.run_worker(project_worker())
 
         self.app.push_screen(EditEntryModal(entry), on_dismiss)
 
@@ -1074,10 +1100,14 @@ class LogsScreen(Container):
         def on_dismiss(result: Any) -> None:
             if result is None or result[0] is None: return
             content, tags, project, created_at = result
-            self.ctx.db.add_entry(content=content, tags=tags, project=project, created_at=created_at)
-            self.notify("New entry added")
-            self._load_data()
-            self._display_recent_entries()
+            
+            async def add_worker() -> None:
+                self.ctx.db.add_entry(content=content, tags=tags, project=project, created_at=created_at)
+                self.notify("New entry added")
+                self._load_data()
+                self._display_recent_entries()
+
+            self.run_worker(add_worker())
 
         self.app.push_screen(QuickAddEntryModal(), on_dismiss)
 

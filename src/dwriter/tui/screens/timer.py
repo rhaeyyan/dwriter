@@ -642,17 +642,20 @@ class TimerScreen(Container):
 
         def on_dismiss(result: str | None) -> None:
             if result:
-                try:
-                    parsed = parse_quick_add(result)
-                    all_tags = list(self.tags)
-                    for tag in parsed.tags:
-                        if tag not in all_tags: all_tags.append(tag)
+                async def save_worker() -> None:
+                    try:
+                        parsed = parse_quick_add(result)
+                        all_tags = list(self.tags)
+                        for tag in parsed.tags:
+                            if tag not in all_tags: all_tags.append(tag)
 
-                    project = parsed.project or ("Break" if self.is_break_mode else self.project)
-                    entry = self.ctx.db.add_entry(content=parsed.content, tags=all_tags, project=project, created_at=datetime.now())
-                    self.post_message(EntryAdded(entry_id=entry.id, content=entry.content, created_at=entry.created_at))
-                except Exception as e:
-                    self.notify(f"Log error: {e}", severity="error")
+                        project = parsed.project or ("Break" if self.is_break_mode else self.project)
+                        entry = self.ctx.db.add_entry(content=parsed.content, tags=all_tags, project=project, created_at=datetime.now())
+                        self.post_message(EntryAdded(entry_id=entry.id, content=entry.content, created_at=entry.created_at))
+                    except Exception as e:
+                        self.notify(f"Log error: {e}", severity="error")
+                
+                self.run_worker(save_worker())
             self._reset_timer()
 
         self.app.push_screen(SessionCompleteModal(minutes=completed_minutes, default_content=default_content, tags=self.tags, project=self.project), on_dismiss)

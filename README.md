@@ -1,5 +1,5 @@
 # dwriter 📝
-Experimental beta: v4.0.0
+Experimental beta: v4.1.0
 ### *The minimalist journal for those who live in the terminal powered by llama 3.1:8b.*
 
 **dwriter** is a high-signal, low-friction journaling tool designed to capture your work without breaking your flow. It bridges the gap between the raw speed of a command-line interface and the visual clarity of a modern dashboard.
@@ -77,7 +77,9 @@ Navigate between screens using the tab bar:
 - **✅ To-do Board:** Keyboard-driven task board with priorities.
 - **⏱️ Focus Timer:** A full-screen countdown that auto-logs your progress.
 - **🔍 Search/Edit:** Live-filtering fuzzy search across all your history.
-- **📈 Weekly Pulse:** Behavioral analytics (Archetypes, Golden Hour, Velocity Delta) updated every 24 hours.
+- **📈 Weekly Pulse:** Behavioral analytics updated every 24 hours.
+
+**Observability:** The TUI now features a persistent **Status Bar** that displays your current active Git branch and real-time background task monitoring (`[🧠 Processing...]`).
 
 **dwriter** operates in two modes: the **Fast Command-Line** (for speed) and the **Visual Dashboard** (for depth).
 
@@ -93,46 +95,50 @@ dwriter timer "25 &feature-y #deepwork"
 
 # Add a task to your todo list
 dwriter todo "Review the pull request" --priority urgent
+
+# Machine-Readable Output (JSON) for automation
+dwriter stats --json
+dwriter today --json
 ```
 ---
 
 ## 💡 Mastering the Workflow
 
-**dwriter** is designed to be your frictionless "brain-to-terminal" bridge. It adapts to your mental state, allowing you to capture everything from high-level project goals to fleeting creative sparks without breaking your momentum.
+**dwriter** is designed to be your frictionless "brain-to-terminal" bridge. It adapts to your mental state, allowing you to capture everything from high-level project goals to fleeting creative sparks.
 
 ### 🏃 Frictionless Capture (The "Keys-Down" Loop)
-*Jot down a note, thought, idea, reminder, or instruction in seconds.*
 - **Instant Entry:** `dwriter add "Idea: build a moisture sensor for the garden #someday"`
-- **Quick Planning:** `dwriter todo "Review the pull request &internal-tools !urgent @due:tomorrow"`
-- **Priority & Deadlines:** Use `!priority` (`!urgent`, `!high`, `!low`) and `@due:date` (`@due:friday`, `@due:2024-01-15`) directly in your text.
-- **Zero Double-Entry:** Use `dwriter done <id>` to complete a task; it's automatically moved to your journal with a timestamp.
-- **Instant Signal:** Run `dwriter stats` for a beautiful text-based productivity report without leaving your prompt.
+- **Git Integration:** When running inside a Git repo, `dwriter add` automatically appends the repo name as a project tag and your current branch as a metadata tag.
+- **Priority & Deadlines:** Use `!priority` (`!urgent`, `!high`) and `@due:date` (`@due:friday`) directly in your text.
+- **Zero Double-Entry:** Use `dwriter done <id>` to complete a task; it's automatically moved to your journal.
+- **Instant Signal:** Run `dwriter stats` for a beautiful text-based productivity report.
 
 ### 🎨 Creative Organization & Retrieval
-*You are the architect of your own history. There are no rigid categories—only your own imagination.*
-- **Total Freedom:** Use `#tags` and `&projects` however you like. Be as specific or as broad as your workflow demands (e.g., `#draft`, `&home:renovation`, `#aha-moment`).
-- **Fuzzy Search:** Don't worry about perfect spelling or exact matches. Use `/` in the TUI or `dwriter search "query"` to find that one obscure note from three months ago.
+- **Total Freedom:** Use `#tags` and `&projects` however you like (e.g., `#draft`, `&home:renovation`).
+- **Fuzzy Search:** Don't worry about perfect spelling. Use `/` in the TUI or `dwriter search "query"`.
 - **Hierarchical Depth:** Use colons to organize complex structures like `&client:acme:q4-report`.
 
 ### 🧠 AI-Augmented Reflection (The 2nd-Brain)
-*Leverage your historical data for strategic insights and context restoration.*
-The 2nd-Brain acts as a specialized analytical layer over your logs. It excels at identifying long-term trends and helping you resume deep work sessions.
+The 2nd-Brain acts as a specialized analytical layer over your logs.
 
-**Example Prompts:**
-- **Retrospective:** `"Summarize my biggest wins and friction points from the last three weekly summaries."`
-- **Context Restoration:** `"What was my last known state on &project-alpha before I went on vacation?"`
-- **Pattern Discovery:** `"Based on my #deepwork logs, what time of day am I most likely to complete complex tasks?"`
-- **Strategic Advice:** `"I'm feeling overwhelmed with &client-work. Analyze my pending tasks and suggest a focus area for today."`
-- **Generative Reflection:** `"Give me a personalized journaling prompt based on my activity from the last 72 hours."`
+**Proactive Intelligence:** After logging an entry, **dwriter** will semantically analyze your history and suggest relevant `#tags` and `&projects`. Simply press `Ctrl+A` in the TUI to apply them instantly.
 
 ### 🧘 Deep Reflection (The Visual Dashboard)
-*Switch to the TUI when you need perspective or a birds-eye view.*
-- **The Dashboard:** Run `dwriter` (or `dwriter ui`) to manage your todo board and activity map side-by-side.
-- **Visual History:** Revisit your trip through a chronological log that feels like a film strip of your memories.
-- **Easy Correction:** Use the interactive `dwriter edit` to quickly fix typos or add detail to past entries.
+- **The Dashboard:** Run `dwriter` (or `dwriter ui`) to manage your todo board and activity map.
+- **Visual History:** Revisit your trip through a chronological log.
+- **Easy Correction:** Use the interactive `dwriter edit` to quickly fix typos.
 
-> [!TIP]
-> **Shell Safety:** Always wrap commands containing `&` or `#` in quotes (e.g., `dwriter timer "25 &work #focus"`). This prevents your shell from misinterpreting symbols as background processes or comments.
+### 🔄 Multi-Device Synchronization
+Keep your journal consistent across every machine you use. **dwriter** uses a Git-backed synchronization engine with **CRDT conflict resolution** (Lamport logical clocks) to ensure your data merges flawlessly without corruption.
+
+```bash
+# Sync local data with a remote repository
+dwriter sync --remote "https://github.com/user/my-journal-sync.git"
+
+# Push or pull manually
+dwriter sync --push
+dwriter sync --pull
+```
 
 ---
 
@@ -140,17 +146,18 @@ The 2nd-Brain acts as a specialized analytical layer over your logs. It excels a
 
 | Document | Description |
 | :--- | :--- |
-| 🚀 **[Update Notes](documentation/update-notes.md)** | **New in v4.0.0:** Local RAG & Vector Memory. |
+| 📘 **[User Manual](documentation/USER-MANUAL.md)** | **The complete technical guide to every feature.** |
+| 🚀 **[Update Notes](documentation/update-notes.md)** | **New in v4.2.0:** Auto-Sync & Ghost Text. |
 | 🛠️ **[Command Reference](documentation/HEADLESS-README.md)** | A complete guide to every CLI command and flag. |
 | 📖 **[Creative Use Cases](documentation/USE_CASES.md)** | 20 ways to use dwriter for brewing, fitness, travel, and more. |
-| ⚙️ **[Dev & Config Guide](documentation/DEV-and-CONFIG.md)** | Customizing your themes, default projects, and dev setup. |
+| ⚙️ **[Dev & Guide](documentation/DEV-and-CONFIG.md)** | Customizing your themes, default projects, and dev setup. |
 
 ---
 
 ## ❓ Troubleshooting & Tips
 
-*   **Shell Characters:** Always wrap your entries in `"quotes"` if they contain `#tags` or `&projects` to prevent your shell from misinterpreting them.
-*   **Clipboard:** On Linux, install `xclip` or `xsel` to enable the "copy-to-clipboard" feature for standup summaries.
-*   **Customization:** Run `dwriter config edit` to tweak your default project or change your standup format to `slack` or `jira`.
+*   **Shell Characters:** Always wrap your entries in `"quotes"` if they contain `#tags` or `&projects`.
+*   **Clipboard:** On Linux, install `xclip` or `xsel` to enable copy-to-clipboard.
+*   **Customization:** Run `dwriter config edit` to tweak your default settings.
 
 ---

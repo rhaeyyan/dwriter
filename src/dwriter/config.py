@@ -91,12 +91,16 @@ class DefaultsConfig:
         project: Default project name.
         default_priority: Default priority for new todos (normal/high/urgent).
         default_due_days: Default days until due for new todos.
+        git_auto_tag: Whether to automatically apply git branch/repo tags.
+        auto_sync: Whether to automatically sync changes in the background.
     """
 
     tags: list[str] = field(default_factory=list)
     project: str | None = None
     default_priority: str = "normal"
     default_due_days: int = 1
+    git_auto_tag: bool = True
+    auto_sync: bool = True
 
 
 @dataclass
@@ -145,6 +149,7 @@ class AIConfig:
         model: Model name.
         base_url: Base URL for the AI provider.
         features: Feature-specific settings.
+        last_pulse_greeting: ISO timestamp of the last 7-day pulse greeting.
     """
 
     enabled: bool = True
@@ -152,6 +157,7 @@ class AIConfig:
     model: str = "llama3.1:8b"
     base_url: str = "http://localhost:11434/v1"
     features: AIFeaturesConfig = field(default_factory=AIFeaturesConfig)
+    last_pulse_greeting: str | None = None
 
 
 @dataclass
@@ -265,6 +271,8 @@ class ConfigManager:
                 project=defaults_data.get("project"),
                 default_priority=defaults_data.get("default_priority", "normal"),
                 default_due_days=defaults_data.get("default_due_days", 1),
+                git_auto_tag=defaults_data.get("git_auto_tag", True),
+                auto_sync=defaults_data.get("auto_sync", True),
             ),
             timer=TimerConfig(
                 work_duration=timer_data.get("work_duration", 25),
@@ -286,6 +294,7 @@ class ConfigManager:
                     reflection_prompts=ai_features_data.get("reflection_prompts", True),
                     burnout_detection=ai_features_data.get("burnout_detection", True),
                 ),
+                last_pulse_greeting=ai_data.get("last_pulse_greeting"),
             ),
         )
 
@@ -342,6 +351,8 @@ class ConfigManager:
             defaults_table["project"] = self._config.defaults.project
         defaults_table["default_priority"] = self._config.defaults.default_priority
         defaults_table["default_due_days"] = self._config.defaults.default_due_days
+        defaults_table["git_auto_tag"] = self._config.defaults.git_auto_tag
+        defaults_table["auto_sync"] = self._config.defaults.auto_sync
         doc.add("defaults", defaults_table)
 
         timer_table = tomlkit.table()
@@ -360,6 +371,8 @@ class ConfigManager:
         ai_table["provider"] = self._config.ai.provider
         ai_table["model"] = self._config.ai.model
         ai_table["base_url"] = self._config.ai.base_url
+        if self._config.ai.last_pulse_greeting:
+            ai_table["last_pulse_greeting"] = self._config.ai.last_pulse_greeting
 
         ai_features = tomlkit.table()
         ai_features["auto_tagging"] = self._config.ai.features.auto_tagging
@@ -426,6 +439,8 @@ class ConfigManager:
                 "project": config.defaults.project,
                 "default_priority": config.defaults.default_priority,
                 "default_due_days": config.defaults.default_due_days,
+                "git_auto_tag": config.defaults.git_auto_tag,
+                "auto_sync": config.defaults.auto_sync,
             },
             "timer": {
                 "work_duration": config.timer.work_duration,
@@ -445,5 +460,6 @@ class ConfigManager:
                     "reflection_prompts": config.ai.features.reflection_prompts,
                     "burnout_detection": config.ai.features.burnout_detection,
                 },
+                "last_pulse_greeting": config.ai.last_pulse_greeting,
             },
         }

@@ -82,3 +82,33 @@ class TimerStateChanged(Message):
         super().__init__()
         self.is_running = is_running
         self.remaining_seconds = remaining_seconds
+
+
+class SemanticRecommendationReady(Message):
+    """Dispatched when proactive AI recommendations are available for an entry.
+
+    Attributes:
+        entry_id: The database ID of the entry.
+        project: Recommended project name (starting with &).
+        tags: Recommended hashtags (starting with #).
+    """
+
+    def __init__(self, entry_id: int, project: str | None, tags: list[str]) -> None:
+        super().__init__()
+        self.entry_id = entry_id
+        self.project = project
+        self.tags = tags
+
+
+class SyncStatus(Message):
+    """Dispatched when background sync status changes.
+
+    Attributes:
+        is_syncing: Whether a sync operation is currently in progress.
+        message: A short status message (e.g., "Synced", "Syncing...", "Sync Failed").
+    """
+
+    def __init__(self, is_syncing: bool, message: str) -> None:
+        super().__init__()
+        self.is_syncing = is_syncing
+        self.message = message

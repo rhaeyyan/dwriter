@@ -28,9 +28,16 @@ from textual.widgets import (
     Tabs,
 )
 
+from .widgets.omnibox import Omnibox
 from .colors import get_icon
 from .command_palette import DWriterCommands
-from .messages import EntryAdded, TimerStateChanged, TodoUpdated
+from .messages import (
+    EntryAdded,
+    SemanticRecommendationReady,
+    SyncStatus,
+    TimerStateChanged,
+    TodoUpdated,
+)
 from .parsers import (
     ParsedEntry,
     ParsedTodo,
@@ -362,6 +369,26 @@ class DWriterApp(App[None]):
     Tab#tab-add-pane {
         color: #73E6CB;
     }
+
+    #status-bar {
+        dock: bottom;
+        height: 1;
+        background: $panel;
+        color: $text-muted;
+        padding: 0 1;
+        layout: horizontal;
+    }
+
+    #status-git {
+        width: auto;
+        margin-right: 2;
+        text-style: italic;
+    }
+
+    #status-task {
+        width: 1fr;
+        color: $accent;
+    }
     """
 
     BINDINGS = [
@@ -376,9 +403,14 @@ class DWriterApp(App[None]):
         Binding("5", "switch_mode('settings')", "Settings", show=False),
         # Dashboard is kept as hidden fallback if needed
         Binding("0", "switch_mode('dashboard')", "Dashboard", show=False),
+        Binding("ctrl+a", "apply_recommendation", "Apply Suggestion", show=False),
     ]
 
     permanent_omnibox = reactive(False)
+    is_processing = reactive(False)
+    sync_status = reactive("Synced")
+    git_branch = reactive("")
+    pending_recommendation = reactive(None)
 
     def __init__(self, ctx: AppContext, starting_tab: str | None = None) -> None:
         """Initialize the dwriter application.
@@ -389,6 +421,7 @@ class DWriterApp(App[None]):
         """
         super().__init__()
         self.ctx = ctx
+        self.ctx.app = self
         # Initialize reactive directly from config
         self.permanent_omnibox = self.ctx.config.display.permanent_omnibox
 
@@ -400,6 +433,7 @@ class DWriterApp(App[None]):
         self._todo_state: TodoInputState = TodoInputState()
         self._timer_running: bool = False
         self._reminder_timer: threading.Timer | None = None
+        self._sync_debounce_timer: threading.Timer | None = None
 
     def compose(self) -> ComposeResult:
         """Compose the main application layout."""
@@ -414,7 +448,7 @@ class DWriterApp(App[None]):
 
         # Apply hidden_class to the Containers
         with Horizontal(id="omnibox-container", classes=hidden_class):
-            yield Input(
+            yield Omnibox(
                 placeholder=f"#tag &project YOUR-ENTRY | #tag &project YOUR-ENTRY {date_fmt}",
                 id="quick-add",
             )
@@ -459,11 +493,21 @@ class DWriterApp(App[None]):
             yield ConfigureScreen(self.ctx, id="settings")
             yield DashboardScreen(self.ctx, id="dashboard")
 
+        with Horizontal(id="status-bar"):
+            yield Label("", id="status-git")
+            yield Label("", id="status-task")
+
         # Single Footer
         yield Footer()
 
     def on_mount(self) -> None:
         """Initialize the application state."""
+        # Register git info
+        from ..git_utils import get_git_info
+        git_info = get_git_info()
+        if git_info:
+            self.git_branch = git_info["branch"]
+
         # Register custom themes
         for theme in THEMES.values():
             self.register_theme(theme)
@@ -500,11 +544,64 @@ class DWriterApp(App[None]):
         if self.ctx.config.display.notifications_enabled:
             self._start_reminder_checker()
 
+        # Trigger initial background sync pull
+        if self.ctx.config.defaults.auto_sync:
+            self._trigger_pull_sync()
+
+    def _trigger_pull_sync(self) -> None:
+        """Dispatches a non-blocking background pull sync."""
+        from ..sync.daemon import pull_sync
+
+        async def pull_sync_worker() -> None:
+            self.post_message(SyncStatus(is_syncing=True, message="Syncing..."))
+            merged = await self.run_worker(lambda: pull_sync(self.ctx.db), thread=True).wait()
+            if merged:
+                # Refresh UI components if data changed
+                self.post_message(EntryAdded(entry_id=0, content="", created_at=datetime.now()))
+                self.post_message(TodoUpdated(todo_id=0, action="updated"))
+            self.post_message(SyncStatus(is_syncing=False, message="Synced"))
+
+        self.run_worker(pull_sync_worker())
+
     def on_unmount(self) -> None:
         """Cancel the background reminder thread on exit."""
         if self._reminder_timer is not None:
             self._reminder_timer.cancel()
             self._reminder_timer = None
+
+    def watch_git_branch(self, value: str) -> None:
+        """Update git branch in status bar."""
+        try:
+            label = self.query_one("#status-git", Label)
+            if value:
+                label.update(f" {value}")
+            else:
+                label.update("")
+        except Exception:
+            pass
+
+    def watch_is_processing(self, value: bool) -> None:
+        """Update processing indicator in status bar."""
+        self._update_status_task()
+
+    def watch_sync_status(self, value: str) -> None:
+        """Update sync status in status bar."""
+        self._update_status_task()
+
+    def _update_status_task(self) -> None:
+        """Centralized helper to update the status-task label."""
+        try:
+            label = self.query_one("#status-task", Label)
+            if self.is_processing:
+                label.update("[🧠 Processing...]")
+            elif self.sync_status == "Syncing...":
+                label.update("[🧠 Syncing...]")
+            elif self.sync_status == "Sync Failed":
+                label.update("[❌ Sync Failed]")
+            else:
+                label.update("[✅ Synced]")
+        except Exception:
+            pass
 
     def watch_permanent_omnibox(self, value: bool) -> None:
         """Update omnibox visibility when the reactive setting changes."""
@@ -533,7 +630,7 @@ class DWriterApp(App[None]):
             # Use set_class to handle visibility via CSS
             container = self.query_one("#omnibox-container")
             footer = self.query_one("#omnibox-footer")
-            omnibox = self.query_one("#quick-add", Input)
+            omnibox = self.query_one("#quick-add", Omnibox)
 
             container.set_class(not show, "hidden")
             footer.set_class(not show, "hidden")
@@ -625,7 +722,7 @@ class DWriterApp(App[None]):
         self.query_one("#omnibox-container").remove_class("hidden")
         self.query_one("#omnibox-footer").remove_class("hidden")
 
-        omnibox = self.query_one("#quick-add", Input)
+        omnibox = self.query_one("#quick-add", Omnibox)
         omnibox.can_focus = True
         omnibox.focus()
         self._sync_omnibox_visibility()
@@ -688,7 +785,7 @@ class DWriterApp(App[None]):
         use_emojis = self.ctx.config.display.use_emojis
         bullet = get_icon("bullet", use_emojis)
         try:
-            omnibox = self.query_one("#quick-add", Input)
+            omnibox = self.query_one("#quick-add", Omnibox)
             hint = self.query_one("#omnibox-hint", Label)
 
             if screen_name == "todo":
@@ -799,12 +896,26 @@ class DWriterApp(App[None]):
             due_date = None
             if value and value.lower() != "none":
                 due_date = self._parse_todo_due_date(value)
+            
+            # Use a worker for the database write
+            content = self._todo_state.content
+            priority = self._todo_state.priority
             all_tags = list(self.ctx.config.defaults.tags) + self._todo_state.tags
             project = self._todo_state.project or self.ctx.config.defaults.project
-            todo = self.ctx.db.add_todo(content=self._todo_state.content, priority=self._todo_state.priority, tags=all_tags, project=project, due_date=due_date)
+
+            async def add_todo_worker() -> None:
+                todo = self.ctx.db.add_todo(
+                    content=content, 
+                    priority=priority, 
+                    tags=all_tags, 
+                    project=project, 
+                    due_date=due_date
+                )
+                self.notify(f"Todo added: {content}")
+                self.post_message(TodoUpdated(todo_id=todo.id, action="added"))
+
+            self.run_worker(add_todo_worker())
             message.input.value = ""
-            self.notify(f"Todo added: {self._todo_state.content}")
-            self.post_message(TodoUpdated(todo_id=todo.id, action="added"))
             self._reset_todo_state()
 
     def _reset_todo_state(self) -> None:
@@ -818,10 +929,23 @@ class DWriterApp(App[None]):
         parsed_entry: ParsedEntry = parse_quick_add(value, date_format=date_format)
         all_tags = list(self.ctx.config.defaults.tags) + parsed_entry.tags
         project = parsed_entry.project or self.ctx.config.defaults.project
-        entry = self.ctx.db.add_entry(content=parsed_entry.content, tags=all_tags, project=project, created_at=parsed_entry.created_at)
+        
+        async def add_entry_worker() -> None:
+            entry = self.ctx.db.add_entry(
+                content=parsed_entry.content, 
+                tags=all_tags, 
+                project=project, 
+                created_at=parsed_entry.created_at
+            )
+            self.notify(f"Logged: {parsed_entry.content}")
+            self.post_message(EntryAdded(
+                entry_id=entry.id, 
+                content=entry.content, 
+                created_at=entry.created_at
+            ))
+
+        self.run_worker(add_entry_worker())
         message.input.value = ""
-        self.notify(f"Logged: {parsed_entry.content}")
-        self.post_message(EntryAdded(entry_id=entry.id, content=entry.content, created_at=entry.created_at))
 
     def _start_timer(self, minutes: int, tags: list[str], project: str | None) -> None:
         """Start a timer session."""
@@ -852,6 +976,34 @@ class DWriterApp(App[None]):
         except Exception:
             return None
 
+    def on_sync_status(self, message: SyncStatus) -> None:
+        """Handle SyncStatus messages to update the TUI state."""
+        self.sync_status = message.message
+
+    def _trigger_debounced_push(self) -> None:
+        """Schedules a debounced background sync push."""
+        if not self.ctx.config.defaults.auto_sync:
+            return
+
+        if self._sync_debounce_timer is not None:
+            self._sync_debounce_timer.cancel()
+
+        self._sync_debounce_timer = threading.Timer(10.0, self._run_push_sync)
+        self._sync_debounce_timer.daemon = True
+        self._sync_debounce_timer.start()
+
+    def _run_push_sync(self) -> None:
+        """Executes the push sync worker through the event loop."""
+        from ..sync.daemon import push_sync
+
+        async def push_sync_worker() -> None:
+            self.post_message(SyncStatus(is_syncing=True, message="Syncing..."))
+            success = await self.run_worker(lambda: push_sync(self.ctx.db), thread=True).wait()
+            status = "Synced" if success else "Sync Failed"
+            self.post_message(SyncStatus(is_syncing=False, message=status))
+
+        self.call_from_thread(self.run_worker, push_sync_worker())
+
     def on_entry_added(self, message: EntryAdded) -> None:
         """Handle EntryAdded messages."""
         try:
@@ -867,6 +1019,10 @@ class DWriterApp(App[None]):
             logs._display_recent_entries()
         except Exception:
             pass
+        
+        # Trigger auto-sync if it's a real entry (id > 0)
+        if message.entry_id > 0:
+            self._trigger_debounced_push()
 
     def on_todo_updated(self, message: TodoUpdated) -> None:
         """Handle TodoUpdated messages."""
@@ -876,6 +1032,10 @@ class DWriterApp(App[None]):
             todo_screen._load_todos()
         except Exception:
             pass
+        
+        # Trigger auto-sync if it's a real update (id > 0)
+        if message.todo_id > 0:
+            self._trigger_debounced_push()
 
     def on_timer_state_changed(self, message: TimerStateChanged) -> None:
         """Handle TimerStateChanged messages."""
@@ -889,3 +1049,72 @@ class DWriterApp(App[None]):
                 timer_tab.remove_class("timer-running")
         except Exception:
             pass
+
+    def on_semantic_recommendation_ready(self, message: SemanticRecommendationReady) -> None:
+        """Handle proactive AI recommendations."""
+        self.pending_recommendation = message
+        
+        parts = []
+        if message.project:
+            parts.append(f"&{message.project}")
+        if message.tags:
+            parts.extend([f"#{t}" for t in message.tags])
+        
+        suggested = " ".join(parts)
+        
+        # Update Omnibox ghost text
+        try:
+            omnibox = self.query_one("#quick-add", Omnibox)
+            omnibox.ghost_text = suggested
+        except Exception:
+            pass
+
+        self.notify(
+            f"AI Suggests: {suggested}. Press [Tab] to accept tokens or [Ctrl+A] for all.",
+            title="✨ Smart Suggestion",
+            severity="information",
+            timeout=10
+        )
+
+    def action_apply_recommendation(self) -> None:
+        """Apply the pending AI recommendation."""
+        if not self.pending_recommendation:
+            self.notify("No pending recommendations.")
+            return
+
+        message = self.pending_recommendation
+        self.pending_recommendation = None
+        
+        # Clear ghost text
+        try:
+            omnibox = self.query_one("#quick-add", Omnibox)
+            omnibox.ghost_text = ""
+        except Exception:
+            pass
+
+        async def apply_worker() -> None:
+            try:
+                # Get existing entry to merge tags
+                entry = self.ctx.db.get_entry(message.entry_id)
+                
+                proj_name = message.project.lstrip("&") if message.project else None
+                tag_names = [t.lstrip("#") for t in message.tags]
+                
+                new_tags = list(set(entry.tag_names + tag_names))
+                
+                self.ctx.db.update_entry(
+                    message.entry_id, 
+                    project=proj_name or entry.project, 
+                    tags=new_tags
+                )
+                self.notify("Recommendations applied!")
+                # Trigger refresh
+                self.post_message(EntryAdded(
+                    entry_id=message.entry_id, 
+                    content=entry.content, 
+                    created_at=entry.created_at
+                ))
+            except Exception as e:
+                self.notify(f"Failed to apply recommendation: {e}", severity="error")
+
+        self.run_worker(apply_worker())

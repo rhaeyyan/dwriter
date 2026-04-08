@@ -59,6 +59,59 @@ def get_embedding(text: str, config: AIConfig) -> list[float]:
     return response.data[0].embedding
 
 
+def get_semantic_recommendation(
+    content: str, 
+    similar_entries: list[Any], 
+    config: AIConfig
+) -> Any:
+    """Generates a proactive recommendation for project and tags.
+
+    Args:
+        content (str): The new entry content.
+        similar_entries (list[Entry]): A list of semantically similar past entries.
+        config (AIConfig): The AI configuration settings.
+
+    Returns:
+        SemanticRecommendation: The AI-generated recommendations.
+    """
+    from .schemas.extraction import SemanticRecommendation
+
+    client = get_ai_client(config)
+    
+    # Prepare context from similar entries
+    context_parts = []
+    for entry in similar_entries:
+        meta = []
+        if entry.project: meta.append(f"&{entry.project}")
+        if entry.tag_names: meta.extend([f"#{t}" for t in entry.tag_names])
+        meta_str = " ".join(meta)
+        context_parts.append(f"Entry: {entry.content}\nTags/Project: {meta_str}")
+    
+    context_str = "\n\n".join(context_parts)
+
+    system_msg = get_system_prompt(
+        "You are a proactive assistant for a terminal-based journal. "
+        "Based on the following past entries and their tags/projects, "
+        "recommend 1 Project (&name) and up to 2 Tags (#tag) for the new entry. "
+        "Only suggest if there is a strong semantic relationship. "
+        "Ensure projects start with '&' and tags start with '#'."
+    )
+
+    user_msg = (
+        f"### PAST CONTEXT:\n{context_str}\n\n"
+        f"### NEW ENTRY:\n{content}"
+    )
+
+    return client.chat.completions.create(
+        model=config.model,
+        response_model=SemanticRecommendation,
+        messages=[
+            {"role": "system", "content": system_msg},
+            {"role": "user", "content": user_msg},
+        ],
+    )
+
+
 def get_system_prompt(base_prompt: str) -> str:
     """Wraps a base prompt with instructions for strict data output.
 

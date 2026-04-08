@@ -63,3 +63,19 @@ class EntryMetadata(BaseModel):
         description="Categorize into: Health, Career, Social, Admin, Deep Work, or Leisure"
     )
     energy_level: int = Field(description="Inferred energy level from 1 to 10", ge=1, le=10)
+
+
+class SemanticRecommendation(BaseModel):
+    """Recommended project and tags based on semantic similarity to past entries.
+
+    Attributes:
+        project: Recommended project name (starting with &).
+        tags: Recommended hashtags (starting with #).
+    """
+
+    project: str | None = Field(
+        description="A single recommended project name, prefixed with '&'. Return null if no strong match."
+    )
+    tags: list[str] = Field(
+        description="Up to two recommended hashtags, each prefixed with '#'."
+    )

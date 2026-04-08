@@ -43,6 +43,7 @@ class AppContext:
         config_manager (ConfigManager): Manager for loading and saving settings.
         config (Config): The active application configuration.
         db (Database): Database interface for entries and tasks.
+        app (Any): Reference to the active TUI App instance (if running).
     """
 
     def __init__(self) -> None:
@@ -65,6 +66,14 @@ class AppContext:
             raise DatabaseError(f"Failed to initialize database: {e}") from e
 
         self._reminders_shown = False
+        self.app: Any = None
+
+    def save_config(self) -> None:
+        """Saves the active configuration to the user's config file."""
+        try:
+            self.config_manager.save(self.config)
+        except Exception as e:
+            self.console.print(f"[red]Error saving configuration: {e}[/red]")
 
     def check_reminders(self, silent: bool = False, force: bool = False) -> None:
         """Evaluates pending urgent tasks and displays reminder alerts.
@@ -237,6 +246,7 @@ def _register_commands() -> None:
         snooze,
         standup,
         stats,
+        sync,
         timer,
         today,
         todo,
@@ -265,6 +275,7 @@ def _register_commands() -> None:
         snooze,
         stats,
         standup,
+        sync,
         today,
         todo,
         ui,

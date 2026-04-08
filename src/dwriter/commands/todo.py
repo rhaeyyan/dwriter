@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+import sys
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
@@ -53,6 +55,12 @@ from ..tui.colors import DUE_OVERDUE, DUE_SOON, DUE_TODAY, DUE_TOMORROW, PROJECT
     is_flag=True,
     help="Show all tasks, including completed ones (for 'list')",
 )
+@click.option(
+    "--json",
+    "output_json",
+    is_flag=True,
+    help="Output data in machine-readable JSON format (for 'list')",
+)
 @click.pass_context
 def todo(
     ctx: click.Context,
@@ -62,6 +70,7 @@ def todo(
     priority: str,
     due_date_str: str | None,
     show_all: bool,
+    output_json: bool,
 ) -> None:
     """Manage future tasks and to-dos.
 
@@ -102,7 +111,7 @@ def todo(
         args = content[1:]
 
         if subcommand == "list":
-            _execute_list(app_ctx, show_all)
+            _execute_list(app_ctx, show_all, output_json)
             return
         elif subcommand == "rm" and args:
             try:
@@ -213,10 +222,28 @@ def todo(
         _launch_tui(app_ctx, starting_tab="todo")
 
 
-def _execute_list(ctx: AppContext, show_all: bool) -> None:
+def _execute_list(ctx: AppContext, show_all: bool, output_json: bool = False) -> None:
     """Internal implementation of todo list."""
     status_filter = None if show_all else "pending"
     tasks = ctx.db.get_todos(status=status_filter)
+
+    if output_json:
+        data = []
+        for task in tasks:
+            data.append({
+                "id": task.id,
+                "uuid": task.uuid,
+                "content": task.content,
+                "project": task.project,
+                "priority": task.priority,
+                "status": task.status,
+                "due_date": task.due_date.isoformat() if task.due_date else None,
+                "tags": task.tag_names,
+                "created_at": task.created_at.isoformat(),
+                "completed_at": task.completed_at.isoformat() if task.completed_at else None,
+            })
+        sys.stdout.write(json.dumps(data, indent=2) + "\n")
+        return
 
     if not tasks:
         ctx.console.print(
@@ -477,10 +504,16 @@ def todo_add(
     is_flag=True,
     help="Show all tasks, including completed ones",
 )
+@click.option(
+    "--json",
+    "output_json",
+    is_flag=True,
+    help="Output data in machine-readable JSON format",
+)
 @click.pass_obj
-def todo_list(ctx: AppContext, show_all: bool) -> None:
+def todo_list(ctx: AppContext, show_all: bool, output_json: bool) -> None:
     """List pending tasks."""
-    _execute_list(ctx, show_all)
+    _execute_list(ctx, show_all, output_json)
 
 
 @todo.command("rm")

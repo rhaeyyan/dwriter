@@ -488,7 +488,19 @@ class TodoListView(ListView):
             d_str = "[dim]\\[---][/dim]"
 
         safe_content = todo.content.replace("[", "\\[")
-        tags_str = f"[{TAG}]#{' #'.join(todo.tag_names)}[/{TAG}]" if todo.tag_names else ""
+        
+        # Split tags into Git context vs User defined
+        user_tags = [t for t in todo.tag_names if not t.startswith("git-")]
+        git_tags = [t for t in todo.tag_names if t.startswith("git-")]
+
+        tags_parts = []
+        if user_tags:
+            tags_parts.append(f"[{TAG}]#{' #'.join(user_tags)}[/{TAG}]")
+        if git_tags:
+            # Context tags (Git) are rendered in a muted, dim style
+            tags_parts.append(f"[dim #8c92a6]#{' #'.join(git_tags)}[/dim #8c92a6]")
+        
+        tags_str = " ".join(tags_parts)
         project_str = f" [{PROJECT}]&{todo.project}[/{PROJECT}]" if todo.project else ""
 
         is_active_reminder = (
@@ -708,17 +720,22 @@ class TodoScreen(Container):
             hint = fmt_map.get(due_date_format)
             due_date = parse_natural_date(message.due_str, prefer_future=True, format_hint=hint) if message.due_str else None
             
-            task = self.ctx.db.add_todo(
-                content=message.content, due_date=due_date, tags=message.tags,
-                project=message.project, priority="urgent" if message.is_reminder else "normal",
-            )
-            self.notify(f"Added task: {task.content}")
+            async def add_worker() -> None:
+                task = self.ctx.db.add_todo(
+                    content=message.content, due_date=due_date, tags=message.tags,
+                    project=message.project, priority="urgent" if message.is_reminder else "normal",
+                )
+                self.notify(f"Added task: {task.content}")
+                
+                self._load_todos()
+                self.post_message(TodoUpdated(todo_id=task.id, action="added"))
+
+            self.run_worker(add_worker())
             
             form = self.query_one(AddTodoForm)
             for inp_id in ["#add-content", "#add-date", "#add-time", "#add-tags", "#add-project"]:
                 form.query_one(inp_id, Input).value = ""
             
-            self._load_todos()
             self.query_one(TabbedContent).active = "pending-pane"
             self.query_one("#todos", TodoListView).focus()
         except Exception as e:
@@ -796,22 +813,26 @@ class TodoScreen(Container):
 
         new_status = "pending" if todo.status == "completed" else "completed"
         now = datetime.now()
-        self.ctx.db.update_todo(todo.id, status=new_status, completed_at=now if new_status == "completed" else None)
 
-        if new_status == "completed":
-            use_emojis = self.app.ctx.config.display.use_emojis
-            entry = self.ctx.db.add_entry(
-                content=f"{get_icon('check', use_emojis)} {todo.content}",
-                tags=todo.tag_names, project=todo.project, created_at=now, todo_id=todo.id,
-            )
-            self.notify(f"Task #{todo.id} completed & logged!")
-            self.post_message(EntryAdded(entry_id=entry.id, content=entry.content, created_at=entry.created_at))
-        else:
-            self.ctx.db.delete_entry_by_todo_id(todo.id)
-            self.notify(f"Task #{todo.id} marked pending")
+        async def toggle_worker() -> None:
+            self.ctx.db.update_todo(todo.id, status=new_status, completed_at=now if new_status == "completed" else None)
 
-        self._load_todos()
-        self.post_message(TodoUpdated(todo_id=todo.id, action="updated"))
+            if new_status == "completed":
+                use_emojis = self.app.ctx.config.display.use_emojis
+                entry = self.ctx.db.add_entry(
+                    content=f"{get_icon('check', use_emojis)} {todo.content}",
+                    tags=todo.tag_names, project=todo.project, created_at=now, todo_id=todo.id,
+                )
+                self.notify(f"Task #{todo.id} completed & logged!")
+                self.post_message(EntryAdded(entry_id=entry.id, content=entry.content, created_at=entry.created_at))
+            else:
+                self.ctx.db.delete_entry_by_todo_id(todo.id)
+                self.notify(f"Task #{todo.id} marked pending")
+
+            self._load_todos()
+            self.post_message(TodoUpdated(todo_id=todo.id, action="updated"))
+
+        self.run_worker(toggle_worker())
 
     def action_edit(self) -> None:
         """Opens the edit modal for the selected task."""
@@ -824,14 +845,17 @@ class TodoScreen(Container):
             due_date = self._parse_due_date(due_str) if due_str else None
             priority = "urgent" if is_reminder else todo.priority
 
-            self.ctx.db.update_todo(
-                todo.id, content=content, due_date=due_date, tags=tags, 
-                project=project, priority=priority,
-                reminder_last_sent=None if is_reminder else todo.reminder_last_sent
-            )
-            self.notify(f"Task #{todo.id} updated")
-            self._load_todos()
-            self.post_message(TodoUpdated(todo_id=todo.id, action="updated"))
+            async def edit_worker() -> None:
+                self.ctx.db.update_todo(
+                    todo.id, content=content, due_date=due_date, tags=tags, 
+                    project=project, priority=priority,
+                    reminder_last_sent=None if is_reminder else todo.reminder_last_sent
+                )
+                self.notify(f"Task #{todo.id} updated")
+                self._load_todos()
+                self.post_message(TodoUpdated(todo_id=todo.id, action="updated"))
+
+            self.run_worker(edit_worker())
 
         self.app.push_screen(EditTodoModal(todo), on_dismiss)
 
@@ -839,10 +863,14 @@ class TodoScreen(Container):
         """Permanently removes the selected task."""
         todo = self._get_selected_todo()
         if not todo: return
-        self.ctx.db.delete_todo(todo.id)
-        self.notify(f"Task #{todo.id} deleted")
-        self._load_todos()
-        self.post_message(TodoUpdated(todo_id=todo.id, action="deleted"))
+        
+        async def delete_worker() -> None:
+            self.ctx.db.delete_todo(todo.id)
+            self.notify(f"Task #{todo.id} deleted")
+            self._load_todos()
+            self.post_message(TodoUpdated(todo_id=todo.id, action="deleted"))
+
+        self.run_worker(delete_worker())
 
     def action_increase_priority(self) -> None:
         """Elevates the priority of the selected task."""
@@ -850,8 +878,13 @@ class TodoScreen(Container):
         if not todo: return
         priorities = ["low", "normal", "high", "urgent"]
         idx = priorities.index(todo.priority) if todo.priority in priorities else 1
-        self.ctx.db.update_todo(todo.id, priority=priorities[min(idx + 1, len(priorities) - 1)])
-        self._load_todos()
+        new_priority = priorities[min(idx + 1, len(priorities) - 1)]
+        
+        async def priority_worker() -> None:
+            self.ctx.db.update_todo(todo.id, priority=new_priority)
+            self._load_todos()
+        
+        self.run_worker(priority_worker())
 
     def action_decrease_priority(self) -> None:
         """Lowers the priority of the selected task."""
@@ -859,8 +892,13 @@ class TodoScreen(Container):
         if not todo: return
         priorities = ["low", "normal", "high", "urgent"]
         idx = priorities.index(todo.priority) if todo.priority in priorities else 1
-        self.ctx.db.update_todo(todo.id, priority=priorities[max(idx - 1, 0)])
-        self._load_todos()
+        new_priority = priorities[max(idx - 1, 0)]
+
+        async def priority_worker() -> None:
+            self.ctx.db.update_todo(todo.id, priority=new_priority)
+            self._load_todos()
+
+        self.run_worker(priority_worker())
 
     def action_switch_tab_pending(self) -> None:
         """Activates the pending tasks tab."""
