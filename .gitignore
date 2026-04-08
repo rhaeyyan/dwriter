@@ -70,3 +70,5 @@ documentation/HISTORY.md
 
 # Stitch prototypes
 stitch/
+# Agent framework context
+documentation/agents/
