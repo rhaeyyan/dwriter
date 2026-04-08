@@ -94,6 +94,13 @@ class SemanticRecommendationReady(Message):
     """
 
     def __init__(self, entry_id: int, project: str | None, tags: list[str]) -> None:
+        """Initialize SemanticRecommendationReady.
+
+        Args:
+            entry_id: The database ID of the entry.
+            project: Recommended project name.
+            tags: Recommended hashtags.
+        """
         super().__init__()
         self.entry_id = entry_id
         self.project = project
@@ -109,6 +116,31 @@ class SyncStatus(Message):
     """
 
     def __init__(self, is_syncing: bool, message: str) -> None:
+        """Initialize SyncStatus.
+
+        Args:
+            is_syncing: Whether a sync operation is currently in progress.
+            message: Status message.
+        """
         super().__init__()
         self.is_syncing = is_syncing
         self.message = message
+
+
+class AIToolEvent(Message):
+    """Dispatched when the AI Agent triggers an internal tool call.
+
+    Allows the TUI to reactively update status indicators or logs.
+
+    Attributes:
+        tool_name: The name of the tool being executed (e.g., 'search_journal').
+    """
+
+    def __init__(self, tool_name: str) -> None:
+        """Initialize the AIToolEvent message.
+
+        Args:
+            tool_name: The name of the tool being executed.
+        """
+        super().__init__()
+        self.tool_name = tool_name

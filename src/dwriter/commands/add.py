@@ -158,6 +158,13 @@ def _process_entry(
     # Use the cleaned content (tags/project removed)
     final_content = parsed.content
 
+    # VALIDATION: Prevent saving empty entries
+    if not final_content.strip():
+        # If we have tags/projects but no content, it's a "metadata-only" entry which we disallow
+        # to prevent accidental pollution from failed pipes or typos.
+        ctx.console.print("[yellow]Empty entry content detected. Entry not saved.[/yellow]")
+        return
+
     # Parse the date
     fmt_map = {
         "YYYY-MM-DD": "%Y-%m-%d",

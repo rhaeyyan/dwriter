@@ -443,12 +443,12 @@ class TodoListView(ListView):
         from ..colors import get_weekday_color, PRIORITY_URGENT, REMINDER_COLOR
         
         priority_map = {
-            "urgent": f"[{PRIORITY_URGENT}]\\[Urgent][/{PRIORITY_URGENT}]",
-            "high": "[#FCBF49]\\[High][/#FCBF49]",
-            "normal": "[white]\\[Normal][/white]",
-            "low": "[dim]\\[Low][/dim]",
+            "urgent": f"[{PRIORITY_URGENT}]\\[Urgent][/]",
+            "high": "[#FCBF49]\\[High][/]",
+            "normal": "[white]\\[Normal][/]",
+            "low": "[dim]\\[Low][/]",
         }
-        pri_str = priority_map.get(todo.priority, "[white]\\[N][/white]")
+        pri_str = priority_map.get(todo.priority, "[white]\\[N][/]")
         due_date_format = self.app.ctx.config.display.due_date_format
 
         if todo.status == "completed" and todo.completed_at:
@@ -477,15 +477,15 @@ class TodoListView(ListView):
             date_str = todo.due_date.strftime(strftime_fmt)
             day_name = todo.due_date.strftime('%A')
             
-            d_str = f"[{wd_color}]\\[{day_name} {date_str}][/{wd_color}]"
+            d_str = f"[{wd_color}]\\[{day_name} {date_str}][/]"
             
             # Add [due time, if applicable] - use $success to match logs
             if todo.due_date.hour != 0 or todo.due_date.minute != 0:
                 use_24hr = self.app.ctx.config.display.clock_24hr
                 t_fmt = "%H:%M" if use_24hr else "%I:%M %p"
-                d_str += f" [$success]\\[{todo.due_date.strftime(t_fmt)}][/$success]"
+                d_str += f" [$success]\\[{todo.due_date.strftime(t_fmt)}][/]"
         else:
-            d_str = "[dim]\\[---][/dim]"
+            d_str = "[dim]\\[---][/]"
 
         safe_content = todo.content.replace("[", "\\[")
         
@@ -495,13 +495,13 @@ class TodoListView(ListView):
 
         tags_parts = []
         if user_tags:
-            tags_parts.append(f"[{TAG}]#{' #'.join(user_tags)}[/{TAG}]")
+            tags_parts.append(f"[{TAG}]#{' #'.join(user_tags)}[/]")
         if git_tags:
             # Context tags (Git) are rendered in a muted, dim style
-            tags_parts.append(f"[dim #8c92a6]#{' #'.join(git_tags)}[/dim #8c92a6]")
+            tags_parts.append(f"[dim #8c92a6]#{' #'.join(git_tags)}[/]")
         
         tags_str = " ".join(tags_parts)
-        project_str = f" [{PROJECT}]&{todo.project}[/{PROJECT}]" if todo.project else ""
+        project_str = f" [{PROJECT}]&{todo.project}[/]" if todo.project else ""
 
         is_active_reminder = (
             todo.status == "pending" and todo.priority == "urgent" and
@@ -512,10 +512,10 @@ class TodoListView(ListView):
         if todo.status == "completed":
             use_emojis = self.app.ctx.config.display.use_emojis
             check_icon = get_icon("check", use_emojis)
-            return f"[dim]{first_line}\n  {check_icon} {safe_content}[/dim]"
+            return f"[dim]{first_line}\n  {check_icon} {safe_content}[/]"
         if is_active_reminder:
-            return f"[{REMINDER_COLOR}]{first_line}\n  🔔 {safe_content}[/{REMINDER_COLOR}]"
-        return f"{first_line}\n  [bold white]{safe_content}[/bold white]"
+            return f"[{REMINDER_COLOR}]{first_line}\n  🔔 {safe_content}[/]"
+        return f"{first_line}\n  [bold white]{safe_content}[/]"
 
     @property
     def selected_todo(self) -> Todo | None:

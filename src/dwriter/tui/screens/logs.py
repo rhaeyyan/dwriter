@@ -675,26 +675,26 @@ class LogsResultsView(ListView):
 
         tags_parts = []
         if user_tags:
-            tags_parts.append(f"[{TAG}]#{' #'.join(user_tags)}[/{TAG}]")
+            tags_parts.append(f"[{TAG}]#{' #'.join(user_tags)}[/]")
         if git_tags:
             # Context tags (Git) are rendered in a muted, dim style
-            tags_parts.append(f"[dim #8c92a6]#{' #'.join(git_tags)}[/dim #8c92a6]")
+            tags_parts.append(f"[dim #8c92a6]#{' #'.join(git_tags)}[/]")
         
         tags_str = " ".join(tags_parts)
-        project_str = f" [{PROJECT}]&{entry.project}[/{PROJECT}]" if entry.project else ""
+        project_str = f" [{PROJECT}]&{entry.project}[/]" if entry.project else ""
 
         score_str = ""
         if score is not None:
             score_color = "green" if score >= 90 else "yellow" if score >= 75 else "dim"
-            score_str = f" [{score_color}]({int(score)}%)[/{score_color}]"
+            score_str = f" [{score_color}]({int(score)}%)[/]"
 
         theme = getattr(self.app, "theme_variables", {})
         time_hex = theme.get("success", "#73E6CB")
         color_tag = time_hex if time_hex.startswith("#") else f"#{time_hex}"
         
-        datetime_str = f"[cyan]{date_str}[/cyan]"
+        datetime_str = f"[cyan]{date_str}[/]"
         if time_str:
-            datetime_str = f"[cyan]{date_str}[/cyan] [{color_tag}]{time_str}[/]"
+            datetime_str = f"[cyan]{date_str}[/] [{color_tag}]{time_str}[/]"
 
         first_line = f"{datetime_str} | {tags_str}{project_str}{score_str}"
         return f"{first_line}\n  {content}" if content else first_line

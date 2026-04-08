@@ -92,6 +92,16 @@ def test_add_command_with_invalid_date():
     assert "Unable to parse date" in str(result.exception)
 
 
+def test_add_empty_stdin_fails():
+    """Test that empty stdin input (even with tags) is not saved."""
+    runner = CliRunner()
+    # Simulate failed pipe (empty stdin) with CLI tags
+    result = runner.invoke(main, ["add", "--stdin", "#failed-pipe"], input="")
+    
+    assert result.exit_code == 0
+    assert "Empty entry content detected" in result.output
+
+
 def test_today_command():
     """Test the today command."""
     runner = CliRunner()

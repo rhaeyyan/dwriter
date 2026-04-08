@@ -228,7 +228,7 @@ class StreakCalendar(Static):
                     last_month = month
 
         month_line = "".join(month_line_chars).rstrip()
-        content.append(f"[dim bold]{month_line}[/dim bold]\n\n")
+        content.append(f"[dim bold]{month_line}[/]\n\n")
 
         day_names = ["   ", "Mon", "   ", "Wed", "   ", "Fri", "   "]
         theme = getattr(self.app, "theme_variables", {})
@@ -241,7 +241,7 @@ class StreakCalendar(Static):
         }
 
         for day_idx in range(7):
-            line = f"[dim]{day_names[day_idx]}[/dim] "
+            line = f"[dim]{day_names[day_idx]}[/] "
             for week in weeks:
                 if not week:
                     line += "  "

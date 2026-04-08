@@ -21,8 +21,10 @@ from textual.app import ComposeResult
 from textual.containers import Container, Vertical
 from textual.widgets import Input, Static
 
-from ...ai.engine import get_ai_client, get_raw_ai_client, get_system_prompt
-from ...ai.schemas.router import ActionRouter
+from ...ai.engine import (
+    ask_second_brain_agentic,
+)
+from ..messages import AIToolEvent
 
 
 class ChatMessage(Container):
@@ -51,7 +53,7 @@ class UserChatMessage(ChatMessage):
     """
     def compose(self) -> ComposeResult:
         # Wrap self.content in escape() so users can't inject Rich markup
-        yield Static(f"[bold cyan]You:[/bold cyan]\n{escape(self.content)}", classes="user-bubble")
+        yield Static(f"[bold cyan]You:[/]\n{escape(self.content)}", classes="user-bubble")
 
 class AIChatMessage(ChatMessage):
     """Widget for AI chat messages aligned to the left."""
@@ -72,7 +74,7 @@ class AIChatMessage(ChatMessage):
     }
     """
     def compose(self) -> ComposeResult:
-        yield Static(f"[bold #cba6f7]2nd-Brain:[/bold #cba6f7]\n{self.content}", classes="ai-bubble")
+        yield Static(f"[bold #cba6f7]2nd-Brain:[/]\n{self.content}", classes="ai-bubble")
 
 class SecondBrainScreen(Container):
     """Interactive AI 2nd-Brain Screen.
@@ -112,6 +114,13 @@ class SecondBrainScreen(Container):
         padding: 0;
         color: $text-muted;
     }
+
+    #ai-status-indicator {
+        height: 1;
+        margin: 0 2;
+        padding: 0;
+        display: none;
+    }
     
     #second-brain-input {
         margin: 0;
@@ -137,13 +146,22 @@ class SecondBrainScreen(Container):
         """Composes the 2nd-Brain layout components."""
         with Vertical():
             with Vertical(id="second-brain-log"):
-                yield Static("[bold black on yellow] SYSTEM [/bold black on yellow]\n[dim]2nd-Brain initialized with recent task and log context.[/dim]")
+                yield Static("[bold black on yellow] SYSTEM [/]\n[dim]2nd-Brain initialized with recent task and log context.[/dim]")
             yield Static("", id="second-brain-status")
+            yield Static("", id="ai-status-indicator")
             yield Input(placeholder="Ask your 2nd-Brain anything...", id="second-brain-input")
 
     def on_mount(self) -> None:
         """Initializes chat history and refreshes the primary context."""
         self._refresh_context()
+
+    def on_ai_tool_event(self, event: AIToolEvent) -> None:
+        """Handle UI updates when the AI agent triggers an internal tool."""
+        indicator = self.query_one("#ai-status-indicator", Static)
+        indicator.update(
+            f"[dim italic]🧠 AI is running {event.tool_name}...[/]"
+        )
+        indicator.display = True
 
     def on_show(self) -> None:
         """Triggers welcome message with 7-day wrap info when screen is shown."""
@@ -167,7 +185,7 @@ class SecondBrainScreen(Container):
             # Check if we should show the full pulse or a minimalist greeting
             if last_pulse == today:
                 welcome_content = (
-                    "Welcome back. [bold #cba6f7]Ready to log or retrieve?[/bold #cba6f7]\n\n"
+                    "Welcome back. [bold #cba6f7]Ready to log or retrieve?[/]\n\n"
                     "How can I help you optimize your focus today?"
                 )
             else:
@@ -179,7 +197,7 @@ class SecondBrainScreen(Container):
                     # Add extra newline between nudge items for better "Dashboard" separation
                     wrap_text = "\n\n".join(nudges)
                     welcome_content = (
-                        "Welcome back! Here's your [bold #cba6f7]7-Day Pulse[/bold #cba6f7] wrap-up:\n\n"
+                        "Welcome back! Here's your [bold #cba6f7]7-Day Pulse[/] wrap-up:\n\n"
                         f"{wrap_text}\n\n"
                         "How can I help you optimize your focus today?"
                     )
@@ -189,7 +207,7 @@ class SecondBrainScreen(Container):
                     self.ctx.save_config()
                 else:
                     welcome_content = (
-                        "Welcome back. [bold #cba6f7]Ready to log or retrieve?[/bold #cba6f7]\n\n"
+                        "Welcome back. [bold #cba6f7]Ready to log or retrieve?[/]\n\n"
                         "How can I help you optimize your focus today?"
                     )
             
@@ -340,7 +358,7 @@ class SecondBrainScreen(Container):
         log.mount(user_msg)
         user_msg.scroll_visible()
         
-        status.update("[bold #cba6f7]Thinking...[/bold #cba6f7]")
+        status.update("[bold #cba6f7]Thinking...[/]")
         event.input.value = ""
 
         if not self.ctx.config.ai.enabled:
@@ -352,78 +370,55 @@ class SecondBrainScreen(Container):
 
     @work(thread=True)
     def _run_ai_chat(self, user_input: str) -> None:
-        """Executes the AI chat workflow focusing on historical retrieval and analysis.
+        """Executes the agentic AI chat workflow with tool calling.
 
         Args:
             user_input (str): The raw text query from the user.
         """
         log = self.query_one("#second-brain-log", Vertical)
         status = self.query_one("#second-brain-status", Static)
-        
+        indicator = self.query_one("#ai-status-indicator", Static)
+
         try:
-            # Intent classification phase
-            client_structured = get_ai_client(self.ctx.config.ai)
-            
-            self.app.call_from_thread(status.update, "[bold #cba6f7]Categorizing intent...[/bold #cba6f7]")
-            client_structured.chat.completions.create(
-                model=self.ctx.config.ai.model,
-                response_model=ActionRouter,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": get_system_prompt(
-                            "Categorize the user's request into a functional domain. "
-                            "Functional areas: reflection, analytics, context_restore, unknown."
-                        ),
-                    },
-                    {"role": "user", "content": user_input},
-                ],
-            )
-
-            # Conversational refinement phase
-            self.app.call_from_thread(status.update, "[bold #cba6f7]Thinking...[/bold #cba6f7]")
-            client = get_raw_ai_client(self.ctx.config.ai)
+            # 1. Targeted context retrieval (keywords)
             targeted_context = self._get_targeted_context(user_input)
-            
-            messages = [
-                {
-                    "role": "system",
-                    "content": (
-                        "You are dwriter 2nd-Brain, a productivity assistant. "
-                        "You have access to historical summaries and recent activity logs. "
-                        "IMPORTANT: You are an analytical assistant. You CANNOT perform actions "
-                        "like adding tasks, logging entries, or changing due dates. If asked "
-                        "to do so, explain that you are designed for reflection and analysis only."
-                        f"\n\n{self._context_data}"
-                        f"{targeted_context}"
-                    ),
-                }
-            ]
-            messages.extend(self._chat_history[-10:])
-            messages.append({"role": "user", "content": user_input})
+            combined_context = f"{self._context_data}\n{targeted_context}"
 
-            response = client.chat.completions.create(
-                model=self.ctx.config.ai.model,
-                messages=messages,  # type: ignore
+            # 2. Run agentic loop (with tool-calling)
+            self.app.call_from_thread(
+                status.update, "[bold #cba6f7]Thinking...[/]"
             )
-            
-            answer = response.choices[0].message.content or ""
+
+            # Pass self so ask_second_brain_agentic can post AIToolEvents back to this screen
+            answer = ask_second_brain_agentic(
+                prompt=user_input,
+                config=self.ctx.config.ai,
+                context_data=combined_context,
+                app_context=self,
+            )
+
+            # 3. Clean up UI state
+            self.app.call_from_thread(status.update, "")
+            self.app.call_from_thread(indicator.update, "")
+            self.app.call_from_thread(setattr, indicator, "display", False)
+
+            # 4. Update chat history and display response
             self._chat_history.append({"role": "user", "content": user_input})
             self._chat_history.append({"role": "assistant", "content": answer})
-            
+
             formatted_answer = self._format_ai_response(answer)
-            
-            # Mount AI message widget
             ai_msg = AIChatMessage(formatted_answer)
             self.app.call_from_thread(log.mount, ai_msg)
             self.app.call_from_thread(ai_msg.scroll_visible)
-            
-            self.app.call_from_thread(status.update, "")
-            
+
         except Exception as e:
+            # Ensure indicators are hidden on error
+            self.app.call_from_thread(status.update, "[bold red]AI Error[/bold red]")
+            self.app.call_from_thread(setattr, indicator, "display", False)
+            
             error_msg = Static(f"[red]AI Error: {e}[/red]")
             self.app.call_from_thread(log.mount, error_msg)
-            self.app.call_from_thread(status.update, "[bold red]AI Error[/bold red]")
+            self.app.call_from_thread(error_msg.scroll_visible)
 
     def _format_ai_response(self, text: str) -> str:
         """Transforms AI-generated Markdown into Rich-compatible markup for UI rendering.
@@ -439,25 +434,25 @@ class SecondBrainScreen(Container):
         
         # 2. Colorize Tags and Projects
         # Use identical colors to InsightGenerator
-        text = re.sub(r'(?<!\w)#([\w:-]+)', r'[bold #66D0BC]#\1[/bold #66D0BC]', text)
-        text = re.sub(r'(?<!\w)&([\w:-]+)', r'[bold #F77F00]&\1[/bold #F77F00]', text)
+        text = re.sub(r'(?<!\w)#([\w:-]+)', r'[bold #66D0BC]#\1[/]', text)
+        text = re.sub(r'(?<!\w)&([\w:-]+)', r'[bold #F77F00]&\1[/]', text)
         
         # 3. Colorize Dates (e.g., 2026-04-07)
-        text = re.sub(r'(\d{4}-\d{2}-\d{2})', r'[cyan]\1[/cyan]', text)
+        text = re.sub(r'(\d{4}-\d{2}-\d{2})', r'[cyan]\1[/]', text)
         
         # 4. Colorize Times (e.g., 14:00, 2:30pm)
-        text = re.sub(r'(\d{1,2}:\d{2}(?:\s*(?:am|pm))?)', r'[$success]\1[/$success]', text)
+        text = re.sub(r'(\d{1,2}:\d{2}(?:\s*(?:am|pm))?)', r'[$success]\1[/]', text)
 
         # 5. Colorize Urgency/Priority levels
-        text = re.sub(r'(?i)\b(urgent)\b', r'[bold #D53E0F]\1[/bold #D53E0F]', text)
-        text = re.sub(r'(?i)\b(high)\b', r'[#D53E0F]\1[/#D53E0F]', text)
-        text = re.sub(r'(?i)\b(normal)\b', r'[white]\1[/white]', text)
-        text = re.sub(r'(?i)\b(low)\b', r'[dim]\1[/dim]', text)
+        text = re.sub(r'(?i)\b(urgent)\b', r'[bold #D53E0F]\1[/]', text)
+        text = re.sub(r'(?i)\b(high)\b', r'[#D53E0F]\1[/]', text)
+        text = re.sub(r'(?i)\b(normal)\b', r'[white]\1[/]', text)
+        text = re.sub(r'(?i)\b(low)\b', r'[dim]\1[/]', text)
         
         # 6. Convert Markdown bold and headers to Rich tags
         # Note: These regexes work on escaped text because escape() only touches [ and ]
-        text = re.sub(r'\*\*(.*?)\*\*', r'[bold #cba6f7]\1[/bold #cba6f7]', text)
-        text = re.sub(r'^#+\s+(.*?)$', r'[bold #cba6f7]\1[/bold #cba6f7]', text, flags=re.MULTILINE)
+        text = re.sub(r'\*\*(.*?)\*\*', r'[bold #cba6f7]\1[/]', text)
+        text = re.sub(r'^#+\s+(.*?)$', r'[bold #cba6f7]\1[/]', text, flags=re.MULTILINE)
         
         # 7. Code blocks and inline code
         text = re.sub(r'```[\w]*\n?(.*?)\n?```', lambda m: f"[dim]{m.group(1)}[/dim]", text, flags=re.DOTALL)
