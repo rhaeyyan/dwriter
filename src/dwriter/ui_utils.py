@@ -24,12 +24,16 @@ def format_entry_datetime(entry: "Entry", config: "Config | None" = None) -> tup
     dt = entry.created_at
 
     date_fmt_setting = (config.display.date_format if config else "YYYY-MM-DD")
-    if date_fmt_setting == "MM/DD/YYYY":
-        date_str = dt.strftime("%m/%d/%Y")
-    elif date_fmt_setting == "DD/MM/YYYY":
-        date_str = dt.strftime("%d/%m/%Y")
-    else:
-        date_str = dt.strftime("%Y-%m-%d")
+    
+    # Map TOML display names to strftime formats
+    fmt_map = {
+        "YYYY-MM-DD": "%Y-%m-%d",
+        "MM/DD/YYYY": "%m/%d/%Y",
+        "DD/MM/YYYY": "%d/%m/%Y",
+    }
+    
+    strftime_fmt = fmt_map.get(date_fmt_setting, "%Y-%m-%d")
+    date_str = dt.strftime(strftime_fmt)
 
     if dt.hour == 0 and dt.minute == 0 and dt.second == 0:
         return date_str, None

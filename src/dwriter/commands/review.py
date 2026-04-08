@@ -12,19 +12,25 @@ import click
 
 from ..database import Entry
 from ..tui.colors import TAG
+from ..ui_utils import format_entry_datetime
 
 
-def format_review_markdown(entries_by_date: Any) -> str:
+def format_review_markdown(entries_by_date: Any, ctx: AppContext) -> str:
     """Format entries as Markdown grouped by date."""
     lines = []
     for date_key, entries in entries_by_date.items():
-        date_str = date_key.strftime("%A, %Y-%m-%d")
-        lines.append(f"## {date_str}")
+        # Get formatted date string for the header
+        dt_obj = datetime.combine(date_key, datetime.min.time())
+        # Use dummy entry to get formatted date string according to config
+        dummy = Entry(content="", created_at=dt_obj)
+        date_str, _ = format_entry_datetime(dummy, ctx.config)
+        
+        lines.append(f"## {date_key.strftime('%A')}, {date_str}")
         lines.append("")
         for entry in entries:
-            time_str = entry.created_at.strftime("%I:%M %p")
-            date_fmt = date_key.strftime("%Y-%m-%d")
-            line = f"- {date_fmt} | [#23c76b]{time_str}[/#23c76b]: {entry.content}"
+            d_str, t_str = format_entry_datetime(entry, ctx.config)
+            time_part = f" | [#23c76b]{t_str}[/#23c76b]" if t_str else ""
+            line = f"- {d_str}{time_part}: {entry.content}"
             if entry.tag_names:
                 line += f" ({', '.join(f'#{t}' for t in entry.tag_names)})"
             if entry.project:
@@ -34,17 +40,20 @@ def format_review_markdown(entries_by_date: Any) -> str:
     return "\n".join(lines)
 
 
-def format_review_plain(entries_by_date: Any) -> str:
+def format_review_plain(entries_by_date: Any, ctx: AppContext) -> str:
     """Format entries as plain text grouped by date."""
     lines = []
     for date_key, entries in entries_by_date.items():
-        date_str = date_key.strftime("%A, %Y-%m-%d")
-        lines.append(f"[green]{date_str}[/green]")
+        dt_obj = datetime.combine(date_key, datetime.min.time())
+        dummy = Entry(content="", created_at=dt_obj)
+        date_str, _ = format_entry_datetime(dummy, ctx.config)
+        
+        lines.append(f"[green]{date_key.strftime('%A')}, {date_str}[/green]")
         lines.append("-" * 40)
         for entry in entries:
-            time_str = entry.created_at.strftime("%I:%M %p")
-            date_fmt = date_key.strftime("%Y-%m-%d")
-            line = f"  {date_fmt} | [#23c76b]{time_str}[/#23c76b]: {entry.content}"
+            d_str, t_str = format_entry_datetime(entry, ctx.config)
+            time_part = f" | [#23c76b]{t_str}[/#23c76b]" if t_str else ""
+            line = f"  {d_str}{time_part}: {entry.content}"
             if entry.tag_names:
                 line += f" ({', '.join(f'[{TAG}]#{t}[/{TAG}]' for t in entry.tag_names)})"
             if entry.project:
@@ -54,16 +63,19 @@ def format_review_plain(entries_by_date: Any) -> str:
     return "\n".join(lines)
 
 
-def format_review_slack(entries_by_date: Any) -> str:
+def format_review_slack(entries_by_date: Any, ctx: AppContext) -> str:
     """Format entries for Slack grouped by date."""
     lines = []
     for date_key, entries in entries_by_date.items():
-        date_str = date_key.strftime("*%A, %Y-%m-%d*")
-        lines.append(f"[green]{date_str}[/green]")
+        dt_obj = datetime.combine(date_key, datetime.min.time())
+        dummy = Entry(content="", created_at=dt_obj)
+        date_str, _ = format_entry_datetime(dummy, ctx.config)
+        
+        lines.append(f"[green]*{date_key.strftime('%A')}, {date_str}*[/green]")
         for entry in entries:
-            time_str = entry.created_at.strftime("%I:%M %p")
-            date_fmt = date_key.strftime("%Y-%m-%d")
-            line = f"  {date_fmt} | [#23c76b]{time_str}[/#23c76b]: {entry.content}"
+            d_str, t_str = format_entry_datetime(entry, ctx.config)
+            time_part = f" | [#23c76b]{t_str}[/#23c76b]" if t_str else ""
+            line = f"  {d_str}{time_part}: {entry.content}"
             if entry.tag_names:
                 line += f" ({', '.join(f'#{t}' for t in entry.tag_names)})"
             if entry.project:
@@ -145,7 +157,7 @@ def review(ctx: AppContext, num_days: int, output_format: str | None) -> None:
 
     # Format the review
     formatter = FORMATTERS.get(output_format, format_review_markdown)
-    review_text = formatter(sorted_entries_by_date)
+    review_text = formatter(sorted_entries_by_date, ctx)
 
     # Add header
     header = f"Review: Last {num_days} Days"

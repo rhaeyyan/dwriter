@@ -45,3 +45,21 @@ class AITaskNarrative(BaseModel):
     main_struggle: str = Field(description="The primary area of difficulty.")
     suggested_focus: str = Field(description="Recommended priority for next steps.")
     summary: str = Field(description="A brief conversational wrap-up.")
+
+
+class EntryMetadata(BaseModel):
+    """Structured metadata inferred from a journal entry.
+
+    Attributes:
+        implicit_mood: Single word describing emotional tone.
+        life_domain: Category of the entry.
+        energy_level: Inferred energy level from 1 to 10.
+    """
+
+    implicit_mood: str = Field(
+        description="A single word describing the emotional tone, e.g., Stressed, Focused, Tired, Excited"
+    )
+    life_domain: str = Field(
+        description="Categorize into: Health, Career, Social, Admin, Deep Work, or Leisure"
+    )
+    energy_level: int = Field(description="Inferred energy level from 1 to 10", ge=1, le=10)

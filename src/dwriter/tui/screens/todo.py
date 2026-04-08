@@ -440,9 +440,11 @@ class TodoListView(ListView):
         Returns:
             str: Formatted markup string.
         """
+        from ..colors import get_weekday_color, PRIORITY_URGENT, REMINDER_COLOR
+        
         priority_map = {
-            "urgent": "[bold red]\\[Urgent][/bold red]",
-            "high": "[#FA5053]\\[High][/#FA5053]",
+            "urgent": f"[{PRIORITY_URGENT}]\\[Urgent][/{PRIORITY_URGENT}]",
+            "high": "[#FCBF49]\\[High][/#FCBF49]",
             "normal": "[white]\\[Normal][/white]",
             "low": "[dim]\\[Low][/dim]",
         }
@@ -450,20 +452,38 @@ class TodoListView(ListView):
         due_date_format = self.app.ctx.config.display.due_date_format
 
         if todo.status == "completed" and todo.completed_at:
-            d_str = f"[cyan]{todo.completed_at.strftime('%m-%d %H:%M')}[/cyan]"
+            # Use format_entry_datetime helper for consistency, wrapping completed_at in a dummy Entry if needed
+            # but simpler to just use the config here since we have it
+            date_fmt_setting = self.app.ctx.config.display.date_format
+            fmt_map = {
+                "YYYY-MM-DD": "%Y-%m-%d",
+                "MM/DD/YYYY": "%m/%d/%Y",
+                "DD/MM/YYYY": "%d/%m/%Y",
+            }
+            strftime_fmt = fmt_map.get(date_fmt_setting, "%Y-%m-%d")
+            d_str = f"[cyan]{todo.completed_at.strftime(strftime_fmt + ' %H:%M')}[/cyan]"
         elif todo.due_date:
-            if due_date_format == "relative":
-                today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-                due_only = todo.due_date.replace(hour=0, minute=0, second=0, microsecond=0)
-                days = (due_only - today).days
-                if days < 0: d_str = f"[{DUE_OVERDUE}]Overdue[/{DUE_OVERDUE}]"
-                elif days == 0: d_str = f"[{DUE_TODAY}]Today[/{DUE_TODAY}]"
-                elif days == 1: d_str = f"[{DUE_TOMORROW}]Tomorrow[/{DUE_TOMORROW}]"
-                else: d_str = f"[{DUE_SOON}]{days}d[/{DUE_SOON}]"
-            else:
-                fmt_map = {"YYYY-MM-DD": "%Y-%m-%d", "MM/DD/YYYY": "%m/%d/%Y", "DD/MM/YYYY": "%d/%m/%Y"}
-                base_fmt = fmt_map.get(due_date_format, "%Y-%m-%d")
-                d_str = f"[white]\\[{todo.due_date.strftime(base_fmt)}][/white]"
+            weekday = todo.due_date.weekday()
+            wd_color = get_weekday_color(weekday)
+            
+            # Format as requested: [Tuesday 2026-04-07]
+            date_fmt_setting = self.app.ctx.config.display.date_format
+            fmt_map = {
+                "YYYY-MM-DD": "%Y-%m-%d",
+                "MM/DD/YYYY": "%m/%d/%Y",
+                "DD/MM/YYYY": "%d/%m/%Y",
+            }
+            strftime_fmt = fmt_map.get(date_fmt_setting, "%Y-%m-%d")
+            date_str = todo.due_date.strftime(strftime_fmt)
+            day_name = todo.due_date.strftime('%A')
+            
+            d_str = f"[{wd_color}]\\[{day_name} {date_str}][/{wd_color}]"
+            
+            # Add [due time, if applicable] - use $success to match logs
+            if todo.due_date.hour != 0 or todo.due_date.minute != 0:
+                use_24hr = self.app.ctx.config.display.clock_24hr
+                t_fmt = "%H:%M" if use_24hr else "%I:%M %p"
+                d_str += f" [$success]\\[{todo.due_date.strftime(t_fmt)}][/$success]"
         else:
             d_str = "[dim]\\[---][/dim]"
 
@@ -482,7 +502,7 @@ class TodoListView(ListView):
             check_icon = get_icon("check", use_emojis)
             return f"[dim]{first_line}\n  {check_icon} {safe_content}[/dim]"
         if is_active_reminder:
-            return f"[bold #FF0000]{first_line}\n  🔔 {safe_content}[/bold #FF0000]"
+            return f"[{REMINDER_COLOR}]{first_line}\n  🔔 {safe_content}[/{REMINDER_COLOR}]"
         return f"{first_line}\n  [bold white]{safe_content}[/bold white]"
 
     @property

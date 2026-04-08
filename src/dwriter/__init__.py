@@ -4,5 +4,5 @@ This package provides a command-line interface for tracking daily tasks
 and generating standup summaries.
 """
 
-__version__ = "3.9.0"
+__version__ = "4.0.0"
 __author__ = "dwriter Contributors"

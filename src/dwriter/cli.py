@@ -100,8 +100,9 @@ class AppContext:
         ]
 
         if reminders:
+            from .tui.colors import REMINDER_COLOR
             if not silent:
-                self.console.print("\n[bold red]🔔 ACTIVE REMINDERS:[/bold red]")
+                self.console.print(f"\n[{REMINDER_COLOR}]🔔 ACTIVE REMINDERS:[/{REMINDER_COLOR}]")
             self._reminders_shown = True
             for r in reminders:
                 if r.due_date.hour == 0 and r.due_date.minute == 0:
@@ -110,7 +111,7 @@ class AppContext:
                     due_str = r.due_date.strftime("%I:%M %p")
 
                 self.console.print(
-                    f"  [red]![/red] [{r.id}] {r.content} (Due: {due_str})"
+                    f"  [{REMINDER_COLOR}]![/{REMINDER_COLOR}] [{r.id}] {r.content} (Due: {due_str})"
                 )
 
                 # Update the database so we don't spam them repeatedly
@@ -167,14 +168,15 @@ def main(ctx: click.Context, check_only: bool) -> None:
         pass
 
 
-def _launch_tui(ctx_obj: AppContext, starting_tab: str = "second-brain") -> None:
+def _launch_tui(ctx_obj: AppContext, starting_tab: str | None = None) -> None:
     """Initializes and runs the Textual-based User Interface (TUI).
 
     Configures the terminal environment and launches the unified application.
 
     Args:
         ctx_obj (AppContext): The application context.
-        starting_tab (str): The initial screen to display. Defaults to "second-brain".
+        starting_tab (str | None): The initial screen to display. 
+            If None, the app decides based on configuration.
     """
     import sys
 
@@ -196,7 +198,7 @@ def _launch_tui(ctx_obj: AppContext, starting_tab: str = "second-brain") -> None
 
 
 @click.command()
-@click.option("--dashboard", "tab", flag_value="second-brain", help="Start on 2nd-Brain screen")
+@click.option("--dashboard", "tab", flag_value="dashboard", help="Start on dashboard screen")
 @click.option("--2brain", "tab", flag_value="second-brain", help="Start on 2nd-Brain screen")
 @click.option("--logs", "tab", flag_value="logs", help="Start on logs tab")
 @click.option("--todo", "tab", flag_value="todo", help="Start on todo tab")
@@ -206,7 +208,7 @@ def _launch_tui(ctx_obj: AppContext, starting_tab: str = "second-brain") -> None
 @click.pass_obj
 def ui(ctx: AppContext, tab: str | None) -> None:
     """Launches the interactive Visual Dashboard (TUI)."""
-    _launch_tui(ctx, starting_tab=tab or "second-brain")
+    _launch_tui(ctx, starting_tab=tab)
 
 
 @click.command()
@@ -228,6 +230,7 @@ def _register_commands() -> None:
         edit,
         examples,
         help_cmd,
+        install_notifications,
         remind,
         review,
         search,
@@ -238,6 +241,7 @@ def _register_commands() -> None:
         today,
         todo,
         undo,
+        uninstall_notifications,
     )
 
 
@@ -251,6 +255,7 @@ def _register_commands() -> None:
         done,
         edit,
         examples,
+        install_notifications,
         timer,
         help_cmd,
         review,
@@ -264,6 +269,7 @@ def _register_commands() -> None:
         todo,
         ui,
         undo,
+        uninstall_notifications,
     ]:
         main.add_command(cmd)
 

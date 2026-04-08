@@ -442,6 +442,21 @@ class AnalyticsEngine:
             percentage = (count / total_activity) * 100
             return project, round(percentage, 1)
 
+    def get_domain_energy_distribution(self) -> dict[str, float]:
+        """Calculates average energy level per life domain.
+
+        Returns:
+            dict[str, float]: Mapping of domain name to average energy level.
+        """
+        with self.db.Session() as session:
+            stats = (
+                session.query(Entry.life_domain, func.avg(Entry.energy_level))
+                .filter(Entry.life_domain.isnot(None))
+                .group_by(Entry.life_domain)
+                .all()
+            )
+            return {domain: round(float(avg), 1) for domain, avg in stats if domain}
+
 class InsightGenerator:
     """Generates prescriptive advice based on analytics data."""
 
@@ -458,10 +473,10 @@ class InsightGenerator:
                 return match.group(0)
             elif match.group(2):
                 # Group 2 matched a #tag
-                return f"[bold #e5ff00]#{match.group(2)}[/]"
+                return f"[bold #66D0BC]#{match.group(2)}[/]"
             elif match.group(3):
                 # Group 3 matched a &project
-                return f"[bold #ff00ff]{match.group(3)}[/]"
+                return f"[bold #F77F00]&{match.group(3)}[/]"
             elif match.group(4):
                 # Use default text color for counts in parentheses
                 return f"({match.group(4)})"

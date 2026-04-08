@@ -44,6 +44,21 @@ def get_raw_ai_client(config: AIConfig) -> OpenAI:
     return OpenAI(base_url=config.base_url, api_key="ollama")
 
 
+def get_embedding(text: str, config: AIConfig) -> list[float]:
+    """Generates a vector embedding for the given text using the Ollama API.
+
+    Args:
+        text (str): The source text to embed.
+        config (AIConfig): The AI configuration settings.
+
+    Returns:
+        list[float]: The generated embedding vector.
+    """
+    client = OpenAI(base_url=config.base_url, api_key="ollama")
+    response = client.embeddings.create(model="nomic-embed-text", input=text)
+    return response.data[0].embedding
+
+
 def get_system_prompt(base_prompt: str) -> str:
     """Wraps a base prompt with instructions for strict data output.
 

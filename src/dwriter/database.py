@@ -1,5 +1,6 @@
 """Database layer for dwriter."""
 
+import json
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -7,6 +8,8 @@ from typing import Any
 from sqlalchemy import (
     DateTime,
     ForeignKey,
+    Integer,
+    LargeBinary,
     String,
     Text,
     case,
@@ -65,6 +68,10 @@ class Entry(Base):
         updated_at (datetime): Timestamp when the entry was last modified.
         todo_id (int | None): Optional link to a related todo task.
         tags (list[Tag]): Collection of tags associated with this entry.
+        implicit_mood (str | None): Inferred emotional tone of the entry.
+        life_domain (str | None): Categorization of the entry (e.g., Health, Career).
+        energy_level (int | None): Inferred energy level (1-10).
+        embedding (bytes | None): Vector embedding of the entry content.
     """
 
     __tablename__ = "entries"
@@ -82,6 +89,11 @@ class Entry(Base):
     todo_id: Mapped[int | None] = mapped_column(
         ForeignKey("todos.id", ondelete="CASCADE"), nullable=True
     )
+
+    implicit_mood: Mapped[str | None] = mapped_column(String)
+    life_domain: Mapped[str | None] = mapped_column(String)
+    energy_level: Mapped[int | None] = mapped_column(Integer)
+    embedding: Mapped[bytes | None] = mapped_column(LargeBinary)
 
     tags: Mapped[list["Tag"]] = relationship(
         back_populates="entry",
@@ -265,6 +277,26 @@ class Database:
                         "INTEGER REFERENCES todos(id) ON DELETE CASCADE"
                     )
 
+                if "implicit_mood" not in entry_columns:
+                    sqlite_conn.execute(
+                        "ALTER TABLE entries ADD COLUMN implicit_mood STRING"
+                    )
+
+                if "life_domain" not in entry_columns:
+                    sqlite_conn.execute(
+                        "ALTER TABLE entries ADD COLUMN life_domain STRING"
+                    )
+
+                if "energy_level" not in entry_columns:
+                    sqlite_conn.execute(
+                        "ALTER TABLE entries ADD COLUMN energy_level INTEGER"
+                    )
+
+                if "embedding" not in entry_columns:
+                    sqlite_conn.execute(
+                        "ALTER TABLE entries ADD COLUMN embedding LARGEBINARY"
+                    )
+
                 # Clean up orphaned tags
                 sqlite_conn.execute(
                     "DELETE FROM tags WHERE entry_id NOT IN (SELECT id FROM entries)"
@@ -293,6 +325,10 @@ class Database:
         project: str | None = None,
         created_at: datetime | None = None,
         todo_id: int | None = None,
+        implicit_mood: str | None = None,
+        life_domain: str | None = None,
+        energy_level: int | None = None,
+        embedding: list[float] | None = None,
     ) -> Entry:
         """Persists a new journal entry to the database.
 
@@ -303,12 +339,26 @@ class Database:
             created_at (datetime | None): Explicit creation timestamp.
                 Defaults to now if None.
             todo_id (int | None): Link to an existing todo task ID.
+            implicit_mood (str | None): Inferred emotional tone.
+            life_domain (str | None): Category of life domain.
+            energy_level (int | None): Inferred energy level.
+            embedding (list[float] | None): Vector embedding of the content.
 
         Returns:
             Entry: The newly created Entry object.
         """
         with self.Session() as session:
-            entry = Entry(content=content, project=project, todo_id=todo_id)
+            entry = Entry(
+                content=content,
+                project=project,
+                todo_id=todo_id,
+                implicit_mood=implicit_mood,
+                life_domain=life_domain,
+                energy_level=energy_level,
+            )
+
+            if embedding:
+                entry.embedding = json.dumps(embedding).encode("utf-8")
 
             if tags:
                 for tag_name in tags:
@@ -360,23 +410,60 @@ class Database:
             return list(session.scalars(stmt).all())
 
     def get_entries_in_range(
-        self, start_date: datetime, end_date: datetime
+        self,
+        start_date: datetime,
+        end_date: datetime,
+        exclude_projects: list[str] | None = None,
+        exclude_tags: list[str] | None = None,
     ) -> list[Entry]:
-        """Retrieves entries that fall within a specified date range.
+        """Retrieves entries that fall within a specified date range with exclusion filters.
 
         Args:
             start_date (datetime): The beginning of the range (inclusive).
             end_date (datetime): The end of the range (inclusive).
+            exclude_projects (list[str] | None): Projects to exclude.
+            exclude_tags (list[str] | None): Tags to exclude.
 
         Returns:
             list[Entry]: A list of entries within the period.
         """
         with self.Session() as session:
+            stmt = select(Entry).where(Entry.created_at.between(start_date, end_date))
+            
+            if exclude_projects:
+                stmt = stmt.where(Entry.project.not_in(exclude_projects))
+            
+            if exclude_tags:
+                # To exclude entries with specific tags, we check that none of the entry's tags are in the excluded list
+                # This logic excludes an entry if ANY of its tags match the exclusion list.
+                from sqlalchemy import not_
+                stmt = stmt.where(not_(Entry.tags.any(Tag.name.in_(exclude_tags))))
+
+            stmt = stmt.order_by(Entry.created_at)
+            return list(session.scalars(stmt).all())
+
+    def get_unique_projects(self) -> list[str]:
+        """Retrieves a list of all unique project names.
+
+        Returns:
+            list[str]: A list of unique project names, sorted alphabetically.
+        """
+        with self.Session() as session:
             stmt = (
-                select(Entry)
-                .where(Entry.created_at.between(start_date, end_date))
-                .order_by(Entry.created_at)
+                select(func.distinct(Entry.project))
+                .where(Entry.project.isnot(None))
+                .order_by(Entry.project)
             )
+            return list(session.scalars(stmt).all())
+
+    def get_unique_tags(self) -> list[str]:
+        """Retrieves a list of all unique tag names.
+
+        Returns:
+            list[str]: A list of unique tag names, sorted alphabetically.
+        """
+        with self.Session() as session:
+            stmt = select(func.distinct(Tag.name)).order_by(Tag.name)
             return list(session.scalars(stmt).all())
 
     def get_latest_entry(self) -> Entry | None:
@@ -600,6 +687,40 @@ class Database:
             if tags:
                 stmt = stmt.join(Tag).where(Tag.name.in_(tags))
             return list(session.scalars(stmt).all())
+
+    def search_similar_entries(
+        self, query_embedding: list[float], limit: int = 5
+    ) -> list[Entry]:
+        """Retrieves entries that are semantically similar to the query embedding.
+
+        Args:
+            query_embedding (list[float]): The embedding vector of the search query.
+            limit (int): Maximum number of results to return.
+
+        Returns:
+            list[Entry]: A list of semantically similar entries.
+        """
+        from .search_utils import cosine_similarity
+
+        with self.Session() as session:
+            # Fetch all entries with embeddings
+            stmt = select(Entry).where(Entry.embedding.isnot(None))
+            entries = list(session.scalars(stmt).all())
+
+            if not entries:
+                return []
+
+            # Calculate similarity scores
+            scored_entries = []
+            for entry in entries:
+                if entry.embedding:
+                    vec = json.loads(entry.embedding.decode("utf-8"))
+                    score = cosine_similarity(query_embedding, vec)
+                    scored_entries.append((entry, score))
+
+            # Sort by score descending and take top limit
+            scored_entries.sort(key=lambda x: x[1], reverse=True)
+            return [entry for entry, score in scored_entries[:limit]]
 
     def get_all_todos(
         self,

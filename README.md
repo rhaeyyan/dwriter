@@ -1,5 +1,5 @@
 # dwriter 📝
-Experimental beta: v3.9.0
+Experimental beta: v4.0.0
 ### *The minimalist journal for those who live in the terminal powered by llama 3.1:8b.*
 
 **dwriter** is a high-signal, low-friction journaling tool designed to capture your work without breaking your flow. It bridges the gap between the raw speed of a command-line interface and the visual clarity of a modern dashboard.
@@ -140,7 +140,7 @@ The 2nd-Brain acts as a specialized analytical layer over your logs. It excels a
 
 | Document | Description |
 | :--- | :--- |
-| 🚀 **[Update Notes](documentation/update-notes.md)** | **New in v3.9.0:** 2nd-Brain Integration. |
+| 🚀 **[Update Notes](documentation/update-notes.md)** | **New in v4.0.0:** Local RAG & Vector Memory. |
 | 🛠️ **[Command Reference](documentation/HEADLESS-README.md)** | A complete guide to every CLI command and flag. |
 | 📖 **[Creative Use Cases](documentation/USE_CASES.md)** | 20 ways to use dwriter for brewing, fitness, travel, and more. |
 | ⚙️ **[Dev & Config Guide](documentation/DEV-and-CONFIG.md)** | Customizing your themes, default projects, and dev setup. |

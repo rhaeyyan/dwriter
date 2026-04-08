@@ -164,6 +164,10 @@ class ConfigureScreen(Container):
                     yield Label("Lock Mode", classes="row-label")
                     yield Switch(value=cfg.display.lock_mode, id="lock-mode-switch")
 
+                with Horizontal(classes="row"):
+                    yield Label("Permanent Omnibox", classes="row-label")
+                    yield Switch(value=cfg.display.permanent_omnibox, id="permanent-omnibox-switch")
+
             # ── Timer Defaults ──────────────────────────────────────
             with Container(classes="section"):
                 yield Label(f"{get_icon('timer', use_emojis)} Timer Defaults", classes="section-title")
@@ -227,6 +231,19 @@ class ConfigureScreen(Container):
                         id="todo-date-format-select",
                     )
 
+            # ── AI & 2nd-Brain ────────────────────────────────────────
+            with Container(classes="section"):
+                yield Label(f"{get_icon('glance', use_emojis)} AI & 2nd-Brain", classes="section-title")
+                yield Label("Toggle AI features and the 2nd-Brain chat interface.", classes="row-help")
+
+                with Horizontal(classes="row"):
+                    yield Label("Enable 2nd-Brain AI", classes="row-label")
+                    yield Switch(value=cfg.ai.enabled, id="ai-enabled-switch")
+
+                with Horizontal(classes="row"):
+                    yield Label("Auto-Tagging", classes="row-label")
+                    yield Switch(value=cfg.ai.features.auto_tagging, id="ai-auto-tagging-switch")
+
         # ── Footer ──────────────────────────────────────────────────
         with Container(id="settings-footer"):
             with Horizontal(id="settings-buttons"):
@@ -271,6 +288,7 @@ class ConfigureScreen(Container):
 
             # Editing
             config.display.lock_mode = bool(self.query_one("#lock-mode-switch", Switch).value)
+            config.display.permanent_omnibox = bool(self.query_one("#permanent-omnibox-switch", Switch).value)
 
             # Timer
             config.timer.work_duration = int(self.query_one("#work-duration-input", Input).value)
@@ -293,11 +311,20 @@ class ConfigureScreen(Container):
             if todo_date_val is not Select.BLANK:
                 config.display.due_date_format = str(todo_date_val)
 
+            # AI
+            config.ai.enabled = bool(self.query_one("#ai-enabled-switch", Switch).value)
+            config.ai.features.auto_tagging = bool(self.query_one("#ai-auto-tagging-switch", Switch).value)
+
             # Save to disk
             self.ctx.config_manager.save(config)
 
             # Update the live in-memory config so all screens pick it up dynamically
             self.ctx.config = config
+
+            # Update reactive state in app
+            from ..app import DWriterApp
+            if isinstance(self.app, DWriterApp):
+                self.app.permanent_omnibox = config.display.permanent_omnibox
 
             # Apply theme live immediately
             self.app.theme = config.display.theme
@@ -320,6 +347,13 @@ class ConfigureScreen(Container):
         self.query_one("#clock-24hr-switch", Switch).value = config.display.clock_24hr
         self.query_one("#date-format-select", Select).value = config.display.date_format
         self.query_one("#lock-mode-switch", Switch).value = config.display.lock_mode
+        self.query_one("#permanent-omnibox-switch", Switch).value = config.display.permanent_omnibox
+        
+        # Sync reactive state in app
+        from ..app import DWriterApp
+        if isinstance(self.app, DWriterApp):
+            self.app.permanent_omnibox = config.display.permanent_omnibox
+
         self.query_one("#work-duration-input", Input).value = str(config.timer.work_duration)
         self.query_one("#break-duration-input", Input).value = str(config.timer.break_duration)
         self.query_one("#auto-start-breaks-switch", Switch).value = config.timer.auto_start_breaks
@@ -327,6 +361,8 @@ class ConfigureScreen(Container):
         self.query_one("#default-tags-input", Input).value = ", ".join(config.defaults.tags)
         self.query_one("#todo-sorting-select", Select).value = config.display.todo_sorting_mode
         self.query_one("#todo-date-format-select", Select).value = config.display.due_date_format
+        self.query_one("#ai-enabled-switch", Switch).value = config.ai.enabled
+        self.query_one("#ai-auto-tagging-switch", Switch).value = config.ai.features.auto_tagging
 
         self.app.theme = config.display.theme
         self.app.notify("Configuration reset to defaults.", severity="warning")

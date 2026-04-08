@@ -15,14 +15,64 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from ...cli import AppContext
 
+from rich.markup import escape
 from textual import work
 from textual.app import ComposeResult
 from textual.containers import Container, Vertical
-from textual.widgets import Input, RichLog, Static
+from textual.widgets import Input, Static
 
 from ...ai.engine import get_ai_client, get_raw_ai_client, get_system_prompt
 from ...ai.schemas.router import ActionRouter
 
+
+class ChatMessage(Container):
+    """Base class for chat messages acting as a full-width container."""
+    def __init__(self, content: str, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.content = content
+
+class UserChatMessage(ChatMessage):
+    """Widget for user chat messages aligned to the right."""
+    DEFAULT_CSS = """
+    UserChatMessage {
+        width: 100%;
+        height: auto;
+        align-horizontal: right;
+    }
+    .user-bubble {
+        width: auto;
+        max-width: 94%;
+        margin: 1 2;
+        padding: 0 1;
+        background: $surface;
+        color: white;
+        border: solid cyan;
+    }
+    """
+    def compose(self) -> ComposeResult:
+        # Wrap self.content in escape() so users can't inject Rich markup
+        yield Static(f"[bold cyan]You:[/bold cyan]\n{escape(self.content)}", classes="user-bubble")
+
+class AIChatMessage(ChatMessage):
+    """Widget for AI chat messages aligned to the left."""
+    DEFAULT_CSS = """
+    AIChatMessage {
+        width: 100%;
+        height: auto;
+        align-horizontal: left;
+    }
+    .ai-bubble {
+        width: auto;
+        max-width: 98%;
+        margin: 1 2;
+        padding: 0 1;
+        background: $panel;
+        color: white;
+        border: round #cba6f7;
+    }
+    """
+    def compose(self) -> ComposeResult:
+        yield Static(f"[bold #cba6f7]2nd-Brain:[/bold #cba6f7]\n{self.content}", classes="ai-bubble")
 
 class SecondBrainScreen(Container):
     """Interactive AI 2nd-Brain Screen.
@@ -51,6 +101,7 @@ class SecondBrainScreen(Container):
         padding: 0;
         margin: 0;
         background: transparent;
+        overflow-y: scroll;
         scrollbar-size-vertical: 1;
         scrollbar-gutter: stable;
     }
@@ -80,20 +131,54 @@ class SecondBrainScreen(Container):
         self.ctx = ctx
         self._chat_history: list[dict[str, str]] = []
         self._context_data: str = ""
+        self._welcome_shown: bool = False
 
     def compose(self) -> ComposeResult:
         """Composes the 2nd-Brain layout components."""
         with Vertical():
-            yield RichLog(id="second-brain-log", highlight=True, markup=True, wrap=True)
+            with Vertical(id="second-brain-log"):
+                yield Static("[bold black on yellow] SYSTEM [/bold black on yellow]\n[dim]2nd-Brain initialized with recent task and log context.[/dim]")
             yield Static("", id="second-brain-status")
             yield Input(placeholder="Ask your 2nd-Brain anything...", id="second-brain-input")
 
     def on_mount(self) -> None:
         """Initializes chat history and refreshes the primary context."""
-        log = self.query_one("#second-brain-log", RichLog)
-        log.write("[bold black on yellow] SYSTEM [/bold black on yellow]")
-        log.write("[dim]2nd-Brain initialized with recent task and log context.\n[/dim]")
         self._refresh_context()
+
+    def on_show(self) -> None:
+        """Triggers welcome message with 7-day wrap info when screen is shown."""
+        if not self._welcome_shown:
+            self._display_welcome_message()
+            self._welcome_shown = True
+
+    @work(thread=True)
+    def _display_welcome_message(self) -> None:
+        """Fetches 7-day wrap info and displays it as a welcome message."""
+        from ...analytics import AnalyticsEngine, InsightGenerator
+        
+        try:
+            engine = AnalyticsEngine(self.ctx.db)
+            insight_gen = InsightGenerator(engine)
+            nudges = insight_gen.generate_weekly_wrapup()
+            
+            if nudges:
+                # Add extra newline between nudge items for better "Dashboard" separation
+                wrap_text = "\n\n".join(nudges)
+                welcome_content = (
+                    "Welcome back! Here's your [bold #cba6f7]7-Day Pulse[/bold #cba6f7] wrap-up:\n\n"
+                    f"{wrap_text}\n\n"
+                    "How can I help you optimize your focus today?"
+                )
+                
+                # We want this to look like an AI message
+                # Skip _format_ai_response because welcome_content is already Rich-formatted
+                ai_msg = AIChatMessage(welcome_content)
+                log = self.query_one("#second-brain-log", Vertical)
+                
+                self.app.call_from_thread(log.mount, ai_msg)
+                self.app.call_from_thread(ai_msg.scroll_visible)
+        except Exception:
+            pass
 
     def _refresh_context(self) -> None:
         """Assembles the primary context from long-term and short-term memory.
@@ -122,25 +207,24 @@ class SecondBrainScreen(Container):
                             f"- Week of {week_label}: {mood}. {velocity}. "
                             f"Focus: {projects}. Wins: {wins}\n"
                         )
-                    except (json.JSONDecodeError, KeyError):
+                    except Exception:
                         continue
         except Exception:
             pass
 
-        # Immediate Layer: Activity from the last 72 hours
+        # Activity Layer: Short-Term Memory (Past 72 hours)
         three_days_ago = datetime.now() - timedelta(days=3)
         entries = self.ctx.db.get_all_entries()
-        recent_entries = [e for e in entries if e.created_at >= three_days_ago]
+        recent = [e for e in entries if e.created_at >= three_days_ago]
         todos = self.ctx.db.get_todos(status="pending")
 
-        short_term = "[SHORT-TERM MEMORY (LAST 3 DAYS)]\n"
-        short_term += "Recent Entries:\n"
-        short_term += "\n".join(
-            [
-                f"- [{e.created_at.strftime('%Y-%m-%d')}] {e.content}"
-                for e in recent_entries[:15]
-            ]
-        )
+        short_term = "[SHORT-TERM ACTIVITY (PAST 72H)]\n"
+        if recent:
+            for e in recent[:20]:
+                short_term += f"- [{e.created_at.strftime('%Y-%m-%d %H:%M')}] {e.content}\n"
+        else:
+            short_term += "- No recent logs.\n"
+
         short_term += "\n\nPending Tasks:\n"
         short_term += "\n".join(
             [f"- [{t.priority.upper()}] {t.content}" for t in todos[:10]]
@@ -225,16 +309,19 @@ class SecondBrainScreen(Container):
         if not user_input:
             return
 
-        log = self.query_one("#second-brain-log", RichLog)
+        log = self.query_one("#second-brain-log", Vertical)
         status = self.query_one("#second-brain-status", Static)
         
-        log.write("\n[bold black on cyan] YOU [/bold black on cyan]")
-        log.write(f"[cyan]{user_input}[/cyan]\n")
+        # User message
+        user_msg = UserChatMessage(user_input)
+        log.mount(user_msg)
+        user_msg.scroll_visible()
+        
         status.update("[bold #cba6f7]Thinking...[/bold #cba6f7]")
         event.input.value = ""
 
         if not self.ctx.config.ai.enabled:
-            log.write("[yellow]AI features are disabled in configuration.[/yellow]")
+            log.mount(Static("[yellow]AI features are disabled in configuration.[/yellow]"))
             status.update("")
             return
 
@@ -247,7 +334,7 @@ class SecondBrainScreen(Container):
         Args:
             user_input (str): The raw text query from the user.
         """
-        log = self.query_one("#second-brain-log", RichLog)
+        log = self.query_one("#second-brain-log", Vertical)
         status = self.query_one("#second-brain-status", Static)
         
         try:
@@ -255,7 +342,7 @@ class SecondBrainScreen(Container):
             client_structured = get_ai_client(self.ctx.config.ai)
             
             self.app.call_from_thread(status.update, "[bold #cba6f7]Categorizing intent...[/bold #cba6f7]")
-            route = client_structured.chat.completions.create(
+            client_structured.chat.completions.create(
                 model=self.ctx.config.ai.model,
                 response_model=ActionRouter,
                 messages=[
@@ -302,12 +389,17 @@ class SecondBrainScreen(Container):
             self._chat_history.append({"role": "assistant", "content": answer})
             
             formatted_answer = self._format_ai_response(answer)
-            self.app.call_from_thread(log.write, "[bold black on #cba6f7] 2ND-BRAIN [/bold black on #cba6f7]")
-            self.app.call_from_thread(log.write, formatted_answer)
+            
+            # Mount AI message widget
+            ai_msg = AIChatMessage(formatted_answer)
+            self.app.call_from_thread(log.mount, ai_msg)
+            self.app.call_from_thread(ai_msg.scroll_visible)
+            
             self.app.call_from_thread(status.update, "")
             
         except Exception as e:
-            self.app.call_from_thread(log.write, f"\n[red]AI Error: {e}[/red]")
+            error_msg = Static(f"[red]AI Error: {e}[/red]")
+            self.app.call_from_thread(log.mount, error_msg)
             self.app.call_from_thread(status.update, "[bold red]AI Error[/bold red]")
 
     def _format_ai_response(self, text: str) -> str:
@@ -319,12 +411,37 @@ class SecondBrainScreen(Container):
         Returns:
             str: Formatted Rich markup string.
         """
-        text = text.replace("[", "\\[")
+        # 1. Escape the raw AI text first to make brackets literal
+        text = escape(text)
+        
+        # 2. Colorize Tags and Projects
+        # Use identical colors to InsightGenerator
         text = re.sub(r'(?<!\w)#([\w:-]+)', r'[bold #66D0BC]#\1[/bold #66D0BC]', text)
         text = re.sub(r'(?<!\w)&([\w:-]+)', r'[bold #F77F00]&\1[/bold #F77F00]', text)
+        
+        # 3. Colorize Dates (e.g., 2026-04-07)
+        text = re.sub(r'(\d{4}-\d{2}-\d{2})', r'[cyan]\1[/cyan]', text)
+        
+        # 4. Colorize Times (e.g., 14:00, 2:30pm)
+        text = re.sub(r'(\d{1,2}:\d{2}(?:\s*(?:am|pm))?)', r'[$success]\1[/$success]', text)
+
+        # 5. Colorize Urgency/Priority levels
+        text = re.sub(r'(?i)\b(urgent)\b', r'[bold #D53E0F]\1[/bold #D53E0F]', text)
+        text = re.sub(r'(?i)\b(high)\b', r'[#D53E0F]\1[/#D53E0F]', text)
+        text = re.sub(r'(?i)\b(normal)\b', r'[white]\1[/white]', text)
+        text = re.sub(r'(?i)\b(low)\b', r'[dim]\1[/dim]', text)
+        
+        # 6. Convert Markdown bold and headers to Rich tags
+        # Note: These regexes work on escaped text because escape() only touches [ and ]
         text = re.sub(r'\*\*(.*?)\*\*', r'[bold #cba6f7]\1[/bold #cba6f7]', text)
         text = re.sub(r'^#+\s+(.*?)$', r'[bold #cba6f7]\1[/bold #cba6f7]', text, flags=re.MULTILINE)
+        
+        # 7. Code blocks and inline code
         text = re.sub(r'```[\w]*\n?(.*?)\n?```', lambda m: f"[dim]{m.group(1)}[/dim]", text, flags=re.DOTALL)
         text = re.sub(r'`(.*?)`', r'[reverse]\1[/reverse]', text)
         
+        # 8. Neat Emoji Lists (ensure space after emoji bullet)
+        # Matches emoji at start of line followed by optional space, ensures 2 spaces for "neat" alignment
+        text = re.sub(r'^([^\w\s\d\[\(])\s*', r'\1  ', text, flags=re.MULTILINE)
+
         return text

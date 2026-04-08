@@ -12,7 +12,7 @@ def test_cli_help():
     result = runner.invoke(main, ["--help"])
 
     assert result.exit_code == 0
-    assert "Dwriter" in result.output
+    assert "dwriter" in result.output
     assert "add" in result.output
     assert "standup" in result.output
 

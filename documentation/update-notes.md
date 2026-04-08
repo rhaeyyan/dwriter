@@ -1,5 +1,30 @@
 # dwriter Update Notes
 
+## Version 4.0.0 - April 8, 2026
+
+### 🚀 Key Features
+
+#### 1. 2nd-Brain UI & Chat Refinement
+- **Message Bubbles**: Refactored the 2nd-Brain chat into a full-width bubble system. User responses are now strictly **right-aligned**, while AI responses are **left-aligned** with rounded borders.
+- **Contextual Formatting**: AI responses now dynamically colorize mentioned dates (`[cyan]`), times (`[$success]`), and priority levels (e.g., `bold red` for Urgent) to match the project's high-signal visual language.
+- **Intelligent Onboarding**: The 2nd-Brain now automatically greets the user with a "7-Day Pulse" wrap-up (Archetype, Velocity, Big Rock, and Momentum) upon initialization to provide immediate situational awareness.
+
+#### 2. Local RAG & Vector Memory
+- **Embedding Pipeline**: Integrated Ollama's `nomic-embed-text` to vectorize journal entries upon creation.
+- **Semantic Search**: Implemented a local RAG (Retrieval-Augmented Generation) pipeline in the `ask` command. The AI now retrieves the top 5 semantically similar historical entries to provide habit-aware insights.
+- **Energy Distribution**: Extended the `AnalyticsEngine` to track average energy levels across different life domains (Health, Career, etc.).
+
+#### 3. Standup & Review Evolution
+- **Exclusion Filters**: Implemented advanced project and tag filtering for Period Reviews. Users can now provide a comma-separated list of projects/tags to **exclude** from reports and exports.
+- **UI Alignment**: Synchronized the Filter button placement with standard dropdowns for a balanced HUD aesthetic.
+
+### 🛠 Improvements & Fixes
+- **Omnibox Reliability**: Resolved synchronization issues with the omnibox toggle. Implemented a 0.2s interval and hardened focus management to ensure the omnibox respects "Zen Mode" vs. "Permanent" settings.
+- **Global AI Toggle**: Introduced a global kill-switch for 2nd-Brain features. When disabled, the application intelligently swaps the primary landing screen from Chat to the Dashboard analytics.
+- **System Hardening**: Added breathing room between the timer progress bar and controls. Refactored timer inputs to automatically strip `&` and `#` flags.
+- **Date Sync**: Hardened `format_entry_datetime` to ensure the user's preferred date format (e.g., `MM/DD/YYYY`) is respected across every screen and export format.
+- **Code Quality**: Conducted a comprehensive cleanup of the core TUI and configuration logic, resolving over 40 PEP 8 and `ruff` violations.
+
 ## Version 3.9.0 - April 7, 2026
 
 ### 🚀 Key Features

@@ -4,9 +4,33 @@ This module provides fuzzy matching capabilities for searching
 journal entries and to-do tasks.
 """
 
+import math
 from typing import Any
 
 from rapidfuzz import fuzz, process
+
+
+def cosine_similarity(vec1: list[float], vec2: list[float]) -> float:
+    """Calculates the cosine similarity between two vectors.
+
+    Args:
+        vec1 (list[float]): The first vector.
+        vec2 (list[float]): The second vector.
+
+    Returns:
+        float: The cosine similarity score (-1.0 to 1.0).
+    """
+    if not vec1 or not vec2:
+        return 0.0
+
+    dot_product = sum(a * b for a, b in zip(vec1, vec2))
+    magnitude1 = math.sqrt(sum(a * a for a in vec1))
+    magnitude2 = math.sqrt(sum(b * b for b in vec2))
+
+    if magnitude1 == 0 or magnitude2 == 0:
+        return 0.0
+
+    return dot_product / (magnitude1 * magnitude2)
 
 
 def search_items(

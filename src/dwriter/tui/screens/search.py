@@ -94,7 +94,7 @@ class EntryResultsView(ListView):
         """
         from ...ui_utils import format_entry_datetime
 
-        date_str, time_str = format_entry_datetime(entry)
+        date_str, time_str = format_entry_datetime(entry, self.app.ctx.config)
         score_color = self._get_score_color(score)
         tags_str = ""
         if entry.tag_names:
@@ -142,7 +142,14 @@ class EntryResultsView(ListView):
 
         # Apply the exact same timestamp logic here
         if todo.status == "completed" and todo.completed_at:
-            dt_str = todo.completed_at.strftime("%m-%d %H:%M")
+            date_fmt_setting = self.app.ctx.config.display.date_format
+            fmt_map = {
+                "YYYY-MM-DD": "%Y-%m-%d",
+                "MM/DD/YYYY": "%m/%d/%Y",
+                "DD/MM/YYYY": "%d/%m/%Y",
+            }
+            strftime_fmt = fmt_map.get(date_fmt_setting, "%Y-%m-%d")
+            dt_str = todo.completed_at.strftime(strftime_fmt + " %H:%M")
             d_str = f"[cyan]{dt_str}[/cyan]"
         elif todo.due_date:
             today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)

@@ -160,6 +160,14 @@ class SessionCompleteModal(ModalScreen):  # type: ignore[type-arg]
 class TimerProgressBar(Static):
     """Custom progress visualization component."""
 
+    DEFAULT_CSS = """
+    TimerProgressBar {
+        width: 100%;
+        content-align: center middle;
+        height: 1;
+    }
+    """
+
     def __init__(self, total_seconds: int = 25 * 60, **kwargs: Any) -> None:
         """Initializes the progress bar.
 
@@ -203,7 +211,13 @@ class TimerProgressBar(Static):
             self.update("No time set")
             return
 
-        progress = 1.0 - (self.remaining_seconds / self.total_seconds)
+        # Safeguard remaining_seconds to not exceed total_seconds to avoid negative progress
+        safe_rem = min(self.remaining_seconds, self.total_seconds)
+        progress = 1.0 - (safe_rem / self.total_seconds)
+        
+        # Ensure progress is within [0, 1]
+        progress = max(0.0, min(1.0, progress))
+        
         percentage = int(progress * 100)
         bar_width, filled = 30, int(progress * 30)
         empty = bar_width - filled
@@ -283,12 +297,52 @@ class TimerScreen(Container):
         height: auto;
         align: center middle;
         padding: 0;
-        margin-top: 4;
+        margin-top: 1;
+    }
+
+    #timer-config-section {
+        height: auto;
+        margin-top: 1;
+        padding: 0 1;
+    }
+
+    .config-row {
+        height: 3;
+        align: center middle;
+    }
+
+    .config-label {
+        width: 6;
+        color: $text-muted;
+        text-style: bold;
+        content-align: center middle;
+        margin-right: 1;
+        height: 3;
+    }
+
+    #timer-config-section Input {
+        width: 1fr;
+        margin-right: 1;
+        border: solid $border-blurred;
+        background: $panel;
+    }
+
+    #timer-config-section Input:focus {
+        border: solid $accent;
+        background: $surface;
     }
 
     #timer-control-button {
         min-width: 15;
         height: auto;
+    }
+
+    #timer-progress-container {
+        height: auto;
+        align: center middle;
+        padding: 0;
+        margin-top: 1;
+        margin-bottom: 1;
     }
 
     #timer-clear-row {
@@ -314,13 +368,6 @@ class TimerScreen(Container):
     #timer-adjust-buttons Button {
         margin: 0 1;
         min-width: 6;
-    }
-
-    #timer-progress-container {
-        height: auto;
-        align: center middle;
-        padding: 0;
-        margin-bottom: 1;
     }
 
     .timer-session-meta {
@@ -371,6 +418,7 @@ class TimerScreen(Container):
     ]
 
     remaining_seconds = reactive(25 * 60)
+    total_seconds = reactive(25 * 60)
     is_running = reactive(False)
     is_finished = reactive(False)
     is_break_mode = reactive(False)
@@ -413,6 +461,18 @@ class TimerScreen(Container):
                     yield Label("Break:", id="timer-break-label")
                     yield Switch(value=self.is_break_mode, id="timer-break-switch")
 
+            # Configuration Fields
+            with Vertical(id="timer-config-section"):
+                with Horizontal(classes="config-row"):
+                    yield Label("Mins:", classes="config-label")
+                    yield Input(value=str(self.initial_minutes), id="input-duration", placeholder="Min")
+                    yield Label("Proj:", classes="config-label")
+                    yield Input(value=self.project or "", id="input-project", placeholder="&project")
+                
+                with Horizontal(classes="config-row"):
+                    yield Label("Tags:", classes="config-label")
+                    yield Input(value=", ".join(self.tags), id="input-tags", placeholder="tag1, tag2")
+
             with Horizontal(id="timer-controls"):
                 yield Button("[ START / PAUSE ]", id="timer-control-button", variant="warning")
 
@@ -442,6 +502,17 @@ class TimerScreen(Container):
         self._update_display()
         self.update_session_meta()
 
+    def on_input_changed(self, event: Input.Changed) -> None:
+        """Handles real-time updates when duration input is modified."""
+        if event.input.id == "input-duration" and not self.is_running and not self.is_finished:
+            try:
+                val = int(event.value)
+                if val >= 1:
+                    self.initial_minutes = val
+                    self.total_seconds = self.remaining_seconds = val * 60
+            except ValueError:
+                pass
+
     def on_switch_changed(self, event: Switch.Changed) -> None:
         """Synchronizes break mode state with the UI switch."""
         if event.switch.id == "timer-break-switch" and self.is_break_mode != event.value:
@@ -463,6 +534,12 @@ class TimerScreen(Container):
     def watch_remaining_seconds(self) -> None:
         """Reactively updates the display when the timer decrements."""
         self._update_display()
+        try:
+            self.query_one("#timer-progress-bar", TimerProgressBar).update_progress(self.remaining_seconds, self.total_seconds)
+        except Exception: pass
+
+    def watch_total_seconds(self) -> None:
+        """Reactively updates the progress bar when the total duration changes."""
         try:
             self.query_one("#timer-progress-bar", TimerProgressBar).update_progress(self.remaining_seconds, self.total_seconds)
         except Exception: pass
@@ -601,7 +678,8 @@ class TimerScreen(Container):
             self.notify("Minimum 1 minute required", severity="warning")
             return
 
-        self.remaining_seconds = self.total_seconds = new_total
+        self.total_seconds = new_total
+        self.remaining_seconds = new_total
         self.initial_minutes = new_total // 60
         self._update_display()
 
@@ -613,7 +691,9 @@ class TimerScreen(Container):
         self.break_duration = self.ctx.config.timer.break_duration
         default_minutes = self.break_duration if self.is_break_mode else self.work_duration
         self.initial_minutes = default_minutes
-        self.remaining_seconds = self.total_seconds = default_minutes * 60
+        new_seconds = default_minutes * 60
+        self.total_seconds = new_seconds
+        self.remaining_seconds = new_seconds
         self._update_display()
 
     def action_toggle_break_mode(self) -> None:
@@ -622,7 +702,11 @@ class TimerScreen(Container):
         new_duration = self.break_duration if self.is_break_mode else self.work_duration
         self.project = "Break" if self.is_break_mode else None
         self.initial_minutes = new_duration
-        self.remaining_seconds = self.total_seconds = new_duration * 60
+        
+        # Update total_seconds first, then remaining_seconds to avoid negative progress in watchers
+        new_seconds = new_duration * 60
+        self.total_seconds = new_seconds
+        self.remaining_seconds = new_seconds
         
         try: self.query_one("#timer-break-switch", Switch).value = self.is_break_mode
         except Exception: pass
@@ -632,8 +716,31 @@ class TimerScreen(Container):
     def action_toggle_pause(self) -> None:
         """Toggles the running state of the timer."""
         if self.is_finished: return
-        if self.is_running: self._stop_timer()
-        else: self._start_timer()
+        if not self.is_running:
+            # Sync inputs before starting
+            try:
+                dur_str = self.query_one("#input-duration", Input).value
+                self.initial_minutes = int(dur_str)
+                # If we're starting fresh, update remaining/total
+                if self.remaining_seconds == self.total_seconds:
+                    self.total_seconds = self.remaining_seconds = self.initial_minutes * 60
+                
+                # Strip & and # flags from inputs
+                raw_project = self.query_one("#input-project", Input).value
+                self.project = raw_project.lstrip("&").strip() or None
+                
+                tags_str = self.query_one("#input-tags", Input).value
+                raw_tags = [t.strip() for t in tags_str.split(",") if t.strip()]
+                self.tags = [t.lstrip("#").strip() for t in raw_tags]
+                
+                self.update_session_meta()
+            except ValueError:
+                self.notify("Invalid duration", severity="error")
+                return
+
+            self._start_timer()
+        else:
+            self._stop_timer()
         self._update_display()
 
     def action_add_5_min(self) -> None: self._adjust_time(5)

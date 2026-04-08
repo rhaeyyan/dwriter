@@ -114,7 +114,7 @@ def search(
         for entry, score in matched_entries:
             from ..ui_utils import format_entry_datetime
 
-            date_str, time_str = format_entry_datetime(entry)
+            date_str, time_str = format_entry_datetime(entry, ctx.config)
             score_str = format_score(score)
             tags_str = ""
             if entry.tag_names:

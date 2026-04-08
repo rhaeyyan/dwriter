@@ -8,6 +8,7 @@ from .delete import delete
 from .edit import edit
 from .examples import examples
 from .help import help_cmd
+from .notifications import install_notifications, uninstall_notifications
 from .review import review
 from .search import search
 from .standup import standup
@@ -27,6 +28,7 @@ __all__ = [
     "edit",
     "examples",
     "help_cmd",
+    "install_notifications",
     "review",
     "remind",
     "search",
@@ -37,4 +39,5 @@ __all__ = [
     "today",
     "todo",
     "undo",
+    "uninstall_notifications",
 ]

@@ -56,10 +56,14 @@ class DisplayConfig:
         ergonomic_mode: Whether to use spacious ergonomic layout.
         date_format: Date display format string.
         lock_mode: Whether to disable editing of date and time fields.
-        color_scheme: Color blindness color scheme (normal, deuteranopia, protanopia, tritanopia).
-        notifications_enabled: Whether to enable system desktop notifications for reminders.
-        due_date_format: Format for displaying due dates (relative, YYYY-MM-DD, MM/DD/YYYY, DD/MM/YYYY).
+        color_scheme: Color blindness color scheme (normal, deuteranopia,
+            protanopia, tritanopia).
+        notifications_enabled: Whether to enable system desktop notifications
+            for reminders.
+        due_date_format: Format for displaying due dates (relative, YYYY-MM-DD,
+            MM/DD/YYYY, DD/MM/YYYY).
         todo_sorting_mode: Urgency hierarchy (priority_first, date_first).
+        permanent_omnibox: Whether to keep the omnibox visible at all times.
     """
 
     show_confirmation: bool = True
@@ -75,6 +79,7 @@ class DisplayConfig:
     notifications_enabled: bool = False
     due_date_format: str = "relative"
     todo_sorting_mode: str = "priority_first"
+    permanent_omnibox: bool = True
 
 
 @dataclass
@@ -250,7 +255,10 @@ class ConfigManager:
                 color_scheme=display_data.get("color_scheme", "normal"),
                 notifications_enabled=display_data.get("notifications_enabled", False),
                 due_date_format=display_data.get("due_date_format", "relative"),
-                todo_sorting_mode=display_data.get("todo_sorting_mode", "priority_first"),
+                todo_sorting_mode=display_data.get(
+                    "todo_sorting_mode", "priority_first"
+                ),
+                permanent_omnibox=display_data.get("permanent_omnibox", True),
             ),
             defaults=DefaultsConfig(
                 tags=defaults_data.get("tags", []),
@@ -324,6 +332,7 @@ class ConfigManager:
         )
         display_table["due_date_format"] = self._config.display.due_date_format
         display_table["todo_sorting_mode"] = self._config.display.todo_sorting_mode
+        display_table["permanent_omnibox"] = self._config.display.permanent_omnibox
         doc.add("display", display_table)
 
         defaults_table = tomlkit.table()
@@ -410,6 +419,7 @@ class ConfigManager:
                 "notifications_enabled": config.display.notifications_enabled,
                 "due_date_format": config.display.due_date_format,
                 "todo_sorting_mode": config.display.todo_sorting_mode,
+                "permanent_omnibox": config.display.permanent_omnibox,
             },
             "defaults": {
                 "tags": config.defaults.tags,
