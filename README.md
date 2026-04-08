@@ -1,5 +1,5 @@
 # dwriter 📝
-Experimental beta: v4.1.0
+Experimental beta: v4.2.0
 ### *The minimalist journal for those who live in the terminal powered by llama 3.1:8b.*
 
 **dwriter** is a high-signal, low-friction journaling tool designed to capture your work without breaking your flow. It bridges the gap between the raw speed of a command-line interface and the visual clarity of a modern dashboard.
@@ -79,7 +79,7 @@ Navigate between screens using the tab bar:
 - **🔍 Search/Edit:** Live-filtering fuzzy search across all your history.
 - **📈 Weekly Pulse:** Behavioral analytics updated every 24 hours.
 
-**Observability:** The TUI now features a persistent **Status Bar** that displays your current active Git branch and real-time background task monitoring (`[🧠 Processing...]`).
+**Observability:** The TUI features a persistent **Status Bar** that displays your current active Git branch and real-time **Background Sync** monitoring (`[✅ Synced]`, `[🧠 Syncing...]`).
 
 **dwriter** operates in two modes: the **Fast Command-Line** (for speed) and the **Visual Dashboard** (for depth).
 
@@ -108,10 +108,10 @@ dwriter today --json
 
 ### 🏃 Frictionless Capture (The "Keys-Down" Loop)
 - **Instant Entry:** `dwriter add "Idea: build a moisture sensor for the garden #someday"`
-- **Git Integration:** When running inside a Git repo, `dwriter add` automatically appends the repo name as a project tag and your current branch as a metadata tag.
-- **Priority & Deadlines:** Use `!priority` (`!urgent`, `!high`) and `@due:date` (`@due:friday`) directly in your text.
+- **Workspace Awareness:** Inside a Git repo, `dwriter add` automatically appends branch and repository tags. Use a `.dwriter-ignore` file to disable this in specific projects.
+- **Ghost Text Suggestions:** As you type in the TUI, AI suggests tags and projects in dim "ghost text." Press `Tab` to selectively accept suggestions or `Ctrl+A` for all.
 - **Zero Double-Entry:** Use `dwriter done <id>` to complete a task; it's automatically moved to your journal.
-- **Instant Signal:** Run `dwriter stats` for a beautiful text-based productivity report.
+- **Auto-Sync:** Changes are automatically pulled on startup and pushed to your remote 10 seconds after your last edit.
 
 ### 🎨 Creative Organization & Retrieval
 - **Total Freedom:** Use `#tags` and `&projects` however you like (e.g., `#draft`, `&home:renovation`).
