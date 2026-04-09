@@ -3,17 +3,16 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from ..cli import AppContext
     from ..database import Entry
 
-from .engine import get_embedding, get_semantic_recommendation
-
-
 import instructor
 import openai
+
+from .engine import get_embedding, get_semantic_recommendation
 
 
 def process_proactive_tagging(ctx: AppContext, entry: Entry) -> None:
@@ -42,7 +41,7 @@ def process_proactive_tagging(ctx: AppContext, entry: Entry) -> None:
         # 2. Search for similar entries
         similar_entries = ctx.db.search_similar_entries(embedding, limit=5)
         similar_entries = [e for e in similar_entries if e.id != entry.id]
-        
+
         if not similar_entries:
             return
 
@@ -82,7 +81,7 @@ def _trigger_tui_recommendation(ctx: AppContext, entry: Entry, recommendation: A
         if hasattr(module, "DWriterApp"):
             # This is not quite right, we need the INSTANCE.
             pass
-    
+
     # Better: AppContext could store a reference to the app.
     if hasattr(ctx, "app") and ctx.app:
         from .messages import SemanticRecommendationReady

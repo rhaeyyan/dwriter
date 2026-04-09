@@ -457,6 +457,43 @@ class AnalyticsEngine:
             )
             return {domain: round(float(avg), 1) for domain, avg in stats if domain}
 
+    def get_streak_info(self) -> tuple[int, int, int]:
+        """Calculates current streak, longest streak, and total entry count.
+
+        Returns:
+            tuple[int, int, int]: (current_streak, longest_streak, total_entries).
+        """
+        total_entries = 0
+        current_streak = 0
+        longest_streak = 0
+
+        with self.db.Session() as session:
+            total_entries = session.query(func.count(Entry.id)).scalar() or 0
+
+            dates_raw = (
+                session.query(func.distinct(func.date(Entry.created_at)))
+                .order_by(func.date(Entry.created_at))
+                .all()
+            )
+            dates = sorted([datetime.strptime(r[0], "%Y-%m-%d").date() for r in dates_raw if r[0]])
+
+            if dates:
+                cs = 1
+                ls = 1
+                for i in range(1, len(dates)):
+                    if (dates[i] - dates[i - 1]).days == 1:
+                        cs += 1
+                        ls = max(ls, cs)
+                    else:
+                        cs = 1
+                if (datetime.now().date() - dates[-1]).days > 1:
+                    current_streak = 0
+                else:
+                    current_streak = cs
+                longest_streak = ls
+
+        return current_streak, longest_streak, total_entries
+
 class InsightGenerator:
     """Generates prescriptive advice based on analytics data."""
 
@@ -495,11 +532,11 @@ class InsightGenerator:
         burnout = self.engine.get_rolling_burnout_score(days=7)
         if burnout > 0.7:
             raw_insights.append(
-                "⚠️ [bold #f38ba8]Burnout Warning:[/] [n]You've been burning the candle at both ends. Try to sign off earlier tonight.[/]"
+                "⚠️ [bold #f38ba8]Burnout Warning:[/] [#cdd6f4]You've been burning the candle at both ends. Try to sign off earlier tonight.[/]"
             )
         elif burnout > 0.4:
             raw_insights.append(
-                "⏱️ [bold #f9e2af]Watch Your Pace:[/] [n]Late-night sessions are adding up. Consider grouping tasks to finish faster.[/]"
+                "⏱️ [bold #f9e2af]Watch Your Pace:[/] [#cdd6f4]Late-night sessions are adding up. Consider grouping tasks to finish faster.[/]"
             )
 
         # 2. Workload / Say-Do Ratio
@@ -508,18 +545,18 @@ class InsightGenerator:
             completion_rate = done / added
             if completion_rate >= 0.8:
                 raw_insights.append(
-                    f"⚖️ [bold #a6e3a1]Great Follow-through![/] [n]You finished {done} out of {added} tasks. Keep this momentum going![/]"
+                    f"⚖️ [bold #a6e3a1]Great Follow-through![/] [#cdd6f4]You finished {done} out of {added} tasks. Keep this momentum going![/]"
                 )
             elif completion_rate < 0.4:
                 raw_insights.append(
-                    f"📦 [bold #f9e2af]Backlog Alert:[/] [n]You added {added} tasks but only finished {done}. Maybe it's time to say 'no' to something new?[/]"
+                    f"📦 [bold #f9e2af]Backlog Alert:[/] [#cdd6f4]You added {added} tasks but only finished {done}. Maybe it's time to say 'no' to something new?[/]"
                 )
 
         # 3. Context switching check
         switches = self.engine.get_context_switches(days=7)
         if switches > 4.0:
             raw_insights.append(
-                f"🔄 [bold #f9e2af]Context Switcher:[/] [n]You're juggling {switches:.1f} projects a day. Try focusing on just one for a few hours.[/]"
+                f"🔄 [bold #f9e2af]Context Switcher:[/] [#cdd6f4]You're juggling {switches:.1f} projects a day. Try focusing on just one for a few hours.[/]"
             )
 
         # 4. Friction Ratio (Project ROI)
@@ -528,7 +565,7 @@ class InsightGenerator:
             highest_friction_proj, ratio, entries, todos = roi_data[0]
             if ratio > 3.0 and entries > 5:
                 raw_insights.append(
-                    f"🚧 [bold #fab387]Project Friction: &{highest_friction_proj}[/]. [n]Lots of notes ({entries}) but few tasks completed ({todos}). Try breaking this down into smaller steps.[/]"
+                    f"🚧 [bold #fab387]Project Friction: &{highest_friction_proj}[/]. [#cdd6f4]Lots of notes ({entries}) but few tasks completed ({todos}). Try breaking this down into smaller steps.[/]"
                 )
 
         # 5. Backlog check
@@ -536,18 +573,18 @@ class InsightGenerator:
         total_pending = fresh + stale + dead
         if total_pending > 0 and (dead / total_pending) > 0.3:
             raw_insights.append(
-                f"🧹 [bold #f38ba8]Staleness Alert:[/] [n]{dead} tasks have gone cold. Consider a cleanup or a fresh start on them.[/]"
+                f"🧹 [bold #f38ba8]Staleness Alert:[/] [#cdd6f4]{dead} tasks have gone cold. Consider a cleanup or a fresh start on them.[/]"
             )
 
         # 6. Deep work check
         deep_count, shallow_count, deep_ratio = self.engine.get_deep_work_ratio(days=7)
         if deep_ratio < 20.0 and (deep_count + shallow_count) > 5:
             raw_insights.append(
-                "🧘 [bold #a6e3a1]Focus Time Needed:[/] [n]Admin tasks are taking over. Schedule a deep-work session today.[/]"
+                "🧘 [bold #a6e3a1]Focus Time Needed:[/] [#cdd6f4]Admin tasks are taking over. Schedule a deep-work session today.[/]"
             )
         elif deep_ratio > 50.0:
             raw_insights.append(
-                "🔥 [bold #a6e3a1]High Focus:[/] [n]You are dedicating a significant portion of your time to deep work sessions.[/]"
+                "🔥 [bold #a6e3a1]High Focus:[/] [#cdd6f4]You are dedicating a significant portion of your time to deep work sessions.[/]"
             )
 
         # Tag growth insights
@@ -556,13 +593,13 @@ class InsightGenerator:
             top_tags = [f"#{t[0]}({t[1]})" for t in tag_velocity[:3]]
             tags_str = ", ".join(top_tags)
             raw_insights.append(
-                f"🏷️ [bold #89b4fa]Active Focus:[/] [n]Recent activity is concentrated in {tags_str}.[/]"
+                f"🏷️ [bold #89b4fa]Active Focus:[/] [#cdd6f4]Recent activity is concentrated in {tags_str}.[/]"
             )
 
         # Default summary if no specific alerts
         if not raw_insights:
             raw_insights.append(
-                "✨ [bold #a6e3a1]Current Status:[/] [n]Your workload distribution appears consistent across active projects.[/]"
+                "✨ [bold #a6e3a1]Current Status:[/] [#cdd6f4]Your workload distribution appears consistent across active projects.[/]"
             )
 
         # Apply colorization to all insights

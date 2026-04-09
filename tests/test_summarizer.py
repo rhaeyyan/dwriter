@@ -221,7 +221,7 @@ class TestCompressWeek:
         )
         mock_summarize.return_value = mock_summary
 
-        config = AIConfig(enabled=True, model="llama3.1")
+        config = AIConfig(enabled=True, chat_model="gemma4:e4b", daemon_model="gemma4:e2b")
         start = datetime(2026, 3, 30)
         end = datetime(2026, 4, 5, 23, 59, 59)
 
@@ -257,7 +257,7 @@ class TestCompressWeek:
         # Mocking 3 calls: Part 1, Part 2, then the final Merge
         mock_summarize.return_value = mock_summary
 
-        config = AIConfig(enabled=True, model="llama3.1")
+        config = AIConfig(enabled=True, chat_model="gemma4:e4b", daemon_model="gemma4:e2b")
         start = datetime(2026, 3, 30)
         end = datetime(2026, 4, 5, 23, 59, 59)
 

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 import pyperclip
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Container, Horizontal, Vertical
+from textual.containers import Container, Horizontal
 from textual.screen import ModalScreen
 from textual.widgets import (
     Button,
@@ -132,8 +132,8 @@ class FilterSelectionScreen(ModalScreen[tuple[list[str], list[str]] | None]):
 
     def compose(self) -> ComposeResult:
         with Container(id="filter-container"):
-            yield Label("Exclude from Period Review", id="filter-title")
-            yield Label("Items entered below will be HIDDEN from the report.", id="filter-hint")
+            yield Label("Exclude from Report", id="filter-title")
+            yield Label("Items entered below will be HIDDEN from standups and reviews.", id="filter-hint")
             
             with Horizontal(classes="filter-row"):
                 yield Label("Projects:", classes="filter-label")
@@ -194,7 +194,6 @@ class StandupScreen(ModalScreen[None]):
     #daily-format { width: 25; }
     #weekly-period { width: 20; }
     #weekly-format { width: 20; }
-    #btn-filter { margin: 1 2 0 2; height: auto; }
 
     #daily-editor, #weekly-editor { height: 1fr; border: solid $success; background: #0d0f18; }
     #weekly-summary { height: 1; margin-top: 1; color: $text-muted; text-style: bold; content-align: center middle; }
@@ -219,8 +218,8 @@ class StandupScreen(ModalScreen[None]):
         self.daily_include_todos = True
         self.weekly_days = 7
         self.weekly_range: tuple[datetime, datetime] | None = None
-        self.weekly_exclude_projects: list[str] = []
-        self.weekly_exclude_tags: list[str] = []
+        self.exclude_projects: list[str] = []
+        self.exclude_tags: list[str] = []
 
     def compose(self) -> ComposeResult:
         use_emojis = self.ctx.config.display.use_emojis
@@ -272,7 +271,6 @@ class StandupScreen(ModalScreen[None]):
                             id="weekly-period",
                             allow_blank=False,
                         )
-                        yield Button(f"{get_icon('search', use_emojis)} Filter", id="btn-filter", variant="default")
                         yield Static(classes="spacer")
                         yield Label("Format: ", classes="control-label")
                         yield Select(
@@ -296,6 +294,7 @@ class StandupScreen(ModalScreen[None]):
                     )
 
             with Horizontal(id="unified-footer"):
+                yield Button(f"\\[ {get_icon('search', use_emojis)} FILTER ]", id="btn-filter", variant="default")
                 yield Button(f"\\[ {get_icon('check', use_emojis)} TODOS (^T) ]", id="btn-todos")
                 yield Button(f"\\[ {get_icon('copy', use_emojis)} COPY ]", id="btn-copy", variant="success")
                 yield Button(f"\\[ {get_icon('export', use_emojis)} EXPORT ]", id="btn-save", variant="primary")
@@ -364,25 +363,26 @@ class StandupScreen(ModalScreen[None]):
             self.action_open_filters()
 
     def action_open_filters(self) -> None:
-        """Open the filter selection dialog for Period Review."""
+        """Open the filter selection dialog for Standup and Review."""
         projects = self.ctx.db.get_unique_projects()
         tags = self.ctx.db.get_unique_tags()
         
         def on_filters_selected(result: tuple[list[str], list[str]] | None) -> None:
             if result is not None:
-                self.weekly_exclude_projects, self.weekly_exclude_tags = result
+                self.exclude_projects, self.exclude_tags = result
+                self._generate_daily_report()
                 self._generate_weekly_report()
                 
                 btn = self.query_one("#btn-filter", Button)
-                if self.weekly_exclude_projects or self.weekly_exclude_tags:
+                if self.exclude_projects or self.exclude_tags:
                     btn.variant = "warning"
-                    self.notify("Exclusion filters applied to Period Review.")
+                    self.notify("Exclusion filters applied.")
                 else:
                     btn.variant = "default"
                     self.notify("Filters cleared.")
         
         self.app.push_screen(
-            FilterSelectionScreen(projects, tags, self.weekly_exclude_projects, self.weekly_exclude_tags), 
+            FilterSelectionScreen(projects, tags, self.exclude_projects, self.exclude_tags), 
             on_filters_selected
         )
 
@@ -472,7 +472,7 @@ class StandupScreen(ModalScreen[None]):
                     )
                 
                 # Add filter info to filename if applicable
-                if self.weekly_exclude_projects or self.weekly_exclude_tags:
+                if self.exclude_projects or self.exclude_tags:
                     base_name += "-filtered"
 
             if format == "markdown":
@@ -523,23 +523,23 @@ class StandupScreen(ModalScreen[None]):
 
         if active_pane == "daily-tab":
             target_d = self.daily_date.date()
-            entries = [
-                e
-                for e in self.ctx.db.get_all_entries()
-                if e.created_at.date() == target_d
-            ]
+            start_date = datetime.combine(target_d, time.min)
+            end_date = datetime.combine(target_d, time.max)
+            entries = self.ctx.db.get_entries_in_range(
+                start_date, end_date, exclude_projects=self.exclude_projects, exclude_tags=self.exclude_tags
+            )
         else:
             if self.weekly_range:
                 start_date = self.weekly_range[0]
                 end_date = self.weekly_range[1]
                 entries = self.ctx.db.get_entries_in_range(
-                    start_date, end_date, exclude_projects=self.weekly_exclude_projects, exclude_tags=self.weekly_exclude_tags
+                    start_date, end_date, exclude_projects=self.exclude_projects, exclude_tags=self.exclude_tags
                 )
             else:
                 start_date = datetime.now() - timedelta(days=self.weekly_days)
                 end_date = datetime.now()
                 entries = self.ctx.db.get_entries_in_range(
-                    start_date, end_date, exclude_projects=self.weekly_exclude_projects, exclude_tags=self.weekly_exclude_tags
+                    start_date, end_date, exclude_projects=self.exclude_projects, exclude_tags=self.exclude_tags
                 )
             entries.sort(key=lambda x: x.created_at, reverse=True)
 
@@ -584,23 +584,23 @@ class StandupScreen(ModalScreen[None]):
 
         if active_pane == "daily-tab":
             target_d = self.daily_date.date()
-            entries = [
-                e
-                for e in self.ctx.db.get_all_entries()
-                if e.created_at.date() == target_d
-            ]
+            start_date = datetime.combine(target_d, time.min)
+            end_date = datetime.combine(target_d, time.max)
+            entries = self.ctx.db.get_entries_in_range(
+                start_date, end_date, exclude_projects=self.exclude_projects, exclude_tags=self.exclude_tags
+            )
         else:
             if self.weekly_range:
                 start_date = self.weekly_range[0]
                 end_date = self.weekly_range[1]
                 entries = self.ctx.db.get_entries_in_range(
-                    start_date, end_date, exclude_projects=self.weekly_exclude_projects, exclude_tags=self.weekly_exclude_tags
+                    start_date, end_date, exclude_projects=self.exclude_projects, exclude_tags=self.exclude_tags
                 )
             else:
                 start_date = datetime.now() - timedelta(days=self.weekly_days)
                 end_date = datetime.now()
                 entries = self.ctx.db.get_entries_in_range(
-                    start_date, end_date, exclude_projects=self.weekly_exclude_projects, exclude_tags=self.weekly_exclude_tags
+                    start_date, end_date, exclude_projects=self.exclude_projects, exclude_tags=self.exclude_tags
                 )
             entries.sort(key=lambda x: x.created_at, reverse=True)
 
@@ -644,16 +644,32 @@ class StandupScreen(ModalScreen[None]):
     def _generate_daily_report(self) -> None:
         try:
             target_d = self.daily_date.date()
-            all_entries = self.ctx.db.get_all_entries()
-            entries = [e for e in all_entries if e.created_at.date() == target_d]
+            start_date = datetime.combine(target_d, time.min)
+            end_date = datetime.combine(target_d, time.max)
+
+            entries = self.ctx.db.get_entries_in_range(
+                start_date, end_date, exclude_projects=self.exclude_projects, exclude_tags=self.exclude_tags
+            )
+            
+            today = datetime.now().date()
+            tomorrow = today + timedelta(days=1)
+            
             pending_todos = [
-                t for t in self.ctx.db.get_all_todos() if t.status == "pending"
+                t for t in self.ctx.db.get_all_todos() 
+                if t.status == "pending" and t.due_date and (t.due_date.date() == today or t.due_date.date() == tomorrow)
             ]
             format_val = self.query_one("#daily-format", Select).value
 
             lines = []
             if format_val == "markdown":
                 lines.append(f"### Standup: {self.daily_date.strftime('%Y-%m-%d')}")
+                
+                if self.exclude_projects or self.exclude_tags:
+                    filter_line = "Excluding: "
+                    if self.exclude_projects: filter_line += f"{' '.join(f'&{p}' for p in self.exclude_projects)} "
+                    if self.exclude_tags: filter_line += f"{' '.join(f'#{t}' for t in self.exclude_tags)}"
+                    lines.append(f"*{filter_line}*\n")
+                
                 lines.append("\n**What I did:**")
                 if not entries:
                     lines.append("- No entries logged.")
@@ -670,12 +686,17 @@ class StandupScreen(ModalScreen[None]):
                     lines.append("\n**Plan for today:**")
                     if not pending_todos:
                         lines.append("- Clear schedule.")
-                    for t in pending_todos[:5]:
+                    for t in pending_todos:
                         clean_content = t.content.lstrip("✅⏱️ ")
                         lines.append(f"- [ ] {clean_content}")
 
             elif format_val == "plain-txt":
                 lines.append(f"Standup: {self.daily_date.strftime('%Y-%m-%d')}")
+                
+                if self.exclude_projects or self.exclude_tags:
+                    f_str = f"Excluding: {' '.join(self.exclude_projects)} {' '.join(self.exclude_tags)}"
+                    lines.append(f_str)
+                
                 lines.append("\nCompleted:")
                 if not entries:
                     lines.append("  Nothing logged.")
@@ -692,12 +713,17 @@ class StandupScreen(ModalScreen[None]):
                     )
                 if self.daily_include_todos:
                     lines.append("\nPlan for today:")
-                    for t in pending_todos[:5]:
+                    for t in pending_todos:
                         clean_content = t.content.lstrip("✅⏱️ ")
                         lines.append(f"  - {clean_content}")
 
             elif format_val == "slack":
                 lines.append(f"*Update ({self.daily_date.strftime('%m/%d')})*")
+                
+                if self.exclude_projects or self.exclude_tags:
+                    f_str = f"_Excluding: {' '.join(self.exclude_projects)} {' '.join(self.exclude_tags)}_"
+                    lines.append(f_str)
+                
                 lines.append("\n*Completed:*")
                 if not entries:
                     lines.append("• Nothing logged.")
@@ -712,12 +738,17 @@ class StandupScreen(ModalScreen[None]):
                     lines.append(f"• {time_prefix}{clean_content}{p_str}{t_str}")
                 if self.daily_include_todos:
                     lines.append("\n*Today:*")
-                    for t in pending_todos[:5]:
+                    for t in pending_todos:
                         clean_content = t.content.lstrip("✅⏱️ ")
                         lines.append(f"• {clean_content}")
 
             elif format_val == "jira":
                 lines.append(f"h3. Standup: {self.daily_date.strftime('%Y-%m-%d')}")
+                
+                if self.exclude_projects or self.exclude_tags:
+                    f_str = f"Excluding: {' '.join(self.exclude_projects)} {' '.join(self.exclude_tags)}"
+                    lines.append(f"{f_str}")
+                
                 lines.append("\nh4. What I did:")
                 if not entries:
                     lines.append("* No entries logged.")
@@ -736,7 +767,7 @@ class StandupScreen(ModalScreen[None]):
                     lines.append("\nh4. Plan for today:")
                     if not pending_todos:
                         lines.append("* Clear schedule.")
-                    for t in pending_todos[:5]:
+                    for t in pending_todos:
                         clean_content = t.content.lstrip("✅⏱️ ")
                         lines.append(f"* {clean_content}")
 
@@ -756,17 +787,18 @@ class StandupScreen(ModalScreen[None]):
     def _generate_weekly_report(self) -> None:
         try:
             if self.weekly_range:
-                start_date = self.weekly_range[0]
-                end_date = self.weekly_range[1]
+                start_date = datetime.combine(self.weekly_range[0].date(), time.min)
+                end_date = datetime.combine(self.weekly_range[1].date(), time.max)
                 entries = self.ctx.db.get_entries_in_range(
-                    start_date, end_date, exclude_projects=self.weekly_exclude_projects, exclude_tags=self.weekly_exclude_tags
+                    start_date, end_date, exclude_projects=self.exclude_projects, exclude_tags=self.exclude_tags
                 )
             else:
                 now = datetime.now()
-                start_date = now - timedelta(days=self.weekly_days)
-                end_date = now
+                # From beginning of N days ago to end of today
+                start_date = datetime.combine((now - timedelta(days=self.weekly_days)).date(), time.min)
+                end_date = datetime.combine(now.date(), time.max)
                 entries = self.ctx.db.get_entries_in_range(
-                    start_date, end_date, exclude_projects=self.weekly_exclude_projects, exclude_tags=self.weekly_exclude_tags
+                    start_date, end_date, exclude_projects=self.exclude_projects, exclude_tags=self.exclude_tags
                 )
             
             entries.sort(key=lambda x: x.created_at, reverse=True)
@@ -806,10 +838,10 @@ class StandupScreen(ModalScreen[None]):
                 else:
                     lines.append(f"# Review: Last {self.weekly_days} Days")
                 
-                if self.weekly_exclude_projects or self.weekly_exclude_tags:
+                if self.exclude_projects or self.exclude_tags:
                     filter_line = "Excluding: "
-                    if self.weekly_exclude_projects: filter_line += f"{' '.join(f'&{p}' for p in self.weekly_exclude_projects)} "
-                    if self.weekly_exclude_tags: filter_line += f"{' '.join(f'#{t}' for t in self.weekly_exclude_tags)}"
+                    if self.exclude_projects: filter_line += f"{' '.join(f'&{p}' for p in self.exclude_projects)} "
+                    if self.exclude_tags: filter_line += f"{' '.join(f'#{t}' for t in self.exclude_tags)}"
                     lines.append(f"*{filter_line}*\n")
                 else:
                     lines.append("")
@@ -836,8 +868,8 @@ class StandupScreen(ModalScreen[None]):
                 else:
                     lines.append(f"Review: Last {self.weekly_days} Days")
                 
-                if self.weekly_exclude_projects or self.weekly_exclude_tags:
-                    f_str = f"Excluding: {' '.join(self.weekly_exclude_projects)} {' '.join(self.weekly_exclude_tags)}"
+                if self.exclude_projects or self.exclude_tags:
+                    f_str = f"Excluding: {' '.join(self.exclude_projects)} {' '.join(self.exclude_tags)}"
                     lines.append(f_str)
                 
                 lines.append("-" * 40)
@@ -864,8 +896,8 @@ class StandupScreen(ModalScreen[None]):
                 else:
                     lines.append(f"*Review: Last {self.weekly_days} Days*")
                 
-                if self.weekly_exclude_projects or self.weekly_exclude_tags:
-                    f_str = f"_Excluding: {' '.join(self.weekly_exclude_projects)} {' '.join(self.weekly_exclude_tags)}_"
+                if self.exclude_projects or self.exclude_tags:
+                    f_str = f"_Excluding: {' '.join(self.exclude_projects)} {' '.join(self.exclude_tags)}_"
                     lines.append(f_str)
 
                 lines.append("")
@@ -893,8 +925,8 @@ class StandupScreen(ModalScreen[None]):
                 else:
                     lines.append(f"h1. Review: Last {self.weekly_days} Days\n")
                 
-                if self.weekly_exclude_projects or self.weekly_exclude_tags:
-                    f_str = f"{{color:gray}}Excluding: {' '.join(self.weekly_exclude_projects)} {' '.join(self.weekly_exclude_tags)}{{color}}"
+                if self.exclude_projects or self.exclude_tags:
+                    f_str = f"{{color:gray}}Excluding: {' '.join(self.exclude_projects)} {' '.join(self.exclude_tags)}{{color}}"
                     lines.append(f"{f_str}\n")
 
                 if not grouped:

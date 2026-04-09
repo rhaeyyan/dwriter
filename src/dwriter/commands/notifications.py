@@ -225,7 +225,7 @@ def uninstall_notifications(ctx: AppContext) -> None:
     console.print("[green]✔[/green] Notifications daemon removed.")
 
 
-def _show_non_linux_instructions(console: "click.utils._DefaultTextStderr | object") -> None:  # type: ignore[name-defined]
+def _show_non_linux_instructions(console: click.utils._DefaultTextStderr | object) -> None:  # type: ignore[name-defined]
     """Print setup instructions for non-Linux platforms."""
     import click as _click  # local to avoid circular issues
 

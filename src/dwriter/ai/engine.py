@@ -11,48 +11,64 @@ from typing import Any
 import instructor
 from openai import OpenAI
 
-from dwriter.ai.tools import fetch_recent_commits, search_journal, search_todos
+from dwriter.ai.tools import (
+    fetch_recent_commits,
+    get_daily_standup,
+    search_journal,
+    search_todos,
+)
 from dwriter.config import AIConfig
 from dwriter.tui.messages import AIToolEvent
 
 AVAILABLE_TOOLS = {
+    "get_daily_standup": get_daily_standup,
     "search_journal": search_journal,
     "search_todos": search_todos,
     "fetch_recent_commits": fetch_recent_commits,
 }
 
 
-def _sanitize_agent_output(text: str | None) -> str:
-    """Strips hallucinated tool-call syntax leaked by local models."""
+def _sanitize_agent_output(text: str) -> str:
     if not text:
         return ""
 
-    # Strip stray Llama 3 XML tool tags
-    clean_text = re.sub(r"<tool_call>.*?</tool_call>", "", text, flags=re.DOTALL)
+    # 1. Strip Llama 3 special control tokens
+    clean_text = re.sub(r'<\|.*?\|>', '', text)
+    clean_text = re.sub(r'<tool_call>.*?</tool_call>', '', clean_text, flags=re.DOTALL)
 
-    # Strip hallucinated markdown JSON tool calls
-    # We look for JSON blocks that contain "name" and "arguments" or typical tool signatures
+    # 2. Strip hallucinated JSON blocks
     clean_text = re.sub(
-        r"```(?:json)?\s*{\s*\"name\":\s*\"[^\"]+\".*?}\s*```",
-        "",
-        clean_text,
-        flags=re.DOTALL | re.IGNORECASE,
+        r'```(?:json)?\s*{\s*"(?:name|arguments|parameters)":.*?}\s*```', 
+        '', clean_text, flags=re.DOTALL | re.IGNORECASE
+    )
+    clean_text = re.sub(
+        r'{\s*"(?:name|arguments|parameters)":\s*".*?}.*?}', 
+        '', clean_text, flags=re.DOTALL | re.IGNORECASE
     )
 
-    # Also strip raw JSON-like structures that look exactly like tool calls
+    # 2.5 Strip common LLM preambles/postambles surrounding tool calls
     clean_text = re.sub(
-        r"{\s*\"name\":\s*\"[^\"]+\",\s*\"arguments\":\s*\{.*?\}.*?}",
-        "",
-        clean_text,
-        flags=re.DOTALL | re.IGNORECASE,
+        r"(?im)^(?:here is|here's)\s+(?:the\s+|a\s+)?(?:json|function call|tool call|function|tool).*?$", 
+        '', clean_text
     )
+    clean_text = re.sub(r'(?im)^\(note:.*?\)$', '', clean_text)
+
+    # 3. Aggressive Markdown Closing (fixes Textual/Rich crashes)
+    # Fix unclosed backticks
+    if clean_text.count('`') % 2 != 0:
+        clean_text += '`'
+
+    # Fix unclosed bold/italic markers
+    for marker in ['**', '__', '*', '_']:
+        if clean_text.count(marker) % 2 != 0:
+            clean_text += marker
 
     return clean_text.strip()
 
 
-def ask_second_brain_agentic(
+    def ask_second_brain_agentic(
     prompt: str, config: AIConfig, context_data: str = "", app_context: Any = None
-) -> str:
+    ) -> str:
     """Conversational AI with tool-calling capabilities (ReAct loop).
 
     Args:
@@ -70,10 +86,20 @@ def ask_second_brain_agentic(
         {
             "role": "system",
             "content": (
-                "You are dwriter 2nd-Brain, a productivity assistant. "
-                "Use the provided context and tools to answer user questions. "
-                "You can search journal entries, todos, and git commits. "
-                f"\n\nSTATIC CONTEXT:\n{context_data}"
+                "You are dwriter 2nd-Brain, a professional productivity assistant. "
+                "Your goal is to help the user reflect on their work and plan ahead. "
+                "\n\nOUTPUT RULES:\n"
+                "1. BE CONCISE. Avoid long preambles or repeating global state "
+                "(like full TODO lists) unless explicitly asked.\n"
+                "2. ALWAYS provide a natural language response. NEVER output raw "
+                "JSON tool calls to the user.\n"
+                "3. If the user asks for a 'standup' or 'report', use the "
+                "'get_daily_standup' tool to fetch a formatted report.\n"
+                "4. Use Markdown for formatting. Use emojis to keep it engaging "
+                "but professional.\n"
+                "5. You have access to tools to search journal entries, todos, "
+                "and git commits. Use them to provide grounded, data-driven answers."
+                f"\n\nSTATIC CONTEXT (PAST 72H & RECENT SUMMARIES):\n{context_data}"
             ),
         },
         {"role": "user", "content": prompt},
@@ -83,22 +109,26 @@ def ask_second_brain_agentic(
         {
             "type": "function",
             "function": {
-                "name": "search_journal",
-                "description": "Searches journal entries for notes and thoughts.",
+                "name": "get_daily_standup",
+                "description": (
+                    "Generates a formatted Daily Standup report for a specific "
+                    "date (default is yesterday)."
+                ),
                 "parameters": {
                     "type": "object",
                     "properties": {
-                        "query": {"type": "string", "description": "The search query"},
+                        "date_str": {
+                            "type": "string", 
+                            "description": "The date in YYYY-MM-DD format. Default is yesterday."
+                        },
                         "project": {
                             "type": "string",
                             "description": "Optional project filter (&name)",
                         },
                     },
-                    "required": ["query"],
                 },
             },
-        },
-        {
+        },        {
             "type": "function",
             "function": {
                 "name": "search_todos",
@@ -134,15 +164,22 @@ def ask_second_brain_agentic(
         },
     ]
 
+    full_response_parts = []
+
     while True:
         response = client.chat.completions.create(
-            model=config.model,
+            model=config.chat_model,
             messages=messages,  # type: ignore
             tools=tools,  # type: ignore
         )
 
         message = response.choices[0].message
         messages.append(message)  # type: ignore
+
+        if message.content:
+            sanitized = _sanitize_agent_output(message.content)
+            if sanitized:
+                full_response_parts.append(sanitized)
 
         if not message.tool_calls:
             break
@@ -176,7 +213,7 @@ def ask_second_brain_agentic(
                     }
                 )
 
-    return _sanitize_agent_output(message.content)
+    return "\n\n".join(full_response_parts)
 
 
 def get_ai_client(config: AIConfig) -> Any:
@@ -272,7 +309,7 @@ def get_semantic_recommendation(
     )
 
     return client.chat.completions.create(
-        model=config.model,
+        model=config.daemon_model,
         response_model=SemanticRecommendation,
         messages=[
             {"role": "system", "content": system_msg},

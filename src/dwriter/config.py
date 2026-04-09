@@ -146,7 +146,9 @@ class AIConfig:
     Attributes:
         enabled: Whether AI features are enabled.
         provider: AI provider (ollama, openai).
-        model: Model name.
+        model: Legacy model name (deprecated).
+        chat_model: Model name for the 2nd-Brain ReAct loop.
+        daemon_model: Model name for background Auto-Semantic Tagging.
         base_url: Base URL for the AI provider.
         features: Feature-specific settings.
         last_pulse_greeting: ISO timestamp of the last 7-day pulse greeting.
@@ -154,7 +156,9 @@ class AIConfig:
 
     enabled: bool = True
     provider: str = "ollama"
-    model: str = "llama3.1:8b"
+    model: str = "gemma4:e4b"
+    chat_model: str = "gemma4:e4b"
+    daemon_model: str = "gemma4:e2b"
     base_url: str = "http://localhost:11434/v1"
     features: AIFeaturesConfig = field(default_factory=AIFeaturesConfig)
     last_pulse_greeting: str | None = None
@@ -287,7 +291,9 @@ class ConfigManager:
             ai=AIConfig(
                 enabled=ai_data.get("enabled", True),
                 provider=ai_data.get("provider", "ollama"),
-                model=ai_data.get("model", "llama3.1:8b"),
+                model=ai_data.get("model", "gemma4:e4b"),
+                chat_model=ai_data.get("chat_model", "gemma4:e4b"),
+                daemon_model=ai_data.get("daemon_model", "gemma4:e2b"),
                 base_url=ai_data.get("base_url", "http://localhost:11434/v1"),
                 features=AIFeaturesConfig(
                     auto_tagging=ai_features_data.get("auto_tagging", False),
@@ -370,6 +376,8 @@ class ConfigManager:
         ai_table["enabled"] = self._config.ai.enabled
         ai_table["provider"] = self._config.ai.provider
         ai_table["model"] = self._config.ai.model
+        ai_table["chat_model"] = self._config.ai.chat_model
+        ai_table["daemon_model"] = self._config.ai.daemon_model
         ai_table["base_url"] = self._config.ai.base_url
         if self._config.ai.last_pulse_greeting:
             ai_table["last_pulse_greeting"] = self._config.ai.last_pulse_greeting
@@ -454,6 +462,8 @@ class ConfigManager:
                 "enabled": config.ai.enabled,
                 "provider": config.ai.provider,
                 "model": config.ai.model,
+                "chat_model": config.ai.chat_model,
+                "daemon_model": config.ai.daemon_model,
                 "base_url": config.ai.base_url,
                 "features": {
                     "auto_tagging": config.ai.features.auto_tagging,

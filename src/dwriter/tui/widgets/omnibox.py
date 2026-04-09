@@ -52,17 +52,17 @@ class Omnibox(Input):
         if event.key == "tab" and self.pending_tokens:
             # Accept the first pending token
             token = self.pending_tokens.pop(0)
-            
+
             # Append to current value with a space if needed
             current = self.value.rstrip()
             if current and not current.endswith((" ", "#", "&")):
                 self.value = f"{current} {token} "
             else:
                 self.value = f"{current}{token} "
-            
+
             # Update ghost text to show remaining tokens
             self.ghost_text = " ".join(self.pending_tokens)
-            
+
             # Prevent default Tab behavior (switching focus)
             event.prevent_default()
             event.stop()
@@ -75,11 +75,11 @@ class Omnibox(Input):
     def render_line(self, y: int) -> list[Segment]:
         """Override to render dim ghost text at the end of the input buffer."""
         segments = super().render_line(y)
-        
+
         # Only render ghost text on the line where the cursor/text is (y=0 for Input)
         if y == 0 and self.ghost_text and self.value:
             # Add a space before ghost text if the value doesn't end with one
             prefix = " " if not self.value.endswith(" ") else ""
             segments.append(Segment(f"{prefix}{self.ghost_text}", Style(color="#626262", italic=True)))
-            
+
         return segments

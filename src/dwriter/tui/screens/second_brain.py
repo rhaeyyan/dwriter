@@ -53,6 +53,7 @@ class UserChatMessage(ChatMessage):
     """
     def compose(self) -> ComposeResult:
         # Wrap self.content in escape() so users can't inject Rich markup
+        # For user chat, we just want standard wrapping but with a bit of padding/margin
         yield Static(f"[bold cyan]You:[/]\n{escape(self.content)}", classes="user-bubble")
 
 class AIChatMessage(ChatMessage):
@@ -74,6 +75,9 @@ class AIChatMessage(ChatMessage):
     }
     """
     def compose(self) -> ComposeResult:
+        # Textual handles wrapping inside Static, but we can't easily do hanging indent 
+        # for multiple lines of a single paragraph via CSS alone in Textual easily.
+        # However, we can use a small trick: if the AI response is a list, we indent.
         yield Static(f"[bold #cba6f7]2nd-Brain:[/]\n{self.content}", classes="ai-bubble")
 
 class SecondBrainScreen(Container):
@@ -456,10 +460,11 @@ class SecondBrainScreen(Container):
         
         # 7. Code blocks and inline code
         text = re.sub(r'```[\w]*\n?(.*?)\n?```', lambda m: f"[dim]{m.group(1)}[/dim]", text, flags=re.DOTALL)
-        text = re.sub(r'`(.*?)`', r'[reverse]\1[/reverse]', text)
+        text = re.sub(r'`(.*?)`', r'[#89b4fa]\1[/]', text)
         
         # 8. Neat Emoji Lists (ensure space after emoji bullet)
         # Matches emoji at start of line followed by optional space, ensures 2 spaces for "neat" alignment
-        text = re.sub(r'^([^\w\s\d\[\(])\s*', r'\1  ', text, flags=re.MULTILINE)
+        # `\\` prevents matching escape characters, avoiding unescaping `\[` which caused the MarkupError crash.
+        text = re.sub(r'^([^\w\s\d\[\(\\])\s*', r'\1  ', text, flags=re.MULTILINE)
 
         return text

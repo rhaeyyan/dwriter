@@ -5,6 +5,7 @@ structured user intents and parameters extracted from natural language.
 """
 
 from datetime import datetime
+
 from pydantic import BaseModel, Field
 
 

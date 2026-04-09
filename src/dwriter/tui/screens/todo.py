@@ -30,10 +30,6 @@ from textual.widgets import (
 
 from ...database import Todo
 from ..colors import (
-    DUE_OVERDUE,
-    DUE_SOON,
-    DUE_TODAY,
-    DUE_TOMORROW,
     PROJECT,
     TAG,
     get_icon,
@@ -440,7 +436,7 @@ class TodoListView(ListView):
         Returns:
             str: Formatted markup string.
         """
-        from ..colors import get_weekday_color, PRIORITY_URGENT, REMINDER_COLOR
+        from ..colors import PRIORITY_URGENT, REMINDER_COLOR, get_weekday_color
         
         priority_map = {
             "urgent": f"[{PRIORITY_URGENT}]\\[Urgent][/]",
