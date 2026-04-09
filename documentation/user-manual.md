@@ -56,27 +56,24 @@ Run `dwriter` to launch the TUI. Built with the **Textual** framework, it provid
 
 ## ✨ 3. AI Intelligence (The "Cognitive" Layer)
 
-dwriter uses local LLMs (via Ollama) and a governed **Multi-Agent Framework** to provide deep insights while maintaining architectural safety.
+dwriter uses local LLMs (via Ollama) and a governed **Analytical Engine** to provide deep insights while maintaining data integrity.
 
-### 🛡️ The Multi-Agent Framework
-All development and AI-driven insights are managed by specialized personas:
-- **The Orchestrator:** Routes your requests to the correct specialist (e.g., TUI Architect, Core Logic Engineer).
-- **The Permission Enforcer:** A security layer that gates AI tool execution based on user-defined strictness (`permission_mode`):
-    - `read-only`: AI can only query data.
-    - `append-only`: AI can query and create new logs/tasks (default).
-    - `prompt`: AI must ask for permission before any mutation.
-    - `danger-full-access`: AI has full read/write/delete permissions.
-- **Architectural Guards:** Ensure that AI-generated code never violates core principles like "UI Isolation" or "Async Safety."
+### 🛡️ AI Security & Permissions
+All AI-driven insights and interactions are governed by a customizable `permission_mode` to ensure your data is handled according to your preferences:
+- **`read-only`**: AI can only query data and cannot make any changes.
+- **`append-only`**: AI can query and create new logs/tasks (default).
+- **`prompt`**: AI must ask for your permission before creating or modifying any data.
+- **`danger-full-access`**: AI has full read/write/delete permissions.
 
 ### 🔍 How RAG Works
 When you use `dwriter ask`, the system:
 1.  **Vectorizes** your question.
-2.  Performs a **Cosine Similarity** search against your SQLite entries.
-3.  Injects the top 5 most relevant entries into the LLM's system prompt as "Context."
+2.  Performs a **Semantic Search** against your history.
+3.  Injects the most relevant entries into the LLM's system prompt as "Context."
 4.  Generates a response based *only* on your actual history.
 
 ### 📉 Context Optimization & Compression
-To prevent "Context Bloat" and keep local LLMs (Gemma-4) performing at peak speeds, **dwriter** implements a **Deterministic Summary Compressor**:
+To prevent "Context Bloat" and keep local LLMs performing at peak speeds, **dwriter** implements a **Deterministic Summary Compressor**:
 - **Deduplication:** Duplicate status lines and redundant headers are stripped.
 - **Priority Loading:** High-signal lines starting with `Summary:`, `- Scope:`, or `- ` (bullets) are prioritized.
 - **Strict Budgets:** Context is capped at **1,200 characters** and **24 lines** to ensure the model focuses only on the most relevant historical activity.
@@ -87,7 +84,7 @@ All AI responses and journal logs now feature **Hanging Indentation**. This ensu
 ### 👻 Omnibox Ghost Text
 A real-time semantic analysis layer.
 - **Trigger:** Typing > 3 words in the Omnibox.
-- **Acceptance:** Press `Tab` to cycle through and accept individual tokens. This allows you to accept an AI-suggested project while ignoring a hallucinated tag.
+- **Acceptance:** Press `Tab` to cycle through and accept individual tokens. This allows you to accept an AI-suggested project while ignoring a suggested tag.
 
 ---
 

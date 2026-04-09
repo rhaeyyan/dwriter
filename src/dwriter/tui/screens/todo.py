@@ -735,7 +735,7 @@ class TodoScreen(Container):
             self.query_one(TabbedContent).active = "pending-pane"
             self.query_one("#todos", TodoListView).focus()
         except Exception as e:
-            self.notify(f"Error adding task: {e}", variant="error")
+            self.notify(f"Error adding task: {e}", severity="error")
 
     def on_add_todo_form_add_todo_cancel(self, message: AddTodoForm.AddTodoCancel) -> None:
         """Handles cancellation from the inline add form."""

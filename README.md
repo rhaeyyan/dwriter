@@ -13,7 +13,7 @@ Whether you are a software engineer tracking "deep work," a freelancer logging b
 Modern productivity apps are often cluttered with distractions. **dwriter** is designed to prioritize your focus:
 
 *   **⚡ Immediate Capture:** Use the "Headless CLI" to log thoughts, tasks, or focus sessions in seconds without leaving your terminal environment.
-*   **🧠 Dual-Model 2nd-Brain:** Reflect on your history with an interactive chat powered by a specialized pipeline (Gemma 4 `e4b` for reasoning, `e2b` for background tasks).
+*   **🧠 Dual-Model 2nd-Brain:** Reflect on your history with an interactive chat powered by a specialized reasoning pipeline.
 *   **🎨 Unified Dashboard:** Launch the Terminal User Interface (TUI) to reflect, search your history, or manage a visual todo board.
 *   **📖 High-Signal Readability:** All logs and AI responses now feature **hanging indentation**, ensuring multi-line entries align perfectly for rapid scanning.
 *   **🤖 Standup Automation:** Instantly transform your raw logs into formatted summaries for Slack, Jira, or Markdown.
@@ -66,11 +66,11 @@ To **launch** the interactive chat:
 dwriter
 ```
 
-**dwriter** features a context-aware "2nd-Brain" designed for deep reflection. It uses a specialized three-tier memory system and a governed **Multi-Agent Framework** to ensure architectural integrity:
+**dwriter** features a context-aware "2nd-Brain" designed for deep reflection. It uses a specialized three-tier memory system and a governed **Analytical Engine** to ensure architectural integrity:
 - **Long-Term Memory:** AI-generated weekly retrospectives that identify your biggest wins and friction points.
 - **Short-Term Memory:** Seamless access to your last 72 hours of activity, optimized via **Deterministic Compression** to keep the AI focused on high-signal data.
 - **Targeted History:** On-demand retrieval of past entries when you mention specific `&projects` or `#tags`.
-- **Governed Architecture:** All AI-driven code and insights are filtered through a **Permission Enforcer** (Read-Only, Append-Only, or Prompt) to maintain TUI isolation and async safety.
+- **Governed Security:** All AI-driven insights are filtered through a customizable **Security Mode** (`permission_mode`) such as Read-Only, Append-Only, or Prompt to maintain data integrity and safety.
 
 ### 📊 The Visual Dashboard (TUI)
 Navigate between screens using the tab bar:

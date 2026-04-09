@@ -95,7 +95,8 @@ def parse_natural_date(
     # Handle combined patterns like "tomorrow 2pm" or "Friday at 3"
     day_patterns = (
         r"(?P<day>today|tomorrow|yesterday|monday|tuesday|wednesday|thursday|"
-        r"friday|saturday|sunday|mon|tue|wed|thu|fri|sat|sun|last\s+\w+)"
+        r"friday|saturday|sunday|mon|tue|wed|thu|fri|sat|sun|last\s+\w+|next\s+\w+|"
+        r"[\+\-]\d+[dwmo])"
     )
     time_patterns = r"(?P<time>\d{1,2}(?::\d{2})?\s*(?P<meridiem>am|pm)?)"
     combined_match = re.match(
@@ -112,16 +113,33 @@ def parse_natural_date(
             base_date = today_midnight + timedelta(days=1)
         elif day_str == "yesterday":
             base_date = today_midnight - timedelta(days=1)
-        elif day_str.startswith("last "):
+        elif day_str.startswith("last ") or day_str.startswith("next "):
+            is_next = day_str.startswith("next ")
             wd_name = day_str[5:].strip()
             target_wd = weekdays.get(wd_name)
             if target_wd is not None:
-                days_back = (now.weekday() - target_wd) % 7
-                if days_back == 0:
-                    days_back = 7
-                base_date = today_midnight - timedelta(days=days_back)
+                if is_next:
+                    days_ahead = (target_wd - now.weekday()) % 7
+                    if days_ahead == 0:
+                        days_ahead = 7
+                    base_date = today_midnight + timedelta(days=days_ahead)
+                else:
+                    days_back = (now.weekday() - target_wd) % 7
+                    if days_back == 0:
+                        days_back = 7
+                    base_date = today_midnight - timedelta(days=days_back)
             else:
                 raise ValueError(f"Unable to parse date: '{date_str}'")
+        elif re.match(r"^[\+\-]\d+[dwmo]$", day_str):
+            val = int(re.search(r"\d+", day_str).group())
+            unit = day_str[-1]
+            sign = 1 if day_str.startswith("+") else -1
+            if unit == "d":
+                base_date = today_midnight + timedelta(days=sign * val)
+            elif unit == "w":
+                base_date = today_midnight + timedelta(weeks=sign * val)
+            else: # unit == "mo"
+                base_date = today_midnight + timedelta(days=sign * val * 30)
         elif day_str in weekdays:
             target_wd = weekdays[day_str]
             if prefer_future:
