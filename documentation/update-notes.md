@@ -4,10 +4,10 @@
 
 ### 🚀 Key Features
 
-#### 1. Permission Enforcer (Architectural Safety)
+#### 1. AI Security & Permissions (Architectural Safety)
 - **Granular Security Modes**: Introduced a new `permission_mode` setting (`read-only`, `append-only`, `prompt`, `danger-full-access`) to govern AI tool execution.
 - **Surgical Tool Gating**: The 2nd-Brain ReAct loop now intercepts every tool call. If the active mode denies an action (e.g., trying to delete a task in `read-only` mode), the engine returns a standardized "System Error" allowing the LLM to explain the restriction to the user.
-- **UI-Independent Logic**: The enforcer is built as a pure-Python module, ensuring headless stability.
+- **UI-Independent Logic**: The security mode is built as a pure-Python module, ensuring headless stability.
 
 #### 2. Deterministic Summary Compression
 - **High-Signal Context**: Implemented a sophisticated `SummaryCompressor` that optimizes the AI's "Short-Term Memory." It normalizes whitespace, removes duplicate entries, and prioritizes structural headers.
@@ -15,18 +15,13 @@
 
 ### 🛠 Improvements & Fixes
 - **Config Schema Evolution**: Added the `permission_mode` key to `AIFeaturesConfig` with backward-compatible defaults.
-- **Surgical Integration**: Wired the compression engine into the 2nd-Brain TUI and the permission enforcer into the ReAct engine loop.
+- **Surgical Integration**: Wired the compression engine into the 2nd-Brain TUI and the AI security mode into the ReAct engine loop.
 
 ## Version 4.3.0 - April 9, 2026
 
 ### 🚀 Key Features
 
-#### 1. Multi-Agent Governance Framework
-- **The Orchestrator**: Introduced a new "Tech Lead" persona (**Persona 7**) to govern all AI-driven development. It manages intent routing and ensures all specialists adhere to domain-specific mandates.
-- **Architectural Guards**: Implemented strict, automated limits to prevent "Logic Leakage." The **UI Isolation Guard** blocks UI agents from touching the database directly, while the **Stochastic Guard** mandates error-handling for all AI integrations.
-- **Test-Driven Adaptation**: If the build breaks (`pytest` or `mypy`), the framework automatically pivots the team into a "QA & Database" focus until the system is green.
-
-#### 2. High-Signal Readability (Hanging Indents)
+#### 1. High-Signal Readability (Hanging Indents)
 - **Advanced Text Wrapping**: Developed a specialized `wrap_with_hanging_indent` utility in `ui_utils.py`. All journal logs and AI responses now feature perfectly aligned multi-line text, ensuring the second and third lines of a paragraph are indented to match the first word.
 - **CLI & TUI Parity**: This formatting is consistently applied across both the headless `today`/`search` commands and the visual 2nd-Brain chat bubbles.
 
@@ -126,7 +121,6 @@
 - **Narrative Neutrality**: Removed marketing-style fluff and "AI-assistant" conversational filler from all technical guides and UI help strings.
 
 ### 🛠 Improvements & Fixes
-- **Security Hardening**: Updated global ignore patterns to strictly exclude internal Gemini CLI context files and local agent workspaces.
 - **Docstring Stabilization**: Fixed inconsistent parameter documentation in the TUI screen modules.
 
 ## Version 3.8.0 - April 6, 2026

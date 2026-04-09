@@ -330,3 +330,49 @@ class TestFutureDates:
             hour=0, minute=0, second=0, microsecond=0
         )
         assert result == expected
+
+    def test_next_monday(self):
+        """Test parsing 'next Monday'."""
+        result = parse_natural_date("next Monday")
+        today = datetime.now()
+        days_ahead = (0 - today.weekday()) % 7
+        if days_ahead == 0:
+            days_ahead = 7
+        expected = (today + timedelta(days=days_ahead)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        assert result == expected
+        assert result.weekday() == 0
+
+    def test_next_friday(self):
+        """Test parsing 'next Friday'."""
+        result = parse_natural_date("next Friday")
+        today = datetime.now()
+        days_ahead = (4 - today.weekday()) % 7
+        if days_ahead == 0:
+            days_ahead = 7
+        expected = (today + timedelta(days=days_ahead)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        assert result == expected
+        assert result.weekday() == 4
+
+    def test_combined_shorthand_with_time(self):
+        """Test parsing '+4d 2pm'."""
+        result = parse_natural_date("+4d 2pm")
+        expected = (datetime.now() + timedelta(days=4)).replace(
+            hour=14, minute=0, second=0, microsecond=0
+        )
+        assert result == expected
+
+    def test_next_monday_with_time(self):
+        """Test parsing 'next monday 12:00 pm'."""
+        result = parse_natural_date("next monday 12:00 pm")
+        today = datetime.now()
+        days_ahead = (0 - today.weekday()) % 7
+        if days_ahead == 0:
+            days_ahead = 7
+        expected = (today + timedelta(days=days_ahead)).replace(
+            hour=12, minute=0, second=0, microsecond=0
+        )
+        assert result == expected
