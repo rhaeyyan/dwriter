@@ -58,15 +58,13 @@ Run `dwriter` to launch the TUI. Built with the **Textual** framework, it provid
 
 dwriter uses local LLMs (via Ollama) and a governed **Multi-Agent Framework** to provide deep insights while maintaining architectural safety.
 
-### 🛡️ The Multi-Agent Framework
-All development and AI-driven insights are managed by specialized personas:
-- **The Orchestrator:** Routes your requests to the correct specialist (e.g., TUI Architect, Core Logic Engineer).
+### 🛡️ "Here to Assist" Framework
+
 - **The Permission Enforcer:** A security layer that gates AI tool execution based on user-defined strictness (`permission_mode`):
     - `read-only`: AI can only query data.
     - `append-only`: AI can query and create new logs/tasks (default).
     - `prompt`: AI must ask for permission before any mutation.
     - `danger-full-access`: AI has full read/write/delete permissions.
-- **Architectural Guards:** Ensure that AI-generated code never violates core principles like "UI Isolation" or "Async Safety."
 
 ### 🔍 How RAG Works
 When you use `dwriter ask`, the system:
@@ -81,8 +79,6 @@ To prevent "Context Bloat" and keep local LLMs (Gemma-4) performing at peak spee
 - **Priority Loading:** High-signal lines starting with `Summary:`, `- Scope:`, or `- ` (bullets) are prioritized.
 - **Strict Budgets:** Context is capped at **1,200 characters** and **24 lines** to ensure the model focuses only on the most relevant historical activity.
 
-### 📖 High-Signal Readability
-All AI responses and journal logs now feature **Hanging Indentation**. This ensures that even long, multi-line paragraphs align perfectly with the first word, making your history much easier to scan at high speeds.
 
 ### 👻 Omnibox Ghost Text
 A real-time semantic analysis layer.
