@@ -66,9 +66,9 @@ def _sanitize_agent_output(text: str) -> str:
     return clean_text.strip()
 
 
-    def ask_second_brain_agentic(
+def ask_second_brain_agentic(
     prompt: str, config: AIConfig, context_data: str = "", app_context: Any = None
-    ) -> str:
+) -> str:
     """Conversational AI with tool-calling capabilities (ReAct loop).
 
     Args:
@@ -128,7 +128,8 @@ def _sanitize_agent_output(text: str) -> str:
                     },
                 },
             },
-        },        {
+        },
+        {
             "type": "function",
             "function": {
                 "name": "search_todos",

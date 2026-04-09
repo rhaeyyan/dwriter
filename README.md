@@ -131,10 +131,12 @@ The 2nd-Brain acts as a specialized analytical layer over your logs.
 - **Easy Correction:** Use the interactive `dwriter edit` to quickly fix typos.
 
 ### 🔄 Multi-Device Synchronization
-Keep your journal consistent across every machine you use. **dwriter** uses a Git-backed synchronization engine with **CRDT conflict resolution** (Lamport logical clocks) to ensure your data merges flawlessly without corruption.
+Keep your journal consistent across every machine you use. **dwriter** uses a Git-backed synchronization engine to ensure your data merges flawlessly without corruption.
+
+**New to syncing?** Read our **[Step-by-Step Sync Guide](documentation/sync-guide.md)** for a simple, non-technical walkthrough.
 
 ```bash
-# Sync local data with a remote repository
+# Connect to your private sync repository
 dwriter sync --remote "https://github.com/user/my-journal-sync.git"
 
 # Push or pull manually
@@ -148,11 +150,12 @@ dwriter sync --pull
 
 | Document | Description |
 | :--- | :--- |
-| 📘 **[User Manual](documentation/USER-MANUAL.md)** | **The complete technical guide to every feature.** |
+| 📘 **[User Manual](documentation/user-manual.md)** | **The complete technical guide to every feature.** |
+| 🔄 **[Sync Guide](documentation/sync-guide.md)** | **Simple, step-by-step instructions for non-technical users.** |
 | 🚀 **[Update Notes](documentation/update-notes.md)** | **New in v4.2.0:** Auto-Sync & Ghost Text. |
-| 🛠️ **[Command Reference](documentation/HEADLESS-README.md)** | A complete guide to every CLI command and flag. |
-| 📖 **[Creative Use Cases](documentation/USE_CASES.md)** | 20 ways to use dwriter for brewing, fitness, travel, and more. |
-| ⚙️ **[Dev & Guide](documentation/DEV-and-CONFIG.md)** | Customizing your themes, default projects, and dev setup. |
+| 🛠️ **[Command Reference](documentation/headless-readme.md)** | A complete guide to every CLI command and flag. |
+| 📖 **[Creative Use Cases](documentation/use-cases.md)** | 20 ways to use dwriter for brewing, fitness, travel, and more. |
+| ⚙️ **[Dev & Guide](documentation/dev-config.md)** | Customizing your themes, default projects, and dev setup. |
 
 ---
 
