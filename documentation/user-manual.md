@@ -61,6 +61,11 @@ dwriter uses local LLMs (via Ollama) and a governed **Multi-Agent Framework** to
 ### 🛡️ The Multi-Agent Framework
 All development and AI-driven insights are managed by specialized personas:
 - **The Orchestrator:** Routes your requests to the correct specialist (e.g., TUI Architect, Core Logic Engineer).
+- **The Permission Enforcer:** A security layer that gates AI tool execution based on user-defined strictness (`permission_mode`):
+    - `read-only`: AI can only query data.
+    - `append-only`: AI can query and create new logs/tasks (default).
+    - `prompt`: AI must ask for permission before any mutation.
+    - `danger-full-access`: AI has full read/write/delete permissions.
 - **Architectural Guards:** Ensure that AI-generated code never violates core principles like "UI Isolation" or "Async Safety."
 
 ### 🔍 How RAG Works
@@ -69,6 +74,12 @@ When you use `dwriter ask`, the system:
 2.  Performs a **Cosine Similarity** search against your SQLite entries.
 3.  Injects the top 5 most relevant entries into the LLM's system prompt as "Context."
 4.  Generates a response based *only* on your actual history.
+
+### 📉 Context Optimization & Compression
+To prevent "Context Bloat" and keep local LLMs (Gemma-4) performing at peak speeds, **dwriter** implements a **Deterministic Summary Compressor**:
+- **Deduplication:** Duplicate status lines and redundant headers are stripped.
+- **Priority Loading:** High-signal lines starting with `Summary:`, `- Scope:`, or `- ` (bullets) are prioritized.
+- **Strict Budgets:** Context is capped at **1,200 characters** and **24 lines** to ensure the model focuses only on the most relevant historical activity.
 
 ### 📖 High-Signal Readability
 All AI responses and journal logs now feature **Hanging Indentation**. This ensures that even long, multi-line paragraphs align perfectly with the first word, making your history much easier to scan at high speeds.

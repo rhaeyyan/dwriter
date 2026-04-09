@@ -11,6 +11,7 @@ from typing import Any
 import instructor
 from openai import OpenAI
 
+from dwriter.ai.permissions import PermissionEnforcer, PermissionMode
 from dwriter.ai.tools import (
     fetch_recent_commits,
     get_daily_standup,
@@ -26,6 +27,17 @@ AVAILABLE_TOOLS = {
     "search_todos": search_todos,
     "fetch_recent_commits": fetch_recent_commits,
 }
+
+
+def _get_permission_mode(mode_str: str) -> PermissionMode:
+    """Maps a configuration string to a PermissionMode enum."""
+    mapping = {
+        "read-only": PermissionMode.READ_ONLY,
+        "append-only": PermissionMode.APPEND_ONLY,
+        "prompt": PermissionMode.PROMPT,
+        "danger-full-access": PermissionMode.DANGER_FULL_ACCESS,
+    }
+    return mapping.get(mode_str.lower(), PermissionMode.APPEND_ONLY)
 
 
 def _sanitize_agent_output(text: str) -> str:
@@ -166,6 +178,7 @@ def ask_second_brain_agentic(
     ]
 
     full_response_parts = []
+    enforcer = PermissionEnforcer(mode=_get_permission_mode(config.features.permission_mode))
 
     while True:
         response = client.chat.completions.create(
@@ -188,6 +201,19 @@ def ask_second_brain_agentic(
         for tool_call in message.tool_calls:
             function_name = tool_call.function.name
             arguments = json.loads(tool_call.function.arguments)
+
+            # Security check before execution
+            permission = enforcer.check(function_name)
+            if not permission.allowed:
+                messages.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": tool_call.id,
+                        "name": function_name,
+                        "content": f"System Error: Permission Denied - {permission.reason}",
+                    }
+                )
+                continue
 
             if app_context:
                 app_context.post_message(AIToolEvent(tool_name=function_name))

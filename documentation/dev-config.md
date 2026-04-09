@@ -44,6 +44,11 @@ notifications_enabled = false  # Toggle desktop push notifications
 | `[review]` | `format` | The layout used for long-term reports. |
 | `[display]` | `colors` | Toggle terminal color support. |
 | `[display]` | `notifications_enabled` | Opt-in to OS-level desktop push notifications for reminders. |
+| `[display]` | `permanent_omnibox` | Whether to keep the omnibox visible at all times. |
+| `[ai.features]` | `permission_mode` | AI security level (`read-only`, `append-only`, `prompt`, `danger-full-access`). |
+| `[ai.features]` | `auto_tagging` | Toggle background AI semantic analysis for entries. |
+| `[ai.features]` | `reflection_prompts` | Enable AI reflection prompts in the TUI. |
+| `[ai.features]` | `burnout_detection` | Enable weekly burnout detection analytics. |
 
 ---
 
@@ -106,6 +111,12 @@ enabled = true
 base_url = "http://localhost:11434/v1"  # Default Ollama API endpoint
 chat_model = "gemma4:e4b"               # 2nd-Brain ReAct loop
 daemon_model = "gemma4:e2b"             # Background Auto-Tagging
+
+[ai.features]
+permission_mode = "append-only"         # Options: read-only, append-only, prompt, danger-full-access
+auto_tagging = true
+reflection_prompts = true
+burnout_detection = true
 ```
 
 ---
