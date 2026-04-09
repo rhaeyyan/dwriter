@@ -19,7 +19,7 @@ def _log_sync(message: str) -> None:
     log_dir = Path.home() / ".dwriter" / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
     log_file = log_dir / "sync.log"
-    
+
     timestamp = datetime.now().isoformat()
     with open(log_file, "a") as f:
         f.write(f"[{timestamp}] {message}\n")
@@ -43,14 +43,14 @@ def pull_sync(db: Database) -> bool:
             capture_output=True,
             check=True
         )
-        
+
         # Check if remote has changes
         status = subprocess.check_output(
             ["git", "status", "-uno"],
             cwd=sync_dir,
             text=True
         )
-        
+
         if "Your branch is behind" in status:
             _log_sync("Remote changes detected, pulling...")
             # 2. Merge (Git level)
@@ -66,7 +66,7 @@ def pull_sync(db: Database) -> bool:
             return True
         else:
             return False
-            
+
     except subprocess.CalledProcessError as e:
         _log_sync(f"Sync pull failed: {e.stderr.decode()}")
         return False
@@ -89,16 +89,16 @@ def push_sync(db: Database) -> bool:
         _log_sync("Starting background push...")
         # 1. Dump SQLite to JSONL
         serialize_db(db, sync_dir)
-        
+
         # 2. Git Commit
         subprocess.run(["git", "add", "."], cwd=sync_dir, check=True, capture_output=True)
-        
+
         # Check if there are changes to commit
         diff = subprocess.run(
             ["git", "diff", "--cached", "--quiet"],
             cwd=sync_dir
         )
-        
+
         if diff.returncode != 0:
             subprocess.run(
                 ["git", "commit", "-m", f"Auto-sync from {os.uname().nodename}"],
@@ -106,7 +106,7 @@ def push_sync(db: Database) -> bool:
                 check=True,
                 capture_output=True
             )
-            
+
             # 3. Git Push
             subprocess.run(
                 ["git", "push", "origin", "main"],
@@ -119,7 +119,7 @@ def push_sync(db: Database) -> bool:
         else:
             _log_sync("No changes to push.")
             return False
-            
+
     except subprocess.CalledProcessError as e:
         _log_sync(f"Auto-sync push failed: {e.stderr.decode()}")
         return False

@@ -6,11 +6,10 @@ like "yesterday", "last Friday", "3 days ago", etc.
 
 import re
 from datetime import datetime, timedelta
-from typing import Optional
 
 
 def parse_natural_date(
-    date_str: str, prefer_future: bool = False, format_hint: Optional[str] = None
+    date_str: str, prefer_future: bool = False, format_hint: str | None = None
 ) -> datetime:
     """Parse a natural language date string into a datetime object.
 
@@ -213,7 +212,7 @@ def parse_natural_date(
 
 
 def parse_date_or_default(
-    date_str: Optional[str], format_hint: Optional[str] = None
+    date_str: str | None, format_hint: str | None = None
 ) -> datetime:
     """Parse a date string or return current datetime if None.
 

@@ -24,7 +24,7 @@ def format_review_markdown(entries_by_date: Any, ctx: AppContext) -> str:
         # Use dummy entry to get formatted date string according to config
         dummy = Entry(content="", created_at=dt_obj)
         date_str, _ = format_entry_datetime(dummy, ctx.config)
-        
+
         lines.append(f"## {date_key.strftime('%A')}, {date_str}")
         lines.append("")
         for entry in entries:
@@ -47,7 +47,7 @@ def format_review_plain(entries_by_date: Any, ctx: AppContext) -> str:
         dt_obj = datetime.combine(date_key, datetime.min.time())
         dummy = Entry(content="", created_at=dt_obj)
         date_str, _ = format_entry_datetime(dummy, ctx.config)
-        
+
         lines.append(f"[green]{date_key.strftime('%A')}, {date_str}[/green]")
         lines.append("-" * 40)
         for entry in entries:
@@ -70,7 +70,7 @@ def format_review_slack(entries_by_date: Any, ctx: AppContext) -> str:
         dt_obj = datetime.combine(date_key, datetime.min.time())
         dummy = Entry(content="", created_at=dt_obj)
         date_str, _ = format_entry_datetime(dummy, ctx.config)
-        
+
         lines.append(f"[green]*{date_key.strftime('%A')}, {date_str}*[/green]")
         for entry in entries:
             d_str, t_str = format_entry_datetime(entry, ctx.config)

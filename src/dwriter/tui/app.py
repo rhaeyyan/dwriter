@@ -7,6 +7,7 @@ and provides the global omnibox for quick entry logging.
 from __future__ import annotations
 
 import threading
+from datetime import datetime
 from typing import TYPE_CHECKING, Any, Literal
 
 if TYPE_CHECKING:
@@ -28,7 +29,6 @@ from textual.widgets import (
     Tabs,
 )
 
-from .widgets.omnibox import Omnibox
 from .colors import get_icon
 from .command_palette import DWriterCommands
 from .messages import (
@@ -46,6 +46,7 @@ from .parsers import (
     parse_todo_add,
 )
 from .themes import THEMES
+from .widgets.omnibox import Omnibox
 
 TodoStep = Literal["task", "tags", "priority", "due_date"]
 
@@ -896,7 +897,7 @@ class DWriterApp(App[None]):
             due_date = None
             if value and value.lower() != "none":
                 due_date = self._parse_todo_due_date(value)
-            
+
             # Use a worker for the database write
             content = self._todo_state.content
             priority = self._todo_state.priority
@@ -905,10 +906,10 @@ class DWriterApp(App[None]):
 
             async def add_todo_worker() -> None:
                 todo = self.ctx.db.add_todo(
-                    content=content, 
-                    priority=priority, 
-                    tags=all_tags, 
-                    project=project, 
+                    content=content,
+                    priority=priority,
+                    tags=all_tags,
+                    project=project,
                     due_date=due_date
                 )
                 self.notify(f"Todo added: {content}")
@@ -929,18 +930,18 @@ class DWriterApp(App[None]):
         parsed_entry: ParsedEntry = parse_quick_add(value, date_format=date_format)
         all_tags = list(self.ctx.config.defaults.tags) + parsed_entry.tags
         project = parsed_entry.project or self.ctx.config.defaults.project
-        
+
         async def add_entry_worker() -> None:
             entry = self.ctx.db.add_entry(
-                content=parsed_entry.content, 
-                tags=all_tags, 
-                project=project, 
+                content=parsed_entry.content,
+                tags=all_tags,
+                project=project,
                 created_at=parsed_entry.created_at
             )
             self.notify(f"Logged: {parsed_entry.content}")
             self.post_message(EntryAdded(
-                entry_id=entry.id, 
-                content=entry.content, 
+                entry_id=entry.id,
+                content=entry.content,
                 created_at=entry.created_at
             ))
 
@@ -1019,7 +1020,7 @@ class DWriterApp(App[None]):
             logs._display_recent_entries()
         except Exception:
             pass
-        
+
         # Trigger auto-sync if it's a real entry (id > 0)
         if message.entry_id > 0:
             self._trigger_debounced_push()
@@ -1032,7 +1033,7 @@ class DWriterApp(App[None]):
             todo_screen._load_todos()
         except Exception:
             pass
-        
+
         # Trigger auto-sync if it's a real update (id > 0)
         if message.todo_id > 0:
             self._trigger_debounced_push()
@@ -1053,15 +1054,15 @@ class DWriterApp(App[None]):
     def on_semantic_recommendation_ready(self, message: SemanticRecommendationReady) -> None:
         """Handle proactive AI recommendations."""
         self.pending_recommendation = message
-        
+
         parts = []
         if message.project:
             parts.append(f"&{message.project}")
         if message.tags:
             parts.extend([f"#{t}" for t in message.tags])
-        
+
         suggested = " ".join(parts)
-        
+
         # Update Omnibox ghost text
         try:
             omnibox = self.query_one("#quick-add", Omnibox)
@@ -1084,7 +1085,7 @@ class DWriterApp(App[None]):
 
         message = self.pending_recommendation
         self.pending_recommendation = None
-        
+
         # Clear ghost text
         try:
             omnibox = self.query_one("#quick-add", Omnibox)
@@ -1096,22 +1097,22 @@ class DWriterApp(App[None]):
             try:
                 # Get existing entry to merge tags
                 entry = self.ctx.db.get_entry(message.entry_id)
-                
+
                 proj_name = message.project.lstrip("&") if message.project else None
                 tag_names = [t.lstrip("#") for t in message.tags]
-                
+
                 new_tags = list(set(entry.tag_names + tag_names))
-                
+
                 self.ctx.db.update_entry(
-                    message.entry_id, 
-                    project=proj_name or entry.project, 
+                    message.entry_id,
+                    project=proj_name or entry.project,
                     tags=new_tags
                 )
                 self.notify("Recommendations applied!")
                 # Trigger refresh
                 self.post_message(EntryAdded(
-                    entry_id=message.entry_id, 
-                    content=entry.content, 
+                    entry_id=message.entry_id,
+                    content=entry.content,
                     created_at=entry.created_at
                 ))
             except Exception as e:

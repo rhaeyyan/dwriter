@@ -149,7 +149,7 @@ def _process_entry(
             # If no project was explicitly provided or found in content, use repo name
             if project is None:
                 project = git_info["repo_name"]
-            
+
             # Add git-branch tag if not already present
             branch_tag = f"git-{git_info['branch']}"
             if branch_tag not in all_tags:
@@ -184,7 +184,7 @@ def _process_entry(
     # Background tasks for AI features
     if ctx.config.ai.enabled:
         from ..ai.proactive import process_proactive_tagging
-        
+
         # Proactive tagging & project matching
         thread = threading.Thread(
             target=process_proactive_tagging,
@@ -207,7 +207,7 @@ def _run_auto_tagging(ctx: AppContext, entry: Entry) -> None:
     try:
         client = get_ai_client(ctx.config.ai)
         result = client.chat.completions.create(
-            model=ctx.config.ai.model,
+            model=ctx.config.ai.daemon_model,
             response_model=TagExtraction,
             messages=[
                 {

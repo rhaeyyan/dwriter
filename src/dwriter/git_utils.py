@@ -40,7 +40,7 @@ def get_git_info() -> GitInfo | None:
         ignore_file = Path(toplevel) / ".dwriter-ignore"
         if ignore_file.exists():
             try:
-                with open(ignore_file, "r") as f:
+                with open(ignore_file) as f:
                     content = f.read()
                     if "disable_auto_tag=true" in content:
                         return None

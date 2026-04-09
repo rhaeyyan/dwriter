@@ -161,7 +161,7 @@ def _display_ai_narrative(ctx: AppContext, engine: AnalyticsEngine, weekly: bool
         try:
             client = get_ai_client(ctx.config.ai)
             narrative = client.chat.completions.create(
-                model=ctx.config.ai.model,
+                model=ctx.config.ai.chat_model,
                 response_model=AITaskNarrative,
                 messages=[
                     {

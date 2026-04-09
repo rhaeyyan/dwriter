@@ -136,7 +136,7 @@ def _summarize_text(
     )
 
     return client.chat.completions.create(
-        model=config.model,
+        model=config.daemon_model,
         response_model=WeeklySummary,
         messages=[
             {"role": "system", "content": system},

@@ -6,10 +6,74 @@ the local journal, todos, and git context.
 
 import json
 import subprocess
+from datetime import datetime, time, timedelta
 from typing import Any
 
 from ..database import Database, Entry, Todo
 from ..search_utils import search_items
+
+
+def get_daily_standup(date_str: str | None = None, project: str | None = None) -> str:
+    """Generates a formatted Daily Standup report for a specific date.
+
+    Args:
+        date_str (str | None): The date in YYYY-MM-DD format. Defaults to yesterday.
+        project (str | None): Optional project filter (&name).
+
+    Returns:
+        str: A formatted Markdown report.
+    """
+    try:
+        db = Database()
+        if date_str:
+            target_date = datetime.strptime(date_str, "%Y-%m-%d")
+        else:
+            target_date = datetime.now() - timedelta(days=1)
+
+        start_date = datetime.combine(target_date.date(), time.min)
+        end_date = datetime.combine(target_date.date(), time.max)
+
+        # We use a simple version of report generation here for the AI to consume
+        entries = db.get_entries_in_range(start_date, end_date, exclude_projects=[project] if project else None)
+
+        # Filter for the specific project if provided
+        if project:
+            entries = [e for e in entries if e.project == project.lstrip("&")]
+
+        lines = [f"### Standup: {target_date.strftime('%Y-%m-%d')}"]
+
+        lines.append("\n**What was done:**")
+        if not entries:
+            lines.append("- No entries logged.")
+        else:
+            for e in entries:
+                p_str = f" &{e.project}" if e.project else ""
+                t_str = f" {' '.join(f'#{t}' for t in e.tag_names)}" if e.tag_names else ""
+                clean_content = e.content.lstrip("✅⏱️ ")
+                lines.append(f"- {clean_content}{p_str}{t_str}")
+
+        # Add plan (pending todos due today/tomorrow)
+        today = datetime.now().date()
+        tomorrow = today + timedelta(days=1)
+        pending_todos = [
+            t for t in db.get_all_todos()
+            if t.status == "pending" and t.due_date and (t.due_date.date() == today or t.due_date.date() == tomorrow)
+        ]
+
+        if project:
+            pending_todos = [t for t in pending_todos if t.project == project.lstrip("&")]
+
+        lines.append("\n**Plan for today:**")
+        if not pending_todos:
+            lines.append("- Clear schedule.")
+        else:
+            for t in pending_todos:
+                clean_content = t.content.lstrip("✅⏱️ ")
+                lines.append(f"- [ ] {clean_content}")
+
+        return "\n".join(lines)
+    except Exception as e:
+        return f"Error generating standup: {str(e)}"
 
 
 def entry_to_dict(entry: Entry) -> dict[str, Any]:

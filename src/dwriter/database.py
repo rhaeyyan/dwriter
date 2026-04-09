@@ -7,9 +7,10 @@ import shutil
 import sys
 import threading
 import uuid
+from collections.abc import Callable
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from rich.console import Console
 from sqlalchemy import (
@@ -591,13 +592,27 @@ class Database:
             stmt = select(Entry).where(Entry.created_at.between(start_date, end_date))
 
             if exclude_projects:
-                stmt = stmt.where(Entry.project.not_in(exclude_projects))
+                from sqlalchemy import not_, or_
+
+                prefix_excludes = [p.lower() for p in exclude_projects if p.endswith(":")]
+                exact_excludes = [p.lower() for p in exclude_projects if not p.endswith(":")]
+
+                conditions = []
+                if exact_excludes:
+                    conditions.append(func.lower(Entry.project).in_(exact_excludes))
+                for prefix in prefix_excludes:
+                    conditions.append(func.lower(Entry.project).like(f"{prefix}%"))
+
+                if conditions:
+                    stmt = stmt.where(or_(Entry.project.is_(None), not_(or_(*conditions))))
 
             if exclude_tags:
-                # To exclude entries with specific tags, we check that none of the entry's tags are in the excluded list
                 from sqlalchemy import not_
 
-                stmt = stmt.where(not_(Entry.tags.any(Tag.name.in_(exclude_tags))))
+                exclude_tags_lower = [t.lower() for t in exclude_tags]
+                stmt = stmt.where(
+                    not_(Entry.tags.any(func.lower(Tag.name).in_(exclude_tags_lower)))
+                )
 
             stmt = stmt.order_by(Entry.created_at)
             return list(session.scalars(stmt).all())

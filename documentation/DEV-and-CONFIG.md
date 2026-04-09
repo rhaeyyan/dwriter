@@ -68,10 +68,11 @@ The **2nd-Brain** and **Weekly Summary** features require a local or remote AI b
 ### 1. Install Ollama
 Download and install Ollama from [ollama.com](https://ollama.com/).
 
-### 2. Pull the Recommended Model
-We recommend **Llama 3.1** for its strong reasoning and context handling:
+### 2. Pull the Recommended Models
+We recommend the **Gemma 4** family for the best balance of speed and reasoning:
 ```bash
-ollama pull llama3.1
+ollama pull gemma4:e4b  # Main Brain (ReAct/Chat)
+ollama pull gemma4:e2b  # Daemon (Background/Tagging)
 ```
 
 ### 3. Update your dwriter config
@@ -81,7 +82,8 @@ Add an `[ai]` section to your `~/.dwriter/config.toml` (or use `dwriter config e
 [ai]
 enabled = true
 base_url = "http://localhost:11434/v1"  # Default Ollama API endpoint
-model = "llama3.1"                      # Or your preferred model
+chat_model = "gemma4:e4b"               # 2nd-Brain ReAct loop
+daemon_model = "gemma4:e2b"             # Background Auto-Tagging
 ```
 
 ---

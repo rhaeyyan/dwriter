@@ -144,7 +144,7 @@ class AppContext:
 @click.pass_context
 @click.version_option(version=__version__, prog_name="dwriter")
 def main(ctx: click.Context, check_only: bool) -> None:
-    """dwriter - A minimalist journal and productivity tool for the terminal.
+    """Dwriter - A minimalist journal and productivity tool for the terminal.
 
     Supports natural language date parsing, hashtags (#tag), and project
     tagging (&project).

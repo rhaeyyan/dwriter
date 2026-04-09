@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from ..database import Database, Entry, Todo
+    from ..database import Database
 
 
 def serialize_db(db: Database, sync_dir: Path) -> None:
@@ -74,7 +74,7 @@ def merge_jsonl_to_db(db: Database, sync_dir: Path) -> None:
     # 1. Merge Entries
     entries_path = sync_dir / "entries.jsonl"
     if entries_path.exists():
-        with open(entries_path, "r") as f:
+        with open(entries_path) as f:
             for line in f:
                 data = json.loads(line)
                 _merge_entry(db, data)
@@ -82,7 +82,7 @@ def merge_jsonl_to_db(db: Database, sync_dir: Path) -> None:
     # 2. Merge Todos
     todos_path = sync_dir / "todos.jsonl"
     if todos_path.exists():
-        with open(todos_path, "r") as f:
+        with open(todos_path) as f:
             for line in f:
                 data = json.loads(line)
                 _merge_todo(db, data)
@@ -91,7 +91,7 @@ def merge_jsonl_to_db(db: Database, sync_dir: Path) -> None:
 def _merge_entry(db: Database, data: dict[str, Any]) -> None:
     """Merges a single entry based on Lamport clock."""
     from ..database import Entry, Tag
-    
+
     with db.Session() as session:
         from sqlalchemy import select
         stmt = select(Entry).where(Entry.uuid == data["uuid"])
@@ -102,7 +102,7 @@ def _merge_entry(db: Database, data: dict[str, Any]) -> None:
             if not existing:
                 existing = Entry(uuid=data["uuid"])
                 session.add(existing)
-            
+
             existing.lamport_clock = data["lamport_clock"]
             existing.content = data["content"]
             existing.project = data["project"]
@@ -111,14 +111,14 @@ def _merge_entry(db: Database, data: dict[str, Any]) -> None:
             existing.life_domain = data["life_domain"]
             existing.energy_level = data["energy_level"]
             existing.tags = [Tag(name=t) for t in data["tags"]]
-            
+
             session.commit()
 
 
 def _merge_todo(db: Database, data: dict[str, Any]) -> None:
     """Merges a single todo based on Lamport clock."""
     from ..database import Todo, TodoTag
-    
+
     with db.Session() as session:
         from sqlalchemy import select
         stmt = select(Todo).where(Todo.uuid == data["uuid"])
@@ -129,7 +129,7 @@ def _merge_todo(db: Database, data: dict[str, Any]) -> None:
             if not existing:
                 existing = Todo(uuid=data["uuid"])
                 session.add(existing)
-            
+
             existing.lamport_clock = data["lamport_clock"]
             existing.content = data["content"]
             existing.project = data["project"]
@@ -139,5 +139,5 @@ def _merge_todo(db: Database, data: dict[str, Any]) -> None:
             existing.created_at = datetime.fromisoformat(data["created_at"])
             existing.completed_at = datetime.fromisoformat(data["completed_at"]) if data["completed_at"] else None
             existing.tags = [TodoTag(name=t) for t in data["tags"]]
-            
+
             session.commit()

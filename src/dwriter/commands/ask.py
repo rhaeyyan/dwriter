@@ -16,12 +16,11 @@ import click
 import openai
 from rich.panel import Panel
 from rich.status import Status
-from rich.table import Table
 
 from ..ai.engine import get_ai_client, get_system_prompt
 from ..ai.schemas.reflection import ContextRestore, ReflectionPrompt
 from ..ai.schemas.router import ActionRouter
-from ..tui.colors import PROJECT, TAG
+from ..tui.colors import TAG
 
 
 @click.command("ask")
@@ -69,7 +68,7 @@ def ask(ctx: AppContext, content: tuple[str, ...]) -> None:
         try:
             # Intent classification
             route = client.chat.completions.create(
-                model=ctx.config.ai.model,
+                model=ctx.config.ai.chat_model,
                 response_model=ActionRouter,
                 max_retries=2,
                 messages=[
@@ -148,7 +147,7 @@ def _execute_general_query(ctx: AppContext, client: Any, query: str) -> None:
         current_tasks += "\n".join([f"- {t.content}" for t in todos[:10]])
 
         response = client.chat.completions.create(
-            model=ctx.config.ai.model,
+            model=ctx.config.ai.chat_model,
             messages=[
                 {
                     "role": "system",
@@ -189,7 +188,7 @@ def _execute_reflection(ctx: AppContext, client: Any) -> None:
 
     try:
         reflection = client.chat.completions.create(
-            model=ctx.config.ai.model,
+            model=ctx.config.ai.chat_model,
             response_model=ReflectionPrompt,
             max_retries=2,
             messages=[
@@ -234,7 +233,7 @@ def _execute_context_restore(ctx: AppContext, client: Any) -> None:
 
     try:
         restore = client.chat.completions.create(
-            model=ctx.config.ai.model,
+            model=ctx.config.ai.chat_model,
             response_model=ContextRestore,
             max_retries=2,
             messages=[
@@ -283,7 +282,7 @@ def _execute_analytics(ctx: AppContext, client: Any) -> None:
 
     try:
         analysis = client.chat.completions.create(
-            model=ctx.config.ai.model,
+            model=ctx.config.ai.chat_model,
             messages=[
                 {
                     "role": "system",
