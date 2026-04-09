@@ -58,8 +58,9 @@ Run `dwriter` to launch the TUI. Built with the **Textual** framework, it provid
 
 dwriter uses local LLMs (via Ollama) and a governed **Analytical Engine** to provide deep insights while maintaining data integrity.
 
-### 🛡️ AI Security & Permissions
-All AI-driven insights and interactions are governed by a customizable `permission_mode` to ensure your data is handled according to your preferences:
+### 🛡️ Intelligence Governance ("Here to Assist" Framework)
+All AI-driven insights and interactions are governed by a customizable `permission_mode` to ensure your data is handled according to your preferences. The **Permission Enforcer** gates AI tool execution based on these settings:
+
 - **`read-only`**: AI can only query data and cannot make any changes.
 - **`append-only`**: AI can query and create new logs/tasks (default).
 - **`prompt`**: AI must ask for your permission before creating or modifying any data.
@@ -78,8 +79,6 @@ To prevent "Context Bloat" and keep local LLMs performing at peak speeds, **dwri
 - **Priority Loading:** High-signal lines starting with `Summary:`, `- Scope:`, or `- ` (bullets) are prioritized.
 - **Strict Budgets:** Context is capped at **1,200 characters** and **24 lines** to ensure the model focuses only on the most relevant historical activity.
 
-### 📖 High-Signal Readability
-All AI responses and journal logs now feature **Hanging Indentation**. This ensures that even long, multi-line paragraphs align perfectly with the first word, making your history much easier to scan at high speeds.
 
 ### 👻 Omnibox Ghost Text
 A real-time semantic analysis layer.
