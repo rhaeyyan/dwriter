@@ -21,6 +21,29 @@ from textual.app import ComposeResult
 from textual.containers import Container, Vertical
 from textual.widgets import Input, Static
 
+class ModernSpinner(Static):
+    """A sleek, modern spinner using Braille characters."""
+    DEFAULT_CSS = """
+    ModernSpinner {
+        display: none;
+        height: 1;
+        margin: 0 2;
+        color: #cba6f7;
+    }
+    """
+    
+    CHARS = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+    
+    def on_mount(self) -> None:
+        self._frame = 0
+        self.update(f"{self.CHARS[0]} [italic]2nd-Brain is thinking...[/]")
+        self.set_interval(0.1, self._update_spinner)
+        
+    def _update_spinner(self) -> None:
+        if self.display:
+            self.update(f"{self.CHARS[self._frame]} [italic]2nd-Brain is thinking...[/]")
+            self._frame = (self._frame + 1) % len(self.CHARS)
+
 from ...ai.engine import (
     ask_second_brain_agentic,
 )
@@ -153,6 +176,7 @@ class SecondBrainScreen(Container):
                 yield Static("[bold black on yellow] SYSTEM [/]\n[dim]2nd-Brain initialized with recent task and log context.[/dim]")
             yield Static("", id="second-brain-status")
             yield Static("", id="ai-status-indicator")
+            yield ModernSpinner(id="ai-spinner")
             yield Input(placeholder="Ask your 2nd-Brain anything...", id="second-brain-input")
 
     def on_mount(self) -> None:
@@ -363,11 +387,13 @@ class SecondBrainScreen(Container):
         user_msg.scroll_visible()
         
         status.update("[bold #cba6f7]Thinking...[/]")
+        self.query_one("#ai-spinner").display = True
         event.input.value = ""
 
         if not self.ctx.config.ai.enabled:
             log.mount(Static("[yellow]AI features are disabled in configuration.[/yellow]"))
             status.update("")
+            self.query_one("#ai-spinner").display = False
             return
 
         self._run_ai_chat(user_input)
@@ -382,6 +408,7 @@ class SecondBrainScreen(Container):
         log = self.query_one("#second-brain-log", Vertical)
         status = self.query_one("#second-brain-status", Static)
         indicator = self.query_one("#ai-status-indicator", Static)
+        spinner = self.query_one("#ai-spinner")
 
         try:
             # 1. Targeted context retrieval (keywords)
@@ -405,6 +432,7 @@ class SecondBrainScreen(Container):
             self.app.call_from_thread(status.update, "")
             self.app.call_from_thread(indicator.update, "")
             self.app.call_from_thread(setattr, indicator, "display", False)
+            self.app.call_from_thread(setattr, spinner, "display", False)
 
             # 4. Update chat history and display response
             self._chat_history.append({"role": "user", "content": user_input})
@@ -419,6 +447,7 @@ class SecondBrainScreen(Container):
             # Ensure indicators are hidden on error
             self.app.call_from_thread(status.update, "[bold red]AI Error[/bold red]")
             self.app.call_from_thread(setattr, indicator, "display", False)
+            self.app.call_from_thread(setattr, spinner, "display", False)
             
             error_msg = Static(f"[red]AI Error: {e}[/red]")
             self.app.call_from_thread(log.mount, error_msg)

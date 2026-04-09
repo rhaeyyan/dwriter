@@ -49,13 +49,19 @@ Run `dwriter` to launch the TUI. Built with the **Textual** framework, it provid
 
 ### 🧠 The 2nd-Brain & 7-Day Pulse
 - **The Pulse:** A heavy analytics operation that runs once every 24 hours. It calculates your "Momentum" (task velocity) and identifies your "Big Rock" (the project taking most of your time).
+- **Modern Feedback:** During AI reasoning (Gemma-4), a sleek **Modern Spinner** (Braille-style) provides non-intrusive feedback, ensuring you know the system is active during complex inference.
 - **Throttling Logic:** To preserve terminal performance, the full pulse is cached. Subsequent launches return a minimalist greeting until the next calendar day.
 
 ---
 
 ## ✨ 3. AI Intelligence (The "Cognitive" Layer)
 
-dwriter uses local LLMs (via Ollama) to provide "Local RAG" (Retrieval-Augmented Generation).
+dwriter uses local LLMs (via Ollama) and a governed **Multi-Agent Framework** to provide deep insights while maintaining architectural safety.
+
+### 🛡️ The Multi-Agent Framework
+All development and AI-driven insights are managed by specialized personas:
+- **The Orchestrator:** Routes your requests to the correct specialist (e.g., TUI Architect, Core Logic Engineer).
+- **Architectural Guards:** Ensure that AI-generated code never violates core principles like "UI Isolation" or "Async Safety."
 
 ### 🔍 How RAG Works
 When you use `dwriter ask`, the system:
@@ -63,6 +69,9 @@ When you use `dwriter ask`, the system:
 2.  Performs a **Cosine Similarity** search against your SQLite entries.
 3.  Injects the top 5 most relevant entries into the LLM's system prompt as "Context."
 4.  Generates a response based *only* on your actual history.
+
+### 📖 High-Signal Readability
+All AI responses and journal logs now feature **Hanging Indentation**. This ensures that even long, multi-line paragraphs align perfectly with the first word, making your history much easier to scan at high speeds.
 
 ### 👻 Omnibox Ghost Text
 A real-time semantic analysis layer.

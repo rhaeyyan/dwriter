@@ -47,6 +47,28 @@ notifications_enabled = false  # Toggle desktop push notifications
 
 ---
 
+## 🛡️ AI Multi-Agent Framework
+
+**dwriter** development and AI-driven insights are governed by a **Multi-Agent Framework**. This system ensures that every contribution and AI response adheres to the project's foundational architectural mandates.
+
+### 👥 Personas
+The framework uses 7 specialized personas to manage the project:
+1.  **The TUI Architect:** Owns the `src/dwriter/tui/` domain.
+2.  **Core Logic & CLI Engineer:** Owns the `src/dwriter/commands/` and headless utilities.
+3.  **AI & RAG Specialist:** Owns the `src/dwriter/ai/` domain and prompt logic.
+4.  **QA & Database Lead:** Owns the `src/dwriter/database.py` and codebase quality.
+5.  **DevOps & Integrations Engineer:** Owns the `src/dwriter/sync/` and OS-level hooks.
+6.  **Technical Auditor:** Owns documentation, `CHANGELOG.md`, and architectural review.
+7.  **The Orchestrator:** Acts as the Tech Lead, routing user intent and enforcing guards.
+
+### 🧱 Architectural Guards
+The Orchestrator enforces strict, automated limits before any code is accepted:
+*   **The UI Isolation Guard:** Prevents the TUI Architect from modifying database logic.
+*   **The Stochastic Guard:** Mandates robust `try/except` fallbacks for all AI integrations.
+*   **The Test-Driven Adaptation:** If tests fail, the team is automatically forced into a QA persona until the build is green.
+
+---
+
 ## 🏗️ Workspace Awareness (`.dwriter-ignore`)
 
 To prevent project-namespace pollution in massive monorepos or specific directories, you can drop a `.dwriter-ignore` file into your repository root.
@@ -155,4 +177,4 @@ This project is licensed under the **MIT License**. Feel free to use, modify, an
 
 ---
 
-[⬅️ Back to README](../README.md) | [📘 User Manual](./USER-MANUAL.md)
+[⬅️ Back to README](../README.md) | [📘 User Manual](./user-manual.md)

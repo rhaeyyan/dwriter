@@ -1,5 +1,28 @@
 # dwriter Update Notes
 
+## Version 4.3.0 - April 9, 2026
+
+### 🚀 Key Features
+
+#### 1. Multi-Agent Governance Framework
+- **The Orchestrator**: Introduced a new "Tech Lead" persona (**Persona 7**) to govern all AI-driven development. It manages intent routing and ensures all specialists adhere to domain-specific mandates.
+- **Architectural Guards**: Implemented strict, automated limits to prevent "Logic Leakage." The **UI Isolation Guard** blocks UI agents from touching the database directly, while the **Stochastic Guard** mandates error-handling for all AI integrations.
+- **Test-Driven Adaptation**: If the build breaks (`pytest` or `mypy`), the framework automatically pivots the team into a "QA & Database" focus until the system is green.
+
+#### 2. High-Signal Readability (Hanging Indents)
+- **Advanced Text Wrapping**: Developed a specialized `wrap_with_hanging_indent` utility in `ui_utils.py`. All journal logs and AI responses now feature perfectly aligned multi-line text, ensuring the second and third lines of a paragraph are indented to match the first word.
+- **CLI & TUI Parity**: This formatting is consistently applied across both the headless `today`/`search` commands and the visual 2nd-Brain chat bubbles.
+
+#### 3. Modern "Braille" Spinner
+- **Sleek AI Feedback**: Replaced the bulky default loading indicator with a custom, minimalist **Modern Spinner** using elegant Braille characters (`⠋⠙⠹...`).
+- **Non-Intrusive UX**: The spinner provides a "Claude-style" modern feel during long Gemma-4 inference times, keeping the interface clean while indicating active reasoning.
+
+### 🛠 Improvements & Fixes
+- **AI Verbosity Control**: Refined the 2nd-Brain system prompts to eliminate "Global State" repetition. The AI is now strictly concise, focusing only on the user's immediate request without over-sharing unrelated TODO lists.
+- **Visual Cleanup**: Removed high-contrast `[reverse]` highlighting from inline code blocks in AI responses, replacing it with a subtle, theme-integrated blue (`#89b4fa`).
+- **Modular Tidiness**: Purged over 15 root-level scratchpad and temporary test scripts, restoring the project's minimalist directory structure.
+- **Import & Syntax Hardening**: Resolved a critical `IndentationError` in the AI engine and fixed several `UndefinedName` and line-length (`E501`) violations across the core TUI and UI utility modules.
+
 ## Version 4.2.0 - April 8, 2026
 
 ### 🚀 Key Features
