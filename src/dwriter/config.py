@@ -132,11 +132,13 @@ class AIFeaturesConfig:
         auto_tagging: Whether to enable background auto-tagging.
         reflection_prompts: Whether to enable AI reflection prompts.
         burnout_detection: Whether to enable weekly burnout detection checks.
+        permission_mode: Security strictness (read-only, append-only, prompt, danger-full-access).
     """
 
     auto_tagging: bool = False
     reflection_prompts: bool = True
     burnout_detection: bool = True
+    permission_mode: str = "append-only"
 
 
 @dataclass
@@ -299,6 +301,7 @@ class ConfigManager:
                     auto_tagging=ai_features_data.get("auto_tagging", False),
                     reflection_prompts=ai_features_data.get("reflection_prompts", True),
                     burnout_detection=ai_features_data.get("burnout_detection", True),
+                    permission_mode=ai_features_data.get("permission_mode", "append-only"),
                 ),
                 last_pulse_greeting=ai_data.get("last_pulse_greeting"),
             ),
@@ -386,6 +389,7 @@ class ConfigManager:
         ai_features["auto_tagging"] = self._config.ai.features.auto_tagging
         ai_features["reflection_prompts"] = self._config.ai.features.reflection_prompts
         ai_features["burnout_detection"] = self._config.ai.features.burnout_detection
+        ai_features["permission_mode"] = self._config.ai.features.permission_mode
         ai_table["features"] = ai_features
         doc.add("ai", ai_table)
 
@@ -469,6 +473,7 @@ class ConfigManager:
                     "auto_tagging": config.ai.features.auto_tagging,
                     "reflection_prompts": config.ai.features.reflection_prompts,
                     "burnout_detection": config.ai.features.burnout_detection,
+                    "permission_mode": config.ai.features.permission_mode,
                 },
                 "last_pulse_greeting": config.ai.last_pulse_greeting,
             },

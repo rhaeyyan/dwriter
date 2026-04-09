@@ -47,6 +47,7 @@ class ModernSpinner(Static):
 from ...ai.engine import (
     ask_second_brain_agentic,
 )
+from ...ai.compression import compress_summary
 from ..messages import AIToolEvent
 
 
@@ -299,7 +300,8 @@ class SecondBrainScreen(Container):
             [f"- [{t.priority.upper()}] {t.content}" for t in todos[:10]]
         )
 
-        self._context_data = f"{long_term}\n{short_term}"
+        raw_context = f"{long_term}\n{short_term}"
+        self._context_data = compress_summary(raw_context)
 
     def _get_targeted_context(self, user_input: str) -> str:
         """Retrieves historical data based on keywords detected in the user input.
@@ -413,7 +415,7 @@ class SecondBrainScreen(Container):
         try:
             # 1. Targeted context retrieval (keywords)
             targeted_context = self._get_targeted_context(user_input)
-            combined_context = f"{self._context_data}\n{targeted_context}"
+            combined_context = compress_summary(f"{self._context_data}\n{targeted_context}")
 
             # 2. Run agentic loop (with tool-calling)
             self.app.call_from_thread(

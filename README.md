@@ -68,9 +68,9 @@ dwriter
 
 **dwriter** features a context-aware "2nd-Brain" designed for deep reflection. It uses a specialized three-tier memory system and a governed **Multi-Agent Framework** to ensure architectural integrity:
 - **Long-Term Memory:** AI-generated weekly retrospectives that identify your biggest wins and friction points.
-- **Short-Term Memory:** Seamless access to your last 72 hours of activity.
+- **Short-Term Memory:** Seamless access to your last 72 hours of activity, optimized via **Deterministic Compression** to keep the AI focused on high-signal data.
 - **Targeted History:** On-demand retrieval of past entries when you mention specific `&projects` or `#tags`.
-- **Governed Architecture:** All AI-driven code and insights are filtered through strict architectural guards to maintain TUI isolation and async safety.
+- **Governed Architecture:** All AI-driven code and insights are filtered through a **Permission Enforcer** (Read-Only, Append-Only, or Prompt) to maintain TUI isolation and async safety.
 
 ### 📊 The Visual Dashboard (TUI)
 Navigate between screens using the tab bar:

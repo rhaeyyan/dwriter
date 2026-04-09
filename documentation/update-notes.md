@@ -1,5 +1,22 @@
 # dwriter Update Notes
 
+## Version 4.3.1 - April 9, 2026
+
+### 🚀 Key Features
+
+#### 1. Permission Enforcer (Architectural Safety)
+- **Granular Security Modes**: Introduced a new `permission_mode` setting (`read-only`, `append-only`, `prompt`, `danger-full-access`) to govern AI tool execution.
+- **Surgical Tool Gating**: The 2nd-Brain ReAct loop now intercepts every tool call. If the active mode denies an action (e.g., trying to delete a task in `read-only` mode), the engine returns a standardized "System Error" allowing the LLM to explain the restriction to the user.
+- **UI-Independent Logic**: The enforcer is built as a pure-Python module, ensuring headless stability.
+
+#### 2. Deterministic Summary Compression
+- **High-Signal Context**: Implemented a sophisticated `SummaryCompressor` that optimizes the AI's "Short-Term Memory." It normalizes whitespace, removes duplicate entries, and prioritizes structural headers.
+- **Context Budgeting**: Strictly enforces a 1,200-character and 24-line budget on all historical data injected into the LLM. This significantly reduces "Context Bloat" and prevents hallucination caused by redundant information.
+
+### 🛠 Improvements & Fixes
+- **Config Schema Evolution**: Added the `permission_mode` key to `AIFeaturesConfig` with backward-compatible defaults.
+- **Surgical Integration**: Wired the compression engine into the 2nd-Brain TUI and the permission enforcer into the ReAct engine loop.
+
 ## Version 4.3.0 - April 9, 2026
 
 ### 🚀 Key Features
