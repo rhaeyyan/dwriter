@@ -86,12 +86,16 @@ class DefaultsConfig:
         project: Default project name.
         default_priority: Default priority for new todos (normal/high/urgent).
         default_due_days: Default days until due for new todos.
+        git_auto_tag: Automatically apply git branch/repo tags to entries.
+        auto_sync: Automatically sync after adding entries.
     """
 
     tags: list[str] = field(default_factory=list)
     project: Optional[str] = None
     default_priority: str = "normal"
     default_due_days: int = 1
+    git_auto_tag: bool = True
+    auto_sync: bool = False
 
 
 @dataclass
@@ -219,6 +223,8 @@ class ConfigManager:
                 project=defaults_data.get("project"),
                 default_priority=defaults_data.get("default_priority", "normal"),
                 default_due_days=defaults_data.get("default_due_days", 1),
+                git_auto_tag=defaults_data.get("git_auto_tag", True),
+                auto_sync=defaults_data.get("auto_sync", False),
             ),
             timer=TimerConfig(
                 work_duration=timer_data.get("work_duration", 25),
@@ -284,6 +290,8 @@ class ConfigManager:
             defaults_table["project"] = self._config.defaults.project
         defaults_table["default_priority"] = self._config.defaults.default_priority
         defaults_table["default_due_days"] = self._config.defaults.default_due_days
+        defaults_table["git_auto_tag"] = self._config.defaults.git_auto_tag
+        defaults_table["auto_sync"] = self._config.defaults.auto_sync
         doc.add("defaults", defaults_table)
 
         timer_table = tomlkit.table()
@@ -354,6 +362,8 @@ class ConfigManager:
                 "project": config.defaults.project,
                 "default_priority": config.defaults.default_priority,
                 "default_due_days": config.defaults.default_due_days,
+                "git_auto_tag": config.defaults.git_auto_tag,
+                "auto_sync": config.defaults.auto_sync,
             },
             "timer": {
                 "work_duration": config.timer.work_duration,
