@@ -13,6 +13,7 @@ from .stats import stats
 from .timer import timer
 from .today import today
 from .todo import todo, done, remind, snooze
+from .notifications import install_notifications, uninstall_notifications
 from .sync import sync
 from .undo import undo
 
@@ -24,6 +25,7 @@ __all__ = [
     "edit",
     "examples",
     "help_cmd",
+    "install_notifications",
     "review",
     "remind",
     "search",
@@ -35,4 +37,5 @@ __all__ = [
     "today",
     "todo",
     "undo",
+    "uninstall_notifications",
 ]

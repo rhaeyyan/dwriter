@@ -203,6 +203,7 @@ def _register_commands() -> None:
         edit,
         examples,
         help_cmd,
+        install_notifications,
         review,
         remind,
         search,
@@ -214,6 +215,7 @@ def _register_commands() -> None:
         today,
         todo,
         undo,
+        uninstall_notifications,
     )
 
     # Dispatch and register commands to the main group
@@ -227,6 +229,7 @@ def _register_commands() -> None:
         timer,
         help_cmd,
         review,
+        install_notifications,
         remind,
         reminders,
         search,
@@ -238,6 +241,7 @@ def _register_commands() -> None:
         todo,
         ui,
         undo,
+        uninstall_notifications,
     ]:
         main.add_command(cmd)
 

@@ -75,6 +75,7 @@ class DisplayConfig:
     notifications_enabled: bool = False
     due_date_format: str = "relative"
     todo_sorting_mode: str = "priority_first"
+    permanent_omnibox: bool = False
 
 
 @dataclass
@@ -217,6 +218,7 @@ class ConfigManager:
                 notifications_enabled=display_data.get("notifications_enabled", False),
                 due_date_format=display_data.get("due_date_format", "relative"),
                 todo_sorting_mode=display_data.get("todo_sorting_mode", "priority_first"),
+                permanent_omnibox=display_data.get("permanent_omnibox", False),
             ),
             defaults=DefaultsConfig(
                 tags=defaults_data.get("tags", []),
@@ -281,6 +283,7 @@ class ConfigManager:
         )
         display_table["due_date_format"] = self._config.display.due_date_format
         display_table["todo_sorting_mode"] = self._config.display.todo_sorting_mode
+        display_table["permanent_omnibox"] = self._config.display.permanent_omnibox
         doc.add("display", display_table)
 
         defaults_table = tomlkit.table()
@@ -356,6 +359,7 @@ class ConfigManager:
                 "notifications_enabled": config.display.notifications_enabled,
                 "due_date_format": config.display.due_date_format,
                 "todo_sorting_mode": config.display.todo_sorting_mode,
+                "permanent_omnibox": config.display.permanent_omnibox,
             },
             "defaults": {
                 "tags": config.defaults.tags,

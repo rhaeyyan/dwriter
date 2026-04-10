@@ -33,13 +33,19 @@ notifications_enabled = false  # Toggle desktop push notifications
 
 ### Configuration Options:
 
-| Section | Option | Description |
-| :--- | :--- | :--- |
-| `[defaults]` | `project` | The project name automatically applied to new entries. |
-| `[standup]` | `format` | Your preferred layout for daily summaries. |
-| `[review]` | `format` | The layout used for long-term reports. |
-| `[display]` | `colors` | Toggle terminal color support. |
-| `[display]` | `notifications_enabled` | Opt-in to OS-level desktop push notifications for reminders. |
+| Section | Option | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `[defaults]` | `project` | string | — | Project name auto-applied to new entries. |
+| `[defaults]` | `git_auto_tag` | bool | `true` | Apply git repo/branch as tags on `dwriter add`. |
+| `[defaults]` | `auto_sync` | bool | `false` | Auto-pull from sync remote on TUI launch. |
+| `[standup]` | `format` | string | `"bullets"` | Layout for daily summaries (bullets, slack, jira, markdown). |
+| `[review]` | `format` | string | `"markdown"` | Layout for long-term reports. |
+| `[display]` | `colors` | bool | `true` | Toggle terminal color support. |
+| `[display]` | `notifications_enabled` | bool | `false` | Opt-in to OS-level desktop push notifications for reminders. |
+| `[display]` | `permanent_omnibox` | bool | `false` | Keep the TUI omnibox pinned open at all times. |
+| `[display]` | `theme` | string | `"cyberpunk"` | TUI color theme (cyberpunk, light, dark, minimal). |
+| `[display]` | `clock_24hr` | bool | `true` | Use 24-hour clock format. |
+| `[display]` | `ergonomic_mode` | bool | `false` | Spacious layout with wider margins. |
 
 ---
 
