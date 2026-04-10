@@ -1,4 +1,4 @@
-# 📘 dwriter: The Definitive Technical & User Manual (v4.2.0)
+# 📘 dwriter: The Definitive Technical & User Manual (v4.4.0)
 
 This manual provides a tiered guide to **dwriter**, covering everything from basic journaling to the underlying distributed state architecture. It is designed for both casual users seeking a clean workflow and developers looking to integrate or extend the system.
 
@@ -49,8 +49,10 @@ Run `dwriter` to launch the TUI. Built with the **Textual** framework, it provid
 
 ### 🧠 The 2nd-Brain & 7-Day Pulse
 - **The Pulse:** A heavy analytics operation that runs once every 24 hours. It calculates your "Momentum" (task velocity) and identifies your "Big Rock" (the project taking most of your time).
-- **Modern Feedback:** During AI reasoning (Gemma-4), a sleek **Modern Spinner** (Braille-style) provides non-intrusive feedback, ensuring you know the system is active during complex inference.
+- **Modern Feedback:** During AI reasoning, a sleek **Modern Spinner** (Braille-style) provides non-intrusive feedback, ensuring you know the system is active during complex inference.
 - **Throttling Logic:** To preserve terminal performance, the full pulse is cached. Subsequent launches return a minimalist greeting until the next calendar day.
+- **Live Context:** The 2nd-Brain re-loads your latest entries and todos each time you open the screen, so entries logged during your session are immediately visible to the AI.
+- **Agentic Tool Calls:** The AI has access to four tools it calls automatically based on your query: `search_journal` (past entries), `search_todos` (tasks), `get_daily_standup` (daily reports), and `fetch_recent_commits` (git history). You do not need to invoke these manually.
 
 ---
 
@@ -77,7 +79,7 @@ When you use `dwriter ask`, the system:
 To prevent "Context Bloat" and keep local LLMs performing at peak speeds, **dwriter** implements a **Deterministic Summary Compressor**:
 - **Deduplication:** Duplicate status lines and redundant headers are stripped.
 - **Priority Loading:** High-signal lines starting with `Summary:`, `- Scope:`, or `- ` (bullets) are prioritized.
-- **Strict Budgets:** Context is capped at **1,200 characters** and **24 lines** to ensure the model focuses only on the most relevant historical activity.
+- **Strict Budgets:** Context is capped at **4,000 characters** and **60 lines**, providing the model with rich historical signal while preventing context bloat on local hardware.
 
 
 ### 👻 Omnibox Ghost Text

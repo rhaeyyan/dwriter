@@ -21,34 +21,61 @@ from textual.app import ComposeResult
 from textual.containers import Container, Vertical
 from textual.widgets import Input, Static
 
-class ModernSpinner(Static):
-    """A sleek, modern spinner using Braille characters."""
+from ...ai.compression import compress_summary
+from ...ai.engine import ask_second_brain_agentic
+
+
+class ThinkingIndicator(Static):
+    """Unified thinking indicator with Braille spinner, text, and elapsed timer."""
     DEFAULT_CSS = """
-    ModernSpinner {
+    ThinkingIndicator {
         display: none;
         height: 1;
         margin: 0 2;
-        color: #cba6f7;
     }
     """
-    
+
     CHARS = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
-    
+    COLORS = ["#D53E0F", "#66D0BC", "#00E5FF", "#FCBF49"]
+
     def on_mount(self) -> None:
         self._frame = 0
-        self.update(f"{self.CHARS[0]} [italic]2nd-Brain is thinking...[/]")
+        self._start_time: float | None = None
+        self.update(self._build_text())
         self.set_interval(0.1, self._update_spinner)
-        
+
+    def start(self) -> None:
+        """Start the indicator and reset the timer."""
+        import time
+        self._start_time = time.monotonic()
+        self._frame = 0
+        self.update(self._build_text())
+        self.display = True
+
+    def stop(self) -> None:
+        """Hide the indicator."""
+        self.display = False
+        self._start_time = None
+
+    def _build_text(self) -> str:
+        """Build the indicator text with spinner and elapsed time."""
+        import time
+        try:
+            char = self.CHARS[self._frame]
+            color = self.COLORS[self._frame % len(self.COLORS)]
+            elapsed = 0.0
+            if self._start_time is not None:
+                elapsed = time.monotonic() - self._start_time
+            mins = int(elapsed // 60)
+            secs = int(elapsed % 60)
+            return f"  [{color}]{char}[/] [dim]thinking[/]  [dim]{mins:02d}:{secs:02d}[/]"
+        except Exception:
+            return "  [dim]thinking...[/]"
+
     def _update_spinner(self) -> None:
         if self.display:
-            self.update(f"{self.CHARS[self._frame]} [italic]2nd-Brain is thinking...[/]")
             self._frame = (self._frame + 1) % len(self.CHARS)
-
-from ...ai.engine import (
-    ask_second_brain_agentic,
-)
-from ...ai.compression import compress_summary
-from ..messages import AIToolEvent
+            self.update(self._build_text())
 
 
 class ChatMessage(Container):
@@ -64,45 +91,66 @@ class UserChatMessage(ChatMessage):
         width: 100%;
         height: auto;
         align-horizontal: right;
+        margin: 1 0 0 0;
+    }
+    .user-label {
+        width: auto;
+        height: 1;
+        color: $primary;
+        margin: 0 2 0 0;
     }
     .user-bubble {
         width: auto;
-        max-width: 94%;
-        margin: 1 2;
-        padding: 0 1;
+        max-width: 80%;
+        height: auto;
+        padding: 0 2;
         background: $surface;
-        color: white;
-        border: solid cyan;
+        border: none;
+        border-right: solid $primary;
+        margin: 0 1 1 0;
     }
     """
     def compose(self) -> ComposeResult:
-        # Wrap self.content in escape() so users can't inject Rich markup
-        # For user chat, we just want standard wrapping but with a bit of padding/margin
-        yield Static(f"[bold cyan]You:[/]\n{escape(self.content)}", classes="user-bubble")
+        # Escape user input to prevent Rich markup injection
+        escaped = escape(self.content)
+        yield Static("you", classes="user-label")
+        yield Static(escaped, classes="user-bubble")
 
 class AIChatMessage(ChatMessage):
-    """Widget for AI chat messages aligned to the left."""
+    """Widget for AI chat messages aligned to the left.
+
+    Renders the response in a clean unified block with a labelled header
+    and a left-side accent border for modern, scannable output.
+    """
     DEFAULT_CSS = """
     AIChatMessage {
         width: 100%;
         height: auto;
-        align-horizontal: left;
+        margin: 1 0 0 0;
+    }
+    .ai-label {
+        width: auto;
+        height: 1;
+        margin: 0 0 0 2;
     }
     .ai-bubble {
         width: auto;
-        max-width: 98%;
-        margin: 1 2;
-        padding: 0 1;
+        max-width: 96%;
+        height: auto;
+        padding: 0 2;
         background: $panel;
-        color: white;
-        border: round #cba6f7;
+        border: none;
+        border-left: solid #cba6f7;
+        margin: 0 0 1 2;
     }
     """
+
     def compose(self) -> ComposeResult:
-        # Textual handles wrapping inside Static, but we can't easily do hanging indent 
-        # for multiple lines of a single paragraph via CSS alone in Textual easily.
-        # However, we can use a small trick: if the AI response is a list, we indent.
-        yield Static(f"[bold #cba6f7]2nd-Brain:[/]\n{self.content}", classes="ai-bubble")
+        # Pre-indent all non-empty lines for consistent hanging alignment
+        lines = self.content.split("\n")
+        indented = "\n".join(f"  {line}" if line.strip() else "" for line in lines)
+        yield Static("[bold #cba6f7]▸ 2nd-Brain[/]", classes="ai-label")
+        yield Static(indented, markup=True, classes="ai-bubble")
 
 class SecondBrainScreen(Container):
     """Interactive AI 2nd-Brain Screen.
@@ -135,12 +183,21 @@ class SecondBrainScreen(Container):
         scrollbar-size-vertical: 1;
         scrollbar-gutter: stable;
     }
-    
+
+    .system-message {
+        height: auto;
+        margin: 1 2 0 2;
+        padding: 0;
+        color: $text-muted;
+        text-align: center;
+    }
+
     #second-brain-status {
         height: 1;
         margin: 0 1;
         padding: 0;
         color: $text-muted;
+        display: none;
     }
 
     #ai-status-indicator {
@@ -149,10 +206,18 @@ class SecondBrainScreen(Container):
         padding: 0;
         display: none;
     }
-    
+
+    #thinking-indicator {
+        height: 1;
+        margin: 0 0 0 1;
+        padding: 0;
+        display: none;
+    }
+
     #second-brain-input {
         margin: 0;
-        border: solid #cba6f7;
+        border: none;
+        border-top: solid #cba6f7;
         background: $surface;
     }
     """
@@ -174,26 +239,17 @@ class SecondBrainScreen(Container):
         """Composes the 2nd-Brain layout components."""
         with Vertical():
             with Vertical(id="second-brain-log"):
-                yield Static("[bold black on yellow] SYSTEM [/]\n[dim]2nd-Brain initialized with recent task and log context.[/dim]")
-            yield Static("", id="second-brain-status")
-            yield Static("", id="ai-status-indicator")
-            yield ModernSpinner(id="ai-spinner")
+                yield Static("[dim]── 2nd-Brain ready · context loaded ──[/dim]", classes="system-message")
+            yield ThinkingIndicator(id="thinking-indicator")
             yield Input(placeholder="Ask your 2nd-Brain anything...", id="second-brain-input")
 
     def on_mount(self) -> None:
         """Initializes chat history and refreshes the primary context."""
         self._refresh_context()
 
-    def on_ai_tool_event(self, event: AIToolEvent) -> None:
-        """Handle UI updates when the AI agent triggers an internal tool."""
-        indicator = self.query_one("#ai-status-indicator", Static)
-        indicator.update(
-            f"[dim italic]🧠 AI is running {event.tool_name}...[/]"
-        )
-        indicator.display = True
-
     def on_show(self) -> None:
-        """Triggers welcome message with 7-day wrap info when screen is shown."""
+        """Refreshes context and triggers welcome message when screen is shown."""
+        self._refresh_context()
         if not self._welcome_shown:
             self._display_welcome_message()
             self._welcome_shown = True
@@ -318,14 +374,14 @@ class SecondBrainScreen(Container):
         three_days_ago = datetime.now() - timedelta(days=3)
         context_parts: list[str] = []
 
-        # Keyword matching for project history
+        # Keyword matching for project history — matches &name and plain name as a word
         try:
             all_projects = list(self.ctx.db.get_project_stats().keys())
             mentioned_projects = [
                 p
                 for p in all_projects
                 if re.search(
-                    r"&" + re.escape(p) + r"\b", user_input, re.IGNORECASE
+                    r"(?:&|\b)" + re.escape(p) + r"\b", user_input, re.IGNORECASE
                 )
             ]
 
@@ -343,14 +399,14 @@ class SecondBrainScreen(Container):
         except Exception:
             pass
 
-        # Keyword matching for tag history
+        # Keyword matching for tag history — matches #name and plain name as a word
         try:
             all_tags = list(self.ctx.db.get_entries_with_tags_count().keys())
             mentioned_tags = [
                 t
                 for t in all_tags
                 if re.search(
-                    r"#" + re.escape(t) + r"\b", user_input, re.IGNORECASE
+                    r"(?:#|\b)" + re.escape(t) + r"\b", user_input, re.IGNORECASE
                 )
             ]
 
@@ -381,23 +437,20 @@ class SecondBrainScreen(Container):
             return
 
         log = self.query_one("#second-brain-log", Vertical)
-        status = self.query_one("#second-brain-status", Static)
-        
+
         # User message
         user_msg = UserChatMessage(user_input)
         log.mount(user_msg)
         user_msg.scroll_visible()
-        
-        status.update("[bold #cba6f7]Thinking...[/]")
-        self.query_one("#ai-spinner").display = True
+
         event.input.value = ""
 
         if not self.ctx.config.ai.enabled:
             log.mount(Static("[yellow]AI features are disabled in configuration.[/yellow]"))
-            status.update("")
-            self.query_one("#ai-spinner").display = False
             return
 
+        thinking = self.query_one("#thinking-indicator", ThinkingIndicator)
+        thinking.start()
         self._run_ai_chat(user_input)
 
     @work(thread=True)
@@ -408,9 +461,7 @@ class SecondBrainScreen(Container):
             user_input (str): The raw text query from the user.
         """
         log = self.query_one("#second-brain-log", Vertical)
-        status = self.query_one("#second-brain-status", Static)
-        indicator = self.query_one("#ai-status-indicator", Static)
-        spinner = self.query_one("#ai-spinner")
+        thinking = self.query_one("#thinking-indicator", ThinkingIndicator)
 
         try:
             # 1. Targeted context retrieval (keywords)
@@ -418,11 +469,6 @@ class SecondBrainScreen(Container):
             combined_context = compress_summary(f"{self._context_data}\n{targeted_context}")
 
             # 2. Run agentic loop (with tool-calling)
-            self.app.call_from_thread(
-                status.update, "[bold #cba6f7]Thinking...[/]"
-            )
-
-            # Pass self so ask_second_brain_agentic can post AIToolEvents back to this screen
             answer = ask_second_brain_agentic(
                 prompt=user_input,
                 config=self.ctx.config.ai,
@@ -430,11 +476,8 @@ class SecondBrainScreen(Container):
                 app_context=self,
             )
 
-            # 3. Clean up UI state
-            self.app.call_from_thread(status.update, "")
-            self.app.call_from_thread(indicator.update, "")
-            self.app.call_from_thread(setattr, indicator, "display", False)
-            self.app.call_from_thread(setattr, spinner, "display", False)
+            # 3. Hide indicator
+            self.app.call_from_thread(thinking.stop)
 
             # 4. Update chat history and display response
             self._chat_history.append({"role": "user", "content": user_input})
@@ -446,17 +489,19 @@ class SecondBrainScreen(Container):
             self.app.call_from_thread(ai_msg.scroll_visible)
 
         except Exception as e:
-            # Ensure indicators are hidden on error
-            self.app.call_from_thread(status.update, "[bold red]AI Error[/bold red]")
-            self.app.call_from_thread(setattr, indicator, "display", False)
-            self.app.call_from_thread(setattr, spinner, "display", False)
-            
+            # Ensure indicator is hidden on error
+            self.app.call_from_thread(thinking.stop)
+
             error_msg = Static(f"[red]AI Error: {e}[/red]")
             self.app.call_from_thread(log.mount, error_msg)
             self.app.call_from_thread(error_msg.scroll_visible)
 
     def _format_ai_response(self, text: str) -> str:
         """Transforms AI-generated Markdown into Rich-compatible markup for UI rendering.
+
+        Focuses on clean, scannable output: proper paragraph spacing,
+        selective colorization of dates/tags/priorities, and minimal
+        emoji amplification to avoid visual clutter.
 
         Args:
             text (str): Raw Markdown text from the AI.
@@ -466,36 +511,47 @@ class SecondBrainScreen(Container):
         """
         # 1. Escape the raw AI text first to make brackets literal
         text = escape(text)
-        
-        # 2. Colorize Tags and Projects
-        # Use identical colors to InsightGenerator
+
+        # 2. Reduce emoji density: remove redundant emoji bullets that local LLMs overuse
+        # Strips lines that are *only* an emoji (common LLM habit: 📌, ✅, 🔥, etc.)
+        # Replaces them with a clean dash marker for scanability.
+        text = re.sub(
+            r'^[\s]*[\U0001F300-\U0001FAD6\U00002700-\U000027BF\U00002600-\U000026FF]\s*',
+            '  \u2013 ',  # en-dash bullet
+            text,
+            flags=re.MULTILINE,
+        )
+
+        # 3. Colorize Tags and Projects (selective — only when they're actual refs)
         text = re.sub(r'(?<!\w)#([\w:-]+)', r'[bold #66D0BC]#\1[/]', text)
         text = re.sub(r'(?<!\w)&([\w:-]+)', r'[bold #F77F00]&\1[/]', text)
-        
-        # 3. Colorize Dates (e.g., 2026-04-07)
+
+        # 4. Colorize Dates (e.g., 2026-04-07)
         text = re.sub(r'(\d{4}-\d{2}-\d{2})', r'[cyan]\1[/]', text)
-        
-        # 4. Colorize Times (e.g., 14:00, 2:30pm)
+
+        # 5. Colorize Times (e.g., 14:00, 2:30pm)
         text = re.sub(r'(\d{1,2}:\d{2}(?:\s*(?:am|pm))?)', r'[$success]\1[/]', text)
 
-        # 5. Colorize Urgency/Priority levels
+        # 6. Colorize Urgency/Priority levels
         text = re.sub(r'(?i)\b(urgent)\b', r'[bold #D53E0F]\1[/]', text)
         text = re.sub(r'(?i)\b(high)\b', r'[#D53E0F]\1[/]', text)
         text = re.sub(r'(?i)\b(normal)\b', r'[white]\1[/]', text)
         text = re.sub(r'(?i)\b(low)\b', r'[dim]\1[/]', text)
-        
-        # 6. Convert Markdown bold and headers to Rich tags
-        # Note: These regexes work on escaped text because escape() only touches [ and ]
+
+        # 7. Convert Markdown bold and headers to Rich tags
         text = re.sub(r'\*\*(.*?)\*\*', r'[bold #cba6f7]\1[/]', text)
         text = re.sub(r'^#+\s+(.*?)$', r'[bold #cba6f7]\1[/]', text, flags=re.MULTILINE)
-        
-        # 7. Code blocks and inline code
-        text = re.sub(r'```[\w]*\n?(.*?)\n?```', lambda m: f"[dim]{m.group(1)}[/dim]", text, flags=re.DOTALL)
+
+        # 8. Code blocks and inline code
+        text = re.sub(
+            r'```[\w]*\n?(.*?)\n?```',
+            lambda m: f"[dim]{m.group(1)}[/dim]",
+            text,
+            flags=re.DOTALL,
+        )
         text = re.sub(r'`(.*?)`', r'[#89b4fa]\1[/]', text)
-        
-        # 8. Neat Emoji Lists (ensure space after emoji bullet)
-        # Matches emoji at start of line followed by optional space, ensures 2 spaces for "neat" alignment
-        # `\\` prevents matching escape characters, avoiding unescaping `\[` which caused the MarkupError crash.
-        text = re.sub(r'^([^\w\s\d\[\(\\])\s*', r'\1  ', text, flags=re.MULTILINE)
+
+        # 9. Normalize paragraph spacing: collapse 3+ newlines into 2
+        text = re.sub(r'\n{3,}', '\n\n', text)
 
         return text

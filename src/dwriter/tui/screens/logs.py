@@ -43,13 +43,16 @@ class QuickAddEntryModal(ModalScreen):  # type: ignore[type-arg]
     }
 
     #edit-content-label, #edit-tags-label, #edit-project-label, #edit-datetime-label {
-        text-style: bold;
+        color: $text-muted;
         padding: 1 0 0 0;
     }
 
     #edit-input, #tags-input, #project-input {
         width: 100%;
+        border: none;
+        border-bottom: solid $primary;
         margin: 0 0 1 0;
+        padding: 1 2 0 2;
     }
 
     .datetime-container {
@@ -61,10 +64,16 @@ class QuickAddEntryModal(ModalScreen):  # type: ignore[type-arg]
     #date-input {
         width: 60%;
         margin-right: 1;
+        border: none;
+        border-bottom: solid $primary;
+        padding: 1 2 0 2;
     }
 
     #time-input {
         width: 1fr;
+        border: none;
+        border-bottom: solid $primary;
+        padding: 1 2 0 2;
     }
 
     #help-text {
@@ -245,13 +254,16 @@ class EditEntryModal(ModalScreen):  # type: ignore[type-arg]
     }
 
     #edit-content-label, #edit-tags-label, #edit-project-label, #edit-datetime-label {
-        text-style: bold;
+        color: $text-muted;
         padding: 1 0 0 0;
     }
 
     #edit-input, #tags-input, #project-input {
         width: 100%;
+        border: none;
+        border-bottom: solid $primary;
         margin: 0 0 1 0;
+        padding: 1 2 0 2;
     }
 
     .datetime-container {
@@ -263,10 +275,16 @@ class EditEntryModal(ModalScreen):  # type: ignore[type-arg]
     #date-input {
         width: 60%;
         margin-right: 1;
+        border: none;
+        border-bottom: solid $primary;
+        padding: 1 2 0 2;
     }
 
     #time-input {
         width: 1fr;
+        border: none;
+        border-bottom: solid $primary;
+        padding: 1 2 0 2;
     }
 
     #help-text {
@@ -607,6 +625,55 @@ class DeleteConfirmModal(ModalScreen):  # type: ignore[type-arg]
         elif event.button.id == "cancel-btn": self.action_cancel()
 
 
+def _wrap_with_hanging_indent(text: str, indent: str) -> str:
+    """Wrap text with a hanging indentation pattern.
+
+    The first line starts with the given indent, and all subsequent
+    lines are padded with the same indent so they align vertically
+    with the first word of the first line.
+
+    Args:
+        text: The text content to wrap.
+        indent: The indentation string for the first line (e.g. "  ").
+
+    Returns:
+        The text wrapped with consistent hanging indentation.
+    """
+    # Strip Rich markup tags to compute visible width for wrapping
+    import re
+    tag_pattern = re.compile(r"\[/?[^]]*\]")
+    visible_text = tag_pattern.sub("", text)
+    # Use a reasonable terminal width for wrapping
+    wrap_width = 70
+    words = visible_text.split()
+    if not words:
+        return f"{indent}{text}"
+
+    # We build lines manually, accounting for markup length vs visible length
+    lines: list[str] = []
+    current_line_words: list[str] = []
+    current_visible_len = 0
+
+    for word in words:
+        word_visible_len = len(tag_pattern.sub("", word))
+        if current_visible_len + len(current_line_words) + word_visible_len <= wrap_width:
+            current_line_words.append(word)
+            current_visible_len += word_visible_len
+        else:
+            lines.append(" ".join(current_line_words))
+            current_line_words = [word]
+            current_visible_len = word_visible_len
+
+    if current_line_words:
+        lines.append(" ".join(current_line_words))
+
+    # Now we need to re-insert markup. For simplicity, we join with the indent
+    # and let Textual's native wrapping handle the rest. The key is the indent.
+    indent_prefix = indent
+    return (f"{indent_prefix}{lines[0]}\n" +
+            "\n".join(f"{indent_prefix}{line}" for line in lines[1:]))
+
+
 class LogsResultsView(ListView):
     """Component for displaying and interacting with a collection of journal entries."""
 
@@ -696,8 +763,21 @@ class LogsResultsView(ListView):
         if time_str:
             datetime_str = f"[cyan]{date_str}[/] [{color_tag}]{time_str}[/]"
 
-        first_line = f"{datetime_str} | {tags_str}{project_str}{score_str}"
-        return f"{first_line}\n  {content}" if content else first_line
+        first_line = f"{datetime_str}  [dim]·[/]  {tags_str}{project_str}{score_str}"
+
+        if not content:
+            return first_line
+
+        # Hanging indentation: subsequent lines align with the first word of content.
+        # The prefix on the first line is: "{first_line}\n  "
+        # We calculate the indent width as the visible length of "{first_line}  " 
+        # and use that to pad subsequent lines.
+        # For Rich markup, we count the raw string length minus markup tags.
+        # A simpler approach: use a fixed indent that matches the "  " prefix
+        # but with hanging wrap applied via textwrap.
+        indent = "  "
+        wrapped_content = _wrap_with_hanging_indent(content, indent)
+        return f"{first_line}\n{wrapped_content}"
 
 
 class LogsScreen(Container):
@@ -706,7 +786,7 @@ class LogsScreen(Container):
     DEFAULT_CSS = """
     LogsScreen {
         height: 1fr;
-        background: $surface;
+        background: $background;
     }
 
     #search-container {
@@ -728,7 +808,7 @@ class LogsScreen(Container):
         background: transparent;
         border: none;
         padding: 0;
-        margin: 1 0 0 0;
+        margin: 0;
         content-align: center middle;
         text-style: bold;
     }
@@ -753,12 +833,15 @@ class LogsScreen(Container):
 
     #search-input {
         width: 1fr;
-        border: solid $secondary;
+        border: none;
+        border-bottom: solid $primary;
         margin: 0 1;
+        padding: 1 2 0 2;
     }
 
     #search-input:focus {
-        border: solid $accent;
+        border: none;
+        border-bottom: solid $accent;
     }
 
     #results-container {
@@ -779,7 +862,7 @@ class LogsScreen(Container):
 
     LogsResultsView {
         height: 1fr;
-        border: solid #45475a;
+        border: solid $primary;
         background: $panel;
         padding: 0;
     }
@@ -791,7 +874,7 @@ class LogsScreen(Container):
     ListItem {
         height: auto;
         margin: 0;
-        padding: 0;
+        padding: 1 2;
     }
 
     Label {

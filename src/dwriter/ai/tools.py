@@ -150,16 +150,26 @@ def search_todos(query: str, project: str | None = None) -> str:
 
 
 def fetch_recent_commits(limit: int = 10) -> str:
-    """Fetches recent git commit messages from the current working directory.
+    """Fetches recent git commit messages from the current git repository.
 
     Use this to see the actual code changes the user has made recently.
     """
     try:
+        from ..git_utils import get_git_info
+
+        git_info = get_git_info()
+        if not git_info:
+            return (
+                "Error: Current directory is not a valid git repository "
+                "or git is not installed."
+            )
+
         result = subprocess.run(
             ["git", "log", f"-{limit}", "--pretty=format:%h - %s (%cr)"],
             capture_output=True,
             text=True,
             check=True,
+            cwd=git_info["toplevel"],
         )
         return result.stdout if result.stdout else "No commits found."
     except subprocess.CalledProcessError:

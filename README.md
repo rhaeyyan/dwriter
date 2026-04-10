@@ -1,5 +1,5 @@
 # dwriter 📝
-Experimental beta: v4.2.0
+Experimental beta: v4.4.0
 ### *The minimalist journal for those who live in the terminal powered by a Dual-Model AI Pipeline (Gemma 4).*
 
 **dwriter** is a high-signal, low-friction journaling tool designed to capture your work without breaking your flow. It bridges the gap between the raw speed of a command-line interface and the visual clarity of a modern dashboard.
@@ -69,7 +69,7 @@ dwriter
 **dwriter** features a context-aware "2nd-Brain" designed for deep reflection. It uses a specialized three-tier memory system and a governed **Analytical Engine** to ensure architectural integrity:
 - **Long-Term Memory:** AI-generated weekly retrospectives that identify your biggest wins and friction points.
 - **Short-Term Memory:** Seamless access to your last 72 hours of activity, optimized via **Deterministic Compression** to keep the AI focused on high-signal data.
-- **Targeted History:** On-demand retrieval of past entries when you mention specific `&projects` or `#tags`.
+- **Targeted History:** On-demand retrieval of past entries when you mention specific projects or tags — works with both `&project` / `#tag` syntax and plain natural language names.
 - **Governed Security:** All AI-driven insights are filtered through a customizable **Security Mode** (`permission_mode`) such as Read-Only, Append-Only, or Prompt to maintain data integrity and safety.
 
 ### 📊 The Visual Dashboard (TUI)
@@ -152,7 +152,7 @@ dwriter sync --pull
 | :--- | :--- |
 | 📘 **[User Manual](documentation/user-manual.md)** | **The complete technical guide to every feature.** |
 | 🔄 **[Sync Guide](documentation/sync-guide.md)** | **Simple, step-by-step instructions for non-technical users.** |
-| 🚀 **[Update Notes](documentation/update-notes.md)** | **New in v4.2.0:** Auto-Sync & Ghost Text. |
+| 🚀 **[Update Notes](documentation/update-notes.md)** | **New in v4.4.0:** TUI overhaul & 2nd-Brain context improvements. |
 | 🛠️ **[Command Reference](documentation/headless-readme.md)** | A complete guide to every CLI command and flag. |
 | 📖 **[Creative Use Cases](documentation/use-cases.md)** | 20 ways to use dwriter for brewing, fitness, travel, and more. |
 | ⚙️ **[Dev & Guide](documentation/dev-config.md)** | Customizing your themes, default projects, and dev setup. |

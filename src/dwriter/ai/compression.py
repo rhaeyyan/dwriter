@@ -6,8 +6,8 @@ import re
 class SummaryCompressionBudget:
     """Defines the limits for deterministic text compression."""
 
-    max_chars: int = 1200
-    max_lines: int = 24
+    max_chars: int = 4000
+    max_lines: int = 60
 
 
 class SummaryCompressor:
