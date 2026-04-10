@@ -50,17 +50,17 @@ def _sanitize_agent_output(text: str) -> str:
 
     # 2. Strip hallucinated JSON blocks
     clean_text = re.sub(
-        r'```(?:json)?\s*{\s*"(?:name|arguments|parameters)":.*?}\s*```', 
+        r'```(?:json)?\s*{\s*"(?:name|arguments|parameters)":.*?}\s*```',
         '', clean_text, flags=re.DOTALL | re.IGNORECASE
     )
     clean_text = re.sub(
-        r'{\s*"(?:name|arguments|parameters)":\s*".*?}.*?}', 
+        r'{\s*"(?:name|arguments|parameters)":\s*".*?}.*?}',
         '', clean_text, flags=re.DOTALL | re.IGNORECASE
     )
 
     # 2.5 Strip common LLM preambles/postambles surrounding tool calls
     clean_text = re.sub(
-        r"(?im)^(?:here is|here's)\s+(?:the\s+|a\s+)?(?:json|function call|tool call|function|tool).*?$", 
+        r"(?im)^(?:here is|here's)\s+(?:the\s+|a\s+)?(?:json|function call|tool call|function|tool).*?$",
         '', clean_text
     )
     clean_text = re.sub(r'(?im)^\(note:.*?\)$', '', clean_text)
@@ -284,6 +284,69 @@ def ask_second_brain_agentic(
                 )
 
     return "\n\n".join(full_response_parts)
+
+
+def generate_targeted_briefing(
+    briefing_type: str,
+    config: AIConfig,
+    context_data: str = "",
+    extra_data: dict[str, Any] | None = None,
+) -> str:
+    """Generates a highly targeted AI briefing based on specific analytics data.
+
+    Args:
+        briefing_type: One of 'weekly_retro', 'burnout_check', 'catch_up'.
+        config: AI configuration.
+        context_data: Static context (history).
+        extra_data: Specific data for the briefing (e.g., filtered entries for Catch Up).
+
+    Returns:
+        str: The AI-generated briefing in Markdown.
+    """
+    client = OpenAI(base_url=config.base_url, api_key="ollama")
+
+    system_prompts = {
+        "weekly_retro": (
+            "You are the dwriter 2nd-Brain. Generate a 'Weekly Retrospective' briefing. "
+            "Focus on: 1. Biggest Wins, 2. Velocity Trends, 3. Project Momentum, "
+            "4. Areas for improvement next week. "
+            "Use a professional yet encouraging tone. Use clean Markdown formatting. "
+            "Limit to 4-5 concise paragraphs or bullet groups."
+        ),
+        "burnout_check": (
+            "You are the dwriter 2nd-Brain. Generate a 'Burnout & Productivity' assessment. "
+            "Analyze after-hours work, context switching, and say-do ratios. "
+            "Provide actionable advice to reduce stress and improve focus. "
+            "Be direct and supportive. Use Markdown highlights."
+        ),
+        "catch_up": (
+            "You are the dwriter 2nd-Brain. Generate a 'Catch Up' briefing for the "
+            "requested criteria (project/tags/dates). "
+            "Summarize: 1. Key Accomplishments, 2. Blockers encountered, "
+            "3. Progress on specific goals, 4. The 'Next Move' for this work stream. "
+            "Be highly concise and high-signal. Use bolding for emphasis."
+        ),
+    }
+
+    prompt = system_prompts.get(briefing_type, "Provide a general productivity briefing.")
+
+    user_content = f"### ANALYTICS & CONTEXT:\n{context_data}\n"
+    if extra_data:
+        # Convert objects to serializable format (strings for datetimes)
+        serialized_extra = json.dumps(extra_data, default=str)
+        user_content += f"\n### TARGETED DATA FOR BRIEFING:\n{serialized_extra}"
+
+    messages = [
+        {"role": "system", "content": prompt},
+        {"role": "user", "content": user_content},
+    ]
+
+    response = client.chat.completions.create(
+        model=config.chat_model,
+        messages=messages,  # type: ignore
+    )
+
+    return _sanitize_agent_output(response.choices[0].message.content or "")
 
 
 def get_ai_client(config: AIConfig) -> Any:

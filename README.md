@@ -1,5 +1,5 @@
 # dwriter: AI Edition 📝
-Experimental beta: v4.4.0
+v4.6.0
 ### *The minimalist journal for those who live in the terminal powered by a Dual-Model AI Pipeline (Gemma 4).*
 
 **dwriter** is a high-signal, low-friction journaling tool designed to capture your work without breaking your flow. It bridges the gap between the raw speed of a command-line interface and the visual clarity of a modern dashboard.
@@ -153,7 +153,7 @@ dwriter sync --pull
 | 🧠 **[2nd-Brain Guide](documentation/2ND-BRAIN-GUIDE.md)** | **How to get the most out of the AI 2nd-Brain — logging habits, querying tips, and analytics.** |
 | 📘 **[User Manual](documentation/user-manual.md)** | **The complete technical guide to every feature.** |
 | 🔄 **[Sync Guide](documentation/sync-guide.md)** | **Simple, step-by-step instructions for non-technical users.** |
-| 🚀 **[Update Notes](documentation/update-notes.md)** | **New in v4.4.0:** TUI overhaul & 2nd-Brain context improvements. |
+| 🚀 **[Update Notes](documentation/update-notes.md)** | **New in v4.6.0:** 2nd-Brain reporting overhaul & Catch Up flow redesign. |
 | 🛠️ **[Command Reference](documentation/headless-readme.md)** | A complete guide to every CLI command and flag. |
 | 📖 **[Creative Use Cases](documentation/use-cases.md)** | 20 ways to use dwriter for brewing, fitness, travel, and more. |
 | ⚙️ **[Dev & Guide](documentation/dev-config.md)** | Customizing your themes, default projects, and dev setup. |
