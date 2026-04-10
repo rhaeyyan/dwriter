@@ -121,21 +121,51 @@ def ask_second_brain_agentic(
         {
             "type": "function",
             "function": {
+                "name": "search_journal",
+                "description": (
+                    "Searches the user's journal entries and time logs using fuzzy "
+                    "matching. Use this whenever the user asks about past work, "
+                    "specific notes, or history that may not be in the static context "
+                    "— e.g. 'what did I work on last week?', 'find my notes about X', "
+                    "'how much time did I spend on Y?'. Returns up to 10 entries with "
+                    "timestamps, tags, project, mood, and energy level."
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "Natural language search query describing what to find.",
+                        },
+                        "project": {
+                            "type": "string",
+                            "description": "Optional: filter by project name (without the & prefix).",
+                        },
+                    },
+                    "required": ["query"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
                 "name": "get_daily_standup",
                 "description": (
-                    "Generates a formatted Daily Standup report for a specific "
-                    "date (default is yesterday)."
+                    "Generates a formatted Daily Standup report summarizing what was "
+                    "done and what is planned. Use this when the user explicitly asks "
+                    "for a 'standup', 'daily report', 'what did I do yesterday', or "
+                    "wants a structured summary of a specific date's activity."
                 ),
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "date_str": {
-                            "type": "string", 
-                            "description": "The date in YYYY-MM-DD format. Default is yesterday."
+                            "type": "string",
+                            "description": "The date in YYYY-MM-DD format. Omit for yesterday.",
                         },
                         "project": {
                             "type": "string",
-                            "description": "Optional project filter (&name)",
+                            "description": "Optional: filter by project name (without the & prefix).",
                         },
                     },
                 },
@@ -145,14 +175,22 @@ def ask_second_brain_agentic(
             "type": "function",
             "function": {
                 "name": "search_todos",
-                "description": "Searches tasks and todo items.",
+                "description": (
+                    "Searches the user's tasks and todo items by content, priority, "
+                    "or deadline. Use this when the user asks about specific tasks, "
+                    "what is pending, what is overdue, or anything about their "
+                    "task list beyond what the static context shows."
+                ),
                 "parameters": {
                     "type": "object",
                     "properties": {
-                        "query": {"type": "string", "description": "The search query"},
+                        "query": {
+                            "type": "string",
+                            "description": "Natural language search query for tasks.",
+                        },
                         "project": {
                             "type": "string",
-                            "description": "Optional project filter (&name)",
+                            "description": "Optional: filter by project name (without the & prefix).",
                         },
                     },
                     "required": ["query"],
@@ -163,14 +201,19 @@ def ask_second_brain_agentic(
             "type": "function",
             "function": {
                 "name": "fetch_recent_commits",
-                "description": "Fetches recent git commit messages.",
+                "description": (
+                    "Fetches recent git commit messages from the user's current "
+                    "repository. Returns short hash, subject line, and relative time "
+                    "(e.g. '2 hours ago'). Use this when the user asks about recent "
+                    "code changes, what was shipped, or git activity."
+                ),
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "limit": {
                             "type": "integer",
-                            "description": "Number of commits to fetch",
-                        }
+                            "description": "Number of commits to fetch (default 10).",
+                        },
                     },
                 },
             },

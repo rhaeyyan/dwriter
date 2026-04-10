@@ -40,8 +40,20 @@ class ConfigureScreen(Container):
         width: 1fr;
         margin-bottom: 1;
         padding: 0 1;
-        border: solid $border-blurred;
+        border: none;
+        border-left: solid $primary;
         background: $panel;
+    }
+
+    Input {
+        border: none;
+        border-bottom: solid $primary;
+        padding: 1 2 0 2;
+    }
+
+    Input:focus {
+        border: none;
+        border-bottom: solid $accent;
     }
 
     .section-title {

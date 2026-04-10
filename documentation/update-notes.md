@@ -1,5 +1,27 @@
 # dwriter Update Notes
 
+## Version 4.4.0 - April 9, 2026
+
+### 🚀 Key Features
+
+#### 1. TUI Visual Overhaul (Modern CLI Aesthetic)
+- **Accent-Line Design Language**: Replaced full box-borders throughout the TUI with minimal accent-line borders (`border-left`, `border-right`, `border-bottom`, `border-top`), giving the interface a clean, modern terminal look.
+- **2nd-Brain Chat Redesign**: User messages are now right-aligned with a right-side `$primary` accent border. AI responses are left-aligned with a left-side `#cba6f7` accent border and a `▸ 2nd-Brain` label. Both use `width: auto` sizing with `max-width` caps for readable line lengths.
+- **Underline Inputs System-Wide**: All text inputs across every screen (Logs, Todo, Timer, Settings, Standup) now use `border: none; border-bottom: solid $primary` for a clean underline style consistent with modern TUI tools.
+- **Vertical Alignment Fix**: Added `padding: 1 2 0 2` to all underline inputs, restoring the 3-row geometry (top-padding + text + border) so label text aligns correctly with input text across every form.
+- **Theme-Aware Colors**: Eliminated all hardcoded hex colors (`#45475a`, `#0d0f18`, `#3b494c`) and non-standard variables (`$border-blurred`, `$secondary` borders). All borders now reference semantic theme variables (`$primary`, `$accent`, `$panel`, `$surface`).
+
+#### 2. 2nd-Brain Context & Quality Improvements
+- **`search_journal` Tool Enabled**: The journal search tool was registered in `AVAILABLE_TOOLS` but was missing from the tools array passed to the LLM API. It is now correctly exposed, enabling the AI to dynamically look up past entries when answering history-based queries (e.g. "what did I work on last week?").
+- **Expanded Context Budget**: The Deterministic Summary Compressor budget has been raised from 1,200 chars / 24 lines to **4,000 chars / 60 lines**, giving the model significantly more history per query without context bloat.
+- **Sharpened Tool Descriptions**: All four tool definitions (`search_journal`, `get_daily_standup`, `search_todos`, `fetch_recent_commits`) now include explicit trigger conditions, output shape descriptions, and usage examples. This materially improves tool-selection accuracy on local models.
+- **Live Context Refresh**: The 2nd-Brain context (`_refresh_context`) is now re-assembled every time the screen becomes visible, rather than only on initial mount. Entries and todos added during the session are immediately available.
+- **Natural Language Targeted History**: The targeted context retrieval now matches project and tag names as plain words in addition to `&name` / `#tag` syntax. Queries like "what have I done for dwriter this week?" now correctly pull project history without requiring the `&` prefix.
+
+### 🛠 Improvements & Fixes
+- **Domain Isolation Enforced**: A regression that modified the LLM system prompt from within the TUI layer has been reverted. Emoji reduction is handled exclusively by the TUI-side `_format_ai_response()` post-processor, keeping AI behavioral logic isolated in `src/dwriter/ai/`.
+- **`fetch_recent_commits` Correctness**: The git commit fetcher now resolves the repository root via `get_git_info()` before running `git log`, preventing failures when dwriter is invoked from a subdirectory.
+
 ## Version 4.3.1 - April 9, 2026
 
 ### 🚀 Key Features

@@ -70,7 +70,7 @@ class RangeSelectionScreen(ModalScreen[tuple[datetime, datetime] | None]):
     #range-container { width: 50; height: auto; border: solid $primary; background: $panel; padding: 1 2; }
     #range-title { text-align: center; text-style: bold; margin-bottom: 1; }
     .range-inputs { height: auto; margin-bottom: 1; }
-    #range-start, #range-end { width: 1fr; }
+    #range-start, #range-end { width: 1fr; border: none; border-bottom: solid $primary; padding: 1 2 0 2; }
     #range-label { color: $text-muted; text-style: bold; content-align: center middle; padding-top: 1; margin: 0 1; }
     #range-footer { height: auto; align: center middle; }
     #range-footer Button { margin: 0 1; }
@@ -116,8 +116,8 @@ class FilterSelectionScreen(ModalScreen[tuple[list[str], list[str]] | None]):
     #filter-title { text-align: center; text-style: bold; margin-bottom: 1; color: $warning; }
     .filter-row { height: auto; margin-bottom: 1; align: left middle; }
     .filter-label { width: 12; color: $text-muted; text-style: bold; content-align: center middle; height: 3; }
-    #filter-projects { width: 1fr; }
-    #filter-tags { width: 1fr; }
+    #filter-projects { width: 1fr; border: none; border-bottom: solid $primary; padding: 1 2 0 2; }
+    #filter-tags { width: 1fr; border: none; border-bottom: solid $primary; padding: 1 2 0 2; }
     #filter-footer { height: auto; align: center middle; margin-top: 1; }
     #filter-footer Button { margin: 0 1; }
     #filter-hint { color: $text-muted; margin-bottom: 1; text-align: center; }
@@ -195,7 +195,7 @@ class StandupScreen(ModalScreen[None]):
     #weekly-period { width: 20; }
     #weekly-format { width: 20; }
 
-    #daily-editor, #weekly-editor { height: 1fr; border: solid $success; background: #0d0f18; }
+    #daily-editor, #weekly-editor { height: 1fr; border: solid $success; background: $background; }
     #weekly-summary { height: 1; margin-top: 1; color: $text-muted; text-style: bold; content-align: center middle; }
 
     #unified-footer { height: auto; min-height: 3; margin-top: 1; align: center middle; }

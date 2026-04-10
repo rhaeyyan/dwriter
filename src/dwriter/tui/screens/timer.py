@@ -56,6 +56,9 @@ class SessionCompleteModal(ModalScreen):  # type: ignore[type-arg]
     #edit-input {
         width: 1fr;
         margin-bottom: 1;
+        border: none;
+        border-bottom: solid $primary;
+        padding: 1 2 0 2;
     }
 
     .session-meta {
@@ -249,7 +252,7 @@ class TimerScreen(Container):
         align: center top;
         padding: 0 3;
         background: $panel;
-        border: solid #3b494c;
+        border: solid $primary;
         border-title-color: $primary;
     }
 
@@ -314,7 +317,6 @@ class TimerScreen(Container):
     .config-label {
         width: 6;
         color: $text-muted;
-        text-style: bold;
         content-align: center middle;
         margin-right: 1;
         height: 3;
@@ -323,12 +325,15 @@ class TimerScreen(Container):
     #timer-config-section Input {
         width: 1fr;
         margin-right: 1;
-        border: solid $border-blurred;
+        border: none;
+        border-bottom: solid $primary;
         background: $panel;
+        padding: 1 2 0 2;
     }
 
     #timer-config-section Input:focus {
-        border: solid $accent;
+        border: none;
+        border-bottom: solid $accent;
         background: $surface;
     }
 

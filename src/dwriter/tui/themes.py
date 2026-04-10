@@ -174,4 +174,5 @@ _PRIORITY_THEMES = ["cyberpunk", "jamboree", "ruby"]
 _OTHER_THEMES = sorted([n for n in THEMES.keys() if n not in _PRIORITY_THEMES])
 
 # List of theme names for Select widget options
-THEME_OPTIONS = [(name.capitalize(), name) for name in (_PRIORITY_THEMES + _OTHER_THEMES)]
+_THEME_ORDER = _PRIORITY_THEMES + _OTHER_THEMES
+THEME_OPTIONS = [(n.capitalize(), n) for n in _THEME_ORDER]
