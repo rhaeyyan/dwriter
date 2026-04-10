@@ -352,6 +352,28 @@ class DWriterApp(App[None]):
         background: transparent;
     }
 
+    Button:hover {
+        background: $surface;
+        text-style: bold;
+    }
+
+    Button.active:hover {
+        background: #cba6f7;
+        color: $background;
+        text-style: bold;
+    }
+
+    #insight-triggers Button:hover {
+        background: #cba6f7 20%;
+        text-style: bold;
+    }
+
+    #insight-triggers Button.active:hover {
+        background: #cba6f7;
+        color: $background;
+        text-style: bold;
+    }
+
     Button.-success { color: $success; text-style: bold; }
     Button.-success:hover, Button.-success:focus { background: $success 20%; color: $success; text-style: reverse bold; }
 
@@ -711,7 +733,7 @@ class DWriterApp(App[None]):
 
     def _set_default_size(self) -> None:
         """Set the default terminal size."""
-        self.set_size(90, 45)
+        self.set_size(90, 42)
 
     def action_command_palette(self) -> None:
         """Open the command palette with dwriter commands."""

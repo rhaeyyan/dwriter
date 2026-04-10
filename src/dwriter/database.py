@@ -641,6 +641,24 @@ class Database:
             stmt = select(func.distinct(Tag.name)).order_by(Tag.name)
             return list(session.scalars(stmt).all())
 
+    def get_stale_todos(self, limit: int = 5) -> list[Todo]:
+        """Retrieves the oldest pending todo tasks.
+
+        Args:
+            limit (int): Maximum number of tasks to return.
+
+        Returns:
+            list[Todo]: The oldest pending tasks ordered by creation date ascending.
+        """
+        with self.Session() as session:
+            stmt = (
+                select(Todo)
+                .where(Todo.status == "pending")
+                .order_by(Todo.created_at.asc())
+                .limit(limit)
+            )
+            return list(session.scalars(stmt).all())
+
     def get_latest_entry(self) -> Entry | None:
         """Retrieves the single most recently created journal entry.
 
@@ -833,6 +851,54 @@ class Database:
             )
             results = session.execute(stmt).all()
             return {str(date): count for date, count in results if date}
+
+    def get_activity_report_data(
+        self,
+        start_date: datetime,
+        end_date: datetime,
+        project: str | None = None,
+        tags: list[str] | None = None,
+    ) -> dict[str, Any]:
+        """Retrieves both entries and todos for a specific activity report.
+
+        Used by the 'Catch Up' feature to fetch context for AI synthesis.
+
+        Args:
+            start_date (datetime): Start of the period.
+            end_date (datetime): End of the period.
+            project (str | None): Optional project filter.
+            tags (list[str] | None): Optional tag filter.
+
+        Returns:
+            dict[str, Any]: A dictionary containing 'entries' and 'todos'.
+        """
+        with self.Session() as session:
+            # 1. Fetch Entries
+            entry_stmt = select(Entry).where(Entry.created_at.between(start_date, end_date))
+            if project:
+                entry_stmt = entry_stmt.where(Entry.project == project)
+            if tags:
+                entry_stmt = entry_stmt.join(Entry.tags).where(Tag.name.in_(tags))
+            entry_stmt = entry_stmt.order_by(Entry.created_at.asc())
+            entries = list(session.scalars(entry_stmt).unique().all())
+
+            # 2. Fetch Todos (either created or completed in range)
+            from sqlalchemy import or_
+
+            todo_stmt = select(Todo).where(
+                or_(
+                    Todo.created_at.between(start_date, end_date),
+                    Todo.completed_at.between(start_date, end_date),
+                )
+            )
+            if project:
+                todo_stmt = todo_stmt.where(Todo.project == project)
+            if tags:
+                todo_stmt = todo_stmt.join(Todo.tags).where(TodoTag.name.in_(tags))
+            todo_stmt = todo_stmt.order_by(Todo.created_at.asc())
+            todos = list(session.scalars(todo_stmt).unique().all())
+
+            return {"entries": entries, "todos": todos}
 
     def get_date_range(self) -> tuple[datetime | None, datetime | None]:
         """Determines the earliest and latest entry timestamps in the database.

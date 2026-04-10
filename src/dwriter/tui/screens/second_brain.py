@@ -1,8 +1,7 @@
 """2nd-Brain screen for dwriter TUI.
 
-This module provides an interactive AI chat interface that is context-aware
-of the user's current tasks and journal entries, featuring long-term memory
-via weekly summaries and targeted historical retrieval.
+This module provides a Strategic Command Center with high-density insights
+from the Analytics Engine and targeted AI synthesis.
 """
 
 from __future__ import annotations
@@ -18,15 +17,16 @@ if TYPE_CHECKING:
 from rich.markup import escape
 from textual import work
 from textual.app import ComposeResult
-from textual.containers import Container, Vertical
-from textual.widgets import Input, Static
+from textual.containers import Horizontal, Vertical
+from textual.widgets import Button, Static
 
 from ...ai.compression import compress_summary
-from ...ai.engine import ask_second_brain_agentic
+from ...ai.engine import generate_targeted_briefing
 
 
 class ThinkingIndicator(Static):
     """Unified thinking indicator with Braille spinner, text, and elapsed timer."""
+
     DEFAULT_CSS = """
     ThinkingIndicator {
         display: none;
@@ -39,6 +39,7 @@ class ThinkingIndicator(Static):
     COLORS = ["#D53E0F", "#66D0BC", "#00E5FF", "#FCBF49"]
 
     def on_mount(self) -> None:
+        """Initializes the spinner state and timer."""
         self._frame = 0
         self._start_time: float | None = None
         self.update(self._build_text())
@@ -47,6 +48,7 @@ class ThinkingIndicator(Static):
     def start(self) -> None:
         """Start the indicator and reset the timer."""
         import time
+
         self._start_time = time.monotonic()
         self._frame = 0
         self.update(self._build_text())
@@ -60,6 +62,7 @@ class ThinkingIndicator(Static):
     def _build_text(self) -> str:
         """Build the indicator text with spinner and elapsed time."""
         import time
+
         try:
             char = self.CHARS[self._frame]
             color = self.COLORS[self._frame % len(self.COLORS)]
@@ -73,19 +76,24 @@ class ThinkingIndicator(Static):
             return "  [dim]thinking...[/]"
 
     def _update_spinner(self) -> None:
+        """Cycles the Braille character and updates the display."""
         if self.display:
             self._frame = (self._frame + 1) % len(self.CHARS)
             self.update(self._build_text())
 
 
-class ChatMessage(Container):
+class ChatMessage(Vertical):
     """Base class for chat messages acting as a full-width container."""
+
     def __init__(self, content: str, **kwargs: Any) -> None:
+        """Initializes the chat message with content."""
         super().__init__(**kwargs)
         self.content = content
 
+
 class UserChatMessage(ChatMessage):
     """Widget for user chat messages aligned to the right."""
+
     DEFAULT_CSS = """
     UserChatMessage {
         width: 100%;
@@ -110,18 +118,17 @@ class UserChatMessage(ChatMessage):
         margin: 0 1 1 0;
     }
     """
+
     def compose(self) -> ComposeResult:
-        # Escape user input to prevent Rich markup injection
+        """Composes the user message bubble."""
         escaped = escape(self.content)
         yield Static("you", classes="user-label")
         yield Static(escaped, classes="user-bubble")
 
-class AIChatMessage(ChatMessage):
-    """Widget for AI chat messages aligned to the left.
 
-    Renders the response in a clean unified block with a labelled header
-    and a left-side accent border for modern, scannable output.
-    """
+class AIChatMessage(ChatMessage):
+    """Widget for AI chat messages aligned to the left."""
+
     DEFAULT_CSS = """
     AIChatMessage {
         width: 100%;
@@ -146,24 +153,15 @@ class AIChatMessage(ChatMessage):
     """
 
     def compose(self) -> ComposeResult:
-        # Pre-indent all non-empty lines for consistent hanging alignment
+        """Composes the AI message bubble with hanging indentation."""
         lines = self.content.split("\n")
         indented = "\n".join(f"  {line}" if line.strip() else "" for line in lines)
         yield Static("[bold #cba6f7]▸ 2nd-Brain[/]", classes="ai-label")
         yield Static(indented, markup=True, classes="ai-bubble")
 
-class SecondBrainScreen(Container):
-    """Interactive AI 2nd-Brain Screen.
 
-    Provides a chat interface for querying productivity data and receiving
-    strategic advice. Context is constructed using a three-tier hierarchy:
-    1. Long-Term Memory (AI-generated weekly retrospectives).
-    2. Short-Term Memory (Activity logs from the preceding 72 hours).
-    3. Targeted History (Contextual retrieval based on detected project or tag keywords).
-
-    Attributes:
-        ctx (AppContext): The application context for database and config access.
-    """
+class SecondBrainScreen(Vertical):
+    """Strategic Command Center for dwriter."""
 
     DEFAULT_CSS = """
     SecondBrainScreen {
@@ -173,147 +171,101 @@ class SecondBrainScreen(Container):
         padding: 0;
     }
 
-    #second-brain-log {
-        height: 1fr;
-        border: none;
-        padding: 0;
-        margin: 0;
-        background: transparent;
-        overflow-y: scroll;
-        scrollbar-size-vertical: 1;
-        scrollbar-gutter: stable;
-    }
-
-    .system-message {
-        height: auto;
-        margin: 1 2 0 2;
-        padding: 0;
-        color: $text-muted;
-        text-align: center;
-    }
-
-    #second-brain-status {
-        height: 1;
-        margin: 0 1;
-        padding: 0;
-        color: $text-muted;
-        display: none;
-    }
-
-    #ai-status-indicator {
-        height: 1;
-        margin: 0 2;
-        padding: 0;
-        display: none;
-    }
-
-    #thinking-indicator {
-        height: 1;
-        margin: 0 0 0 1;
-        padding: 0;
-        display: none;
-    }
-
-    #second-brain-input {
-        margin: 0;
-        border: none;
-        border-top: solid #cba6f7;
+    #insight-triggers {
+        height: 3;
+        align: center middle;
         background: $surface;
+        padding: 0 1;
+    }
+
+    #insight-triggers Button {
+        margin: 0 1;
+        min-width: 15;
+        border: none;
+        background: $panel;
+    }
+
+    #insight-triggers Button.active {
+        background: #cba6f7;
+        color: $background;
+        text-style: bold;
+    }
+
+    #insights-hub {
+        height: 1fr;
+        margin: 0 1 1 1;
+        border: solid #cba6f7;
+        background: $panel;
+        padding: 1 2;
+    }
+
+    #insights-narrative {
+        height: 1fr;
+        overflow-y: scroll;
+        margin-top: 1;
+    }
+
+    #insights-buttons {
+        height: 3;
+        align: center middle;
+        margin-top: 1;
+        background: $surface;
+    }
+
+    #insights-buttons Button {
+        margin: 0 1;
+        min-width: 16;
+    }
+
+    #ai-label {
+        color: #cba6f7;
     }
     """
 
     def __init__(self, ctx: AppContext, **kwargs: Any) -> None:
-        """Initializes the 2nd-Brain screen.
-
-        Args:
-            ctx (AppContext): Application context.
-            **kwargs (Any): Additional widget arguments.
-        """
+        """Initializes the Strategic Command Center screen."""
         super().__init__(**kwargs)
         self.ctx = ctx
-        self._chat_history: list[dict[str, str]] = []
         self._context_data: str = ""
-        self._welcome_shown: bool = False
 
     def compose(self) -> ComposeResult:
-        """Composes the 2nd-Brain layout components."""
-        with Vertical():
-            with Vertical(id="second-brain-log"):
-                yield Static("[dim]── 2nd-Brain ready · context loaded ──[/dim]", classes="system-message")
-            yield ThinkingIndicator(id="thinking-indicator")
-            yield Input(placeholder="Ask your 2nd-Brain anything...", id="second-brain-input")
+        """Composes the command center layout with trigger row and hub."""
+        with Horizontal(id="insight-triggers"):
+            yield Button("Energy", id="trigger-energy")
+            yield Button("Momentum", id="trigger-momentum")
+            yield Button("Golden Hour", id="trigger-golden-hour")
+            yield Button("Stale", id="trigger-stale")
+            yield Button("Focus", id="trigger-focus")
+            yield Button("Pulse", id="trigger-pulse")
+
+        with Vertical(id="insights-hub"):
+            yield Static("[bold #cba6f7]▸ Insights Hub[/]", id="ai-label")
+            with Vertical(id="insights-narrative"):
+                yield Static(
+                    "Welcome to your [bold #cba6f7]Strategic Command Center[/].\n\n"
+                    "Select a report above to explore your analytics, or use the "
+                    "briefing buttons below for AI-powered synthesis.",
+                    id="narrative-text",
+                )
+
+            with Horizontal(id="insights-buttons"):
+                yield Button("💬 Follow-up", id="btn-ask", variant="primary")
+                yield Button("Weekly Retro", id="btn-retro")
+                yield Button("Burnout Check", id="btn-burnout")
+                yield Button("Catch Up", id="btn-catchup")
+
+        yield ThinkingIndicator(id="thinking-indicator")
 
     def on_mount(self) -> None:
-        """Initializes chat history and refreshes the primary context."""
+        """Refreshes primary context upon mounting."""
         self._refresh_context()
 
     def on_show(self) -> None:
-        """Refreshes context and triggers welcome message when screen is shown."""
+        """Refreshes context when the screen is shown."""
         self._refresh_context()
-        if not self._welcome_shown:
-            self._display_welcome_message()
-            self._welcome_shown = True
-
-    @work(thread=True)
-    def _display_welcome_message(self) -> None:
-        """Fetches 7-day wrap info and displays it as a welcome message.
-
-        Throttles the heavy 7-Day Pulse wrap-up to once per day. If already
-        shown today, returns a fast, minimalist greeting.
-        """
-        from ...analytics import AnalyticsEngine, InsightGenerator
-        
-        try:
-            today = datetime.now().date().isoformat()
-            last_pulse = self.ctx.config.ai.last_pulse_greeting
-            
-            # Check if we should show the full pulse or a minimalist greeting
-            if last_pulse == today:
-                welcome_content = (
-                    "Welcome back. [bold #cba6f7]Ready to log or retrieve?[/]\n\n"
-                    "How can I help you optimize your focus today?"
-                )
-            else:
-                engine = AnalyticsEngine(self.ctx.db)
-                insight_gen = InsightGenerator(engine)
-                nudges = insight_gen.generate_weekly_wrapup()
-                
-                if nudges:
-                    # Add extra newline between nudge items for better "Dashboard" separation
-                    wrap_text = "\n\n".join(nudges)
-                    welcome_content = (
-                        "Welcome back! Here's your [bold #cba6f7]7-Day Pulse[/] wrap-up:\n\n"
-                        f"{wrap_text}\n\n"
-                        "How can I help you optimize your focus today?"
-                    )
-                    
-                    # Update the last_pulse_greeting timestamp
-                    self.ctx.config.ai.last_pulse_greeting = today
-                    self.ctx.save_config()
-                else:
-                    welcome_content = (
-                        "Welcome back. [bold #cba6f7]Ready to log or retrieve?[/]\n\n"
-                        "How can I help you optimize your focus today?"
-                    )
-            
-            # We want this to look like an AI message
-            # Skip _format_ai_response because welcome_content is already Rich-formatted
-            ai_msg = AIChatMessage(welcome_content)
-            log = self.query_one("#second-brain-log", Vertical)
-            
-            self.app.call_from_thread(log.mount, ai_msg)
-            self.app.call_from_thread(ai_msg.scroll_visible)
-        except Exception:
-            pass
 
     def _refresh_context(self) -> None:
-        """Assembles the primary context from long-term and short-term memory.
-
-        Long-term summaries are prepended to ensure the model maintains global
-        awareness, while short-term data is appended to leverage recency bias
-        for immediate tasks and logs.
-        """
-        # Historical Layer: Weekly Summaries
+        """Assembles the primary context for AI briefings."""
         long_term = ""
         try:
             summaries = self.ctx.db.get_summaries(summary_type="weekly", limit=4)
@@ -325,233 +277,297 @@ class SecondBrainScreen(Container):
                         week_label = s.period_start.strftime("%b %d")
                         wins = ", ".join(data.get("biggest_wins", [])[:2])
                         mood = data.get("dominant_mood", "N/A")
-                        velocity = data.get("velocity", "N/A")
-                        projects = ", ".join(
-                            f"&{p}" for p in data.get("key_projects", [])
-                        )
-                        long_term += (
-                            f"- Week of {week_label}: {mood}. {velocity}. "
-                            f"Focus: {projects}. Wins: {wins}\n"
-                        )
+                        long_term += f"- Week of {week_label}: {mood}. Wins: {wins}\n"
                     except Exception:
                         continue
         except Exception:
             pass
 
-        # Activity Layer: Short-Term Memory (Past 72 hours)
         three_days_ago = datetime.now() - timedelta(days=3)
         entries = self.ctx.db.get_all_entries()
         recent = [e for e in entries if e.created_at >= three_days_ago]
-        todos = self.ctx.db.get_todos(status="pending")
 
         short_term = "[SHORT-TERM ACTIVITY (PAST 72H)]\n"
-        if recent:
-            for e in recent[:20]:
-                short_term += f"- [{e.created_at.strftime('%Y-%m-%d %H:%M')}] {e.content}\n"
-        else:
-            short_term += "- No recent logs.\n"
+        for e in recent[:20]:
+            short_term += f"- [{e.created_at.strftime('%Y-%m-%d %H:%M')}] {e.content}\n"
 
-        short_term += "\n\nPending Tasks:\n"
-        short_term += "\n".join(
-            [f"- [{t.priority.upper()}] {t.content}" for t in todos[:10]]
-        )
+        self._context_data = compress_summary(f"{long_term}\n{short_term}")
 
-        raw_context = f"{long_term}\n{short_term}"
-        self._context_data = compress_summary(raw_context)
-
-    def _get_targeted_context(self, user_input: str) -> str:
-        """Retrieves historical data based on keywords detected in the user input.
-
-        Identifies project names (&project) and tags (#tag) to fetch related
-        historical entries, providing more granular context for the AI.
-
-        Args:
-            user_input (str): The raw text from the user.
-
-        Returns:
-            str: Formatted historical context string.
-        """
-        three_days_ago = datetime.now() - timedelta(days=3)
-        context_parts: list[str] = []
-
-        # Keyword matching for project history — matches &name and plain name as a word
+    def _set_active_trigger(self, active_id: str) -> None:
+        """Updates the active state CSS class on trigger buttons."""
+        for btn in self.query("#insight-triggers Button"):
+            btn.remove_class("active")
         try:
-            all_projects = list(self.ctx.db.get_project_stats().keys())
-            mentioned_projects = [
-                p
-                for p in all_projects
-                if re.search(
-                    r"(?:&|\b)" + re.escape(p) + r"\b", user_input, re.IGNORECASE
-                )
-            ]
-
-            for project in mentioned_projects[:2]:
-                history = self.ctx.db.get_all_entries(project=project)
-                past = [e for e in history if e.created_at < three_days_ago][:15]
-                if past:
-                    lines = [
-                        f"- [{e.created_at.strftime('%Y-%m-%d')}] {e.content}"
-                        for e in past
-                    ]
-                    context_parts.append(
-                        f"\n[TARGETED HISTORY: &{project}]\n" + "\n".join(lines)
-                    )
+            self.query_one(f"#{active_id}", Button).add_class("active")
         except Exception:
             pass
 
-        # Keyword matching for tag history — matches #name and plain name as a word
-        try:
-            all_tags = list(self.ctx.db.get_entries_with_tags_count().keys())
-            mentioned_tags = [
-                t
-                for t in all_tags
-                if re.search(
-                    r"(?:#|\b)" + re.escape(t) + r"\b", user_input, re.IGNORECASE
+    async def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Handles button presses for reports, briefings, and modals."""
+        button_id = event.button.id
+        from .briefing_modals import CatchUpModal, FollowUpModal
+
+        if button_id and button_id.startswith("trigger-"):
+            report_type = button_id.removeprefix("trigger-")
+            self._set_active_trigger(button_id)
+            self._generate_report(report_type)
+        elif button_id == "btn-ask":
+            self.app.push_screen(FollowUpModal(self.ctx))
+        elif button_id == "btn-retro":
+            self._generate_briefing("weekly_retro")
+        elif button_id == "btn-burnout":
+            self._generate_briefing("burnout_check")
+        elif button_id == "btn-catchup":
+            def _on_catchup_result(criteria: dict | None) -> None:
+                if criteria is None:
+                    return
+                narrative = self.query_one("#narrative-text", Static)
+                narrative.update(
+                    f"[dim]Preparing Catch Up briefing"
+                    f" ({criteria['range_label']})…[/]"
                 )
-            ]
+                self._generate_catchup_briefing(criteria)
 
-            for tag in mentioned_tags[:2]:
-                history = self.ctx.db.get_all_entries(tags=[tag])
-                past = [e for e in history if e.created_at < three_days_ago][:15]
-                if past:
-                    lines = [
-                        f"- [{e.created_at.strftime('%Y-%m-%d')}] {e.content}"
-                        for e in past
-                    ]
-                    context_parts.append(
-                        f"\n[TARGETED HISTORY: #{tag}]\n" + "\n".join(lines)
-                    )
-        except Exception:
-            pass
-
-        return "\n".join(context_parts)
-
-    async def on_input_submitted(self, event: Input.Submitted) -> None:
-        """Handles the submission of a user query.
-
-        Args:
-            event (Input.Submitted): The input submission event.
-        """
-        user_input = event.value.strip()
-        if not user_input:
-            return
-
-        log = self.query_one("#second-brain-log", Vertical)
-
-        # User message
-        user_msg = UserChatMessage(user_input)
-        log.mount(user_msg)
-        user_msg.scroll_visible()
-
-        event.input.value = ""
-
-        if not self.ctx.config.ai.enabled:
-            log.mount(Static("[yellow]AI features are disabled in configuration.[/yellow]"))
-            return
-
-        thinking = self.query_one("#thinking-indicator", ThinkingIndicator)
-        thinking.start()
-        self._run_ai_chat(user_input)
+            self.app.push_screen(CatchUpModal(self.ctx), _on_catchup_result)
 
     @work(thread=True)
-    def _run_ai_chat(self, user_input: str) -> None:
-        """Executes the agentic AI chat workflow with tool calling.
+    def _generate_report(self, report_type: str) -> None:
+        """Runs a deterministic analytics report in a background thread."""
+        from ...analytics import AnalyticsEngine, InsightGenerator
 
-        Args:
-            user_input (str): The raw text query from the user.
-        """
-        log = self.query_one("#second-brain-log", Vertical)
-        thinking = self.query_one("#thinking-indicator", ThinkingIndicator)
+        engine = AnalyticsEngine(self.ctx.db)
+        lines: list[str] = []
+        title = ""
 
-        try:
-            # 1. Targeted context retrieval (keywords)
-            targeted_context = self._get_targeted_context(user_input)
-            combined_context = compress_summary(f"{self._context_data}\n{targeted_context}")
+        if report_type == "energy":
+            title = "🔋 Energy Radar"
+            distribution = engine.get_domain_energy_distribution()
+            if not distribution:
+                lines.append(
+                    "[dim]No energy data yet. Add entries with life domain "
+                    "classifications to populate this report.[/]"
+                )
+            else:
+                lines.append("[bold]Average energy level by life domain[/]\n")
+                for domain, avg in sorted(
+                    distribution.items(), key=lambda x: x[1], reverse=True
+                ):
+                    bar_width = 14
+                    filled = int((avg / 10) * bar_width)
+                    bar = "█" * filled + "░" * (bar_width - filled)
+                    color = (
+                        "#a6e3a1" if avg >= 7 else "#f9e2af" if avg >= 5 else "#f38ba8"
+                    )
+                    lines.append(
+                        f"  [bold]{domain:<12}[/] [{color}]{bar}[/]"
+                        f"  [bold #cba6f7]{avg:.1f}[/]"
+                    )
 
-            # 2. Run agentic loop (with tool-calling)
-            answer = ask_second_brain_agentic(
-                prompt=user_input,
-                config=self.ctx.config.ai,
-                context_data=combined_context,
-                app_context=self,
+        elif report_type == "momentum":
+            title = "⚡ Momentum Report"
+            added, done = engine.get_say_do_ratio(days=7)
+            current_cleared, delta = engine.get_velocity_delta()
+            say_do = (done / max(added, 1)) * 100
+            bar_width = 14
+            filled = int(say_do * bar_width / 100)
+            bar = "█" * filled + "░" * (bar_width - filled)
+            trend_color = "#a6e3a1" if delta >= 0 else "#f38ba8"
+            trend_icon = "↑" if delta >= 0 else "↓"
+            completion_color = (
+                "#a6e3a1" if say_do >= 70 else "#f9e2af" if say_do >= 40 else "#f38ba8"
+            )
+            lines.append("[bold]Say-Do Ratio  (last 7 days)[/]\n")
+            lines.append(
+                f"  [{completion_color}]{bar}[/]  [bold #cba6f7]{say_do:.0f}%[/]"
+            )
+            lines.append(f"  {done} completed  /  {added} added\n")
+            lines.append("[bold]Velocity Delta[/]\n")
+            lines.append(
+                f"  [{trend_color}]{trend_icon} {abs(delta)}%[/] vs. last week"
+                f"  ({current_cleared} tasks cleared)"
             )
 
-            # 3. Hide indicator
-            self.app.call_from_thread(thinking.stop)
+        elif report_type == "golden-hour":
+            title = "🕒 Golden Hour"
+            peak = engine.get_golden_hour()
+            pulse = engine.get_weekly_pulse()
+            lines.append("[bold]Peak Productivity Window[/]\n")
+            lines.append(f"  [bold #cba6f7]{peak}[/]  ← highest activity density\n")
+            if pulse:
+                lines.append("[bold]Activity by Day of Week[/]\n")
+                max_count = max(pulse.values()) or 1
+                for day, count in pulse.items():
+                    bar_width = 14
+                    filled = int((count / max_count) * bar_width)
+                    bar = "█" * filled + "░" * (bar_width - filled)
+                    lines.append(f"  [bold]{day:<4}[/] {bar}  [dim]{count}[/]")
 
-            # 4. Update chat history and display response
-            self._chat_history.append({"role": "user", "content": user_input})
-            self._chat_history.append({"role": "assistant", "content": answer})
+        elif report_type == "stale":
+            title = "⚠️ Stale Task Report"
+            fresh, stale, dead = engine.get_task_staleness()
+            stale_todos = self.ctx.db.get_stale_todos(limit=7)
+            total = fresh + stale + dead
+            lines.append("[bold]Task Age Breakdown[/]\n")
+            lines.append(f"  [bold #a6e3a1]Fresh[/]  (< 3 days)    {fresh}")
+            lines.append(f"  [bold #f9e2af]Stale[/]  (3–14 days)   {stale}")
+            lines.append(f"  [bold #f38ba8]Dead[/]   (> 14 days)   {dead}")
+            lines.append("  [dim]──────────────────────────[/]")
+            lines.append(f"  Total pending: {total}\n")
+            if stale_todos:
+                now = datetime.now()
+                lines.append("[bold]Oldest Pending Tasks[/]\n")
+                for t in stale_todos:
+                    days_old = (now - t.created_at).days
+                    proj = (
+                        f"[bold #F77F00]&{t.project}[/] " if t.project else ""
+                    )
+                    snippet = (
+                        t.content[:32] + "…" if len(t.content) > 32 else t.content
+                    )
+                    age_color = (
+                        "#f38ba8" if days_old > 14 else
+                        "#f9e2af" if days_old > 3 else "#a6e3a1"
+                    )
+                    lines.append(
+                        f"  {proj}{snippet}  [{age_color}]{days_old}d[/]"
+                    )
 
-            formatted_answer = self._format_ai_response(answer)
-            ai_msg = AIChatMessage(formatted_answer)
-            self.app.call_from_thread(log.mount, ai_msg)
-            self.app.call_from_thread(ai_msg.scroll_visible)
+        elif report_type == "focus":
+            title = "🏷️ Focus Report"
+            tag_velocity = engine.get_tag_velocity(days=14)
+            big_rock = engine.get_big_rock(days=7)
+            context_switches = engine.get_context_switches(days=7)
+            lines.append("[bold]Top Tags  (last 14 days)[/]\n")
+            if tag_velocity:
+                for tag, count, trend in tag_velocity[:6]:
+                    trend_color = (
+                        "#a6e3a1" if "↑" in trend or "↗" in trend
+                        else "#f38ba8" if "↓" in trend or "↘" in trend
+                        else "#cdd6f4"
+                    )
+                    lines.append(
+                        f"  [bold #66D0BC]#{tag:<14}[/]"
+                        f" {count:>3}  [{trend_color}]{trend}[/]"
+                    )
+            else:
+                lines.append("  [dim]No tag data yet.[/]")
+            if big_rock:
+                proj, pct = big_rock
+                lines.append("\n[bold]Big Rock[/]\n")
+                lines.append(
+                    f"  [bold #F77F00]&{proj}[/] claimed"
+                    f" [bold #cba6f7]{pct:.0f}%[/] of your bandwidth"
+                )
+            lines.append("\n[bold]Context Switches[/]\n")
+            switch_color = (
+                "#f38ba8" if context_switches > 4
+                else "#f9e2af" if context_switches > 2
+                else "#a6e3a1"
+            )
+            lines.append(
+                f"  [{switch_color}]{context_switches:.1f}[/] avg projects/day"
+            )
+
+        elif report_type == "pulse":
+            title = "🎭 Weekly Pulse"
+            wrapup = InsightGenerator(engine).generate_weekly_wrapup()
+            lines.append("[bold]7-Day Snapshot[/]\n")
+            for insight in wrapup:
+                lines.append(f"  {insight}")
+            deep_work, shallow_work, deep_ratio = engine.get_deep_work_ratio(days=7)
+            focus_color = (
+                "#a6e3a1" if deep_ratio >= 30
+                else "#f9e2af" if deep_ratio >= 15
+                else "#f38ba8"
+            )
+            lines.append("\n[bold]Deep Work Ratio[/]\n")
+            lines.append(
+                f"  [{focus_color}]{deep_ratio:.0f}%[/] deep"
+                f"  ({deep_work} sessions vs {shallow_work} shallow)"
+            )
+
+        body = "\n".join(lines)
+        display_text = f"[bold #cba6f7]▸ {title}[/]\n\n{body}"
+        narrative = self.query_one("#narrative-text", Static)
+        self.app.call_from_thread(narrative.update, display_text)
+
+    @work(thread=True)
+    def _generate_briefing(self, briefing_type: str) -> None:
+        """Executes targeted AI synthesis in a background worker."""
+        thinking = self.query_one("#thinking-indicator", ThinkingIndicator)
+        self.app.call_from_thread(thinking.start)
+
+        try:
+            answer = generate_targeted_briefing(
+                briefing_type=briefing_type,
+                config=self.ctx.config.ai,
+                context_data=self._context_data,
+            )
+
+            formatted = self.format_ai_response(answer)
+
+            narrative = self.query_one("#narrative-text", Static)
+            title_map = {
+                "weekly_retro": "Weekly Retrospective",
+                "burnout_check": "Burnout & Productivity Check",
+            }
+            title = title_map.get(briefing_type, "Briefing")
+
+            display_text = f"[bold #cba6f7]▸ {title}[/]\n\n{formatted}"
+            self.app.call_from_thread(narrative.update, display_text)
 
         except Exception as e:
-            # Ensure indicator is hidden on error
+            self.app.notify(f"Briefing error: {e}", severity="error")
+        finally:
             self.app.call_from_thread(thinking.stop)
 
-            error_msg = Static(f"[red]AI Error: {e}[/red]")
-            self.app.call_from_thread(log.mount, error_msg)
-            self.app.call_from_thread(error_msg.scroll_visible)
+    @work(thread=True)
+    def _generate_catchup_briefing(self, criteria: dict) -> None:
+        """Fetches activity data and runs the Catch Up AI briefing in a background worker."""
+        thinking = self.query_one("#thinking-indicator", ThinkingIndicator)
+        self.app.call_from_thread(thinking.start)
 
-    def _format_ai_response(self, text: str) -> str:
-        """Transforms AI-generated Markdown into Rich-compatible markup for UI rendering.
+        try:
+            data = self.ctx.db.get_activity_report_data(
+                start_date=criteria["start_date"],
+                end_date=criteria["end_date"],
+                project=criteria.get("project"),
+                tags=criteria.get("tags"),
+            )
 
-        Focuses on clean, scannable output: proper paragraph spacing,
-        selective colorization of dates/tags/priorities, and minimal
-        emoji amplification to avoid visual clutter.
+            answer = generate_targeted_briefing(
+                briefing_type="catch_up",
+                config=self.ctx.config.ai,
+                context_data=f"Catch up Briefing Criteria: {criteria['criteria_str']}",
+                extra_data=data,
+            )
 
-        Args:
-            text (str): Raw Markdown text from the AI.
+            formatted = self.format_ai_response(answer)
+            display_text = (
+                f"[bold #cba6f7]▸ Catch Up: {criteria['range_label']}[/]\n\n{formatted}"
+            )
+            narrative = self.query_one("#narrative-text", Static)
+            self.app.call_from_thread(narrative.update, display_text)
 
-        Returns:
-            str: Formatted Rich markup string.
-        """
-        # 1. Escape the raw AI text first to make brackets literal
+        except Exception as e:
+            self.app.notify(f"Catch Up error: {e}", severity="error")
+        finally:
+            self.app.call_from_thread(thinking.stop)
+
+    @staticmethod
+    def format_ai_response(text: str) -> str:
+        """Transforms AI-generated Markdown into Rich-compatible markup for UI rendering."""
         text = escape(text)
 
-        # 2. Reduce emoji density: remove redundant emoji bullets that local LLMs overuse
-        # Strips lines that are *only* an emoji (common LLM habit: 📌, ✅, 🔥, etc.)
-        # Replaces them with a clean dash marker for scanability.
-        text = re.sub(
-            r'^[\s]*[\U0001F300-\U0001FAD6\U00002700-\U000027BF\U00002600-\U000026FF]\s*',
-            '  \u2013 ',  # en-dash bullet
-            text,
-            flags=re.MULTILINE,
-        )
+        # Colorize Tags and Projects
+        text = re.sub(r"(?<!\w)#([\w:-]+)", r"[bold #66D0BC]#\1[/]", text)
+        text = re.sub(r"(?<!\w)&([\w:-]+)", r"[bold #F77F00]&\1[/]", text)
 
-        # 3. Colorize Tags and Projects (selective — only when they're actual refs)
-        text = re.sub(r'(?<!\w)#([\w:-]+)', r'[bold #66D0BC]#\1[/]', text)
-        text = re.sub(r'(?<!\w)&([\w:-]+)', r'[bold #F77F00]&\1[/]', text)
+        # Markdown bold and headers
+        text = re.sub(r"\*\*(.*?)\*\*", r"[bold #cba6f7]\1[/]", text)
+        text = re.sub(r"^#+\s+(.*?)$", r"[bold #cba6f7]\1[/]", text, flags=re.MULTILINE)
 
-        # 4. Colorize Dates (e.g., 2026-04-07)
-        text = re.sub(r'(\d{4}-\d{2}-\d{2})', r'[cyan]\1[/]', text)
-
-        # 5. Colorize Times (e.g., 14:00, 2:30pm)
-        text = re.sub(r'(\d{1,2}:\d{2}(?:\s*(?:am|pm))?)', r'[$success]\1[/]', text)
-
-        # 6. Colorize Urgency/Priority levels
-        text = re.sub(r'(?i)\b(urgent)\b', r'[bold #D53E0F]\1[/]', text)
-        text = re.sub(r'(?i)\b(high)\b', r'[#D53E0F]\1[/]', text)
-        text = re.sub(r'(?i)\b(normal)\b', r'[white]\1[/]', text)
-        text = re.sub(r'(?i)\b(low)\b', r'[dim]\1[/]', text)
-
-        # 7. Convert Markdown bold and headers to Rich tags
-        text = re.sub(r'\*\*(.*?)\*\*', r'[bold #cba6f7]\1[/]', text)
-        text = re.sub(r'^#+\s+(.*?)$', r'[bold #cba6f7]\1[/]', text, flags=re.MULTILINE)
-
-        # 8. Code blocks and inline code
-        text = re.sub(
-            r'```[\w]*\n?(.*?)\n?```',
-            lambda m: f"[dim]{m.group(1)}[/dim]",
-            text,
-            flags=re.DOTALL,
-        )
-        text = re.sub(r'`(.*?)`', r'[#89b4fa]\1[/]', text)
-
-        # 9. Normalize paragraph spacing: collapse 3+ newlines into 2
-        text = re.sub(r'\n{3,}', '\n\n', text)
+        # Normalize paragraph spacing
+        text = re.sub(r"\n{3,}", "\n\n", text)
 
         return text

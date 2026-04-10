@@ -1,5 +1,27 @@
 # dwriter Update Notes
 
+## Version 4.6.0 - April 10, 2026
+
+### 🚀 Key Features
+
+#### 1. 2nd-Brain: Action-First Reporting
+- **Trigger Button Row**: The static KPI widget grid has been replaced by a row of six report trigger buttons — **Energy**, **Momentum**, **Golden Hour**, **Stale**, **Focus**, and **Pulse**. The Insights Hub is now the full-height primary surface.
+- **Inline Analytics Reports**: Each trigger button generates a formatted, deterministic report directly in the Insights Hub using the Analytical Engine — no AI model call required. Reports include bar charts, trend indicators, and contextual colour coding.
+- **Active State**: The selected report button highlights in the 2nd-Brain accent colour. Hovering non-active buttons shows a light tint; the active button holds its full colour while hovered.
+
+#### 2. Catch Up Briefing — Redesigned Form & Flow
+- **Compact Form**: The previous tag selection list (which overflowed the visible area) has been removed. Project and tag inputs are now typed free-form fields with inline recent-value hints shown above each input.
+- **Time Range Toggle**: A single **Custom Range** button expands two date fields (start and end) beneath a persistent "Last 7 Days" or "Custom date range" indicator. The selected mode is always visible; clicking the button switches between modes.
+- **Immediate Close on Generate**: Clicking **Generate** now closes the form instantly. The Insights Hub displays a "Preparing…" line while the Analytical Engine fetches activity data and generates the briefing in the background. The result appears in the Insights Hub when ready — no secondary popup.
+
+### 🛠 Improvements & Fixes
+- **Global Button Hover**: All TUI buttons now respond to mouse hover with a surface-background highlight. Buttons carrying an active state maintain their accent colour on hover via explicit specificity rules.
+- **TUI Default Size**: Terminal window defaults updated to **90 × 42**.
+- **2nd-Brain Button Labels**: Emojis removed from all 2nd-Brain action buttons for a cleaner, text-focused interface. The 💬 Follow-up button retains its icon.
+- **Date Validation on Submit**: Custom date range inputs are validated before the form closes. An error notification is shown inline if a date string cannot be parsed, keeping the form open for correction.
+
+---
+
 ## Version 4.4.0 - April 9, 2026
 
 ### 🚀 Key Features
