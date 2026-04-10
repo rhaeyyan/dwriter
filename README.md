@@ -150,6 +150,7 @@ dwriter sync --pull
 
 | Document | Description |
 | :--- | :--- |
+| 🧠 **[2nd-Brain Guide](documentation/2ND-BRAIN-GUIDE.md)** | **How to get the most out of the AI 2nd-Brain — logging habits, querying tips, and analytics.** |
 | 📘 **[User Manual](documentation/user-manual.md)** | **The complete technical guide to every feature.** |
 | 🔄 **[Sync Guide](documentation/sync-guide.md)** | **Simple, step-by-step instructions for non-technical users.** |
 | 🚀 **[Update Notes](documentation/update-notes.md)** | **New in v4.4.0:** TUI overhaul & 2nd-Brain context improvements. |
