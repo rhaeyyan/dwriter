@@ -67,3 +67,7 @@ GEMINI.md
 
 # Stitch prototypes
 stitch/
+
+# Agent framework context
+.agents/
+.agent/
