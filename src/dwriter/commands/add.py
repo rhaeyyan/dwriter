@@ -10,6 +10,7 @@ if TYPE_CHECKING:
 import click
 
 from ..date_utils import parse_date_or_default
+from ..git_utils import get_git_info
 from ..ui_utils import display_entry
 from ..tui.colors import TAG
 
@@ -83,6 +84,16 @@ def add(
     # Use explicitly provided project, then content-extracted project, then default
     if project is None:
         project = parsed.project or ctx.config.defaults.project
+
+    # Git CWD auto-tagging
+    if ctx.config.defaults.git_auto_tag:
+        git_info = get_git_info()
+        if git_info:
+            if project is None:
+                project = git_info["repo_name"]
+            branch_tag = f"git-{git_info['branch']}"
+            if branch_tag not in all_tags:
+                all_tags.append(branch_tag)
 
     # Use the cleaned content (tags/project removed)
     final_content = parsed.content

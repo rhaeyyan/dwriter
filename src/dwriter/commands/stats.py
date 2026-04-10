@@ -1,25 +1,29 @@
 """Stats command - provides a text-based summary of your productivity."""
 
 from __future__ import annotations
+
+import json
+import sys
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ..cli import AppContext
 
 import click
-from rich.panel import Panel
 from rich.columns import Columns
+from rich.panel import Panel
 from rich.table import Table
 
-from ..stats_utils import calculate_streak
 from ..analytics import AnalyticsEngine, InsightGenerator
+from ..stats_utils import calculate_streak
 from ..tui.colors import PROJECT, TAG
 
 
 @click.command()
 @click.option("--weekly", is_flag=True, help="Show the 7-day Weekly Pulse wrap-up summary.")
+@click.option("--json", "output_json", is_flag=True, help="Output data in machine-readable JSON format.")
 @click.pass_obj
-def stats(ctx: AppContext, weekly: bool) -> None:
+def stats(ctx: AppContext, weekly: bool, output_json: bool) -> None:
     """View a text-based summary of your productivity.
 
     Displays your current streaks, total counts, and behavioral insights
@@ -47,7 +51,26 @@ def stats(ctx: AppContext, weekly: bool) -> None:
     else:
         insights = insight_gen.generate_insights()
         insights_title = "💡 Behavioral Insights"
-    
+
+    tag_velocity = engine.get_tag_velocity(days=30)
+
+    if output_json:
+        data = {
+            "streaks": {"current": current_streak, "longest": longest_streak},
+            "counts": {
+                "entries": len(entries),
+                "completed_todos": len(todos_completed),
+                "pending_todos": len(todos_pending),
+            },
+            "insights": {"title": insights_title, "items": insights},
+            "top_tags": [
+                {"tag": tag, "count": count, "trend": trend}
+                for tag, count, trend in tag_velocity[:5]
+            ],
+        }
+        sys.stdout.write(json.dumps(data, indent=2) + "\n")
+        return
+
     # Render summary to the console
     ctx.console.print("[bold blue]📊 Productivity Summary[/bold blue]\n")
     

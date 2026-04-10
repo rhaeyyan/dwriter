@@ -6,10 +6,11 @@ like "yesterday", "last Friday", "3 days ago", etc.
 
 import re
 from datetime import datetime, timedelta
-from typing import Optional
 
 
-def parse_natural_date(date_str: str, prefer_future: bool = False, format_hint: Optional[str] = None) -> datetime:
+def parse_natural_date(
+    date_str: str, prefer_future: bool = False, format_hint: str | None = None
+) -> datetime:
     """Parse a natural language date string into a datetime object.
 
     Args:
@@ -51,7 +52,10 @@ def parse_natural_date(date_str: str, prefer_future: bool = False, format_hint: 
             return now + timedelta(minutes=value)
 
     # Handle "in N mins/hours"
-    in_rel_match = re.match(r"^in\s+(?P<value>\d+)\s*(?P<unit>min|mins|minute|minutes|hour|hours)$", date_str)
+    in_rel_match = re.match(
+        r"^in\s+(?P<value>\d+)\s*(?P<unit>min|mins|minute|minutes|hour|hours)$",
+        date_str,
+    )
     if in_rel_match:
         value = int(in_rel_match.group("value"))
         unit = in_rel_match.group("unit")
@@ -73,8 +77,9 @@ def parse_natural_date(date_str: str, prefer_future: bool = False, format_hint: 
             hour = 0
 
         target = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
-        # If the time has already passed today, and it's a bare time (not part of a combined pattern),
-        # assume tomorrow if prefer_future is set or if it's just a time like "2pm"
+        # If the time has already passed today, and it's a bare time
+        # (not part of a combined pattern), assume tomorrow if prefer_future
+        # is set or if it's just a time like "2pm"
         if target < now:
             target += timedelta(days=1)
         return target
@@ -88,9 +93,15 @@ def parse_natural_date(date_str: str, prefer_future: bool = False, format_hint: 
     }
 
     # Handle combined patterns like "tomorrow 2pm" or "Friday at 3"
-    day_patterns = r"(?P<day>today|tomorrow|yesterday|monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|wed|thu|fri|sat|sun|last\s+\w+)"
+    day_patterns = (
+        r"(?P<day>today|tomorrow|yesterday|monday|tuesday|wednesday|thursday|"
+        r"friday|saturday|sunday|mon|tue|wed|thu|fri|sat|sun|last\s+\w+|next\s+\w+|"
+        r"[\+\-]\d+[dwmo])"
+    )
     time_patterns = r"(?P<time>\d{1,2}(?::\d{2})?\s*(?P<meridiem>am|pm)?)"
-    combined_match = re.match(rf"^{day_patterns}(?:\s+(?:at\s+)?{time_patterns})?$", date_str)
+    combined_match = re.match(
+        rf"^{day_patterns}(?:\s+(?:at\s+)?{time_patterns})?$", date_str
+    )
     if combined_match:
         day_str = combined_match.group("day")
         time_part = combined_match.group("time")
@@ -102,15 +113,33 @@ def parse_natural_date(date_str: str, prefer_future: bool = False, format_hint: 
             base_date = today_midnight + timedelta(days=1)
         elif day_str == "yesterday":
             base_date = today_midnight - timedelta(days=1)
-        elif day_str.startswith("last "):
-            wd_name = day_str[5:]
+        elif day_str.startswith("last ") or day_str.startswith("next "):
+            is_next = day_str.startswith("next ")
+            wd_name = day_str[5:].strip()
             target_wd = weekdays.get(wd_name)
             if target_wd is not None:
-                days_back = (now.weekday() - target_wd) % 7
-                if days_back == 0: days_back = 7
-                base_date = today_midnight - timedelta(days=days_back)
+                if is_next:
+                    days_ahead = (target_wd - now.weekday()) % 7
+                    if days_ahead == 0:
+                        days_ahead = 7
+                    base_date = today_midnight + timedelta(days=days_ahead)
+                else:
+                    days_back = (now.weekday() - target_wd) % 7
+                    if days_back == 0:
+                        days_back = 7
+                    base_date = today_midnight - timedelta(days=days_back)
             else:
-                base_date = today_midnight
+                raise ValueError(f"Unable to parse date: '{date_str}'")
+        elif re.match(r"^[\+\-]\d+[dwmo]$", day_str):
+            val = int(re.search(r"\d+", day_str).group())
+            unit = day_str[-1]
+            sign = 1 if day_str.startswith("+") else -1
+            if unit == "d":
+                base_date = today_midnight + timedelta(days=sign * val)
+            elif unit == "w":
+                base_date = today_midnight + timedelta(weeks=sign * val)
+            else: # unit == "mo"
+                base_date = today_midnight + timedelta(days=sign * val * 30)
         elif day_str in weekdays:
             target_wd = weekdays[day_str]
             if prefer_future:
@@ -137,29 +166,39 @@ def parse_natural_date(date_str: str, prefer_future: bool = False, format_hint: 
         return today_midnight + timedelta(days=1)
 
     # Shorthands
-    future_match = re.match(r"^\+(?P<val>\d+)(?P<unit>[dwm])$", date_str)
+    future_match = re.match(r"^\+(?P<val>\d+)(?P<unit>d|w|mo)$", date_str)
     if future_match:
         val = int(future_match.group("val"))
         unit = future_match.group("unit")
-        if unit == "d": return today_midnight + timedelta(days=val)
-        if unit == "w": return today_midnight + timedelta(weeks=val)
-        if unit == "m": return today_midnight + timedelta(days=val * 30)
+        if unit == "d":
+            return today_midnight + timedelta(days=val)
+        if unit == "w":
+            return today_midnight + timedelta(weeks=val)
+        if unit == "mo":
+            return today_midnight + timedelta(days=val * 30)
 
-    past_match = re.match(r"^-(?P<val>\d+)(?P<unit>[dwm])$", date_str)
+    past_match = re.match(r"^-(?P<val>\d+)(?P<unit>d|w|mo)$", date_str)
     if past_match:
         val = int(past_match.group("val"))
         unit = past_match.group("unit")
-        if unit == "d": return today_midnight - timedelta(days=val)
-        if unit == "w": return today_midnight - timedelta(weeks=val)
-        if unit == "m": return today_midnight - timedelta(days=val * 30)
+        if unit == "d":
+            return today_midnight - timedelta(days=val)
+        if unit == "w":
+            return today_midnight - timedelta(weeks=val)
+        if unit == "mo":
+            return today_midnight - timedelta(days=val * 30)
 
     # N days/weeks [ago]
-    ago_match = re.match(r"^(?P<val>\d+)\s+(?P<unit>day|days|week|weeks)(?P<ago>\s+ago)?$", date_str)
+    ago_match = re.match(
+        r"^(?P<val>\d+)\s+(?P<unit>day|days|week|weeks)(?P<ago>\s+ago)?$", date_str
+    )
     if ago_match:
         val = int(ago_match.group("val"))
         unit = ago_match.group("unit")
         is_past = ago_match.group("ago") is not None
-        delta = timedelta(days=val) if unit.startswith("day") else timedelta(weeks=val)
+        delta = (
+            timedelta(days=val) if unit.startswith("day") else timedelta(weeks=val)
+        )
         if is_past:
             return today_midnight - delta
         return today_midnight + delta
@@ -187,10 +226,12 @@ def parse_natural_date(date_str: str, prefer_future: bool = False, format_hint: 
         except ValueError:
             continue
 
-    raise ValueError(f"Unable to parse: '{date_str}'")
+    raise ValueError(f"Unable to parse date: '{date_str}'")
 
 
-def parse_date_or_default(date_str: Optional[str], format_hint: Optional[str] = None) -> datetime:
+def parse_date_or_default(
+    date_str: str | None, format_hint: str | None = None
+) -> datetime:
     """Parse a date string or return current datetime if None.
 
     Args:
