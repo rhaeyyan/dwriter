@@ -82,10 +82,15 @@ class QuickAddEntryModal(ModalScreen):  # type: ignore[type-arg]
         text-style: italic;
     }
 
+    #save-exit-row {
+        width: 100%;
+        height: auto;
+        align: right middle;
+    }
+
     #save-exit-btn {
-        dock: top;
         width: auto;
-        margin: 0 1;
+        margin: 0;
     }
 
     #edit-buttons {
@@ -115,7 +120,8 @@ class QuickAddEntryModal(ModalScreen):  # type: ignore[type-arg]
         """Composes the modal layout."""
         use_emojis = self.app.ctx.config.display.use_emojis
         with Container(id="edit-modal-container"):
-            yield Button(f"{get_icon('save', use_emojis)} Save & Exit", id="save-exit-btn", variant="success")
+            with Horizontal(id="save-exit-row"):
+                yield Button(f"{get_icon('save', use_emojis)} Save & Exit", id="save-exit-btn", variant="success")
             yield Label(f"{get_icon('plus', use_emojis)} Quick Add Entry", id="edit-modal-title")
 
             yield Label("Content:", id="edit-content-label")
@@ -541,7 +547,7 @@ class DeleteConfirmModal(ModalScreen):  # type: ignore[type-arg]
     #delete-modal-container {
         width: 50;
         height: auto;
-        min-height: 8;
+        max-height: 12;
         background: $surface;
         border: solid $error;
         padding: 0 2;
@@ -605,7 +611,7 @@ class DeleteConfirmModal(ModalScreen):  # type: ignore[type-arg]
                 f'"{self.entry_content[:50]}{"..." if len(self.entry_content) > 50 else ""}"',
                 id="delete-modal-content",
             )
-            with Container(id="delete-buttons"):
+            with Horizontal(id="delete-buttons"):
                 yield Button("\\[ DELETE ]", id="delete-btn", variant="error")
                 yield Button("\\[ CANCEL ]", id="cancel-btn", variant="default")
 
