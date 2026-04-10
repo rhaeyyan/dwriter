@@ -1,4 +1,4 @@
-# dwriter 📝
+# dwriter: AI Edition 📝
 Experimental beta: v4.4.0
 ### *The minimalist journal for those who live in the terminal powered by a Dual-Model AI Pipeline (Gemma 4).*
 
