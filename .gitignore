@@ -72,3 +72,4 @@ documentation/HISTORY.md
 stitch/
 # Agent framework context
 documentation/agents/
+.agents/
