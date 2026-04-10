@@ -442,6 +442,57 @@ class AnalyticsEngine:
             percentage = (count / total_activity) * 100
             return project, round(percentage, 1)
 
+    def get_domain_energy_distribution(self) -> dict[str, float]:
+        """Calculates average energy level per life domain.
+
+        Returns:
+            dict[str, float]: Mapping of domain name to average energy level.
+        """
+        with self.db.Session() as session:
+            stats = (
+                session.query(Entry.life_domain, func.avg(Entry.energy_level))
+                .filter(Entry.life_domain.isnot(None))
+                .group_by(Entry.life_domain)
+                .all()
+            )
+            return {domain: round(float(avg), 1) for domain, avg in stats if domain}
+
+    def get_streak_info(self) -> tuple[int, int, int]:
+        """Calculates current streak, longest streak, and total entry count.
+
+        Returns:
+            tuple[int, int, int]: (current_streak, longest_streak, total_entries).
+        """
+        current_streak = 0
+        longest_streak = 0
+
+        with self.db.Session() as session:
+            total_entries = session.query(func.count(Entry.id)).scalar() or 0
+
+            dates_raw = (
+                session.query(func.distinct(func.date(Entry.created_at)))
+                .order_by(func.date(Entry.created_at))
+                .all()
+            )
+            dates = sorted(
+                [datetime.strptime(r[0], "%Y-%m-%d").date() for r in dates_raw if r[0]]
+            )
+
+            if dates:
+                cs = 1
+                ls = 1
+                for i in range(1, len(dates)):
+                    if (dates[i] - dates[i - 1]).days == 1:
+                        cs += 1
+                        ls = max(ls, cs)
+                    else:
+                        cs = 1
+                current_streak = 0 if (datetime.now().date() - dates[-1]).days > 1 else cs
+                longest_streak = ls
+
+        return current_streak, longest_streak, total_entries
+
+
 class InsightGenerator:
     """Generates prescriptive advice based on analytics data."""
 
