@@ -61,6 +61,20 @@ class TodoUpdated(Message):
         self.action = action
 
 
+class SyncStatus(Message):
+    """Dispatched when the background sync state changes.
+
+    Attributes:
+        is_syncing: Whether a sync operation is in progress.
+        message: Human-readable status string.
+    """
+
+    def __init__(self, is_syncing: bool, message: str) -> None:
+        super().__init__()
+        self.is_syncing = is_syncing
+        self.message = message
+
+
 class TimerStateChanged(Message):
     """Dispatched when the timer state changes (start/stop/complete).
 

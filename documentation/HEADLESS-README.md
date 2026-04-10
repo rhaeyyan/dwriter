@@ -131,4 +131,92 @@ View and edit your settings to match your personal workflow.
 
 ---
 
+## 🔄 Cross-Device Sync
+
+Synchronize your journal across machines using a Git remote as the transport layer. Data is merged conflict-free using Lamport clock-based CRDT logic.
+
+```bash
+# Configure your sync remote once
+dwriter sync --remote git@github.com:you/dwriter-sync.git
+
+# Push your latest entries
+dwriter sync --push
+
+# Pull and merge entries from another machine
+dwriter sync --pull
+```
+
+Enable automatic background pull on TUI launch:
+```toml
+# ~/.dwriter/config.toml
+[defaults]
+auto_sync = true
+```
+
+---
+
+## 🏷️ Git Auto-Tagging
+
+When you add an entry inside a Git repository, dwriter can automatically apply the repo name as `&project` and the branch as a `#git-<branch>` tag.
+
+```bash
+# Inside a git repo on branch "feature/auth"
+dwriter add "Implemented JWT refresh logic"
+# → logged as: &my-repo #git-feature/auth
+
+# Disable auto-tagging
+dwriter config set git_auto_tag false
+```
+
+```toml
+[defaults]
+git_auto_tag = true   # default: true
+```
+
+---
+
+## 🔔 Notification Daemon (Linux)
+
+Install a background systemd daemon that fires desktop notifications for urgent tasks.
+
+```bash
+# Install (checks every 5 min by default)
+dwriter install-notifications
+
+# Custom interval
+dwriter install-notifications --interval 10
+
+# Preview without writing anything
+dwriter install-notifications --dry-run
+
+# Remove
+dwriter uninstall-notifications
+```
+
+Requires `notifications_enabled = true` in your config:
+```bash
+dwriter config set notifications_enabled true
+```
+
+> macOS and Windows: Run `dwriter install-notifications` for platform-specific setup instructions.
+
+---
+
+## 📤 Machine-Readable Output
+
+All key read commands support a `--json` flag for scripting and piping.
+
+```bash
+# Today's entries as JSON
+dwriter today --json | jq '.[].content'
+
+# Stats as JSON
+dwriter stats --json | jq '.streaks'
+
+# Todo list as JSON
+dwriter todo list --json | jq '.[] | select(.priority == "urgent")'
+```
+
+---
+
 [⬅️ Back to README](../README.md)

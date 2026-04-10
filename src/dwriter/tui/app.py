@@ -6,6 +6,7 @@ and provides the global omnibox for quick entry logging.
 
 from __future__ import annotations
 
+import threading
 from typing import TYPE_CHECKING, Any, Literal
 
 if TYPE_CHECKING:
@@ -15,6 +16,7 @@ from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.command import CommandPalette
 from textual.containers import Horizontal
+from textual.reactive import reactive
 from textual.widgets import (
     Button,
     ContentSwitcher,
@@ -28,7 +30,8 @@ from textual.widgets import (
 )
 
 from .command_palette import DWriterCommands
-from .messages import EntryAdded, TimerStateChanged, TodoUpdated
+from .messages import EntryAdded, SyncStatus, TimerStateChanged, TodoUpdated
+from .widgets.omnibox import Omnibox
 from .parsers import (
     ParsedEntry,
     ParsedTimer,
@@ -368,6 +371,26 @@ class DWriterApp(App[None]):
     
     Button.-default { color: $foreground 70%; text-style: bold; }
     Button.-default:hover, Button.-default:focus { color: $foreground; background: $surface; text-style: reverse bold; }
+
+    #status-bar {
+        dock: bottom;
+        height: 1;
+        background: $panel;
+        color: $text-muted;
+        padding: 0 1;
+        layout: horizontal;
+    }
+
+    #status-git {
+        width: auto;
+        margin-right: 2;
+        text-style: italic;
+    }
+
+    #status-task {
+        width: 1fr;
+        color: $accent;
+    }
     """
 
     BINDINGS = [
@@ -382,6 +405,10 @@ class DWriterApp(App[None]):
         Binding("5", "switch_mode('settings')", "Settings", show=False),
     ]
 
+    permanent_omnibox = reactive(False)
+    sync_status = reactive("Synced")
+    git_branch = reactive("")
+
     def __init__(self, ctx: AppContext, starting_tab: str = "dashboard") -> None:
         """Initialize the dwriter application.
 
@@ -394,6 +421,7 @@ class DWriterApp(App[None]):
         self._current_screen: str = starting_tab
         self._todo_state: TodoInputState = TodoInputState()
         self._timer_running: bool = False
+        self._reminder_timer: threading.Timer | None = None
 
     def compose(self) -> ComposeResult:
         """Compose the main application layout."""
@@ -401,13 +429,18 @@ class DWriterApp(App[None]):
 
         # Omnibox - Top command palette for frictionless entry
         date_fmt = self.ctx.config.display.date_format
-        with Horizontal(id="omnibox-container"):
-            yield Input(
+
+        # Check config and determine initial visibility class
+        is_permanent = self.ctx.config.display.permanent_omnibox
+        hidden_class = "" if is_permanent else "hidden"
+
+        with Horizontal(id="omnibox-container", classes=hidden_class):
+            yield Omnibox(
                 placeholder=f"#tag &project YOUR-ENTRY | #tag &project YOUR-ENTRY {date_fmt}",
                 id="quick-add",
             )
-        
-        with Horizontal(id="omnibox-footer"):
+
+        with Horizontal(id="omnibox-footer", classes=hidden_class):
             yield Label(
                 f"#tag &project YOUR-ENTRY | #tag &project YOUR-ENTRY {date_fmt}",
                 id="omnibox-hint",
@@ -440,11 +473,21 @@ class DWriterApp(App[None]):
             yield TimerScreen(self.ctx, id="timer")
             yield ConfigureScreen(self.ctx, id="settings")
 
+        with Horizontal(id="status-bar"):
+            yield Label("", id="status-git")
+            yield Label("", id="status-task")
+
         # Single Footer
         yield Footer()
 
     def on_mount(self) -> None:
         """Initialize the application state."""
+        # Detect git branch for status bar
+        from ..git_utils import get_git_info
+        git_info = get_git_info()
+        if git_info:
+            self.git_branch = git_info["branch"]
+
         # Register custom themes
         for theme in THEMES.values():
             self.register_theme(theme)
@@ -461,12 +504,165 @@ class DWriterApp(App[None]):
         if config.display.ergonomic_mode:
             self.add_class("ergonomic-mode")
 
+        # Sync permanent omnibox setting
+        self.permanent_omnibox = config.display.permanent_omnibox
+
         self.call_after_refresh(self._set_default_size)
-        self._update_omnibox_placeholder("dashboard")
+        self._update_omnibox_placeholder(self._current_screen)
+
+        # Explicit initial sync of visibility
+        self._sync_omnibox_visibility()
+
+        # Keep navigation tabs focused to prevent omnibox from stealing focus
+        self.query_one("#navigation-tabs").focus()
+
+        # Background interval to keep omnibox visibility consistent
+        self.set_interval(0.2, self._sync_omnibox_visibility)
+
+        # Start background reminder checker if notifications are enabled
+        if self.ctx.config.display.notifications_enabled:
+            self._start_reminder_checker()
+
+        # Trigger initial background sync pull if auto_sync is enabled
+        if self.ctx.config.defaults.auto_sync:
+            self._trigger_pull_sync()
+
+    def on_unmount(self) -> None:
+        """Cancel the background reminder thread on exit."""
+        if self._reminder_timer is not None:
+            self._reminder_timer.cancel()
+            self._reminder_timer = None
 
     def _set_default_size(self) -> None:
         """Set the default terminal size."""
         self.set_size(90, 45)
+
+    def _trigger_pull_sync(self) -> None:
+        """Dispatch a non-blocking background pull sync."""
+        from ..sync.daemon import pull_sync
+        from datetime import datetime
+
+        async def pull_sync_worker() -> None:
+            self.post_message(SyncStatus(is_syncing=True, message="Syncing..."))
+            merged = await self.run_worker(lambda: pull_sync(self.ctx.db), thread=True).wait()
+            if merged:
+                self.post_message(EntryAdded(entry_id=0, content="", created_at=datetime.now()))
+                self.post_message(TodoUpdated(todo_id=0, action="updated"))
+            self.post_message(SyncStatus(is_syncing=False, message="Synced"))
+
+        self.run_worker(pull_sync_worker())
+
+    def on_sync_status(self, message: SyncStatus) -> None:
+        """Update sync_status reactive from background sync."""
+        self.sync_status = message.message
+
+    def watch_git_branch(self, value: str) -> None:
+        """Update git branch in status bar."""
+        try:
+            label = self.query_one("#status-git", Label)
+            label.update(f" {value}" if value else "")
+        except Exception:
+            pass
+
+    def watch_sync_status(self, value: str) -> None:
+        """Update sync status in status bar."""
+        self._update_status_task()
+
+    def _update_status_task(self) -> None:
+        """Update the status-task label with current sync status."""
+        try:
+            label = self.query_one("#status-task", Label)
+            if self.sync_status == "Syncing...":
+                label.update("[⟳ Syncing...]")
+            elif self.sync_status == "Sync Failed":
+                label.update("[✗ Sync Failed]")
+            else:
+                label.update("[✓ Synced]")
+        except Exception:
+            pass
+
+    def watch_permanent_omnibox(self, value: bool) -> None:
+        """Update omnibox visibility when the permanent_omnibox setting changes."""
+        try:
+            self.query_one("#omnibox-container").set_class(not value, "hidden")
+            self.query_one("#omnibox-footer").set_class(not value, "hidden")
+        except Exception:
+            pass
+        self._sync_omnibox_visibility()
+
+    def _sync_omnibox_visibility(self) -> None:
+        """Central logic for omnibox visibility using CSS classes and focus management."""
+        try:
+            is_permanent = self.permanent_omnibox
+            current_focused = self.focused
+            is_omnibox_focused = (
+                current_focused is not None
+                and getattr(current_focused, "id", None) == "quick-add"
+            )
+            show = is_permanent or is_omnibox_focused
+
+            container = self.query_one("#omnibox-container")
+            footer = self.query_one("#omnibox-footer")
+            omnibox = self.query_one("#quick-add", Omnibox)
+
+            container.set_class(not show, "hidden")
+            footer.set_class(not show, "hidden")
+
+            if not is_permanent and not is_omnibox_focused:
+                omnibox.can_focus = False
+            else:
+                omnibox.can_focus = True
+        except Exception:
+            pass
+
+    def _start_reminder_checker(self, interval_seconds: int = 300) -> None:
+        """Schedule a recurring background reminder check every interval_seconds."""
+        self._run_reminder_check()
+        self._reminder_timer = threading.Timer(
+            interval_seconds,
+            self._start_reminder_checker,
+            kwargs={"interval_seconds": interval_seconds},
+        )
+        self._reminder_timer.daemon = True
+        self._reminder_timer.start()
+
+    def _run_reminder_check(self) -> None:
+        """Check for due urgent tasks and surface them in-app and via OS notify-send."""
+        from datetime import datetime, timedelta
+
+        from ..ui_utils import send_system_notification
+
+        try:
+            now = datetime.now()
+            todos = self.ctx.db.get_todos(status="pending")
+            due_soon = [
+                t
+                for t in todos
+                if t.priority == "urgent"
+                and t.due_date is not None
+                and t.due_date <= now + timedelta(minutes=30)
+                and (
+                    t.reminder_last_sent is None
+                    or t.reminder_last_sent < now - timedelta(hours=1)
+                )
+            ]
+
+            for task in due_soon:
+                self.ctx.db.update_todo(task.id, reminder_last_sent=now)
+                send_system_notification("dwriter Reminder", task.content)
+
+                if task.due_date is not None:
+                    if task.due_date.hour == 0 and task.due_date.minute == 0:
+                        due_label = task.due_date.strftime("%Y-%m-%d")
+                    else:
+                        due_label = task.due_date.strftime("%H:%M")
+                    msg = f"🔔 [{task.id}] {task.content} (Due: {due_label})"
+                else:
+                    msg = f"🔔 [{task.id}] {task.content}"
+
+                self.call_from_thread(self.notify, msg, severity="warning", timeout=8)
+        except Exception:
+            pass
 
     def action_command_palette(self) -> None:
         """Open the command palette with dwriter commands."""
@@ -475,7 +671,12 @@ class DWriterApp(App[None]):
 
     def action_focus_omnibox(self) -> None:
         """Focus the quick-add input."""
-        self.query_one("#quick-add", Input).focus()
+        self.query_one("#omnibox-container").remove_class("hidden")
+        self.query_one("#omnibox-footer").remove_class("hidden")
+        omnibox = self.query_one("#quick-add", Omnibox)
+        omnibox.can_focus = True
+        omnibox.focus()
+        self._sync_omnibox_visibility()
 
     def action_blur_omnibox(self) -> None:
         """Remove focus from the omnibox when pressing escape."""
@@ -485,6 +686,7 @@ class DWriterApp(App[None]):
                 self._reset_todo_state()
                 self.notify("Todo creation cancelled", timeout=1.5)
             self.set_focus(None)
+            self._sync_omnibox_visibility()
 
     def action_open_help(self) -> None:
         """Open the help screen."""
@@ -556,7 +758,7 @@ class DWriterApp(App[None]):
         use_emojis = self.ctx.config.display.use_emojis
         bullet = get_icon("bullet", use_emojis)
         try:
-            omnibox = self.query_one("#quick-add", Input)
+            omnibox = self.query_one("#quick-add", Omnibox)
             hint = self.query_one("#omnibox-hint", Label)
 
             if screen_name == "todo":
