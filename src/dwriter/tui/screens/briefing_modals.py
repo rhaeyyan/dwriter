@@ -10,16 +10,17 @@ if TYPE_CHECKING:
 
 from textual import work
 from textual.app import ComposeResult
-from textual.containers import Horizontal, Vertical, ScrollableContainer
+from textual.containers import Horizontal, ScrollableContainer, Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Button, Input, Static
 
 from ...ai.engine import ask_second_brain_agentic
-from .second_brain import ThinkingIndicator, UserChatMessage, AIChatMessage
+from .second_brain import AIChatMessage, ThinkingIndicator, UserChatMessage
 
 
 class BriefingDisplayModal(ModalScreen[None]):
     """Modal for displaying a generated AI briefing with export options."""
+
     DEFAULT_CSS = """
     BriefingDisplayModal {
         align: center middle;
@@ -47,10 +48,21 @@ class BriefingDisplayModal(ModalScreen[None]):
     }
     """
 
-    def __init__(self, title: str, content: str, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        title: str,
+        content: str,
+        raw_content: str = "",
+        report_kind: str = "",
+        range_label: str = "",
+        **kwargs: Any,
+    ) -> None:
         super().__init__(**kwargs)
         self.briefing_title = title
-        self.content = content
+        self.content = content  # Rich-tagged, for display only
+        self.raw_content = raw_content  # Clean Markdown, for export
+        self.report_kind = report_kind  # "weekly-retro" | "burnout-check" | "catch-up"
+        self.range_label = range_label  # Catch Up only
 
     def compose(self) -> ComposeResult:
         with Vertical(id="briefing-container"):
@@ -59,28 +71,88 @@ class BriefingDisplayModal(ModalScreen[None]):
                 yield Static(self.content, markup=True)
             with Horizontal(id="briefing-footer"):
                 yield Button("Copy (c)", id="btn-copy", variant="primary")
+                yield Button("Save to Obsidian (o)", id="btn-obsidian")
                 yield Button("Close (Esc)", id="btn-close")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "btn-copy":
             self.action_copy()
+        elif event.button.id == "btn-obsidian":
+            self.action_save_obsidian()
         elif event.button.id == "btn-close":
             self.dismiss()
 
     def action_copy(self) -> None:
         try:
-            import pyperclip
             import re
+
+            import pyperclip
+
             # Remove Rich markup for plain text copy
-            clean_content = re.sub(r'\[.*?\]', '', self.content)
+            clean_content = re.sub(r"\[.*?\]", "", self.content)
             pyperclip.copy(clean_content)
             self.app.notify("Report copied to clipboard!", title="Success")
         except Exception:
             self.app.notify("Could not copy report", severity="error")
 
+    def action_save_obsidian(self) -> None:
+        """Export the raw briefing content to the configured Obsidian vault."""
+        from ...export.obsidian import (
+            get_note_path,
+            obsidian_is_configured,
+            render_ai_report_note,
+            write_note,
+        )
+
+        # Access app context from the TUI app
+        # In dwriter, the App object carries the ctx
+        if not hasattr(self.app, "ctx"):
+            self.app.notify(
+                "Application context not found. Cannot export.", severity="error"
+            )
+            return
+
+        ctx = getattr(self.app, "ctx")
+        obs_cfg = ctx.config.obsidian
+
+        if not obsidian_is_configured(obs_cfg):
+            self.app.notify(
+                "Obsidian vault not configured. Set obsidian.vault_path in config.",
+                severity="warning",
+                title="Not Configured",
+            )
+            return
+
+        now = datetime.now()
+        title_map = {
+            "weekly-retro": "Weekly Retro",
+            "burnout-check": "Burnout Check",
+            "catch-up": (
+                f"Catch Up ({self.range_label})" if self.range_label else "Catch Up"
+            ),
+            "standup": "Standup",
+        }
+        title = title_map.get(self.report_kind, self.briefing_title)
+
+        try:
+            note_content = render_ai_report_note(
+                title=f"{title} · {now.strftime('%B %d, %Y')}",
+                report_kind=self.report_kind,
+                content=self.raw_content,
+                date=now,
+                range_label=self.range_label or None,
+            )
+            note_path = get_note_path(obs_cfg, self.report_kind, now, title)
+            write_note(note_path, note_content)
+            self.app.notify(f"Saved to {note_path.name}", title="Saved to Obsidian")
+        except (OSError, ValueError) as e:
+            self.app.notify(str(e), severity="error", title="Export Failed")
+
     def on_key(self, event: Any) -> None:
         if event.key == "c":
             self.action_copy()
+        elif event.key == "o":
+            self.action_save_obsidian()
         elif event.key == "escape":
             self.dismiss()
 

@@ -494,6 +494,8 @@ class SecondBrainScreen(Vertical):
     @work(thread=True)
     def _generate_briefing(self, briefing_type: str) -> None:
         """Executes targeted AI synthesis in a background worker."""
+        from .briefing_modals import BriefingDisplayModal
+
         thinking = self.query_one("#thinking-indicator", ThinkingIndicator)
         self.app.call_from_thread(thinking.start)
 
@@ -506,7 +508,6 @@ class SecondBrainScreen(Vertical):
 
             formatted = self.format_ai_response(answer)
 
-            narrative = self.query_one("#narrative-text", Static)
             title_map = {
                 "weekly_retro": "Weekly Retrospective",
                 "burnout_check": "Burnout & Productivity Check",
@@ -514,7 +515,20 @@ class SecondBrainScreen(Vertical):
             title = title_map.get(briefing_type, "Briefing")
 
             display_text = f"[bold #cba6f7]▸ {title}[/]\n\n{formatted}"
+
+            modal = BriefingDisplayModal(
+                title=title,
+                content=display_text,
+                raw_content=answer,
+                report_kind=briefing_type.replace("_", "-"),
+            )
+
+            # Update inline narrative as fallback/record
+            narrative = self.query_one("#narrative-text", Static)
             self.app.call_from_thread(narrative.update, display_text)
+
+            # Push the modal for full-screen viewing and export
+            self.app.call_from_thread(self.app.push_screen, modal)
 
         except Exception as e:
             self.app.notify(f"Briefing error: {e}", severity="error")
@@ -524,6 +538,8 @@ class SecondBrainScreen(Vertical):
     @work(thread=True)
     def _generate_catchup_briefing(self, criteria: dict) -> None:
         """Fetches activity data and runs the Catch Up AI briefing in a background worker."""
+        from .briefing_modals import BriefingDisplayModal
+
         thinking = self.query_one("#thinking-indicator", ThinkingIndicator)
         self.app.call_from_thread(thinking.start)
 
@@ -543,11 +559,20 @@ class SecondBrainScreen(Vertical):
             )
 
             formatted = self.format_ai_response(answer)
-            display_text = (
-                f"[bold #cba6f7]▸ Catch Up: {criteria['range_label']}[/]\n\n{formatted}"
+            title = f"Catch Up: {criteria['range_label']}"
+            display_text = f"[bold #cba6f7]▸ {title}[/]\n\n{formatted}"
+
+            modal = BriefingDisplayModal(
+                title=title,
+                content=display_text,
+                raw_content=answer,
+                report_kind="catch-up",
+                range_label=criteria["range_label"],
             )
+
             narrative = self.query_one("#narrative-text", Static)
             self.app.call_from_thread(narrative.update, display_text)
+            self.app.call_from_thread(self.app.push_screen, modal)
 
         except Exception as e:
             self.app.notify(f"Catch Up error: {e}", severity="error")

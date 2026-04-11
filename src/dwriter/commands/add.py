@@ -244,7 +244,7 @@ def _run_burnout_detection(ctx: AppContext) -> None:
         if len(recent_entries) < 5:
             return
 
-        client = get_ai_client(ctx.config.ai)
+        get_ai_client(ctx.config.ai)
         # Simplified burnout check logic
         pass
     except Exception:

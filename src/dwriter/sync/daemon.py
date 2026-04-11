@@ -27,7 +27,7 @@ def _log_sync(message: str) -> None:
 
 def pull_sync(db: Database) -> bool:
     """Performs a non-blocking background pull sync.
-    
+
     Returns:
         bool: True if changes were merged, False otherwise.
     """
@@ -77,7 +77,7 @@ def pull_sync(db: Database) -> bool:
 
 def push_sync(db: Database) -> bool:
     """Performs a background push sync.
-    
+
     Returns:
         bool: True if push was successful, False otherwise.
     """
