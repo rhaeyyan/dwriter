@@ -1,5 +1,32 @@
 # dwriter Update Notes
 
+## Version 4.6.2 - April 10, 2026
+
+### 🛠 Improvements & Fixes
+
+- **Follow-up Conversation — Exit Added**: The Follow-up chat modal now includes a `✕` close button in the header bar and responds to the `Escape` key. Previously, opening the Follow-up screen provided no way to exit without restarting the application.
+- **`--version` Reporting Fixed**: `dwriter --version` now always reports the correct installed version. The version string was previously hardcoded in the package and had drifted to `4.0.0` regardless of the actual release — it now reads dynamically from the installed package, so future releases are reflected automatically.
+
+---
+
+## Version 4.6.1 - April 10, 2026
+
+### 🚀 Key Features
+
+#### 1. Security Mode — Proactive Suggestions Now Governed
+- **Consistent Security Enforcement**: Proactive AI suggestions — the project and tag recommendations that appear after logging a new entry — are now governed by the active Security Mode setting. Users running in `read-only` mode will no longer receive proactive suggestions, keeping that mode fully locked down across all AI interactions.
+
+#### 2. Context Budget Applied Universally
+- **Engine-Level Enforcement**: The AI context budget is now enforced internally within the 2nd-Brain engine for every interaction, including Follow-up conversations. Previously, the budget was only applied by the Command Center report triggers. Any context passed to the AI — regardless of which surface invoked it — is now compressed before reaching the model.
+
+### 🛠 Improvements & Fixes
+
+- **AI Tool Connection Efficiency**: The journal search, todo search, and standup generation tools used by the 2nd-Brain now share the application's existing database connection instead of opening a separate one per tool call. This eliminates redundant overhead during multi-step conversations where the AI chains several tool calls in sequence.
+- **Compression Engine Test Coverage**: The context compression engine now has full test coverage, including budget enforcement, deduplication, priority ordering, and idempotency.
+- **AI Tool Test Coverage**: The AI tool functions (journal search, todo search, standup) now have test coverage verifying correct behaviour with both injected and fallback database connections.
+
+---
+
 ## Version 4.6.0 - April 10, 2026
 
 ### 🚀 Key Features
