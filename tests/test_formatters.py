@@ -20,7 +20,7 @@ def create_test_entry(content, tags=None, project=None):
 
 def test_format_bullets_basic():
     """Test basic bullet formatting."""
-    from dwriter.commands.standup import format_standup_bullets
+    from dwriter.commands.standup_service import format_standup_bullets
 
     entries = [create_test_entry("Fixed bug")]
     result = format_standup_bullets(entries)
@@ -30,7 +30,7 @@ def test_format_bullets_basic():
 
 def test_format_bullets_with_tags():
     """Test bullet formatting with tags."""
-    from dwriter.commands.standup import format_standup_bullets
+    from dwriter.commands.standup_service import format_standup_bullets
 
     entries = [create_test_entry("Fixed bug", tags=["bug", "backend"])]
     result = format_standup_bullets(entries)
@@ -41,7 +41,7 @@ def test_format_bullets_with_tags():
 
 def test_format_bullets_with_project():
     """Test bullet formatting with project."""
-    from dwriter.commands.standup import format_standup_bullets
+    from dwriter.commands.standup_service import format_standup_bullets
     from dwriter.tui.colors import PROJECT
 
     entries = [create_test_entry("Fixed bug", project="myapp")]
@@ -53,7 +53,7 @@ def test_format_bullets_with_project():
 
 def test_format_slack():
     """Test Slack formatting."""
-    from dwriter.commands.standup import format_standup_slack
+    from dwriter.commands.standup_service import format_standup_slack
 
     entries = [create_test_entry("Fixed bug")]
     result = format_standup_slack(entries)
@@ -63,7 +63,7 @@ def test_format_slack():
 
 def test_format_jira():
     """Test Jira formatting."""
-    from dwriter.commands.standup import format_standup_jira
+    from dwriter.commands.standup_service import format_standup_jira
 
     entries = [create_test_entry("Fixed bug")]
     result = format_standup_jira(entries)
@@ -73,7 +73,7 @@ def test_format_jira():
 
 def test_format_markdown():
     """Test Markdown formatting."""
-    from dwriter.commands.standup import format_standup_markdown
+    from dwriter.commands.standup_service import format_standup_markdown
 
     entries = [create_test_entry("Fixed bug")]
     result = format_standup_markdown(entries)
@@ -83,7 +83,7 @@ def test_format_markdown():
 
 def test_format_multiple_entries():
     """Test formatting with multiple entries."""
-    from dwriter.commands.standup import format_standup_bullets
+    from dwriter.commands.standup_service import format_standup_bullets
 
     entries = [
         create_test_entry("Task 1"),
