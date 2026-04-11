@@ -105,7 +105,41 @@ To prevent data loss across multiple machines, we implement **Lamport Logical Cl
 
 ---
 
-## ⚙️ 5. Advanced Configuration
+## 📝 5. Obsidian Export
+
+dwriter integrates seamlessly with Obsidian by allowing you to export AI-generated reports and periodic reviews directly to your vault.
+
+### ⚙️ Setup
+1. Open your configuration file at `~/.dwriter/config.toml` (or use `dwriter config show` to find the path).
+2. Set the `vault_path` under the `[obsidian]` section to the absolute path of your Obsidian vault:
+   ```toml
+   [obsidian]
+   vault_path = "/Users/username/Documents/ObsidianVault"
+   ai_reports_folder = "AI Reports"
+   reviews_folder = "Reviews"
+   ```
+
+### 💻 CLI Export
+You can export summaries directly from the command line using the `--obsidian` flag:
+- **Daily Standup:** `dwriter standup --obsidian` (saves to the `AI Reports` folder, dated to yesterday)
+- **Period Review:** `dwriter review --days 7 --obsidian` (saves to the `Reviews` folder)
+
+### 🧠 2nd-Brain Export
+When viewing AI briefings (Catch Up, Weekly Retro, Burnout Check) in the TUI's **Strategic Command Center**, click the **Save to Obsidian (o)** button to write the clean Markdown report directly to your vault.
+
+### 🗂️ Note Types & Dataview
+Exported notes use specific frontmatter schemas.
+- **AI Reports** have `type: ai-report` and `report-kind` (e.g., standup, weekly-retro).
+- **Reviews** have `type: period-review` with `period-start` and `period-end` dates.
+
+**Dataview Example:**
+```dataview
+LIST FROM "AI Reports" WHERE type = "ai-report"
+```
+
+---
+
+## ⚙️ 6. Advanced Configuration
 
 ### `config.toml` Schema
 Stored in `~/.dwriter/config.toml`. Key sections:

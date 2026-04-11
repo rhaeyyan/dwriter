@@ -24,13 +24,13 @@ def wrap_with_hanging_indent(
     subsequent_indent: str = "    "
 ) -> str:
     """Wraps text with a hanging indent for better readability.
-    
+
     Args:
         text: The text to wrap.
         width: The maximum width of the wrapped lines.
         initial_indent: Indentation for the first line.
         subsequent_indent: Indentation for all lines after the first.
-        
+
     Returns:
         The wrapped text with hanging indents.
     """
@@ -52,7 +52,7 @@ def wrap_with_hanging_indent(
 
 
 def format_entry_datetime(
-    entry: "Entry", 
+    entry: "Entry",
     config: "Config | None" = None
 ) -> tuple[str, str | None]:
     """Format an entry's date and time for display.
@@ -88,7 +88,7 @@ def display_entry(console: "Console", entry: "Entry", config: "Config") -> None:
     # Calculate the prefix to determine the subsequent indentation width
     if time_str is None:
         prefix = (
-            f"[{PROJECT}][{entry.id}][/{PROJECT}] " 
+            f"[{PROJECT}][{entry.id}][/{PROJECT}] "
             if config.display.show_id else ""
         )
         raw_prefix = f"[{entry.id}] " if config.display.show_id else ""
@@ -96,7 +96,7 @@ def display_entry(console: "Console", entry: "Entry", config: "Config") -> None:
         raw_full_prefix = f"{raw_prefix}{date_str}: "
     else:
         prefix = (
-            f"[{PROJECT}][{entry.id}][/{PROJECT}] {date_str}" 
+            f"[{PROJECT}][{entry.id}][/{PROJECT}] {date_str}"
             if config.display.show_id else date_str
         )
         raw_prefix = f"[{entry.id}] {date_str}" if config.display.show_id else date_str
@@ -262,14 +262,6 @@ def send_system_notification(title: str, message: str) -> None:
             )
         elif sys.platform == "win32":  # Windows
             # Standard Windows notification via PowerShell
-            powershell_cmd = (
-                f"$t = '{title}'; $m = '{message}'; "
-                "[registration.notification.toastnotificationmanager, "
-                "registration.notification, content=generic]::CreateToastNotifier()."
-                "Show([registration.notification.toastnotificationmanager]::"
-                "GetTemplateContent([registration.notification.toasttemplatetype]::"
-                "ToastText02))"
-            )
             # This is a bit complex for a single line, so using a simpler alternative if possible
             # or adhering to the prompt's suggested PowerShell command
             subprocess.run(

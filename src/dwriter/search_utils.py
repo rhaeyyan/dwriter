@@ -23,7 +23,7 @@ def cosine_similarity(vec1: list[float], vec2: list[float]) -> float:
     if not vec1 or not vec2:
         return 0.0
 
-    dot_product = sum(a * b for a, b in zip(vec1, vec2))
+    dot_product = sum(a * b for a, b in zip(vec1, vec2, strict=False))
     magnitude1 = math.sqrt(sum(a * a for a in vec1))
     magnitude2 = math.sqrt(sum(b * b for b in vec2))
 

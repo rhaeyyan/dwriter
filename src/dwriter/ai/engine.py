@@ -305,7 +305,10 @@ def generate_targeted_briefing(
         extra_data: Specific data for the briefing (e.g., filtered entries for Catch Up).
 
     Returns:
-        str: The AI-generated briefing in Markdown.
+        str: The AI-generated briefing in Markdown. Returns clean Markdown
+             suitable for display or file export. Callers are responsible
+             for any Rich/terminal rendering transformation. Do not apply
+             Rich markup before passing this output to file writers.
     """
     client = OpenAI(base_url=config.base_url, api_key="ollama")
 

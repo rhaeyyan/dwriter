@@ -269,7 +269,7 @@ class AnalyticsEngine:
 
     def get_deep_work_ratio(self, days: int = 45) -> tuple[int, int, float]:
         """Calculate the ratio of deep work sessions vs shallow work.
-        
+
         Deep work: Focus sessions (starts with ⏱️).
         Shallow work: Standard entries + total Todos added.
         """

@@ -109,8 +109,16 @@ FORMATTERS = {
     default=None,
     help="Output format: markdown, plain, slack",
 )
+@click.option(
+    "--obsidian",
+    is_flag=True,
+    default=False,
+    help="Export review to Obsidian vault",
+)
 @click.pass_obj
-def review(ctx: AppContext, num_days: int, output_format: str | None) -> None:
+def review(
+    ctx: AppContext, num_days: int | None, output_format: str | None, obsidian: bool
+) -> None:
     """Review last N days.
 
     Generates a summary of all entries from the past N days,
@@ -125,6 +133,7 @@ def review(ctx: AppContext, num_days: int, output_format: str | None) -> None:
       dwriter review                  # Last 5 days (default)
       dwriter review --days 7         # Last week
       dwriter review --format markdown
+      dwriter review --obsidian       # Export to Obsidian vault
     """
     # Use config defaults if not specified
     if num_days is None:
@@ -162,6 +171,37 @@ def review(ctx: AppContext, num_days: int, output_format: str | None) -> None:
     # Add header
     header = f"Review: Last {num_days} Days"
     output = f"{header}\n{review_text}"
+
+    # Export to Obsidian if requested
+    if obsidian:
+        from ..export.obsidian import (
+            get_note_path,
+            obsidian_is_configured,
+            render_review_note,
+            strip_rich_markup,
+            write_note,
+        )
+
+        obs_cfg = ctx.config.obsidian
+        if not obsidian_is_configured(obs_cfg):
+            ctx.console.print("[yellow]![/yellow] Obsidian vault not configured.")
+        else:
+            clean_text = strip_rich_markup(review_text)
+            note_content = render_review_note(
+                content=clean_text,
+                start_date=start_date,
+                end_date=end_date,
+                num_days=num_days,
+            )
+            title = f"{num_days}-Day Review"
+            try:
+                note_path = get_note_path(obs_cfg, "review", end_date, title)
+                write_note(note_path, note_content)
+                ctx.console.print(
+                    f"[green]✅[/green] Saved to Obsidian: [dim]{note_path}[/dim]"
+                )
+            except (OSError, ValueError) as e:
+                ctx.console.print(f"[red]![/red] Failed to save to Obsidian: {e}")
 
     ctx.console.print()
     ctx.console.print(output)

@@ -142,6 +142,28 @@ class AIFeaturesConfig:
 
 
 @dataclass
+class ObsidianConfig:
+    """Obsidian vault export configuration.
+
+    Attributes:
+        vault_path: Absolute path to the Obsidian vault root directory.
+                    If None or empty, export is disabled.
+        ai_reports_folder: Vault subfolder for AI briefings and standup notes.
+        reviews_folder: Vault subfolder for period review notes.
+        wikilinks: Whether to render project names as [[wikilinks]].
+        include_todos: Whether to include todo sections in standup notes.
+        enabled: Master switch. Set automatically when vault_path is non-empty.
+    """
+
+    vault_path: str | None = None
+    ai_reports_folder: str = "AI Reports"
+    reviews_folder: str = "Reviews"
+    wikilinks: bool = True
+    include_todos: bool = True
+    enabled: bool = False
+
+
+@dataclass
 class AIConfig:
     """AI configuration.
 
@@ -177,6 +199,7 @@ class Config:
         defaults: Default values for entries.
         timer: Timer (Timer) settings.
         ai: AI-related settings.
+        obsidian: Obsidian-related settings.
     """
 
     standup: StandupConfig = field(default_factory=StandupConfig)
@@ -185,6 +208,7 @@ class Config:
     defaults: DefaultsConfig = field(default_factory=DefaultsConfig)
     timer: TimerConfig = field(default_factory=TimerConfig)
     ai: AIConfig = field(default_factory=AIConfig)
+    obsidian: ObsidianConfig = field(default_factory=ObsidianConfig)
 
 
 class ConfigManager:
@@ -242,6 +266,9 @@ class ConfigManager:
         timer_data = data.get("timer", {})  # May not exist in old configs
         ai_data = data.get("ai", {})
         ai_features_data = ai_data.get("features", {})
+        obsidian_data = data.get("obsidian", {})
+
+        vault_path = obsidian_data.get("vault_path")
 
         self._config = Config(
             standup=StandupConfig(
@@ -301,9 +328,21 @@ class ConfigManager:
                     auto_tagging=ai_features_data.get("auto_tagging", False),
                     reflection_prompts=ai_features_data.get("reflection_prompts", True),
                     burnout_detection=ai_features_data.get("burnout_detection", True),
-                    permission_mode=ai_features_data.get("permission_mode", "append-only"),
+                    permission_mode=ai_features_data.get(
+                        "permission_mode", "append-only"
+                    ),
                 ),
                 last_pulse_greeting=ai_data.get("last_pulse_greeting"),
+            ),
+            obsidian=ObsidianConfig(
+                vault_path=vault_path,
+                ai_reports_folder=obsidian_data.get(
+                    "ai_reports_folder", "AI Reports"
+                ),
+                reviews_folder=obsidian_data.get("reviews_folder", "Reviews"),
+                wikilinks=obsidian_data.get("wikilinks", True),
+                include_todos=obsidian_data.get("include_todos", True),
+                enabled=bool(vault_path),
             ),
         )
 
@@ -393,6 +432,16 @@ class ConfigManager:
         ai_table["features"] = ai_features
         doc.add("ai", ai_table)
 
+        obsidian_table = tomlkit.table()
+        if self._config.obsidian.vault_path:
+            obsidian_table["vault_path"] = self._config.obsidian.vault_path
+        obsidian_table["ai_reports_folder"] = self._config.obsidian.ai_reports_folder
+        obsidian_table["reviews_folder"] = self._config.obsidian.reviews_folder
+        obsidian_table["wikilinks"] = self._config.obsidian.wikilinks
+        obsidian_table["include_todos"] = self._config.obsidian.include_todos
+        obsidian_table["enabled"] = self._config.obsidian.enabled
+        doc.add("obsidian", obsidian_table)
+
         with open(self.config_path, "w") as f:
             f.write(tomlkit.dumps(doc))
 
@@ -477,4 +526,13 @@ class ConfigManager:
                 },
                 "last_pulse_greeting": config.ai.last_pulse_greeting,
             },
+            "obsidian": {
+                "vault_path": config.obsidian.vault_path,
+                "ai_reports_folder": config.obsidian.ai_reports_folder,
+                "reviews_folder": config.obsidian.reviews_folder,
+                "wikilinks": config.obsidian.wikilinks,
+                "include_todos": config.obsidian.include_todos,
+                "enabled": config.obsidian.enabled,
+            },
         }
+

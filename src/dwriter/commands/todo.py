@@ -705,7 +705,7 @@ def snooze(
       dwriter snooze 42 --at 5pm
     """
     try:
-        task = ctx.db.get_todo(task_id)
+        ctx.db.get_todo(task_id)
     except ValueError:
         ctx.console.print(f"[red]![/red] Task {task_id} not found.")
         return

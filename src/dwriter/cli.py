@@ -184,7 +184,7 @@ def _launch_tui(ctx_obj: AppContext, starting_tab: str | None = None) -> None:
 
     Args:
         ctx_obj (AppContext): The application context.
-        starting_tab (str | None): The initial screen to display. 
+        starting_tab (str | None): The initial screen to display.
             If None, the app decides based on configuration.
     """
     import sys

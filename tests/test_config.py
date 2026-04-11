@@ -95,3 +95,29 @@ def test_config_manager_get_path(temp_path):
     """Test getting config file path."""
     manager = ConfigManager(temp_path / "config.toml")
     assert manager.get_config_path() == temp_path / "config.toml"
+
+
+def test_config_manager_obsidian_roundtrip(temp_path):
+    """Test ObsidianConfig saving and loading."""
+    config_path = temp_path / "config.toml"
+    manager = ConfigManager(config_path)
+
+    # Set non-default values
+    config = manager.load()
+    config.obsidian.vault_path = "/path/to/vault"
+    config.obsidian.ai_reports_folder = "My Reports"
+    config.obsidian.reviews_folder = "My Reviews"
+    config.obsidian.wikilinks = False
+    config.obsidian.include_todos = False
+    manager.save(config)
+
+    # Load in new manager
+    new_manager = ConfigManager(config_path)
+    loaded = new_manager.load()
+
+    assert loaded.obsidian.vault_path == "/path/to/vault"
+    assert loaded.obsidian.ai_reports_folder == "My Reports"
+    assert loaded.obsidian.reviews_folder == "My Reviews"
+    assert loaded.obsidian.wikilinks is False
+    assert loaded.obsidian.include_todos is False
+    assert loaded.obsidian.enabled is True

@@ -208,3 +208,91 @@ def test_edit_command():
     result = runner.invoke(main, ["edit"])
 
     assert result.exit_code == 0
+
+
+def test_standup_obsidian_not_configured():
+    """Test standup --obsidian warning when not configured."""
+    runner = CliRunner()
+    # Ensure there is an entry so it doesn't return early
+    runner.invoke(main, ["add", "Work done", "--date", "yesterday"])
+    
+    with patch("dwriter.config.ConfigManager.load") as mock_load:
+        from dwriter.config import Config
+        mock_cfg = Config()
+        mock_cfg.obsidian.vault_path = None
+        mock_load.return_value = mock_cfg
+        
+        result = runner.invoke(main, ["standup", "--obsidian"])
+        assert "Obsidian vault not configured" in result.output
+
+
+def test_review_obsidian_not_configured():
+    """Test review --obsidian warning when not configured."""
+    runner = CliRunner()
+    # Ensure there is an entry
+    runner.invoke(main, ["add", "Review entry"])
+    
+    with patch("dwriter.config.ConfigManager.load") as mock_load:
+        from dwriter.config import Config
+        mock_cfg = Config()
+        mock_cfg.obsidian.vault_path = None
+        mock_load.return_value = mock_cfg
+        
+        result = runner.invoke(main, ["review", "--obsidian"])
+        assert "Obsidian vault not configured" in result.output
+
+
+def test_standup_obsidian_export(tmp_path):
+    """Test successful standup --obsidian export."""
+    runner = CliRunner()
+    vault_path = tmp_path / "vault"
+    vault_path.mkdir()
+    
+    # Pre-add some entries so standup isn't empty
+    runner.invoke(main, ["add", "Did some work", "--date", "yesterday"])
+
+    with patch("dwriter.config.ConfigManager.load") as mock_load:
+        from dwriter.config import Config
+        mock_cfg = Config()
+        mock_cfg.obsidian.vault_path = str(vault_path)
+        mock_cfg.obsidian.enabled = True
+        mock_load.return_value = mock_cfg
+        
+        result = runner.invoke(main, ["standup", "--obsidian", "--no-copy"])
+        assert result.exit_code == 0
+        assert "Saved to Obsidian" in result.output
+        
+        # Verify file exists
+        report_dir = vault_path / "AI Reports"
+        assert report_dir.exists()
+        files = list(report_dir.glob("*.md"))
+        assert len(files) == 1
+        assert "Standup" in files[0].name
+
+
+def test_review_obsidian_export(tmp_path):
+    """Test successful review --obsidian export."""
+    runner = CliRunner()
+    vault_path = tmp_path / "vault"
+    vault_path.mkdir()
+    
+    # Pre-add some entries
+    runner.invoke(main, ["add", "Review entry"])
+
+    with patch("dwriter.config.ConfigManager.load") as mock_load:
+        from dwriter.config import Config
+        mock_cfg = Config()
+        mock_cfg.obsidian.vault_path = str(vault_path)
+        mock_cfg.obsidian.enabled = True
+        mock_load.return_value = mock_cfg
+        
+        result = runner.invoke(main, ["review", "--obsidian", "--days", "1"])
+        assert result.exit_code == 0
+        assert "Saved to Obsidian" in result.output
+        
+        # Verify file exists
+        review_dir = vault_path / "Reviews"
+        assert review_dir.exists()
+        files = list(review_dir.glob("*.md"))
+        assert len(files) == 1
+        assert "Review" in files[0].name
