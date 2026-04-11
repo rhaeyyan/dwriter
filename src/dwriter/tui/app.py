@@ -6,9 +6,8 @@ and provides the global omnibox for quick entry logging.
 
 from __future__ import annotations
 
-import threading
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from ..cli import AppContext
@@ -40,29 +39,13 @@ from .messages import (
 )
 from .parsers import (
     ParsedEntry,
-    ParsedTodo,
     parse_quick_add,
     parse_timer,
-    parse_todo_add,
 )
+from .reminder_coordinator import ReminderCoordinator
 from .themes import THEMES
+from .todo_workflow import TodoWorkflow
 from .widgets.omnibox import Omnibox
-
-TodoStep = Literal["task", "tags", "priority", "due_date"]
-
-
-class TodoInputState:
-    """State tracker for multi-step todo input workflow."""
-
-    def __init__(self) -> None:
-        """Initialize the todo input state."""
-        self.active: bool = False
-        self.step: TodoStep = "task"
-        self.content: str = ""
-        self.tags: list[str] = []
-        self.project: str = ""
-        self.priority: str = "normal"
-        self.due_date: str = ""
 
 
 class DWriterApp(App[None]):
@@ -453,10 +436,11 @@ class DWriterApp(App[None]):
             starting_tab = "second-brain" if self.ctx.config.ai.enabled else "dashboard"
 
         self._current_screen: str = starting_tab
-        self._todo_state: TodoInputState = TodoInputState()
         self._timer_running: bool = False
-        self._reminder_timer: threading.Timer | None = None
-        self._sync_debounce_timer: threading.Timer | None = None
+        self._todo_workflow: TodoWorkflow = TodoWorkflow(self)
+        self._reminder_coordinator: ReminderCoordinator = ReminderCoordinator(self)
+        from ..sync.coordinator import SyncCoordinator
+        self._sync_coordinator: SyncCoordinator = SyncCoordinator(self)
 
     def compose(self) -> ComposeResult:
         """Compose the main application layout."""
@@ -565,32 +549,15 @@ class DWriterApp(App[None]):
 
         # Start background reminder checker if enabled
         if self.ctx.config.display.notifications_enabled:
-            self._start_reminder_checker()
+            self._reminder_coordinator.start()
 
         # Trigger initial background sync pull
         if self.ctx.config.defaults.auto_sync:
-            self._trigger_pull_sync()
-
-    def _trigger_pull_sync(self) -> None:
-        """Dispatches a non-blocking background pull sync."""
-        from ..sync.daemon import pull_sync
-
-        async def pull_sync_worker() -> None:
-            self.post_message(SyncStatus(is_syncing=True, message="Syncing..."))
-            merged = await self.run_worker(lambda: pull_sync(self.ctx.db), thread=True).wait()
-            if merged:
-                # Refresh UI components if data changed
-                self.post_message(EntryAdded(entry_id=0, content="", created_at=datetime.now()))
-                self.post_message(TodoUpdated(todo_id=0, action="updated"))
-            self.post_message(SyncStatus(is_syncing=False, message="Synced"))
-
-        self.run_worker(pull_sync_worker())
+            self._sync_coordinator.trigger_pull()
 
     def on_unmount(self) -> None:
         """Cancel the background reminder thread on exit."""
-        if self._reminder_timer is not None:
-            self._reminder_timer.cancel()
-            self._reminder_timer = None
+        self._reminder_coordinator.stop()
 
     def watch_git_branch(self, value: str) -> None:
         """Update git branch in status bar."""
@@ -669,68 +636,6 @@ class DWriterApp(App[None]):
         except Exception:
             pass
 
-    def _start_reminder_checker(self, interval_seconds: int = 300) -> None:
-        """Schedule a recurring background reminder check.
-
-        Fires every ``interval_seconds`` (default 5 min) using a daemon
-        threading.Timer so it doesn't block clean exit.
-
-        Args:
-            interval_seconds: How often to poll in seconds.
-        """
-        self._run_reminder_check()
-        self._reminder_timer = threading.Timer(
-            interval_seconds, self._start_reminder_checker, kwargs={"interval_seconds": interval_seconds}
-        )
-        self._reminder_timer.daemon = True
-        self._reminder_timer.start()
-
-    def _run_reminder_check(self) -> None:
-        """Check for due urgent tasks and surface them in-app and via OS.
-
-        Safe to call from a background thread — all UI updates are dispatched
-        through ``call_from_thread``.
-        """
-        from datetime import datetime, timedelta
-
-        from ..ui_utils import send_system_notification
-
-        try:
-            now = datetime.now()
-            todos = self.ctx.db.get_todos(status="pending")
-            due_soon = [
-                t
-                for t in todos
-                if t.priority == "urgent"
-                and t.due_date is not None
-                and t.due_date <= now + timedelta(minutes=30)
-                and (
-                    t.reminder_last_sent is None
-                    or t.reminder_last_sent < now - timedelta(hours=1)
-                )
-            ]
-
-            for task in due_soon:
-                # Stamp the cooldown timestamp
-                self.ctx.db.update_todo(task.id, reminder_last_sent=now)
-
-                # OS desktop notification (non-blocking subprocess)
-                send_system_notification("dwriter Reminder", task.content)
-
-                # In-app Textual toast — must go through the event loop
-                if task.due_date is not None:
-                    if task.due_date.hour == 0 and task.due_date.minute == 0:
-                        due_label = task.due_date.strftime("%Y-%m-%d")
-                    else:
-                        due_label = task.due_date.strftime("%H:%M")
-                    message = f"🔔 [{task.id}] {task.content} (Due: {due_label})"
-                else:
-                    message = f"🔔 [{task.id}] {task.content}"
-
-                self.call_from_thread(self.notify, message, severity="warning", timeout=8)
-        except Exception:
-            pass  # Never crash the TUI for a reminder failure
-
     def _set_default_size(self) -> None:
         """Set the default terminal size."""
         self.set_size(90, 42)
@@ -753,8 +658,8 @@ class DWriterApp(App[None]):
     def action_blur_omnibox(self) -> None:
         """Remove focus from the omnibox when pressing escape."""
         if self.focused is not None and self.focused.id == "quick-add":
-            if self._todo_state.active:
-                self._reset_todo_state()
+            if self._todo_workflow.state.active:
+                self._todo_workflow.reset()
                 self.notify("Todo creation cancelled", timeout=1.5)
             self.set_focus(None)
             # Re-sync will handle can_focus = False if needed
@@ -779,7 +684,7 @@ class DWriterApp(App[None]):
                 switcher.current = screen_name
                 self._current_screen = screen_name
                 if screen_name != "todo":
-                    self._reset_todo_state()
+                    self._todo_workflow.reset()
                 self._update_omnibox_placeholder(screen_name)
             except Exception:
                 pass
@@ -812,22 +717,22 @@ class DWriterApp(App[None]):
             hint = self.query_one("#omnibox-hint", Label)
 
             if screen_name == "todo":
-                if self._todo_state.active:
-                    step = self._todo_state.step
+                if self._todo_workflow.state.active:
+                    step = self._todo_workflow.state.step
                     if step == "task":
                         omnibox.placeholder = "Enter task description..."
                         hint.update(f"Task text with optional #tag &project {bullet} 'q' to cancel")
                     elif step == "tags":
-                        current_tags = ", ".join(self._todo_state.tags) if self._todo_state.tags else "none"
+                        current_tags = ", ".join(self._todo_workflow.state.tags) if self._todo_workflow.state.tags else "none"
                         hint.update(f"Current: {current_tags} {bullet} Add more #tag &project or Enter to skip")
                         omnibox.placeholder = "Add tags/project (or press Enter to skip)..."
                     elif step == "priority":
                         omnibox.placeholder = "Priority: L=Low, N=Normal, H=High, U=Urgent (or Enter for Normal)"
-                        hint.update(f"Task: {self._todo_state.content[:40]}... {bullet} 'q' to cancel")
+                        hint.update(f"Task: {self._todo_workflow.state.content[:40]}... {bullet} 'q' to cancel")
                     elif step == "due_date":
                         date_fmt = self.ctx.config.display.date_format
                         omnibox.placeholder = f"Due date: {date_fmt}, today, tomorrow, 5d, 2w, 3m (or Enter for none)"
-                        hint.update(f"Priority: {self._todo_state.priority.upper()} {bullet} 'q' to cancel")
+                        hint.update(f"Priority: {self._todo_workflow.state.priority.upper()} {bullet} 'q' to cancel")
                 else:
                     omnibox.placeholder = "Enter Task and press Enter to start multi-step add"
                     hint.update(f"Enter Task and press Enter to start multi-step add {bullet} 'q' to cancel")
@@ -853,14 +758,14 @@ class DWriterApp(App[None]):
             return
 
         value = message.value.strip()
-        if value == "q" and self._todo_state.active:
-            self._reset_todo_state()
+        if value == "q" and self._todo_workflow.state.active:
+            self._todo_workflow.reset()
             message.input.value = ""
             self.notify("Todo creation cancelled", timeout=1.5)
             return
 
-        if self._todo_state.active and self._current_screen == "todo":
-            self._handle_todo_step(value, message)
+        if self._todo_workflow.state.active and self._current_screen == "todo":
+            self._todo_workflow.handle_step(value, message)
             return
 
         if value:
@@ -872,79 +777,9 @@ class DWriterApp(App[None]):
                     return
 
             if self._current_screen == "todo":
-                self._start_todo_workflow(value, message)
+                self._todo_workflow.start(value, message)
             else:
                 self._create_journal_entry(value, message)
-
-    def _start_todo_workflow(self, value: str, message: Input.Submitted) -> None:
-        """Start the multi-step todo creation workflow."""
-        parsed: ParsedTodo = parse_todo_add(value)
-        self._todo_state.active = True
-        self._todo_state.step = "tags"
-        self._todo_state.content = parsed.content
-        self._todo_state.tags = parsed.tags
-        self._todo_state.project = parsed.project or ""
-        self._todo_state.priority = parsed.priority
-        message.input.value = ""
-        self._update_omnibox_placeholder("todo")
-
-    def _handle_todo_step(self, value: str, message: Input.Submitted) -> None:
-        """Handle a step in the multi-step todo workflow."""
-        step = self._todo_state.step
-        if step == "tags":
-            if value:
-                parsed: ParsedTodo = parse_todo_add(value)
-                for tag in parsed.tags:
-                    if tag not in self._todo_state.tags:
-                        self._todo_state.tags.append(tag)
-                if parsed.project:
-                    self._todo_state.project = parsed.project
-            self._todo_state.step = "priority"
-            message.input.value = ""
-            self._update_omnibox_placeholder("todo")
-        elif step == "priority":
-            value_lower = value.lower().strip()
-            if value_lower == "l":
-                self._todo_state.priority = "low"
-            elif value_lower == "h":
-                self._todo_state.priority = "high"
-            elif value_lower == "u":
-                self._todo_state.priority = "urgent"
-            else:
-                self._todo_state.priority = "normal"
-            self._todo_state.step = "due_date"
-            message.input.value = ""
-            self._update_omnibox_placeholder("todo")
-        elif step == "due_date":
-            due_date = None
-            if value and value.lower() != "none":
-                due_date = self._parse_todo_due_date(value)
-
-            # Use a worker for the database write
-            content = self._todo_state.content
-            priority = self._todo_state.priority
-            all_tags = list(self.ctx.config.defaults.tags) + self._todo_state.tags
-            project = self._todo_state.project or self.ctx.config.defaults.project
-
-            async def add_todo_worker() -> None:
-                todo = self.ctx.db.add_todo(
-                    content=content,
-                    priority=priority,
-                    tags=all_tags,
-                    project=project,
-                    due_date=due_date
-                )
-                self.notify(f"Todo added: {content}")
-                self.post_message(TodoUpdated(todo_id=todo.id, action="added"))
-
-            self.run_worker(add_todo_worker())
-            message.input.value = ""
-            self._reset_todo_state()
-
-    def _reset_todo_state(self) -> None:
-        """Reset the multi-step todo input state."""
-        self._todo_state = TodoInputState()
-        self._update_omnibox_placeholder("todo")
 
     def _create_journal_entry(self, value: str, message: Input.Submitted) -> None:
         """Create a journal entry from input."""
@@ -988,44 +823,9 @@ class DWriterApp(App[None]):
         except Exception:
             pass
 
-    def _parse_todo_due_date(self, due_str: str) -> Any:
-        """Parse a due date string for todos."""
-        from ..date_utils import parse_natural_date
-        try:
-            date_fmt = self.ctx.config.display.date_format
-            fmt_map = {"YYYY-MM-DD": "%Y-%m-%d", "MM/DD/YYYY": "%m/%d/%Y", "DD/MM/YYYY": "%d/%m/%Y"}
-            hint = fmt_map.get(date_fmt)
-            return parse_natural_date(due_str, prefer_future=True, format_hint=hint)
-        except Exception:
-            return None
-
     def on_sync_status(self, message: SyncStatus) -> None:
         """Handle SyncStatus messages to update the TUI state."""
         self.sync_status = message.message
-
-    def _trigger_debounced_push(self) -> None:
-        """Schedules a debounced background sync push."""
-        if not self.ctx.config.defaults.auto_sync:
-            return
-
-        if self._sync_debounce_timer is not None:
-            self._sync_debounce_timer.cancel()
-
-        self._sync_debounce_timer = threading.Timer(10.0, self._run_push_sync)
-        self._sync_debounce_timer.daemon = True
-        self._sync_debounce_timer.start()
-
-    def _run_push_sync(self) -> None:
-        """Executes the push sync worker through the event loop."""
-        from ..sync.daemon import push_sync
-
-        async def push_sync_worker() -> None:
-            self.post_message(SyncStatus(is_syncing=True, message="Syncing..."))
-            success = await self.run_worker(lambda: push_sync(self.ctx.db), thread=True).wait()
-            status = "Synced" if success else "Sync Failed"
-            self.post_message(SyncStatus(is_syncing=False, message=status))
-
-        self.call_from_thread(self.run_worker, push_sync_worker())
 
     def on_entry_added(self, message: EntryAdded) -> None:
         """Handle EntryAdded messages."""
@@ -1045,7 +845,7 @@ class DWriterApp(App[None]):
 
         # Trigger auto-sync if it's a real entry (id > 0)
         if message.entry_id > 0:
-            self._trigger_debounced_push()
+            self._sync_coordinator.trigger_push_debounced()
 
     def on_todo_updated(self, message: TodoUpdated) -> None:
         """Handle TodoUpdated messages."""
@@ -1058,7 +858,7 @@ class DWriterApp(App[None]):
 
         # Trigger auto-sync if it's a real update (id > 0)
         if message.todo_id > 0:
-            self._trigger_debounced_push()
+            self._sync_coordinator.trigger_push_debounced()
 
     def on_timer_state_changed(self, message: TimerStateChanged) -> None:
         """Handle TimerStateChanged messages."""

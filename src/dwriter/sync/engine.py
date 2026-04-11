@@ -117,7 +117,7 @@ def _merge_entry(db: Database, data: dict[str, Any]) -> None:
 
 def _merge_todo(db: Database, data: dict[str, Any]) -> None:
     """Merges a single todo based on Lamport clock."""
-    from ..database import Todo, TodoTag
+    from ..database import Tag, Todo
 
     with db.Session() as session:
         from sqlalchemy import select
@@ -138,6 +138,6 @@ def _merge_todo(db: Database, data: dict[str, Any]) -> None:
             existing.due_date = datetime.fromisoformat(data["due_date"]) if data["due_date"] else None
             existing.created_at = datetime.fromisoformat(data["created_at"])
             existing.completed_at = datetime.fromisoformat(data["completed_at"]) if data["completed_at"] else None
-            existing.tags = [TodoTag(name=t) for t in data["tags"]]
+            existing.tags = [Tag(name=t) for t in data["tags"]]
 
             session.commit()
