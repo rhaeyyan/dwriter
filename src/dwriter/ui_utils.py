@@ -1,7 +1,7 @@
 """UI utilities for consistent output formatting."""
 
-from datetime import datetime
-from typing import TYPE_CHECKING, Any, Optional
+import textwrap
+from typing import TYPE_CHECKING, Any
 
 from textual.app import ComposeResult
 from textual.containers import Container, ScrollableContainer
@@ -17,7 +17,44 @@ if TYPE_CHECKING:
     from .database import Entry
 
 
-def format_entry_datetime(entry: "Entry", config: "Optional[Config]" = None) -> tuple[str, Optional[str]]:
+def wrap_with_hanging_indent(
+    text: str,
+    width: int = 80,
+    initial_indent: str = "",
+    subsequent_indent: str = "    "
+) -> str:
+    """Wraps text with a hanging indent for better readability.
+
+    Args:
+        text: The text to wrap.
+        width: The maximum width of the wrapped lines.
+        initial_indent: Indentation for the first line.
+        subsequent_indent: Indentation for all lines after the first.
+
+    Returns:
+        The wrapped text with hanging indents.
+    """
+    if not text:
+        return ""
+
+    wrapper = textwrap.TextWrapper(
+        width=width,
+        initial_indent=initial_indent,
+        subsequent_indent=subsequent_indent,
+        break_long_words=True,
+        replace_whitespace=False
+    )
+
+    # Handle multiple paragraphs
+    lines = text.splitlines()
+    wrapped_lines = [wrapper.fill(line) if line.strip() else "" for line in lines]
+    return "\n".join(wrapped_lines)
+
+
+def format_entry_datetime(
+    entry: "Entry",
+    config: "Config | None" = None
+) -> tuple[str, str | None]:
     """Format an entry's date and time for display.
 
     Returns (date_str, time_str). time_str is None for midnight entries.
@@ -25,12 +62,16 @@ def format_entry_datetime(entry: "Entry", config: "Optional[Config]" = None) -> 
     dt = entry.created_at
 
     date_fmt_setting = (config.display.date_format if config else "YYYY-MM-DD")
-    if date_fmt_setting == "MM/DD/YYYY":
-        date_str = dt.strftime("%m/%d/%Y")
-    elif date_fmt_setting == "DD/MM/YYYY":
-        date_str = dt.strftime("%d/%m/%Y")
-    else:
-        date_str = dt.strftime("%Y-%m-%d")
+
+    # Map TOML display names to strftime formats
+    fmt_map = {
+        "YYYY-MM-DD": "%Y-%m-%d",
+        "MM/DD/YYYY": "%m/%d/%Y",
+        "DD/MM/YYYY": "%d/%m/%Y",
+    }
+
+    strftime_fmt = fmt_map.get(date_fmt_setting, "%Y-%m-%d")
+    date_str = dt.strftime(strftime_fmt)
 
     if dt.hour == 0 and dt.minute == 0 and dt.second == 0:
         return date_str, None
@@ -41,19 +82,49 @@ def format_entry_datetime(entry: "Entry", config: "Optional[Config]" = None) -> 
 
 
 def display_entry(console: "Console", entry: "Entry", config: "Config") -> None:
-    """Display a single journal entry to the console."""
+    """Display a single journal entry to the console with hanging indentation."""
     date_str, time_str = format_entry_datetime(entry)
 
+    # Calculate the prefix to determine the subsequent indentation width
     if time_str is None:
-        prefix = f"[{PROJECT}][{entry.id}][/{PROJECT}] " if config.display.show_id else ""
-        console.print(f"{prefix}{date_str}: {entry.content}")
+        prefix = (
+            f"[{PROJECT}][{entry.id}][/{PROJECT}] "
+            if config.display.show_id else ""
+        )
+        raw_prefix = f"[{entry.id}] " if config.display.show_id else ""
+        full_prefix = f"{prefix}{date_str}: "
+        raw_full_prefix = f"{raw_prefix}{date_str}: "
     else:
-        prefix = f"[{PROJECT}][{entry.id}][/{PROJECT}] {date_str}" if config.display.show_id else date_str
-        console.print(f"{prefix} | [#23c76b]{time_str}[/#23c76b]: {entry.content}")
+        prefix = (
+            f"[{PROJECT}][{entry.id}][/{PROJECT}] {date_str}"
+            if config.display.show_id else date_str
+        )
+        raw_prefix = f"[{entry.id}] {date_str}" if config.display.show_id else date_str
+        full_prefix = f"{prefix} | [#23c76b]{time_str}[/#23c76b]: "
+        raw_full_prefix = f"{raw_prefix} | {time_str}: "
+
+    # The subsequent indent should match the length of the visible prefix
+    indent_width = len(raw_full_prefix)
+    subsequent_indent = " " * indent_width
+
+    wrapped_content = wrap_with_hanging_indent(
+        entry.content,
+        width=console.width if console.width > 0 else 80,
+        initial_indent="",
+        subsequent_indent=subsequent_indent
+    )
+
+    console.print(f"{full_prefix}{wrapped_content}")
 
     if entry.tag_names:
         tags_str = " ".join(f"[{TAG}]#[/]{t}" for t in entry.tag_names)
-        console.print(f"    [{TAG}]Tags:[/{TAG}] {tags_str}")
+        wrapped_tags = wrap_with_hanging_indent(
+            tags_str,
+            width=console.width if console.width > 0 else 80,
+            initial_indent=f"    [{TAG}]Tags:[/{TAG}] ",
+            subsequent_indent="          " # Match length of "    Tags: "
+        )
+        console.print(wrapped_tags)
 
     if entry.project:
         console.print(f"    [{PROJECT}]Project:[/{PROJECT}] &{entry.project}")
@@ -112,9 +183,9 @@ class HelpOverlay(ModalScreen[None]):
     def __init__(
         self,
         title: str = "Help",
-        bindings: Optional[list[tuple[str, str, str]]] = None,
-        tips: Optional[list[str]] = None,
-        commands: Optional[list[tuple[str, str]]] = None,
+        bindings: list[tuple[str, str, str]] | None = None,
+        tips: list[str] | None = None,
+        commands: list[tuple[str, str]] | None = None,
     ) -> None:
         """Initialize the help overlay."""
         super().__init__()

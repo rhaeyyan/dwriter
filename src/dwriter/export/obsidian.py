@@ -22,7 +22,7 @@ def strip_rich_markup(text: str) -> str:
     # Matches a '[' NOT preceded by '[', followed by optional '/', 
     # then optionally either a style word (with optional attributes) or a hex color, 
     # followed by ']' NOT followed by ']'.
-    rich_tag_pattern = r"(?<!\[)\[/?(?:[a-z]+(?: [a-z0-9#_]*)*|#[a-f0-9]{6})?\](?!\])"
+    rich_tag_pattern = r"(?<!\[)\[/?(?:[a-zA-Z]+(?: [a-zA-Z0-9#_]*)*|#[a-fA-F0-9]{6})?\](?!\])"
     return re.sub(rich_tag_pattern, "", text)
 
 

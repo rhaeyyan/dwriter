@@ -35,6 +35,10 @@ def test_strip_rich_markup():
     
     # Compound and block characters
     assert strip_rich_markup("[bold #a6e3a1]█░[/]") == "█░"
+    
+    # Uppercase hex (TAG and PROJECT colors from tui/colors.py)
+    assert strip_rich_markup("[bold #66D0BC]#dev[/]") == "#dev"
+    assert strip_rich_markup("[bold #F77F00]&dwriter[/]") == "&dwriter"
 
 
 def test_render_ai_report_note():
