@@ -11,7 +11,8 @@ from typing import Any
 import instructor
 from openai import OpenAI
 
-from dwriter.ai.permissions import PermissionEnforcer, PermissionMode
+from dwriter.ai.compression import SummaryCompressor
+from dwriter.ai.permissions import PermissionEnforcer, permission_mode_from_str
 from dwriter.ai.tools import (
     fetch_recent_commits,
     get_daily_standup,
@@ -28,16 +29,6 @@ AVAILABLE_TOOLS = {
     "fetch_recent_commits": fetch_recent_commits,
 }
 
-
-def _get_permission_mode(mode_str: str) -> PermissionMode:
-    """Maps a configuration string to a PermissionMode enum."""
-    mapping = {
-        "read-only": PermissionMode.READ_ONLY,
-        "append-only": PermissionMode.APPEND_ONLY,
-        "prompt": PermissionMode.PROMPT,
-        "danger-full-access": PermissionMode.DANGER_FULL_ACCESS,
-    }
-    return mapping.get(mode_str.lower(), PermissionMode.APPEND_ONLY)
 
 
 def _sanitize_agent_output(text: str) -> str:
@@ -94,6 +85,19 @@ def ask_second_brain_agentic(
     """
     client = OpenAI(base_url=config.base_url, api_key="ollama")
 
+    # Extract a shared db instance from the caller's app context so tool
+    # functions can reuse the existing connection instead of opening new ones.
+    db = None
+    if app_context is not None:
+        ctx_obj = getattr(app_context, "ctx", None)
+        if ctx_obj is not None:
+            db = getattr(ctx_obj, "db", None)
+
+    # Enforce the context budget at the engine boundary regardless of what
+    # the caller provides.  SummaryCompressor is the single enforcement point.
+    compressor = SummaryCompressor()
+    safe_context = compressor.compress(context_data) if context_data else ""
+
     messages = [
         {
             "role": "system",
@@ -111,7 +115,7 @@ def ask_second_brain_agentic(
                 "but professional.\n"
                 "5. You have access to tools to search journal entries, todos, "
                 "and git commits. Use them to provide grounded, data-driven answers."
-                f"\n\nSTATIC CONTEXT (PAST 72H & RECENT SUMMARIES):\n{context_data}"
+                f"\n\nSTATIC CONTEXT (PAST 72H & RECENT SUMMARIES):\n{safe_context}"
             ),
         },
         {"role": "user", "content": prompt},
@@ -221,7 +225,7 @@ def ask_second_brain_agentic(
     ]
 
     full_response_parts = []
-    enforcer = PermissionEnforcer(mode=_get_permission_mode(config.features.permission_mode))
+    enforcer = PermissionEnforcer(mode=permission_mode_from_str(config.features.permission_mode))
 
     while True:
         response = client.chat.completions.create(
@@ -263,7 +267,7 @@ def ask_second_brain_agentic(
 
             if function_name in AVAILABLE_TOOLS:
                 tool_func = AVAILABLE_TOOLS[function_name]
-                result = tool_func(**arguments)
+                result = tool_func(db=db, **arguments)
 
                 messages.append(
                     {

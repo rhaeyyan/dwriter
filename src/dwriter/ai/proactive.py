@@ -13,6 +13,7 @@ import instructor
 import openai
 
 from .engine import get_embedding, get_semantic_recommendation
+from .permissions import PermissionEnforcer, permission_mode_from_str
 
 
 def process_proactive_tagging(ctx: AppContext, entry: Entry) -> None:
@@ -47,6 +48,14 @@ def process_proactive_tagging(ctx: AppContext, entry: Entry) -> None:
 
         # 3. Generate recommendations
         if len(entry.content) < 10:
+            return
+
+        enforcer = PermissionEnforcer(
+            mode=permission_mode_from_str(ctx.config.ai.features.permission_mode)
+        )
+        permission = enforcer.check("proactive_tagging")
+        if not permission.allowed:
+            logging.warning("Proactive tagging blocked by Security Mode: %s", permission.reason)
             return
 
         try:
