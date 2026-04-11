@@ -12,19 +12,25 @@ import click
 
 from ..database import Entry
 from ..tui.colors import TAG
+from ..ui_utils import format_entry_datetime
 
 
-def format_review_markdown(entries_by_date: Any) -> str:
+def format_review_markdown(entries_by_date: Any, ctx: AppContext) -> str:
     """Format entries as Markdown grouped by date."""
     lines = []
     for date_key, entries in entries_by_date.items():
-        date_str = date_key.strftime("%A, %Y-%m-%d")
-        lines.append(f"## {date_str}")
+        # Get formatted date string for the header
+        dt_obj = datetime.combine(date_key, datetime.min.time())
+        # Use dummy entry to get formatted date string according to config
+        dummy = Entry(content="", created_at=dt_obj)
+        date_str, _ = format_entry_datetime(dummy, ctx.config)
+
+        lines.append(f"## {date_key.strftime('%A')}, {date_str}")
         lines.append("")
         for entry in entries:
-            time_str = entry.created_at.strftime("%I:%M %p")
-            date_fmt = date_key.strftime("%Y-%m-%d")
-            line = f"- {date_fmt} | [#23c76b]{time_str}[/#23c76b]: {entry.content}"
+            d_str, t_str = format_entry_datetime(entry, ctx.config)
+            time_part = f" | [#23c76b]{t_str}[/#23c76b]" if t_str else ""
+            line = f"- {d_str}{time_part}: {entry.content}"
             if entry.tag_names:
                 line += f" ({', '.join(f'#{t}' for t in entry.tag_names)})"
             if entry.project:
@@ -34,17 +40,20 @@ def format_review_markdown(entries_by_date: Any) -> str:
     return "\n".join(lines)
 
 
-def format_review_plain(entries_by_date: Any) -> str:
+def format_review_plain(entries_by_date: Any, ctx: AppContext) -> str:
     """Format entries as plain text grouped by date."""
     lines = []
     for date_key, entries in entries_by_date.items():
-        date_str = date_key.strftime("%A, %Y-%m-%d")
-        lines.append(f"[green]{date_str}[/green]")
+        dt_obj = datetime.combine(date_key, datetime.min.time())
+        dummy = Entry(content="", created_at=dt_obj)
+        date_str, _ = format_entry_datetime(dummy, ctx.config)
+
+        lines.append(f"[green]{date_key.strftime('%A')}, {date_str}[/green]")
         lines.append("-" * 40)
         for entry in entries:
-            time_str = entry.created_at.strftime("%I:%M %p")
-            date_fmt = date_key.strftime("%Y-%m-%d")
-            line = f"  {date_fmt} | [#23c76b]{time_str}[/#23c76b]: {entry.content}"
+            d_str, t_str = format_entry_datetime(entry, ctx.config)
+            time_part = f" | [#23c76b]{t_str}[/#23c76b]" if t_str else ""
+            line = f"  {d_str}{time_part}: {entry.content}"
             if entry.tag_names:
                 line += f" ({', '.join(f'[{TAG}]#{t}[/{TAG}]' for t in entry.tag_names)})"
             if entry.project:
@@ -54,16 +63,19 @@ def format_review_plain(entries_by_date: Any) -> str:
     return "\n".join(lines)
 
 
-def format_review_slack(entries_by_date: Any) -> str:
+def format_review_slack(entries_by_date: Any, ctx: AppContext) -> str:
     """Format entries for Slack grouped by date."""
     lines = []
     for date_key, entries in entries_by_date.items():
-        date_str = date_key.strftime("*%A, %Y-%m-%d*")
-        lines.append(f"[green]{date_str}[/green]")
+        dt_obj = datetime.combine(date_key, datetime.min.time())
+        dummy = Entry(content="", created_at=dt_obj)
+        date_str, _ = format_entry_datetime(dummy, ctx.config)
+
+        lines.append(f"[green]*{date_key.strftime('%A')}, {date_str}*[/green]")
         for entry in entries:
-            time_str = entry.created_at.strftime("%I:%M %p")
-            date_fmt = date_key.strftime("%Y-%m-%d")
-            line = f"  {date_fmt} | [#23c76b]{time_str}[/#23c76b]: {entry.content}"
+            d_str, t_str = format_entry_datetime(entry, ctx.config)
+            time_part = f" | [#23c76b]{t_str}[/#23c76b]" if t_str else ""
+            line = f"  {d_str}{time_part}: {entry.content}"
             if entry.tag_names:
                 line += f" ({', '.join(f'#{t}' for t in entry.tag_names)})"
             if entry.project:
@@ -97,8 +109,16 @@ FORMATTERS = {
     default=None,
     help="Output format: markdown, plain, slack",
 )
+@click.option(
+    "--obsidian",
+    is_flag=True,
+    default=False,
+    help="Export review to Obsidian vault",
+)
 @click.pass_obj
-def review(ctx: AppContext, num_days: int, output_format: str | None) -> None:
+def review(
+    ctx: AppContext, num_days: int | None, output_format: str | None, obsidian: bool
+) -> None:
     """Review last N days.
 
     Generates a summary of all entries from the past N days,
@@ -113,6 +133,7 @@ def review(ctx: AppContext, num_days: int, output_format: str | None) -> None:
       dwriter review                  # Last 5 days (default)
       dwriter review --days 7         # Last week
       dwriter review --format markdown
+      dwriter review --obsidian       # Export to Obsidian vault
     """
     # Use config defaults if not specified
     if num_days is None:
@@ -145,11 +166,42 @@ def review(ctx: AppContext, num_days: int, output_format: str | None) -> None:
 
     # Format the review
     formatter = FORMATTERS.get(output_format, format_review_markdown)
-    review_text = formatter(sorted_entries_by_date)
+    review_text = formatter(sorted_entries_by_date, ctx)
 
     # Add header
     header = f"Review: Last {num_days} Days"
     output = f"{header}\n{review_text}"
+
+    # Export to Obsidian if requested
+    if obsidian:
+        from ..export.obsidian import (
+            get_note_path,
+            obsidian_is_configured,
+            render_review_note,
+            strip_rich_markup,
+            write_note,
+        )
+
+        obs_cfg = ctx.config.obsidian
+        if not obsidian_is_configured(obs_cfg):
+            ctx.console.print("[yellow]![/yellow] Obsidian vault not configured.")
+        else:
+            clean_text = strip_rich_markup(review_text)
+            note_content = render_review_note(
+                content=clean_text,
+                start_date=start_date,
+                end_date=end_date,
+                num_days=num_days,
+            )
+            title = f"{num_days}-Day Review"
+            try:
+                note_path = get_note_path(obs_cfg, "review", end_date, title)
+                write_note(note_path, note_content)
+                ctx.console.print(
+                    f"[green]✅[/green] Saved to Obsidian: [dim]{note_path}[/dim]"
+                )
+            except (OSError, ValueError) as e:
+                ctx.console.print(f"[red]![/red] Failed to save to Obsidian: {e}")
 
     ctx.console.print()
     ctx.console.print(output)

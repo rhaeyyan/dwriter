@@ -136,6 +136,12 @@ FORMATTERS = {
     default=False,
     help="Include the 7-day Weekly Pulse wrap-up summary",
 )
+@click.option(
+    "--obsidian",
+    is_flag=True,
+    default=False,
+    help="Export standup to Obsidian vault",
+)
 @click.pass_obj
 def standup(
     ctx: AppContext,
@@ -143,6 +149,7 @@ def standup(
     no_copy: bool,
     with_todos: bool,
     weekly: bool,
+    obsidian: bool,
 ) -> None:
     """Generate yesterday's standup.
 
@@ -163,6 +170,7 @@ def standup(
       dwriter standup --no-copy
       dwriter standup --with-todos    # Include pending tasks
       dwriter standup --weekly        # Include 7-day Pulse Wrap-up
+      dwriter standup --obsidian      # Export to Obsidian vault
     """
     # Use config defaults if not specified
     if output_format is None:
@@ -211,8 +219,9 @@ def standup(
 
     # Append weekly wrap-up if requested
     if weekly:
-        from ..analytics import AnalyticsEngine, InsightGenerator
         import re
+
+        from ..analytics import AnalyticsEngine, InsightGenerator
 
         engine = AnalyticsEngine(ctx.db)
         insight_gen = InsightGenerator(engine)
@@ -229,8 +238,41 @@ def standup(
             # Strip Rich tags but keep the text
             clean_n = re.sub(r"\[.*?\]", "", n)
             clean_wrapup.append(f"- {clean_n}")
-        
+
         output += f"{wrapup_header}\n" + "\n".join(clean_wrapup)
+
+    # Export to Obsidian if requested
+    if obsidian:
+        from ..export.obsidian import (
+            get_note_path,
+            obsidian_is_configured,
+            render_ai_report_note,
+            strip_rich_markup,
+            write_note,
+        )
+
+        obs_cfg = ctx.config.obsidian
+        if not obsidian_is_configured(obs_cfg):
+            ctx.console.print(
+                "[yellow]![/yellow] Obsidian vault not configured. Set [bold]obsidian.vault_path[/bold] in config."
+            )
+        else:
+            # Strip Rich markup before rendering the note
+            clean_output = strip_rich_markup(output)
+            note_content = render_ai_report_note(
+                title=f"Standup · {yesterday.strftime('%B %d, %Y')}",
+                report_kind="standup",
+                content=clean_output,
+                date=yesterday,
+            )
+            try:
+                note_path = get_note_path(obs_cfg, "standup", yesterday, "Standup")
+                write_note(note_path, note_content)
+                ctx.console.print(
+                    f"[green]✅[/green] Saved to Obsidian: [dim]{note_path}[/dim]"
+                )
+            except (OSError, ValueError) as e:
+                ctx.console.print(f"[red]![/red] Failed to save to Obsidian: {e}")
 
     # Copy to clipboard if enabled
     if should_copy:

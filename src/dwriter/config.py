@@ -6,7 +6,7 @@ stored in TOML format.
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import tomlkit
 
@@ -56,10 +56,14 @@ class DisplayConfig:
         ergonomic_mode: Whether to use spacious ergonomic layout.
         date_format: Date display format string.
         lock_mode: Whether to disable editing of date and time fields.
-        color_scheme: Color blindness color scheme (normal, deuteranopia, protanopia, tritanopia).
-        notifications_enabled: Whether to enable system desktop notifications for reminders.
-        due_date_format: Format for displaying due dates (relative, YYYY-MM-DD, MM/DD/YYYY, DD/MM/YYYY).
+        color_scheme: Color blindness color scheme (normal, deuteranopia,
+            protanopia, tritanopia).
+        notifications_enabled: Whether to enable system desktop notifications
+            for reminders.
+        due_date_format: Format for displaying due dates (relative, YYYY-MM-DD,
+            MM/DD/YYYY, DD/MM/YYYY).
         todo_sorting_mode: Urgency hierarchy (priority_first, date_first).
+        permanent_omnibox: Whether to keep the omnibox visible at all times.
     """
 
     show_confirmation: bool = True
@@ -75,7 +79,7 @@ class DisplayConfig:
     notifications_enabled: bool = False
     due_date_format: str = "relative"
     todo_sorting_mode: str = "priority_first"
-    permanent_omnibox: bool = False
+    permanent_omnibox: bool = True
 
 
 @dataclass
@@ -87,16 +91,16 @@ class DefaultsConfig:
         project: Default project name.
         default_priority: Default priority for new todos (normal/high/urgent).
         default_due_days: Default days until due for new todos.
-        git_auto_tag: Automatically apply git branch/repo tags to entries.
-        auto_sync: Automatically sync after adding entries.
+        git_auto_tag: Whether to automatically apply git branch/repo tags.
+        auto_sync: Whether to automatically sync changes in the background.
     """
 
     tags: list[str] = field(default_factory=list)
-    project: Optional[str] = None
+    project: str | None = None
     default_priority: str = "normal"
     default_due_days: int = 1
     git_auto_tag: bool = True
-    auto_sync: bool = False
+    auto_sync: bool = True
 
 
 @dataclass
@@ -121,6 +125,70 @@ class TimerConfig:
 
 
 @dataclass
+class AIFeaturesConfig:
+    """AI feature-specific configuration.
+
+    Attributes:
+        auto_tagging: Whether to enable background auto-tagging.
+        reflection_prompts: Whether to enable AI reflection prompts.
+        burnout_detection: Whether to enable weekly burnout detection checks.
+        permission_mode: Security strictness (read-only, append-only, prompt, danger-full-access).
+    """
+
+    auto_tagging: bool = False
+    reflection_prompts: bool = True
+    burnout_detection: bool = True
+    permission_mode: str = "append-only"
+
+
+@dataclass
+class ObsidianConfig:
+    """Obsidian vault export configuration.
+
+    Attributes:
+        vault_path: Absolute path to the Obsidian vault root directory.
+                    If None or empty, export is disabled.
+        ai_reports_folder: Vault subfolder for AI briefings and standup notes.
+        reviews_folder: Vault subfolder for period review notes.
+        wikilinks: Whether to render project names as [[wikilinks]].
+        include_todos: Whether to include todo sections in standup notes.
+        enabled: Master switch. Set automatically when vault_path is non-empty.
+    """
+
+    vault_path: str | None = None
+    ai_reports_folder: str = "AI Reports"
+    reviews_folder: str = "Reviews"
+    wikilinks: bool = True
+    include_todos: bool = True
+    enabled: bool = False
+
+
+@dataclass
+class AIConfig:
+    """AI configuration.
+
+    Attributes:
+        enabled: Whether AI features are enabled.
+        provider: AI provider (ollama, openai).
+        model: Legacy model name (deprecated).
+        chat_model: Model name for the 2nd-Brain ReAct loop.
+        daemon_model: Model name for background Auto-Semantic Tagging.
+        base_url: Base URL for the AI provider.
+        features: Feature-specific settings.
+        last_pulse_greeting: ISO timestamp of the last 7-day pulse greeting.
+    """
+
+    enabled: bool = True
+    provider: str = "ollama"
+    model: str = "gemma4:e4b"
+    chat_model: str = "gemma4:e4b"
+    daemon_model: str = "gemma4:e2b"
+    base_url: str = "http://localhost:11434/v1"
+    features: AIFeaturesConfig = field(default_factory=AIFeaturesConfig)
+    last_pulse_greeting: str | None = None
+
+
+@dataclass
 class Config:
     """Main configuration container.
 
@@ -130,6 +198,8 @@ class Config:
         display: Display-related settings.
         defaults: Default values for entries.
         timer: Timer (Timer) settings.
+        ai: AI-related settings.
+        obsidian: Obsidian-related settings.
     """
 
     standup: StandupConfig = field(default_factory=StandupConfig)
@@ -137,6 +207,8 @@ class Config:
     display: DisplayConfig = field(default_factory=DisplayConfig)
     defaults: DefaultsConfig = field(default_factory=DefaultsConfig)
     timer: TimerConfig = field(default_factory=TimerConfig)
+    ai: AIConfig = field(default_factory=AIConfig)
+    obsidian: ObsidianConfig = field(default_factory=ObsidianConfig)
 
 
 class ConfigManager:
@@ -151,7 +223,7 @@ class ConfigManager:
 
     DEFAULT_CONFIG = Config()
 
-    def __init__(self, config_path: Optional[Path] = None):
+    def __init__(self, config_path: Path | None = None):
         """Initialize the configuration manager.
 
         Args:
@@ -164,7 +236,7 @@ class ConfigManager:
             config_path = data_dir / "config.toml"
 
         self.config_path = config_path
-        self._config: Optional[Config] = None
+        self._config: Config | None = None
 
     def load(self) -> Config:
         """Load configuration from file.
@@ -192,6 +264,11 @@ class ConfigManager:
         display_data = data.get("display", {})
         defaults_data = data.get("defaults", {})
         timer_data = data.get("timer", {})  # May not exist in old configs
+        ai_data = data.get("ai", {})
+        ai_features_data = ai_data.get("features", {})
+        obsidian_data = data.get("obsidian", {})
+
+        vault_path = obsidian_data.get("vault_path")
 
         self._config = Config(
             standup=StandupConfig(
@@ -217,8 +294,10 @@ class ConfigManager:
                 color_scheme=display_data.get("color_scheme", "normal"),
                 notifications_enabled=display_data.get("notifications_enabled", False),
                 due_date_format=display_data.get("due_date_format", "relative"),
-                todo_sorting_mode=display_data.get("todo_sorting_mode", "priority_first"),
-                permanent_omnibox=display_data.get("permanent_omnibox", False),
+                todo_sorting_mode=display_data.get(
+                    "todo_sorting_mode", "priority_first"
+                ),
+                permanent_omnibox=display_data.get("permanent_omnibox", True),
             ),
             defaults=DefaultsConfig(
                 tags=defaults_data.get("tags", []),
@@ -226,7 +305,7 @@ class ConfigManager:
                 default_priority=defaults_data.get("default_priority", "normal"),
                 default_due_days=defaults_data.get("default_due_days", 1),
                 git_auto_tag=defaults_data.get("git_auto_tag", True),
-                auto_sync=defaults_data.get("auto_sync", False),
+                auto_sync=defaults_data.get("auto_sync", True),
             ),
             timer=TimerConfig(
                 work_duration=timer_data.get("work_duration", 25),
@@ -238,11 +317,38 @@ class ConfigManager:
                 auto_start_breaks=timer_data.get("auto_start_breaks", False),
                 sound_enabled=timer_data.get("sound_enabled", True),
             ),
+            ai=AIConfig(
+                enabled=ai_data.get("enabled", True),
+                provider=ai_data.get("provider", "ollama"),
+                model=ai_data.get("model", "gemma4:e4b"),
+                chat_model=ai_data.get("chat_model", "gemma4:e4b"),
+                daemon_model=ai_data.get("daemon_model", "gemma4:e2b"),
+                base_url=ai_data.get("base_url", "http://localhost:11434/v1"),
+                features=AIFeaturesConfig(
+                    auto_tagging=ai_features_data.get("auto_tagging", False),
+                    reflection_prompts=ai_features_data.get("reflection_prompts", True),
+                    burnout_detection=ai_features_data.get("burnout_detection", True),
+                    permission_mode=ai_features_data.get(
+                        "permission_mode", "append-only"
+                    ),
+                ),
+                last_pulse_greeting=ai_data.get("last_pulse_greeting"),
+            ),
+            obsidian=ObsidianConfig(
+                vault_path=vault_path,
+                ai_reports_folder=obsidian_data.get(
+                    "ai_reports_folder", "AI Reports"
+                ),
+                reviews_folder=obsidian_data.get("reviews_folder", "Reviews"),
+                wikilinks=obsidian_data.get("wikilinks", True),
+                include_todos=obsidian_data.get("include_todos", True),
+                enabled=bool(vault_path),
+            ),
         )
 
         return self._config
 
-    def save(self, config: Optional[Config] = None) -> None:
+    def save(self, config: Config | None = None) -> None:
         """Save configuration to file.
 
         Args:
@@ -307,6 +413,34 @@ class ConfigManager:
         timer_table["auto_start_breaks"] = self._config.timer.auto_start_breaks
         timer_table["sound_enabled"] = self._config.timer.sound_enabled
         doc.add("timer", timer_table)
+
+        ai_table = tomlkit.table()
+        ai_table["enabled"] = self._config.ai.enabled
+        ai_table["provider"] = self._config.ai.provider
+        ai_table["model"] = self._config.ai.model
+        ai_table["chat_model"] = self._config.ai.chat_model
+        ai_table["daemon_model"] = self._config.ai.daemon_model
+        ai_table["base_url"] = self._config.ai.base_url
+        if self._config.ai.last_pulse_greeting:
+            ai_table["last_pulse_greeting"] = self._config.ai.last_pulse_greeting
+
+        ai_features = tomlkit.table()
+        ai_features["auto_tagging"] = self._config.ai.features.auto_tagging
+        ai_features["reflection_prompts"] = self._config.ai.features.reflection_prompts
+        ai_features["burnout_detection"] = self._config.ai.features.burnout_detection
+        ai_features["permission_mode"] = self._config.ai.features.permission_mode
+        ai_table["features"] = ai_features
+        doc.add("ai", ai_table)
+
+        obsidian_table = tomlkit.table()
+        if self._config.obsidian.vault_path:
+            obsidian_table["vault_path"] = self._config.obsidian.vault_path
+        obsidian_table["ai_reports_folder"] = self._config.obsidian.ai_reports_folder
+        obsidian_table["reviews_folder"] = self._config.obsidian.reviews_folder
+        obsidian_table["wikilinks"] = self._config.obsidian.wikilinks
+        obsidian_table["include_todos"] = self._config.obsidian.include_todos
+        obsidian_table["enabled"] = self._config.obsidian.enabled
+        doc.add("obsidian", obsidian_table)
 
         with open(self.config_path, "w") as f:
             f.write(tomlkit.dumps(doc))
@@ -377,4 +511,28 @@ class ConfigManager:
                 "auto_start_breaks": config.timer.auto_start_breaks,
                 "sound_enabled": config.timer.sound_enabled,
             },
+            "ai": {
+                "enabled": config.ai.enabled,
+                "provider": config.ai.provider,
+                "model": config.ai.model,
+                "chat_model": config.ai.chat_model,
+                "daemon_model": config.ai.daemon_model,
+                "base_url": config.ai.base_url,
+                "features": {
+                    "auto_tagging": config.ai.features.auto_tagging,
+                    "reflection_prompts": config.ai.features.reflection_prompts,
+                    "burnout_detection": config.ai.features.burnout_detection,
+                    "permission_mode": config.ai.features.permission_mode,
+                },
+                "last_pulse_greeting": config.ai.last_pulse_greeting,
+            },
+            "obsidian": {
+                "vault_path": config.obsidian.vault_path,
+                "ai_reports_folder": config.obsidian.ai_reports_folder,
+                "reviews_folder": config.obsidian.reviews_folder,
+                "wikilinks": config.obsidian.wikilinks,
+                "include_todos": config.obsidian.include_todos,
+                "enabled": config.obsidian.enabled,
+            },
         }
+
