@@ -13,18 +13,24 @@ from ..database import Database, Entry, Todo
 from ..search_utils import search_items
 
 
-def get_daily_standup(date_str: str | None = None, project: str | None = None) -> str:
+def get_daily_standup(
+    date_str: str | None = None,
+    project: str | None = None,
+    db: Database | None = None,
+) -> str:
     """Generates a formatted Daily Standup report for a specific date.
 
     Args:
         date_str (str | None): The date in YYYY-MM-DD format. Defaults to yesterday.
         project (str | None): Optional project filter (&name).
+        db (Database | None): Shared database instance. A new connection is opened
+            if not provided.
 
     Returns:
         str: A formatted Markdown report.
     """
     try:
-        db = Database()
+        db = db or Database()
         if date_str:
             target_date = datetime.strptime(date_str, "%Y-%m-%d")
         else:
@@ -107,13 +113,23 @@ def todo_to_dict(todo: Todo) -> dict[str, Any]:
     }
 
 
-def search_journal(query: str, project: str | None = None) -> str:
+def search_journal(
+    query: str,
+    project: str | None = None,
+    db: Database | None = None,
+) -> str:
     """Searches the user's journal entries and time logs.
 
     Use this to find what the user has worked on, their thoughts, or past notes.
+
+    Args:
+        query (str): Natural language search query.
+        project (str | None): Optional project filter.
+        db (Database | None): Shared database instance. A new connection is opened
+            if not provided.
     """
     try:
-        db = Database()
+        db = db or Database()
         entries = db.get_all_entries(project=project)
 
         # Use fuzzy search from search_utils
@@ -128,13 +144,23 @@ def search_journal(query: str, project: str | None = None) -> str:
         return f"Error searching journal: {str(e)}"
 
 
-def search_todos(query: str, project: str | None = None) -> str:
+def search_todos(
+    query: str,
+    project: str | None = None,
+    db: Database | None = None,
+) -> str:
     """Searches the user's tasks and todo items.
 
     Use this to find specific tasks, their status, or deadlines.
+
+    Args:
+        query (str): Natural language search query.
+        project (str | None): Optional project filter.
+        db (Database | None): Shared database instance. A new connection is opened
+            if not provided.
     """
     try:
-        db = Database()
+        db = db or Database()
         todos = db.get_all_todos(project=project)
 
         # Use fuzzy search from search_utils

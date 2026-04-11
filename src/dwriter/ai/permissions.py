@@ -37,6 +37,7 @@ class PermissionEnforcer:
             "fetch_recent_commits",
             "get_daily_standup",
             "get_stats",
+            "proactive_tagging",
         }
         self._append_tools = {
             "add_entry",
@@ -84,3 +85,21 @@ class PermissionEnforcer:
             )
 
         return EnforcementResult(False, f"Unknown tool or permission state: {tool_name}")
+
+
+def permission_mode_from_str(mode_str: str) -> PermissionMode:
+    """Maps a configuration string to a PermissionMode enum.
+
+    Args:
+        mode_str (str): The permission mode string from config (e.g. "read-only").
+
+    Returns:
+        PermissionMode: The corresponding enum value, defaulting to APPEND_ONLY.
+    """
+    mapping = {
+        "read-only": PermissionMode.READ_ONLY,
+        "append-only": PermissionMode.APPEND_ONLY,
+        "prompt": PermissionMode.PROMPT,
+        "danger-full-access": PermissionMode.DANGER_FULL_ACCESS,
+    }
+    return mapping.get(mode_str.lower(), PermissionMode.APPEND_ONLY)

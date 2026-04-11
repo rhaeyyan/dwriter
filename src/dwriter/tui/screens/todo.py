@@ -84,6 +84,13 @@ class AddTodoForm(Vertical):
         border: none;
         border-bottom: solid $primary;
         padding: 1 2 0 2;
+        background: transparent;
+    }
+
+    Input:focus {
+        border: none;
+        border-bottom: solid $accent;
+        background: transparent;
     }
     """
 

@@ -312,8 +312,24 @@ class FollowUpModal(ModalScreen[None]):
     #chat-header {
         background: $primary;
         color: $background;
+        height: 3;
+        align: left middle;
         padding: 0 1;
+    }
+    #chat-title {
+        width: 1fr;
+        content-align: left middle;
         text-style: bold;
+        color: $background;
+    }
+    #btn-close-chat {
+        min-width: 5;
+        border: none;
+        background: transparent;
+        color: $background;
+    }
+    #btn-close-chat:hover {
+        background: $error 50%;
     }
     """
 
@@ -323,11 +339,21 @@ class FollowUpModal(ModalScreen[None]):
 
     def compose(self) -> ComposeResult:
         with Vertical(id="chat-container"):
-            yield Static(" 💬 Follow-up Conversation", id="chat-header")
+            with Horizontal(id="chat-header"):
+                yield Static("💬 Follow-up Conversation", id="chat-title")
+                yield Button("✕", id="btn-close-chat")
             with Vertical(id="chat-log"):
                 yield Static("[dim]Ask anything about your productivity data...[/]")
             yield ThinkingIndicator(id="thinking-indicator")
             yield Input(placeholder="Your question...", id="chat-input")
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "btn-close-chat":
+            self.dismiss()
+
+    def on_key(self, event: Any) -> None:
+        if event.key == "escape":
+            self.dismiss()
 
     async def on_input_submitted(self, event: Input.Submitted) -> None:
         user_input = event.value.strip()
