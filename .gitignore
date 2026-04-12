@@ -71,6 +71,7 @@ documentation/HISTORY.md
 # Stitch prototypes
 stitch/
 # Agent framework context
+agents/
 documentation/agents/
 .agents/
 .claude/
