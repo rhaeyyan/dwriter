@@ -4,6 +4,25 @@ This document tracks the historical development sessions of the dwriter project.
 
 ---
 
+# Session Activity - April 11, 2026 (Session 33) - v4.8.x
+
+## 📋 Session Plan (Quality Auditor)
+
+**Task:** Resolve all open items carried from Sessions 31–32: Guard 4 violations (analytics.py, tui/app.py, database.py), port `cfa9670` to main, audit Pending Review Queue, and fix pre-existing test failure.
+
+**Personas:**
+- **Analytics Engineer** — decompose `analytics.py` (635 lines) → `analytics/` package: `engine.py` + `insights.py` + `__init__.py`
+- **TUI Architect** — reduce `tui/app.py` (942 lines): extract CSS to `app.tcss`, extract AI recommendation handlers to `ai_handlers.py` mixin
+- **QA & Database Lead** — decompose `database.py` (1324 lines) → package: `models.py`, `migrations.py`, `entry_repository.py`, `todo_repository.py`, `core.py`, `__init__.py`
+- **Branch Integration Steward** — port `cfa9670` (Session 30 Ruff/Mypy cleanup) to main; audit Pending Review Queue (`d3a0e33`, `a750fb0`, `ba3b53a`)
+- **Core Logic Engineer** — investigate `test_plus_months_shorthand` failure on main
+
+**Sequencing:** Analytics Engineer and TUI Architect run in parallel (no shared files). QA & Database Lead runs after Analytics Engineer commits (analytics.py imports from database). Branch Integration Steward runs last (stable state). Core Logic Engineer can run in parallel with all above.
+
+**Guard pre-conditions:** 215 tests pass on dwriter-ai. Guards 1–3 pass. Guard 4 fails (3 known violations).
+
+---
+
 # Session Activity - April 11, 2026 (Session 32) - v4.8.x
 
 ## 📋 Session Plan (Quality Auditor)
