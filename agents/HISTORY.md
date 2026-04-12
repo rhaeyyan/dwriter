@@ -4,6 +4,26 @@ This document tracks the historical development sessions of the dwriter project.
 
 ---
 
+# Session Activity - April 11, 2026 (Session 32) - v4.8.x
+
+## 📋 Session Plan (Quality Auditor)
+
+**Task:** Complete the two unfinished Session 29 tasks — Branch Integration Steward ports `e1f8857` to `main`; Documentation Lead updates CLI reference for the `todo` subcommand restructure.
+
+**Personas:**
+- **Documentation Lead** — update `documentation/user-manual.md` §1 Task Management on `dwriter-ai` first
+- **Branch Integration Steward** — pre-flight `main`, port code + doc update, update `PORTING_MANIFEST.md`
+
+**Sequencing:** Documentation Lead commits on `dwriter-ai` first (parallel-safe). Steward then operates on `main` in isolation — no other persona writes during the port.
+
+**Guard pre-conditions:** 3/3 guards pass on `dwriter-ai`. 215 tests pass. Session 31 committed clean.
+
+**Cross-domain read declarations:**
+- Branch Integration Steward reading `src/dwriter/tui/app.py` on `main` — reason: assess coordinator extraction conflict surface before cherry-pick decision.
+- Branch Integration Steward reading `src/dwriter/database.py` on `main` — reason: verify `TodoTag` pre-unification state before applying Track 1 migration changes.
+
+---
+
 # Session Activity - April 11, 2026 (Session 31) - v4.8.x
 
 ## 📋 Session Plan (Quality Auditor)

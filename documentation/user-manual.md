@@ -16,10 +16,40 @@ The `add` command is the heartbeat of dwriter.
 - **Technical Detail:** Content is sanitized via regex before storage. Metadata is extracted into separate relational tables in the SQLite database to allow for high-speed indexing.
 
 ### ✅ Task Management (`todo`)
-- **Frictionless Creation:** `dwriter todo "Task !high &api @due:friday"`
-- **Priorities:** `!low`, `!normal`, `!high`, `!urgent`.
-- **Completion Workflow:** `dwriter done <id>`.
-- **Technical Detail:** When a task is marked `done`, a corresponding `Entry` is created with a foreign key relation to the `Todo` ID. This maintains a verifiable audit trail of completion.
+
+`todo` is a full command group. Tasks support priority levels (`low`, `normal`, `high`, `urgent`), due dates, tags, and project assignment.
+
+**Creating tasks:**
+```bash
+dwriter todo "Write unit tests #testing &backend"   # inline quick-add
+dwriter todo add "Fix card draw bug" #bug &core      # explicit subcommand
+dwriter todo add "Review PR" --due tomorrow --priority high
+dwriter todo add "Ship it" --due +5d -t release -p core
+```
+
+**Reviewing tasks:**
+```bash
+dwriter todo list            # pending tasks
+dwriter todo list --all      # include completed
+dwriter todo list --json     # machine-readable output
+```
+
+**Managing tasks:**
+```bash
+dwriter todo edit <id>       # edit content interactively
+dwriter todo rm <id>         # delete a task
+```
+
+**Completing and reminders:**
+```bash
+dwriter done <id>                        # mark complete; auto-logs a journal entry
+dwriter done "write tests" --search      # match by content instead of ID
+dwriter remind "Call client" --at 3pm    # urgent shortcut with due time
+dwriter snooze <id> --for 30m           # push due date forward
+dwriter snooze <id> --at "tomorrow 9am"
+```
+
+**Technical Detail:** When a task is marked `done`, a corresponding `Entry` is created with a foreign key relation to the `Todo` ID, maintaining a verifiable audit trail of completion.
 
 ### 🤖 Machine-Readable Output (`--json`)
 Technical users can pipe dwriter data into other tools (e.g., BitBar, Waybar, or custom scripts).
