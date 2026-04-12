@@ -17,7 +17,6 @@ if TYPE_CHECKING:
 
 from ..tui.colors import PROJECT, TAG
 
-
 # ---------------------------------------------------------------------------
 # Format functions
 # ---------------------------------------------------------------------------
@@ -197,7 +196,7 @@ def build_standup_text(
         elif output_format == "markdown":
             wrapup_header = f"\n\n### {wrapup_header.strip()}"
 
-        clean_wrapup = [f"- {re.sub(r'\[.*?\]', '', n)}" for n in wrapup]
+        clean_wrapup = ["- " + re.sub(r"\[.*?\]", "", n) for n in wrapup]
         output += f"{wrapup_header}\n" + "\n".join(clean_wrapup)
 
     return output

@@ -112,7 +112,7 @@ class BriefingDisplayModal(ModalScreen[None]):
             )
             return
 
-        ctx = getattr(self.app, "ctx")
+        ctx = self.app.ctx
         obs_cfg = ctx.config.obsidian
 
         if not obsidian_is_configured(obs_cfg):

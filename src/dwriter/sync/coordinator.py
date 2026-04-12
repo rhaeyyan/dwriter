@@ -30,8 +30,8 @@ class SyncCoordinator:
         """Dispatch a non-blocking background pull sync."""
         from datetime import datetime
 
-        from .daemon import pull_sync
         from ..tui.messages import EntryAdded, SyncStatus, TodoUpdated
+        from .daemon import pull_sync
 
         async def pull_sync_worker() -> None:
             self._app.post_message(SyncStatus(is_syncing=True, message="Syncing..."))
@@ -69,8 +69,8 @@ class SyncCoordinator:
         Called from the debounce timer thread; uses ``call_from_thread`` to
         safely schedule the coroutine on the Textual event loop.
         """
-        from .daemon import push_sync
         from ..tui.messages import SyncStatus
+        from .daemon import push_sync
 
         async def push_sync_worker() -> None:
             self._app.post_message(SyncStatus(is_syncing=True, message="Syncing..."))

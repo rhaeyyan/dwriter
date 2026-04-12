@@ -17,8 +17,13 @@ class SummaryCompressor:
     budgets.
     """
 
-    def __init__(self, budget: SummaryCompressionBudget = SummaryCompressionBudget()):
-        self.budget = budget
+    def __init__(self, budget: SummaryCompressionBudget | None = None) -> None:
+        """Initialize the compressor with an optional budget.
+
+        Args:
+            budget: Limits for text compression. Defaults to standard budget.
+        """
+        self.budget = budget or SummaryCompressionBudget()
 
     def compress(self, text: str) -> str:
         """Compresses the input text using normalization and a priority system.

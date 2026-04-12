@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from ...cli import AppContext
+    from ..app import DWriterApp
 
 from textual.app import ComposeResult
 from textual.binding import Binding
@@ -26,6 +27,8 @@ from ..parsers import parse_quick_add
 
 class SessionCompleteModal(ModalScreen):  # type: ignore[type-arg]
     """Modal dialog for logging activity upon timer completion."""
+
+    app: DWriterApp
 
     CSS = """
     SessionCompleteModal {

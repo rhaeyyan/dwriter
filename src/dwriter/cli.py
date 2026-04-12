@@ -8,6 +8,8 @@ from __future__ import annotations
 import click
 from rich.console import Console
 
+from typing import Any
+
 from . import __version__
 from .config import ConfigManager
 from .database import Database
@@ -114,10 +116,13 @@ class AppContext:
                 self.console.print(f"\n[{REMINDER_COLOR}]🔔 ACTIVE REMINDERS:[/{REMINDER_COLOR}]")
             self._reminders_shown = True
             for r in reminders:
-                if r.due_date.hour == 0 and r.due_date.minute == 0:
-                    due_str = r.due_date.strftime("%Y-%m-%d")
+                if r.due_date:
+                    if r.due_date.hour == 0 and r.due_date.minute == 0:
+                        due_str = r.due_date.strftime("%Y-%m-%d")
+                    else:
+                        due_str = r.due_date.strftime("%I:%M %p")
                 else:
-                    due_str = r.due_date.strftime("%I:%M %p")
+                    due_str = "No due date"
 
                 self.console.print(
                     f"  [{REMINDER_COLOR}]![/{REMINDER_COLOR}] [{r.id}] {r.content} (Due: {due_str})"
