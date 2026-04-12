@@ -19,8 +19,8 @@ def strip_rich_markup(text: str) -> str:
     """
     # Pattern to target Rich syntax: [bold], [#cba6f7], [dim], [/], [bold #cba6f7], [/#23c76b], etc.
     # It avoids stripping [[wikilinks]] by ensuring we don't match if it's a double bracket.
-    # Matches a '[' NOT preceded by '[', followed by optional '/', 
-    # then optionally either a style word (with optional attributes) or a hex color, 
+    # Matches a '[' NOT preceded by '[', followed by optional '/',
+    # then optionally either a style word (with optional attributes) or a hex color,
     # followed by ']' NOT followed by ']'.
     rich_tag_pattern = r"(?<!\[)\[/?(?:[a-zA-Z]+(?: [a-zA-Z0-9#_]*)*|#[a-fA-F0-9]{6})?\](?!\])"
     return re.sub(rich_tag_pattern, "", text)
@@ -124,7 +124,7 @@ def get_note_path(
         raise ValueError("Obsidian vault_path is not configured.")
 
     vault_root = Path(config.vault_path)
-    
+
     if note_type == "review":
         folder = vault_root / config.reviews_folder
     else:
@@ -133,7 +133,7 @@ def get_note_path(
     # Sanitize title for filesystem safety
     # Strip characters not valid in filenames: / \ : * ? " < > |
     safe_title = re.sub(r'[\\/:*?"<>|]', "", title).strip()
-    
+
     filename = f"{date.strftime('%Y-%m-%d')} — {safe_title}.md"
     return folder / filename
 

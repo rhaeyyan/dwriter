@@ -6,8 +6,7 @@ and provides the global omnibox for quick entry logging.
 
 from __future__ import annotations
 
-from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ..cli import AppContext

@@ -27,7 +27,12 @@ class PermissionEnforcer:
     system access.
     """
 
-    def __init__(self, mode: PermissionMode = PermissionMode.APPEND_ONLY):
+    def __init__(self, mode: PermissionMode = PermissionMode.APPEND_ONLY) -> None:
+        """Initialize the enforcer with a specific security mode.
+
+        Args:
+            mode: The active permission level for the AI.
+        """
         self.active_mode = mode
 
         # Tool categories for classification
