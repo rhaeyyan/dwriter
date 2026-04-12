@@ -34,6 +34,19 @@ check "Security Mode Guard" \
 check "Context Budget Guard" \
     'grep -q "SummaryCompressor" src/dwriter/ai/engine.py'
 
+# File-Size Ceiling Guard: No .py file outside tui/screens/ may exceed 600 lines.
+# TUI screen files are exempt (complex widget composition requires vertical length).
+check "File-Size Ceiling Guard" \
+    '! find src/dwriter -name "*.py" \
+        -not -path "*/tui/screens/*" \
+        -not -path "*/__pycache__/*" \
+    | while read f; do
+        lines=$(wc -l < "$f")
+        if [ "$lines" -gt 600 ]; then
+            echo "FAIL: $f ($lines lines)"
+        fi
+      done | grep -q "FAIL"'
+
 echo ""
 echo "=== Results: $PASS passed, $FAIL failed ==="
 echo ""
