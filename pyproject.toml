@@ -57,6 +57,9 @@ Repository = "https://github.com/yourusername/dwriter"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+"dwriter" = ["tui/*.tcss"]
+
 [tool.black]
 line-length = 88
 target-version = ["py39"]
