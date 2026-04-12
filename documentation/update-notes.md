@@ -1,5 +1,56 @@
 # dwriter Update Notes
 
+## Version 4.8.2 - April 12, 2026
+
+### 🛠 Internal Architecture
+- **Guard 4 compliance**: Decomposed four modules that exceeded the 600-line file-size ceiling:
+  - `analytics.py` (634 lines) → `analytics/` package: `engine.py` + `insights.py` + `__init__.py`
+  - `database.py` (1,219 lines) → `database_models.py`, `database_migrations.py`, `database_entry_repo.py`, `database_todo_repo.py`, slim core
+  - `tui/app.py` (997 lines): CSS extracted to `app.tcss`; AI event handlers extracted to `tui/ai_handlers.py`
+- **Guard 4 check**: `check_guards.sh` now enforces the 600-line file-size ceiling as an automated architecture guard.
+- **User Manual**: Todo CLI reference updated to document the `todo` subcommand restructure.
+
+---
+
+## Version 4.8.1 - April 11, 2026
+
+### 🛠 Improvements & Fixes
+- **Ruff/Mypy compliance**: Full linting and type-checking pass across the codebase.
+- **mypy**: `python_version` bumped from `3.9` to `3.10`.
+- **Null guard**: Fixed potential `AttributeError` when displaying reminders for tasks without a due date.
+- **Type annotations**: `app: DWriterApp` added to 6 widget/screen classes (`HelpScreen`, `SessionCompleteModal`, `AddTodoForm`, `TodoListItem`, `EditTodoModal`, `TodoScreen`) for Mypy compliance.
+- **Dead code removal**: Removed unused Windows PowerShell notification code in `ui_utils.py`.
+
+---
+
+## Version 4.8.0 - April 11, 2026
+
+### 🚀 Key Features
+
+#### 1. Todo Subcommand Restructure
+- `dwriter todo` is now a subcommand group: `todo add`, `todo list`, `todo rm`, `todo edit`, `done`, `remind`, `snooze` — each a first-class command with dedicated help text and completion support.
+
+#### 2. Standup Service Extraction
+- Standup formatting and build logic extracted into `commands/standup_service.py` for cleaner separation and testability.
+
+#### 3. Coordinator Extraction
+- Background sync logic extracted from `tui/app.py` into `sync/coordinator.py`; reminder polling into `tui/reminder_coordinator.py`; todo workflow into `tui/todo_workflow.py`.
+
+---
+
+## Version 4.7.0 - April 11, 2026
+
+### 🚀 Key Features
+
+#### 1. Obsidian Export
+- **`dwriter obsidian export-briefing`** / **`dwriter obsidian export-review`**: Export journal briefings and period reviews to an Obsidian vault as dated Markdown notes. Configure the vault path via `[obsidian]` in `~/.dwriter/config.toml`.
+
+### 🛠 Improvements & Fixes
+- **Obsidian export regex**: Fixed a regex edge case in the Obsidian export formatter that caused malformed output on certain entry formats.
+- **`ui_utils.py` restoration**: Restored out-of-scope changes that were incorrectly dropped during the previous merge.
+
+---
+
 ## Version 4.6.2 - April 10, 2026
 
 ### 🛠 Improvements & Fixes
