@@ -1,5 +1,44 @@
 # dwriter Update Notes
 
+## Version 3.7.0 - April 12, 2026
+
+### 🛠 Internal Architecture
+- **Guard 4 compliance**: Decomposed three modules that exceeded the 600-line file-size ceiling:
+  - `analytics.py` (634 lines) → `analytics/` package: `engine.py` + `insights.py` + `__init__.py`
+  - `database.py` (881 lines) → `database_models.py`, `database_migrations.py`, `database_entry_repo.py`, `database_todo_repo.py`, slim core (120 lines)
+  - `tui/app.py` (997 lines): CSS extracted to `app.tcss`; omnibox logic extracted to `app_omnibox.py` mixin
+- **Null guard**: Fixed potential `AttributeError` when displaying reminders for tasks without a due date.
+- **Type annotations**: `app: DWriterApp` added to 6 widget/screen classes for Mypy compliance.
+- **mypy**: `python_version` bumped from `3.9` to `3.10`.
+- **Dead code removal**: Removed unused Windows PowerShell notification code in `ui_utils.py`.
+
+---
+
+## Version 3.6.3 - April 11, 2026
+
+### 🚀 Key Features
+
+#### 1. Tag Unification
+- `todo_tags` table merged into the unified `tags` table with a new `todo_id` column. Migration runs automatically on startup with backup/rollback safeguards.
+
+#### 2. Todo Subcommand Restructure
+- `dwriter todo` is now a subcommand group: `todo add`, `todo list`, `todo rm`, `todo edit`, `done`, `remind`, `snooze` — each a first-class command with dedicated help text.
+
+#### 3. Standup Service
+- Standup formatting and build logic extracted into `commands/standup_service.py` for cleaner separation and testability.
+
+#### 4. Coordinator Extraction
+- Background sync logic extracted from `tui/app.py` into `sync/coordinator.py`; reminder polling into `tui/reminder_coordinator.py`; todo workflow into `tui/todo_workflow.py`.
+
+#### 5. Obsidian Export
+- **`dwriter obsidian export-briefing`** / **`dwriter obsidian export-review`**: Export journal briefings and period reviews to an Obsidian vault as dated Markdown notes. Configure via `[obsidian]` in `~/.dwriter/config.toml`.
+
+### 🛠 Improvements & Fixes
+- `check_guards.sh`: Architecture guards script added — Security Mode, Context Budget (skipped on AI-free branch), and Guard 4 file-size ceiling checks.
+- `user-manual.md`: Task management section rewritten to document the `todo` subcommand restructure.
+
+---
+
 ## main-core v1.0.0 - April 10, 2026
 
 A new lightweight branch, `main-core`, has been created from `main` (v3.7.0). It provides all core dwriter features without any AI/LLM dependencies — ideal for users on constrained hardware or those who prefer a fully offline setup.
