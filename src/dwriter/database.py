@@ -43,15 +43,25 @@ class Base(DeclarativeBase):
 
 
 class Tag(Base):
-    """Tag associated with a journal entry."""
+    """Tag associated with a journal entry or a todo task."""
 
     __tablename__ = "tags"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    entry_id: Mapped[int] = mapped_column(ForeignKey("entries.id", ondelete="CASCADE"))
+    entry_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("entries.id", ondelete="CASCADE"), nullable=True
+    )
+    todo_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("todos.id", ondelete="CASCADE"), nullable=True
+    )
     name: Mapped[str] = mapped_column(String, index=True)
 
-    entry: Mapped["Entry"] = relationship(back_populates="tags")
+    entry: Mapped["Entry | None"] = relationship(
+        back_populates="tags", foreign_keys="[Tag.entry_id]"
+    )
+    todo: Mapped["Todo | None"] = relationship(
+        back_populates="tags", foreign_keys="[Tag.todo_id]"
+    )
 
 
 class Entry(Base):
@@ -78,6 +88,7 @@ class Entry(Base):
 
     tags: Mapped[list["Tag"]] = relationship(
         back_populates="entry",
+        foreign_keys="[Tag.entry_id]",
         lazy="selectin",
         cascade="all, delete-orphan",
     )
@@ -88,18 +99,6 @@ class Entry(Base):
         if hasattr(self, "_tag_names_cache"):
             return self._tag_names_cache
         return [tag.name for tag in self.tags]
-
-
-class TodoTag(Base):
-    """Tag associated with a todo task."""
-
-    __tablename__ = "todo_tags"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    todo_id: Mapped[int] = mapped_column(ForeignKey("todos.id", ondelete="CASCADE"))
-    name: Mapped[str] = mapped_column(String, index=True)
-
-    todo: Mapped["Todo"] = relationship(back_populates="tags")
 
 
 class Todo(Base):
@@ -121,8 +120,9 @@ class Todo(Base):
     )
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
 
-    tags: Mapped[list["TodoTag"]] = relationship(
+    tags: Mapped[list["Tag"]] = relationship(
         back_populates="todo",
+        foreign_keys="[Tag.todo_id]",
         lazy="selectin",
         cascade="all, delete-orphan",
     )
@@ -312,12 +312,54 @@ class Database:
                             "ALTER TABLE entries ADD COLUMN energy_level INTEGER"
                         )
 
+                    # Tag Unification migration: merge todo_tags into tags
+                    tag_cols = {
+                        row[1]
+                        for row in conn.execute("PRAGMA table_info(tags)").fetchall()
+                    }
+                    if "todo_id" not in tag_cols:
+                        conn.execute(
+                            "CREATE TABLE tags_new ("
+                            "id INTEGER PRIMARY KEY, "
+                            "entry_id INTEGER REFERENCES entries(id) ON DELETE CASCADE, "
+                            "todo_id INTEGER REFERENCES todos(id) ON DELETE CASCADE, "
+                            "name TEXT NOT NULL"
+                            ")"
+                        )
+                        conn.execute(
+                            "INSERT INTO tags_new (entry_id, name) "
+                            "SELECT entry_id, name FROM tags"
+                        )
+                        if "todo_tags" in {
+                            row[0]
+                            for row in conn.execute(
+                                "SELECT name FROM sqlite_master WHERE type='table'"
+                            ).fetchall()
+                        }:
+                            conn.execute(
+                                "INSERT INTO tags_new (todo_id, name) "
+                                "SELECT todo_id, name FROM todo_tags"
+                            )
+                            conn.execute("DROP TABLE todo_tags")
+                        conn.execute("DROP TABLE tags")
+                        conn.execute("ALTER TABLE tags_new RENAME TO tags")
+                        conn.execute(
+                            "CREATE INDEX IF NOT EXISTS ix_tags_name ON tags (name)"
+                        )
+                        conn.execute(
+                            "CREATE INDEX IF NOT EXISTS ix_tags_todo_id ON tags (todo_id)"
+                        )
+
                     # Orphan cleanup
                     conn.execute(
-                        "DELETE FROM tags WHERE entry_id NOT IN (SELECT id FROM entries)"
+                        "DELETE FROM tags "
+                        "WHERE entry_id IS NOT NULL "
+                        "AND entry_id NOT IN (SELECT id FROM entries)"
                     )
                     conn.execute(
-                        "DELETE FROM todo_tags WHERE todo_id NOT IN (SELECT id FROM todos)"
+                        "DELETE FROM tags "
+                        "WHERE todo_id IS NOT NULL "
+                        "AND todo_id NOT IN (SELECT id FROM todos)"
                     )
 
                     conn.commit()
@@ -688,7 +730,7 @@ class Database:
             )
             if tags:
                 for tag_name in tags:
-                    todo.tags.append(TodoTag(name=tag_name))
+                    todo.tags.append(Tag(name=tag_name))
             session.add(todo)
             session.commit()
             session.refresh(todo)
@@ -789,7 +831,7 @@ class Database:
             if reminder_last_sent is not None:
                 todo.reminder_last_sent = reminder_last_sent
             if tags is not None:
-                todo.tags = [TodoTag(name=t) for t in tags]
+                todo.tags = [Tag(name=t) for t in tags]
             session.commit()
             session.refresh(todo)
             return todo
@@ -835,5 +877,5 @@ class Database:
             if project:
                 stmt = stmt.where(Todo.project == project)
             if tags:
-                stmt = stmt.join(TodoTag).where(TodoTag.name.in_(tags))
+                stmt = stmt.join(Tag, Tag.todo_id == Todo.id).where(Tag.name.in_(tags))
             return list(session.scalars(stmt).all())
