@@ -40,8 +40,20 @@ class ConfigureScreen(Container):
         width: 1fr;
         margin-bottom: 1;
         padding: 0 1;
-        border: solid $border-blurred;
+        border: none;
+        border-left: solid $primary;
         background: $panel;
+    }
+
+    Input {
+        border: none;
+        border-bottom: solid $primary;
+        padding: 1 2 0 2;
+    }
+
+    Input:focus {
+        border: none;
+        border-bottom: solid $accent;
     }
 
     .section-title {
@@ -164,6 +176,10 @@ class ConfigureScreen(Container):
                     yield Label("Lock Mode", classes="row-label")
                     yield Switch(value=cfg.display.lock_mode, id="lock-mode-switch")
 
+                with Horizontal(classes="row"):
+                    yield Label("Permanent Omnibox", classes="row-label")
+                    yield Switch(value=cfg.display.permanent_omnibox, id="permanent-omnibox-switch")
+
             # ── Timer Defaults ──────────────────────────────────────
             with Container(classes="section"):
                 yield Label(f"{get_icon('timer', use_emojis)} Timer Defaults", classes="section-title")
@@ -271,6 +287,9 @@ class ConfigureScreen(Container):
 
             # Editing
             config.display.lock_mode = bool(self.query_one("#lock-mode-switch", Switch).value)
+            config.display.permanent_omnibox = bool(
+                self.query_one("#permanent-omnibox-switch", Switch).value
+            )
 
             # Timer
             config.timer.work_duration = int(self.query_one("#work-duration-input", Input).value)
@@ -302,6 +321,11 @@ class ConfigureScreen(Container):
             # Apply theme live immediately
             self.app.theme = config.display.theme
 
+            # Sync permanent_omnibox reactive so the change takes effect without restart
+            from ..app import DWriterApp  # type: ignore[attr-defined]
+            if isinstance(self.app, DWriterApp):
+                self.app.permanent_omnibox = config.display.permanent_omnibox
+
             self.app.notify("Configuration saved! Some changes require a restart.", severity="success", timeout=4)
         except ValueError as e:
             self.app.notify(f"Invalid input: {e}", severity="error")
@@ -320,6 +344,12 @@ class ConfigureScreen(Container):
         self.query_one("#clock-24hr-switch", Switch).value = config.display.clock_24hr
         self.query_one("#date-format-select", Select).value = config.display.date_format
         self.query_one("#lock-mode-switch", Switch).value = config.display.lock_mode
+        self.query_one("#permanent-omnibox-switch", Switch).value = config.display.permanent_omnibox
+
+        from ..app import DWriterApp  # type: ignore[attr-defined]
+        if isinstance(self.app, DWriterApp):
+            self.app.permanent_omnibox = config.display.permanent_omnibox
+
         self.query_one("#work-duration-input", Input).value = str(config.timer.work_duration)
         self.query_one("#break-duration-input", Input).value = str(config.timer.break_duration)
         self.query_one("#auto-start-breaks-switch", Switch).value = config.timer.auto_start_breaks
