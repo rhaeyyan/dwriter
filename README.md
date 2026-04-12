@@ -97,7 +97,7 @@ dwriter add "Refactored the auth layer #backend &project-x"
 dwriter timer "25 &feature-y #deepwork"
 
 # Add a task to your todo list
-dwriter todo "Review the pull request" --priority urgent
+dwriter todo add "Review the pull request" --priority urgent
 
 # Machine-Readable Output (JSON) for automation
 dwriter stats --json
@@ -154,7 +154,7 @@ dwriter sync --pull
 | 🧠 **[2nd-Brain Guide](documentation/2ND-BRAIN-GUIDE.md)** | **How to get the most out of the AI 2nd-Brain — logging habits, querying tips, and analytics.** |
 | 📘 **[User Manual](documentation/user-manual.md)** | **The complete technical guide to every feature.** |
 | 🔄 **[Sync Guide](documentation/sync-guide.md)** | **Simple, step-by-step instructions for non-technical users.** |
-| 🚀 **[Update Notes](documentation/update-notes.md)** | **New in v4.6.0:** 2nd-Brain reporting overhaul & Catch Up flow redesign. |
+| 🚀 **[Update Notes](documentation/update-notes.md)** | **New in v4.8.2:** Guard 4 compliance, module decomposition & Ruff/Mypy pass. |
 | 🛠️ **[Command Reference](documentation/headless-readme.md)** | A complete guide to every CLI command and flag. |
 | 📖 **[Creative Use Cases](documentation/use-cases.md)** | 20 ways to use dwriter for brewing, fitness, travel, and more. |
 | ⚙️ **[Dev & Guide](documentation/dev-config.md)** | Customizing your themes, default projects, and dev setup. |
