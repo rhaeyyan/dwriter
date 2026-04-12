@@ -2,7 +2,13 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from textual.app import ComposeResult
+
+if TYPE_CHECKING:
+    from ..app import DWriterApp
+
 from textual.binding import Binding
 from textual.containers import Container
 from textual.screen import Screen
@@ -12,6 +18,8 @@ from ..colors import PROJECT, TAG, get_icon
 
 class HelpScreen(Screen):  # type: ignore[type-arg]
     """Help screen for dwriter TUI."""
+
+    app: DWriterApp
 
     CSS = """
     HelpScreen {

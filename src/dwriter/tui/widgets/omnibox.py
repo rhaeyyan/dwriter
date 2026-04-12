@@ -36,6 +36,11 @@ class Omnibox(Input):
     pending_tokens: list[str] = []
 
     def __init__(self, **kwargs: Any) -> None:
+        """Initialize the Omnibox widget.
+
+        Args:
+            **kwargs: Arguments passed to the Textual Input widget.
+        """
         super().__init__(**kwargs)
         self.pending_tokens = []
 

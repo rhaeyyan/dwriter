@@ -261,17 +261,7 @@ def send_system_notification(title: str, message: str) -> None:
                 ["notify-send", title, message], check=False, capture_output=True
             )
         elif sys.platform == "win32":  # Windows
-            # Standard Windows notification via PowerShell
-            powershell_cmd = (
-                f"$t = '{title}'; $m = '{message}'; "
-                "[registration.notification.toastnotificationmanager, "
-                "registration.notification, content=generic]::CreateToastNotifier()."
-                "Show([registration.notification.toastnotificationmanager]::"
-                "GetTemplateContent([registration.notification.toasttemplatetype]::"
-                "ToastText02))"
-            )
-            # This is a bit complex for a single line, so using a simpler alternative if possible
-            # or adhering to the prompt's suggested PowerShell command
+            # Adhering to the prompt's suggested PowerShell command
             subprocess.run(
                 [
                     "powershell",

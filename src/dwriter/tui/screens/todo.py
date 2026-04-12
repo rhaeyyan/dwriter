@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from ...cli import AppContext
+    from ..app import DWriterApp
 
 from textual.app import ComposeResult
 from textual.binding import Binding
@@ -45,6 +46,8 @@ from ..messages import EntryAdded, TodoUpdated
 
 class AddTodoForm(Vertical):
     """A form for quickly adding a new todo directly from the board."""
+
+    app: DWriterApp
 
     DEFAULT_CSS = """
     AddTodoForm {
@@ -178,6 +181,8 @@ class AddTodoForm(Vertical):
 class TodoListItem(ListItem):
     """Custom list item for todo tasks."""
 
+    app: DWriterApp
+
     def __init__(self, todo: Todo, **kwargs: Any) -> None:
         """Initialize the todo list item.
 
@@ -191,6 +196,8 @@ class TodoListItem(ListItem):
 
 class EditTodoModal(ModalScreen):  # type: ignore[type-arg]
     """Modal dialog for editing a todo."""
+
+    app: DWriterApp
 
     CSS = """
     EditTodoModal {
@@ -911,6 +918,8 @@ class TodoListView(ListView):
 
 class TodoScreen(Container):
     """Todo board screen."""
+
+    app: DWriterApp
 
     DEFAULT_CSS = """
     TodoScreen {

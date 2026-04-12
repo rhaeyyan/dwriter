@@ -93,10 +93,13 @@ class AppContext:
                 self.console.print("\n[bold red]🔔 ACTIVE REMINDERS:[/bold red]")
             self._reminders_shown = True
             for r in reminders:
-                if r.due_date.hour == 0 and r.due_date.minute == 0:
-                    due_str = r.due_date.strftime("%Y-%m-%d")
+                if r.due_date:
+                    if r.due_date.hour == 0 and r.due_date.minute == 0:
+                        due_str = r.due_date.strftime("%Y-%m-%d")
+                    else:
+                        due_str = r.due_date.strftime("%I:%M %p")
                 else:
-                    due_str = r.due_date.strftime("%I:%M %p")
+                    due_str = "No due date"
                 
                 self.console.print(
                     f"  [red]![/red] [{r.id}] {r.content} (Due: {due_str})"
