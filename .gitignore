@@ -69,5 +69,6 @@ GEMINI.md
 stitch/
 
 # Agent framework context
+agents/
 .agents/
 .agent/
