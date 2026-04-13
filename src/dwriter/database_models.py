@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy import (
     DateTime,
@@ -33,18 +32,18 @@ class Tag(Base):
     __tablename__ = "tags"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    entry_id: Mapped[Optional[int]] = mapped_column(
+    entry_id: Mapped[int | None] = mapped_column(
         ForeignKey("entries.id", ondelete="CASCADE"), nullable=True
     )
-    todo_id: Mapped[Optional[int]] = mapped_column(
+    todo_id: Mapped[int | None] = mapped_column(
         ForeignKey("todos.id", ondelete="CASCADE"), nullable=True
     )
     name: Mapped[str] = mapped_column(String, index=True)
 
-    entry: Mapped["Entry | None"] = relationship(
+    entry: Mapped[Entry | None] = relationship(
         back_populates="tags", foreign_keys="[Tag.entry_id]"
     )
-    todo: Mapped["Todo | None"] = relationship(
+    todo: Mapped[Todo | None] = relationship(
         back_populates="tags", foreign_keys="[Tag.todo_id]"
     )
 
@@ -58,20 +57,20 @@ class Entry(Base):
     uuid: Mapped[str] = mapped_column(String, unique=True, index=True)
     lamport_clock: Mapped[int] = mapped_column(Integer, default=0)
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    project: Mapped[Optional[str]] = mapped_column(String)
+    project: Mapped[str | None] = mapped_column(String)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=func.now(), index=True
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=func.now(), onupdate=func.now()
     )
-    todo_id: Mapped[Optional[int]] = mapped_column(
+    todo_id: Mapped[int | None] = mapped_column(
         ForeignKey("todos.id", ondelete="CASCADE"), nullable=True
     )
-    life_domain: Mapped[Optional[str]] = mapped_column(String)
-    energy_level: Mapped[Optional[int]] = mapped_column(Integer)
+    life_domain: Mapped[str | None] = mapped_column(String)
+    energy_level: Mapped[int | None] = mapped_column(Integer)
 
-    tags: Mapped[list["Tag"]] = relationship(
+    tags: Mapped[list[Tag]] = relationship(
         back_populates="entry",
         foreign_keys="[Tag.entry_id]",
         lazy="selectin",
@@ -95,17 +94,17 @@ class Todo(Base):
     uuid: Mapped[str] = mapped_column(String, unique=True, index=True)
     lamport_clock: Mapped[int] = mapped_column(Integer, default=0)
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    project: Mapped[Optional[str]] = mapped_column(String)
+    project: Mapped[str | None] = mapped_column(String)
     priority: Mapped[str] = mapped_column(String, default="normal")
     status: Mapped[str] = mapped_column(String, default="pending")
-    due_date: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    reminder_last_sent: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    due_date: Mapped[datetime | None] = mapped_column(DateTime)
+    reminder_last_sent: Mapped[datetime | None] = mapped_column(DateTime)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=func.now(), index=True
     )
-    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime)
 
-    tags: Mapped[list["Tag"]] = relationship(
+    tags: Mapped[list[Tag]] = relationship(
         back_populates="todo",
         foreign_keys="[Tag.todo_id]",
         lazy="selectin",

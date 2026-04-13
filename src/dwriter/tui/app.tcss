@@ -1,10 +1,11 @@
-/* Color Variables - Now handled by Themes */
-/* We keep only functional variables that themes don't provide */
 $text-muted: #8c92a6;
 $panel-light: #45475a;
 $border-muted: #45475a;
 
-/* Omnibox - Top command palette */
+.hidden {
+    display: none !important;
+}
+
 #omnibox-container {
     height: auto;
     border: solid $border-muted;
@@ -47,7 +48,6 @@ $border-muted: #45475a;
     text-style: bold;
 }
 
-/* Horizontal Navigation Tabs - bracket style */
 Tabs {
     background: transparent;
     border: none;
@@ -72,7 +72,6 @@ Tab.-active {
     text-style: bold;
 }
 
-/* Flashing timer tab when running */
 Tab.timer-running {
     background: transparent;
     color: #00FF7F;
@@ -97,7 +96,6 @@ Tab#tab-spacer.-active {
     background: transparent;
 }
 
-/* Content Area - Full width, no borders */
 #content-area {
     height: 1fr;
     width: 1fr;
@@ -107,7 +105,6 @@ Tab#tab-spacer.-active {
     padding: 0 1;
 }
 
-/* Floating Panels - btop solid borders */
 .todo-panel, .search-panel, .card {
     height: 100%;
     border: solid $border-muted;
@@ -137,7 +134,6 @@ Tab#tab-spacer.-active {
     border-bottom: solid $success;
 }
 
-/* Lists - tighter spacing but with gaps between entries */
 ListItem {
     padding: 0;
     margin-bottom: 1;
@@ -153,7 +149,6 @@ ListView {
     scrollbar-gutter: stable;
 }
 
-/* Dashboard */
 #dashboard-main-container {
     height: 1fr;
     padding: 0;
@@ -179,7 +174,6 @@ StreakCalendar, ActivitySparkline {
     padding: 0 1;
 }
 
-/* DataTables & Tabs */
 DataTable {
     border: solid $border-muted;
     border-title-color: $success;
@@ -195,7 +189,6 @@ TabbedContent {
     height: 1fr;
 }
 
-/* Help Screen */
 HelpScreen {
     align: center middle;
     background: rgba(13, 15, 24, 0.85);
@@ -246,7 +239,6 @@ HelpScreen {
     margin-top: 0;
 }
 
-/* Ergonomic Mode Toggle */
 Screen.ergonomic-mode #content-area {
     padding: 0 4;
 }
@@ -262,7 +254,6 @@ Screen.ergonomic-mode ListItem {
     padding: 1 0;
 }
 
-/* Buttons - Sleek Neon Ghost Style */
 Button {
     border: none;
     height: auto;
@@ -270,6 +261,28 @@ Button {
     min-width: 8;
     padding: 0 1;
     background: transparent;
+}
+
+Button:hover {
+    background: $surface;
+    text-style: bold;
+}
+
+Button.active:hover {
+    background: #cba6f7;
+    color: $background;
+    text-style: bold;
+}
+
+#insight-triggers Button:hover {
+    background: #cba6f7 20%;
+    text-style: bold;
+}
+
+#insight-triggers Button.active:hover {
+    background: #cba6f7;
+    color: $background;
+    text-style: bold;
 }
 
 Button.-success { color: $success; text-style: bold; }
@@ -286,6 +299,10 @@ Button.-primary:hover, Button.-primary:focus { background: $primary 20%; color: 
 
 Button.-default { color: $foreground 70%; text-style: bold; }
 Button.-default:hover, Button.-default:focus { color: $foreground; background: $surface; text-style: reverse bold; }
+
+Tab#tab-add-pane {
+    color: #73E6CB;
+}
 
 #status-bar {
     dock: bottom;

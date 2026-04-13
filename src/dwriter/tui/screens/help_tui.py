@@ -13,6 +13,7 @@ from textual.binding import Binding
 from textual.containers import Container
 from textual.screen import Screen
 from textual.widgets import Footer, Header, Static, TabbedContent, TabPane
+
 from ..colors import PROJECT, TAG, get_icon
 
 

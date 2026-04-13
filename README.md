@@ -1,5 +1,5 @@
 # dwriter 📝
-v3.7.0
+v4.8.4
 ### *The minimalist journal for those who live in the terminal.*
 
 **dwriter** is a high-signal, low-friction journaling tool designed to capture your work without breaking your flow. It bridges the gap between the raw speed of a command-line interface and the visual clarity of a modern dashboard.

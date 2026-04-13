@@ -1,6 +1,7 @@
 """Delete command for bulk deletion of entries."""
 
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -9,7 +10,6 @@ if TYPE_CHECKING:
 from datetime import datetime
 
 import click
-
 
 
 def parse_date(date_str: str) -> datetime:

@@ -1,6 +1,7 @@
 """Edit command for managing entries interactively."""
 
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -97,7 +98,7 @@ def _bulk_edit_today(ctx: AppContext) -> None:
         ctx: The application context.
     """
     entries = ctx.db.get_entries_by_date(datetime.now())
-    
+
     if not entries:
         ctx.console.print("[yellow]No entries found for today.[/yellow]")
         ctx.console.print("Run [bold]dwriter ui[/bold] to see your full history.")
@@ -106,7 +107,7 @@ def _bulk_edit_today(ctx: AppContext) -> None:
     ctx.console.print("[bold cyan]Today's Entries:[/bold cyan]")
     for entry in entries:
         ctx.console.print(f"  [[{PROJECT}]{entry.id}[/{PROJECT}]] {entry.content}")
-    
+
     ctx.console.print("\nTo edit a specific entry, run: [bold]dwriter edit --id <ID>[/bold]")
     ctx.console.print("To use the interactive editor, run: [bold]dwriter ui --logs[/bold]")
 

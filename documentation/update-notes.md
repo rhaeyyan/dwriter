@@ -1,6 +1,22 @@
 # dwriter Update Notes
 
-## Version 3.7.0 - April 12, 2026
+## Version 4.8.4 - April 12, 2026
+
+### 🚀 TUI Parity & Enhancements
+- **Permanent Omnibox**: Ported the persistent footer-based Omnibox architecture from the AI branch. The Omnibox can now be toggled to stay visible via the `permanent_omnibox` setting.
+- **Enhanced Timer Screen**: Ported the modern Timer UI with integrated Quick-Add fields for Tags and Projects, and improved progress visualization.
+- **"Overdue" status**: Tasks past their due date (or past their due time, if specified) now display as **Overdue** in the TUI board.
+- **Visual indicators**: Overdue labels use the `$error` (red) semantic color for high-signal visibility.
+
+### 🛠 Quality & Maintenance
+- **Major Pre-flight Cleanup**: Backported hundreds of Ruff and Mypy fixes to ensure codebase health and consistency across branches.
+- **Natural Language Parsing**: Resolved an ambiguity in relative date parsing where `+3m` was incorrectly parsed as minutes instead of months.
+- **AI-Free Invariant**: All ported TUI features have been surgically stripped of AI dependencies to maintain the pure, AI-free nature of the main branch.
+
+---
+
+## Version 4.8.2 - April 12, 2026
+
 
 ### 🛠 Internal Architecture
 - **Guard 4 compliance**: Decomposed three modules that exceeded the 600-line file-size ceiling:

@@ -16,8 +16,8 @@ if TYPE_CHECKING:
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Horizontal, Vertical
-from textual.reactive import reactive
 from textual.message import Message
+from textual.reactive import reactive
 from textual.screen import ModalScreen
 from textual.widgets import (
     Button,
@@ -25,14 +25,12 @@ from textual.widgets import (
     Label,
     ListItem,
     ListView,
-    Static,
     TabbedContent,
     TabPane,
 )
 
 from ...database import Todo
 from ..colors import (
-    DUE_LATER,
     DUE_OVERDUE,
     DUE_SOON,
     DUE_TODAY,
@@ -1154,7 +1152,6 @@ class TodoScreen(Container):
     def _load_todos(self) -> None:
         """Load todos from database and update all lists."""
         # We always load all todos to update the counts in the tab labels
-        from ...database import Todo
         self._all_todos = self.ctx.db.get_todos()
         self._update_all_lists()
 

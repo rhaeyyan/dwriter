@@ -56,7 +56,7 @@ class AppContext:
             self.db = Database()
         except Exception as e:
             raise DatabaseError(f"Failed to initialize database: {e}") from e
-        
+
         self._reminders_shown = False
 
     def check_reminders(self, silent: bool = False, force: bool = False) -> None:
@@ -100,7 +100,7 @@ class AppContext:
                         due_str = r.due_date.strftime("%I:%M %p")
                 else:
                     due_str = "No due date"
-                
+
                 self.console.print(
                     f"  [red]![/red] [{r.id}] {r.content} (Due: {due_str})"
                 )
@@ -127,7 +127,7 @@ class AppContext:
 @click.version_option(version=__version__, prog_name="dwriter")
 def main(ctx: click.Context, check_only: bool) -> None:
     """Dwriter - A minimalist journal for the terminal.
-... (rest of docstring)
+    ... (rest of docstring)
     """
     try:
         ctx.obj = AppContext()
@@ -207,8 +207,8 @@ def _register_commands() -> None:
         examples,
         help_cmd,
         install_notifications,
-        review,
         remind,
+        review,
         search,
         snooze,
         standup,

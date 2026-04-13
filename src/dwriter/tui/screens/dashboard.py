@@ -15,7 +15,7 @@ from textual.containers import Container, ScrollableContainer, Vertical
 from textual.widgets import LoadingIndicator, Static
 
 from ...analytics import AnalyticsEngine, InsightGenerator
-from ..colors import PROJECT, TAG, get_icon
+from ..colors import get_icon
 
 
 class UnifiedPulsePanel(Static):

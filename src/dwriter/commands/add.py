@@ -12,7 +12,6 @@ import click
 from ..date_utils import parse_date_or_default
 from ..git_utils import get_git_info
 from ..ui_utils import display_entry
-from ..tui.colors import TAG
 
 
 @click.command(context_settings={"help_option_names": ["-h", "--help"], "allow_interspersed_args": True})
@@ -77,7 +76,7 @@ def add(
     from ..tui.parsers import parse_quick_add
     date_format = ctx.config.display.date_format
     parsed = parse_quick_add(content_str, date_format=date_format)
-    
+
     # Merge default tags, content-extracted tags, and explicitly provided tags
     all_tags = list(ctx.config.defaults.tags) + list(parsed.tags) + list(tags)
 

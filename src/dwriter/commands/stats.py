@@ -36,15 +36,15 @@ def stats(ctx: AppContext, weekly: bool, output_json: bool) -> None:
     entries = ctx.db.get_all_entries()
     todos_pending = ctx.db.get_todos(status="pending")
     todos_completed = ctx.db.get_todos(status="completed")
-    
+
     # Process streak metrics
     entry_dates = [e.created_at for e in entries]
     current_streak, longest_streak = calculate_streak(entry_dates)
-    
+
     # Initialize analytics engine and generate insights
     engine = AnalyticsEngine(ctx.db)
     insight_gen = InsightGenerator(engine)
-    
+
     if weekly:
         insights = insight_gen.generate_weekly_wrapup()
         insights_title = "🎭 Weekly Pulse Wrap-up"
@@ -73,7 +73,7 @@ def stats(ctx: AppContext, weekly: bool, output_json: bool) -> None:
 
     # Render summary to the console
     ctx.console.print("[bold blue]📊 Productivity Summary[/bold blue]\n")
-    
+
     # Render Streak and Activity overview panels
     streak_panel = Panel(
         f"[bold cyan]{current_streak}[/bold cyan] days (Current)\n"
@@ -82,7 +82,7 @@ def stats(ctx: AppContext, weekly: bool, output_json: bool) -> None:
         border_style="cyan",
         expand=False
     )
-    
+
     counts_panel = Panel(
         f"📝 [bold]{len(entries)}[/bold] Entries\n"
         f"✅ [bold]{len(todos_completed)}[/bold] Completed\n"
@@ -91,10 +91,10 @@ def stats(ctx: AppContext, weekly: bool, output_json: bool) -> None:
         border_style=PROJECT,
         expand=False
     )
-    
+
     ctx.console.print(Columns([streak_panel, counts_panel]))
     ctx.console.print()
-    
+
     # Display insights
     if insights:
         ctx.console.print(f"[{TAG}]{insights_title}[/{TAG}]")
@@ -111,10 +111,10 @@ def stats(ctx: AppContext, weekly: bool, output_json: bool) -> None:
         table.add_column("Tag", style=TAG)
         table.add_column("Count", justify="right")
         table.add_column("Trend", justify="right")
-        
+
         for tag, count, trend in tag_velocity[:5]:
             table.add_row(f"#{tag}", str(count), trend)
-        
+
         ctx.console.print(table)
         ctx.console.print()
 

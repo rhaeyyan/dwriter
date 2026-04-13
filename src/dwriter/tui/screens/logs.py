@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
@@ -16,8 +15,8 @@ from textual.screen import ModalScreen
 from textual.widgets import Button, Header, Input, Label, ListItem, ListView
 
 from ...database import Entry
-from ..colors import PROJECT, TAG, get_icon
 from ...search_utils import search_items
+from ..colors import PROJECT, TAG, get_icon
 
 
 class QuickAddEntryModal(ModalScreen):  # type: ignore[type-arg]

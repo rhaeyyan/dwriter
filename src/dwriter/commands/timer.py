@@ -10,8 +10,7 @@ if TYPE_CHECKING:
 from datetime import datetime
 
 import click
-from rich.progress import Progress, BarColumn, TextColumn, TimeRemainingColumn
-
+from rich.progress import BarColumn, Progress, TextColumn, TimeRemainingColumn
 
 
 @click.command(context_settings={"help_option_names": ["-h", "--help"], "allow_interspersed_args": True})
@@ -61,10 +60,10 @@ def timer(
     parsed_content = None
 
     if args:
-        from ..tui.parsers import parse_timer, parse_quick_add
+        from ..tui.parsers import parse_quick_add, parse_timer
         arg_str = " ".join(args)
         parsed = parse_timer(arg_str)
-        
+
         if parsed:
             minutes = parsed.minutes
             parsed_tags = parsed.tags
@@ -77,7 +76,7 @@ def timer(
             parsed_tags = quick_parsed.tags
             parsed_project = quick_parsed.project
             parsed_content = quick_parsed.content
-            
+
             # Check if any part of the content can be parsed as minutes
             try:
                 for word in arg_str.split():
@@ -89,13 +88,13 @@ def timer(
 
     # Merge default config tags/projects with provided ones
     all_tags = list(ctx.config.defaults.tags) + list(parsed_tags) + list(tags)
-    
+
     # Use explicitly provided project, then parsed project, then default
     if project is None:
         project = parsed_project or ctx.config.defaults.project
 
     seconds = minutes * 60
-    
+
     ctx.console.print(f"[bold green]Starting {minutes}-minute focus timer...[/bold green]")
     if project:
         ctx.console.print(f"Project: [purple]&{project}[/purple]")
@@ -103,7 +102,7 @@ def timer(
         ctx.console.print(f"Tags: [yellow]#{' #'.join(all_tags)}[/yellow]")
     if parsed_content:
         ctx.console.print(f"Focus: [white]{parsed_content}[/white]")
-    
+
     try:
         # Initialize and run terminal progress bar
         with Progress(
@@ -114,11 +113,11 @@ def timer(
             console=ctx.console,
         ) as progress:
             task = progress.add_task("Focus Session", total=seconds)
-            
+
             while not progress.finished:
                 progress.update(task, advance=1)
                 time.sleep(1)
-        
+
         # Prompt user for what they accomplished
         ctx.console.print("\n[bold green]✅ Session complete![/bold green]")
         accomplishment = click.prompt(
@@ -134,7 +133,7 @@ def timer(
             log_content = f"⏱️ Finished {minutes}-minute focus session"
             if parsed_content:
                 log_content += f": {parsed_content}"
-            
+
         ctx.db.add_entry(
             content=log_content,
             tags=all_tags,
@@ -142,6 +141,6 @@ def timer(
             created_at=datetime.now()
         )
         ctx.console.print("[green]✅ Session logged to journal![/green]")
-        
+
     except KeyboardInterrupt:
         ctx.console.print("\n[yellow]Timer cancelled. Session not logged.[/yellow]")

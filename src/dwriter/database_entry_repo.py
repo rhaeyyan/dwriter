@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import delete, func, select
 
@@ -24,12 +24,12 @@ class EntryRepository:
     def add_entry(
         self,
         content: str,
-        tags: Optional[list[str]] = None,
-        project: Optional[str] = None,
-        created_at: Optional[datetime] = None,
-        todo_id: Optional[int] = None,
-        life_domain: Optional[str] = None,
-        energy_level: Optional[int] = None,
+        tags: list[str] | None = None,
+        project: str | None = None,
+        created_at: datetime | None = None,
+        todo_id: int | None = None,
+        life_domain: str | None = None,
+        energy_level: int | None = None,
     ) -> Entry:
         """Add a new journal entry."""
         return self._queued_write(  # type: ignore[attr-defined]
@@ -46,12 +46,12 @@ class EntryRepository:
     def _add_entry_sync(
         self,
         content: str,
-        tags: Optional[list[str]] = None,
-        project: Optional[str] = None,
-        created_at: Optional[datetime] = None,
-        todo_id: Optional[int] = None,
-        life_domain: Optional[str] = None,
-        energy_level: Optional[int] = None,
+        tags: list[str] | None = None,
+        project: str | None = None,
+        created_at: datetime | None = None,
+        todo_id: int | None = None,
+        life_domain: str | None = None,
+        energy_level: int | None = None,
     ) -> Entry:
         next_clock = self._get_next_lamport()  # type: ignore[attr-defined]
         with self.Session() as session:  # type: ignore[attr-defined]
@@ -97,8 +97,8 @@ class EntryRepository:
         self,
         start_date: datetime,
         end_date: datetime,
-        exclude_projects: Optional[list[str]] = None,
-        exclude_tags: Optional[list[str]] = None,
+        exclude_projects: list[str] | None = None,
+        exclude_tags: list[str] | None = None,
     ) -> list[Entry]:
         """Retrieve entries within a date range with optional exclusion filters."""
         with self.Session() as session:  # type: ignore[attr-defined]
@@ -130,7 +130,7 @@ class EntryRepository:
             stmt = stmt.order_by(Entry.created_at)
             return list(session.scalars(stmt).all())
 
-    def get_latest_entry(self) -> Optional[Entry]:
+    def get_latest_entry(self) -> Entry | None:
         """Retrieve the most recent entry."""
         with self.Session() as session:  # type: ignore[attr-defined]
             return session.scalars(
@@ -140,10 +140,10 @@ class EntryRepository:
     def update_entry(
         self,
         entry_id: int,
-        content: Optional[str] = None,
-        tags: Optional[list[str]] = None,
-        project: Optional[str] = None,
-        created_at: Optional[datetime] = None,
+        content: str | None = None,
+        tags: list[str] | None = None,
+        project: str | None = None,
+        created_at: datetime | None = None,
     ) -> Entry:
         """Update an existing entry."""
         return self._queued_write(  # type: ignore[attr-defined]
@@ -158,10 +158,10 @@ class EntryRepository:
     def _update_entry_sync(
         self,
         entry_id: int,
-        content: Optional[str] = None,
-        tags: Optional[list[str]] = None,
-        project: Optional[str] = None,
-        created_at: Optional[datetime] = None,
+        content: str | None = None,
+        tags: list[str] | None = None,
+        project: str | None = None,
+        created_at: datetime | None = None,
     ) -> Entry:
         next_clock = self._get_next_lamport()  # type: ignore[attr-defined]
         with self.Session() as session:  # type: ignore[attr-defined]
@@ -225,8 +225,8 @@ class EntryRepository:
         self,
         limit: int = 50,
         offset: int = 0,
-        project: Optional[str] = None,
-        tags: Optional[list[str]] = None,
+        project: str | None = None,
+        tags: list[str] | None = None,
     ) -> list[Entry]:
         """Retrieve a page of entries, optionally filtered."""
         with self.Session() as session:  # type: ignore[attr-defined]
@@ -273,7 +273,7 @@ class EntryRepository:
             results = session.execute(stmt).all()
             return {str(date): count for date, count in results if date}
 
-    def get_date_range(self) -> tuple[Optional[datetime], Optional[datetime]]:
+    def get_date_range(self) -> tuple[datetime | None, datetime | None]:
         """Get the date range of all entries."""
         with self.Session() as session:  # type: ignore[attr-defined]
             stmt = select(func.min(Entry.created_at), func.max(Entry.created_at))
@@ -284,8 +284,8 @@ class EntryRepository:
 
     def get_all_entries(
         self,
-        project: Optional[str] = None,
-        tags: Optional[list[str]] = None,
+        project: str | None = None,
+        tags: list[str] | None = None,
     ) -> list[Entry]:
         """Retrieve all entries, optionally filtered."""
         with self.Session() as session:  # type: ignore[attr-defined]

@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime, timedelta
-from typing import Optional
 
-from sqlalchemy import case, func, select
+from sqlalchemy import case, select
 
 from .database_models import Tag, Todo
 
@@ -22,9 +21,9 @@ class TodoRepository:
         self,
         content: str,
         priority: str = "normal",
-        project: Optional[str] = None,
-        tags: Optional[list[str]] = None,
-        due_date: Optional[datetime] = None,
+        project: str | None = None,
+        tags: list[str] | None = None,
+        due_date: datetime | None = None,
     ) -> Todo:
         """Add a new task."""
         return self._queued_write(  # type: ignore[attr-defined]
@@ -40,9 +39,9 @@ class TodoRepository:
         self,
         content: str,
         priority: str = "normal",
-        project: Optional[str] = None,
-        tags: Optional[list[str]] = None,
-        due_date: Optional[datetime] = None,
+        project: str | None = None,
+        tags: list[str] | None = None,
+        due_date: datetime | None = None,
     ) -> Todo:
         next_clock = self._get_next_lamport()  # type: ignore[attr-defined]
         with self.Session() as session:  # type: ignore[attr-defined]
@@ -71,7 +70,7 @@ class TodoRepository:
                 raise ValueError(f"Todo with id {todo_id} not found")
             return todo
 
-    def get_todos(self, status: Optional[str] = "pending") -> list[Todo]:
+    def get_todos(self, status: str | None = "pending") -> list[Todo]:
         """Retrieve tasks, ordered by priority and urgency."""
         with self.Session() as session:  # type: ignore[attr-defined]
             stmt = select(Todo)
@@ -101,14 +100,14 @@ class TodoRepository:
     def update_todo(
         self,
         todo_id: int,
-        content: Optional[str] = None,
-        status: Optional[str] = None,
-        priority: Optional[str] = None,
-        project: Optional[str] = None,
-        tags: Optional[list[str]] = None,
-        completed_at: Optional[datetime] = None,
-        due_date: Optional[datetime] = None,
-        reminder_last_sent: Optional[datetime] = None,
+        content: str | None = None,
+        status: str | None = None,
+        priority: str | None = None,
+        project: str | None = None,
+        tags: list[str] | None = None,
+        completed_at: datetime | None = None,
+        due_date: datetime | None = None,
+        reminder_last_sent: datetime | None = None,
     ) -> Todo:
         """Update an existing task."""
         return self._queued_write(  # type: ignore[attr-defined]
@@ -127,14 +126,14 @@ class TodoRepository:
     def _update_todo_sync(
         self,
         todo_id: int,
-        content: Optional[str] = None,
-        status: Optional[str] = None,
-        priority: Optional[str] = None,
-        project: Optional[str] = None,
-        tags: Optional[list[str]] = None,
-        completed_at: Optional[datetime] = None,
-        due_date: Optional[datetime] = None,
-        reminder_last_sent: Optional[datetime] = None,
+        content: str | None = None,
+        status: str | None = None,
+        priority: str | None = None,
+        project: str | None = None,
+        tags: list[str] | None = None,
+        completed_at: datetime | None = None,
+        due_date: datetime | None = None,
+        reminder_last_sent: datetime | None = None,
     ) -> Todo:
         next_clock = self._get_next_lamport()  # type: ignore[attr-defined]
         with self.Session() as session:  # type: ignore[attr-defined]
@@ -194,8 +193,8 @@ class TodoRepository:
 
     def get_all_todos(
         self,
-        project: Optional[str] = None,
-        tags: Optional[list[str]] = None,
+        project: str | None = None,
+        tags: list[str] | None = None,
     ) -> list[Todo]:
         """Retrieve all todos, optionally filtered."""
         with self.Session() as session:  # type: ignore[attr-defined]

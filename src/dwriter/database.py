@@ -6,9 +6,9 @@ import queue
 import threading
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
-from sqlalchemy import select, create_engine, event
+from sqlalchemy import create_engine, event, select
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
 
@@ -34,7 +34,7 @@ class Database(EntryRepository, TodoRepository):
     thread to prevent SQLite locking under concurrent TUI + CLI access.
     """
 
-    def __init__(self, db_path: Optional[Path] = None):
+    def __init__(self, db_path: Path | None = None):
         """Initialize database connection and schema."""
         if db_path is None:
             data_dir = Path.home() / ".dwriter"
