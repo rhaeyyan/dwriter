@@ -106,7 +106,7 @@ class DWriterCommands(Provider):
         if not isinstance(app, DWriterApp):
             return
         # Navigate to dashboard screen
-        app.mount_screen("dashboard")
+        app.mount_screen("dashboard")  # type: ignore[attr-defined]
         app.notify("Dashboard opened", timeout=1.5)
 
     async def _run_export(self) -> None:

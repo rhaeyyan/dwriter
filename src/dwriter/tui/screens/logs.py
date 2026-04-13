@@ -118,7 +118,7 @@ class QuickAddEntryModal(ModalScreen):  # type: ignore[type-arg]
 
     def compose(self) -> ComposeResult:
         """Composes the modal layout."""
-        use_emojis = self.app.ctx.config.display.use_emojis
+        use_emojis = self.app.ctx.config.display.use_emojis  # type: ignore[attr-defined]
         with Container(id="edit-modal-container"):
             with Horizontal(id="save-exit-row"):
                 yield Button(f"{get_icon('save', use_emojis)} Save & Exit", id="save-exit-btn", variant="success")
@@ -133,7 +133,7 @@ class QuickAddEntryModal(ModalScreen):  # type: ignore[type-arg]
             yield Label("Project:", id="edit-project-label")
             yield Input(id="project-input", placeholder="Project name (optional)")
 
-            date_fmt = self.app.ctx.config.display.date_format
+            date_fmt = self.app.ctx.config.display.date_format  # type: ignore[attr-defined]
             fmt_map = {
                 "YYYY-MM-DD": "%Y-%m-%d",
                 "MM/DD/YYYY": "%m/%d/%Y",
@@ -166,7 +166,7 @@ class QuickAddEntryModal(ModalScreen):  # type: ignore[type-arg]
         """
         from ...date_utils import parse_natural_date
         try:
-            date_fmt = self.app.ctx.config.display.date_format
+            date_fmt = self.app.ctx.config.display.date_format  # type: ignore[attr-defined]
             fmt_map = {
                 "YYYY-MM-DD": "%Y-%m-%d",
                 "MM/DD/YYYY": "%m/%d/%Y",
@@ -345,7 +345,7 @@ class EditEntryModal(ModalScreen):  # type: ignore[type-arg]
 
     def compose(self) -> ComposeResult:
         """Composes the modal UI components."""
-        use_emojis = self.app.ctx.config.display.use_emojis
+        use_emojis = self.app.ctx.config.display.use_emojis  # type: ignore[attr-defined]
         with Container(id="edit-modal-container"):
             yield Button(f"{get_icon('save', use_emojis)} Save & Exit", id="save-exit-btn", variant="success")
             yield Label(f"{get_icon('edit', use_emojis)} Edit Entry #{self.entry.id}", id="edit-modal-title")
@@ -372,8 +372,8 @@ class EditEntryModal(ModalScreen):  # type: ignore[type-arg]
                 placeholder="Project name (optional)",
             )
 
-            lock_mode = self.app.ctx.config.display.lock_mode
-            date_fmt = self.app.ctx.config.display.date_format
+            lock_mode = self.app.ctx.config.display.lock_mode  # type: ignore[attr-defined]
+            date_fmt = self.app.ctx.config.display.date_format  # type: ignore[attr-defined]
             fmt_map = {
                 "YYYY-MM-DD": "%Y-%m-%d",
                 "MM/DD/YYYY": "%m/%d/%Y",
@@ -434,7 +434,7 @@ class EditEntryModal(ModalScreen):  # type: ignore[type-arg]
         from ...date_utils import parse_natural_date
 
         try:
-            date_fmt = self.app.ctx.config.display.date_format
+            date_fmt = self.app.ctx.config.display.date_format  # type: ignore[attr-defined]
             fmt_map = {
                 "YYYY-MM-DD": "%Y-%m-%d",
                 "MM/DD/YYYY": "%m/%d/%Y",
@@ -604,7 +604,7 @@ class DeleteConfirmModal(ModalScreen):  # type: ignore[type-arg]
 
     def compose(self) -> ComposeResult:
         """Composes the modal layout."""
-        use_emojis = self.app.ctx.config.display.use_emojis
+        use_emojis = self.app.ctx.config.display.use_emojis  # type: ignore[attr-defined]
         with Container(id="delete-modal-container"):
             yield Label(f"{get_icon('warning', use_emojis)} Delete Entry?", id="delete-modal-title")
             yield Label(
@@ -730,10 +730,10 @@ class LogsResultsView(ListView):
         """
         from ...ui_utils import format_entry_datetime
 
-        date_str, time_str = format_entry_datetime(entry, self.app.ctx.config)
+        date_str, time_str = format_entry_datetime(entry, self.app.ctx.config)  # type: ignore[attr-defined]
         content = entry.content
         
-        use_emojis = self.app.ctx.config.display.use_emojis
+        use_emojis = self.app.ctx.config.display.use_emojis  # type: ignore[attr-defined]
         check_icon = get_icon("check", use_emojis)
         timer_icon = get_icon("timer", use_emojis)
         
@@ -1053,10 +1053,10 @@ class LogsScreen(Container):
         load_more_btn = self.query_one("#btn-load-more")
         load_more_btn.display = self._has_more
         if not self._has_more:
-            load_more_btn.label = "No more entries"
+            load_more_btn.label = "No more entries"  # type: ignore[attr-defined]
             load_more_btn.disabled = True
         else:
-            load_more_btn.label = "Load More"
+            load_more_btn.label = "Load More"  # type: ignore[attr-defined]
             load_more_btn.disabled = False
 
         self._update_status_bar(len(self._all_entries), is_search=False)

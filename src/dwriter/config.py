@@ -132,7 +132,8 @@ class AIFeaturesConfig:
         auto_tagging: Whether to enable background auto-tagging.
         reflection_prompts: Whether to enable AI reflection prompts.
         burnout_detection: Whether to enable weekly burnout detection checks.
-        permission_mode: Security strictness (read-only, append-only, prompt, danger-full-access).
+        permission_mode: Security strictness (read-only, append-only,
+            prompt, danger-full-access).
     """
 
     auto_tagging: bool = False

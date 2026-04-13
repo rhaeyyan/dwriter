@@ -439,7 +439,7 @@ class TodoListView(ListView):
         """
         priority_order = {"urgent": 0, "high": 1, "normal": 2, "low": 3}
         today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-        sorting_mode = self.app.ctx.config.display.todo_sorting_mode
+        sorting_mode = self.app.ctx.config.display.todo_sorting_mode  # type: ignore[attr-defined]
 
         def sort_key(todo: Todo) -> tuple[int, int, int, float]:
             if todo.status == "completed":
@@ -499,6 +499,7 @@ class TodoListView(ListView):
         Returns:
             str: Formatted markup string.
         """
+        from ...date_utils import format_due_date
         from ..colors import PRIORITY_URGENT, REMINDER_COLOR, get_weekday_color
         
         priority_map = {
@@ -512,7 +513,7 @@ class TodoListView(ListView):
         if todo.status == "completed" and todo.completed_at:
             # Use format_entry_datetime helper for consistency, wrapping completed_at in a dummy Entry if needed
             # but simpler to just use the config here since we have it
-            date_fmt_setting = self.app.ctx.config.display.date_format
+            date_fmt_setting = self.app.ctx.config.display.date_format  # type: ignore[attr-defined]
             fmt_map = {
                 "YYYY-MM-DD": "%Y-%m-%d",
                 "MM/DD/YYYY": "%m/%d/%Y",
@@ -521,27 +522,36 @@ class TodoListView(ListView):
             strftime_fmt = fmt_map.get(date_fmt_setting, "%Y-%m-%d")
             d_str = f"[cyan]{todo.completed_at.strftime(strftime_fmt + ' %H:%M')}[/cyan]"
         elif todo.due_date:
-            weekday = todo.due_date.weekday()
-            wd_color = get_weekday_color(weekday)
-            
-            # Format as requested: [Tuesday 2026-04-07]
-            date_fmt_setting = self.app.ctx.config.display.date_format
+            date_fmt_setting = self.app.ctx.config.display.date_format  # type: ignore[attr-defined]
             fmt_map = {
                 "YYYY-MM-DD": "%Y-%m-%d",
                 "MM/DD/YYYY": "%m/%d/%Y",
                 "DD/MM/YYYY": "%d/%m/%Y",
             }
             strftime_fmt = fmt_map.get(date_fmt_setting, "%Y-%m-%d")
-            date_str = todo.due_date.strftime(strftime_fmt)
-            day_name = todo.due_date.strftime('%A')
             
-            d_str = f"[{wd_color}]\\[{day_name} {date_str}][/]"
+            use_24hr = self.app.ctx.config.display.clock_24hr  # type: ignore[attr-defined]
+            
+            formatted_due = format_due_date(
+                todo.due_date, 
+                date_format=strftime_fmt,
+                use_24hr=use_24hr
+            )
+            
+            if formatted_due == "Overdue":
+                d_str = f"[$error]\\[{formatted_due}][/]"
+            elif formatted_due == "Today":
+                d_str = f"[$success]\\[{formatted_due}][/]"
+            else:
+                weekday = todo.due_date.weekday()
+                wd_color = get_weekday_color(weekday)
+                d_str = f"[{wd_color}]\\[{formatted_due}][/]"
             
             # Add [due time, if applicable] - use $success to match logs
             if todo.due_date.hour != 0 or todo.due_date.minute != 0:
-                use_24hr = self.app.ctx.config.display.clock_24hr
                 t_fmt = "%H:%M" if use_24hr else "%I:%M %p"
-                d_str += f" [$success]\\[{todo.due_date.strftime(t_fmt)}][/]"
+                time_color = "$error" if formatted_due == "Overdue" else "$success"
+                d_str += f" [{time_color}]\\[{todo.due_date.strftime(t_fmt)}][/]"
         else:
             d_str = "[dim]\\[---][/]"
 
@@ -572,7 +582,7 @@ class TodoListView(ListView):
         indent = "  "
 
         if todo.status == "completed":
-            use_emojis = self.app.ctx.config.display.use_emojis
+            use_emojis = self.app.ctx.config.display.use_emojis  # type: ignore[attr-defined]
             check_icon = get_icon("check", use_emojis)
             content_text = f"{check_icon} {safe_content}"
             wrapped = _wrap_todo_with_hanging_indent(content_text, indent)

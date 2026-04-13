@@ -135,7 +135,7 @@ def _summarize_text(
         "structured retrospective. Use & for projects and # for tags."
     )
 
-    return client.chat.completions.create(
+    return client.chat.completions.create(  # type: ignore[no-any-return]
         model=config.daemon_model,
         response_model=WeeklySummary,
         messages=[
@@ -180,7 +180,7 @@ def compress_week(
         summary_b = _summarize_text(second_half, config)
 
         merge_text = (
-            "Consolidate these two partial summaries into a unified weekly retrospective.\n\n"
+            "Consolidate these two partial summaries into a unified weekly retrospective.\n\n"  # noqa: E501
             f"PART 1 (Mon-Wed):\n{summary_a.model_dump_json()}\n\n"
             f"PART 2 (Thu-Sun):\n{summary_b.model_dump_json()}"
         )

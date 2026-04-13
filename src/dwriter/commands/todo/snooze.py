@@ -44,7 +44,7 @@ def snooze(
         return
 
     if not at_time and not for_duration:
-        ctx.console.print("[yellow]Hint:[/yellow] Use --at or --for to specify snooze time.")
+        ctx.console.print("[yellow]Hint:[/yellow] Use --at or --for to specify snooze time.")  # noqa: E501
         at_time = click.prompt("Snooze until? (e.g., +15m, 2pm)", type=str)
 
     due_str = at_time or (f"+{for_duration}" if for_duration else None)

@@ -341,7 +341,7 @@ class ConfigureScreen(Container):
             # Apply theme live immediately
             self.app.theme = config.display.theme
 
-            self.app.notify("Configuration saved! Some changes require a restart.", severity="success", timeout=4)
+            self.app.notify("Configuration saved! Some changes require a restart.", severity="information", timeout=4)
         except ValueError as e:
             self.app.notify(f"Invalid input: {e}", severity="error")
         except Exception as e:

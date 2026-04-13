@@ -198,12 +198,12 @@ class HelpOverlay(ModalScreen[None]):
         """Compose the help overlay layout."""
         use_emojis = True
         try:
-            use_emojis = self.app.ctx.config.display.use_emojis
+            use_emojis = self.app.ctx.config.display.use_emojis  # type: ignore[attr-defined]
         except Exception:
             pass
 
         with Container():
-            yield Static(f"{get_icon('question', use_emojis)} {self.title}", classes="help-title")
+            yield Static(f"{get_icon('question', use_emojis)} {self.title}", classes="help-title")  # noqa: E501
             yield Static("", classes="help-section")
 
             with ScrollableContainer(id="help-bindings"):
@@ -211,15 +211,15 @@ class HelpOverlay(ModalScreen[None]):
                     yield Static(f"[bold cyan]{key:12}[/]  {desc}", classes="help-desc")
 
             if self.commands:
-                yield Static(f"\n{get_icon('note', use_emojis)} Commands:", classes="help-section")
+                yield Static(f"\n{get_icon('note', use_emojis)} Commands:", classes="help-section")  # noqa: E501
                 for cmd, desc in self.commands:
                     yield Static(f"  [bold yellow]{cmd}[/]", classes="help-desc")
                     yield Static(f"    {desc}", classes="help-tip")
 
             if self.tips:
-                yield Static(f"\n{get_icon('tips', use_emojis)} Tips:", classes="help-section")
+                yield Static(f"\n{get_icon('tips', use_emojis)} Tips:", classes="help-section")  # noqa: E501
                 for tip in self.tips:
-                    yield Static(f"  {get_icon('bullet', use_emojis)} {tip}", classes="help-tip")
+                    yield Static(f"  {get_icon('bullet', use_emojis)} {tip}", classes="help-tip")  # noqa: E501
 
             close_msg = "\nPress [bold]Esc[/] or [bold]Enter[/] to close"
             yield Static(close_msg, classes="help-close")

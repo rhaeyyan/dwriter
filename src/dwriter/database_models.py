@@ -45,12 +45,12 @@ class Tag(Base):
     __tablename__ = "tags"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    entry_id: Mapped[int | None] = mapped_column(ForeignKey("entries.id", ondelete="CASCADE"))
-    todo_id: Mapped[int | None] = mapped_column(ForeignKey("todos.id", ondelete="CASCADE"))
+    entry_id: Mapped[int | None] = mapped_column(ForeignKey("entries.id", ondelete="CASCADE"))  # noqa: E501
+    todo_id: Mapped[int | None] = mapped_column(ForeignKey("todos.id", ondelete="CASCADE"))  # noqa: E501
     name: Mapped[str] = mapped_column(String, index=True)
 
-    entry: Mapped["Entry | None"] = relationship(back_populates="tags", foreign_keys="[Tag.entry_id]")
-    todo: Mapped["Todo | None"] = relationship(back_populates="tags", foreign_keys="[Tag.todo_id]")
+    entry: Mapped[Entry | None] = relationship(back_populates="tags", foreign_keys="[Tag.entry_id]")  # noqa: E501
+    todo: Mapped[Todo | None] = relationship(back_populates="tags", foreign_keys="[Tag.todo_id]")  # noqa: E501
 
 
 class Entry(Base):
@@ -95,7 +95,7 @@ class Entry(Base):
     energy_level: Mapped[int | None] = mapped_column(Integer)
     embedding: Mapped[bytes | None] = mapped_column(LargeBinary)
 
-    tags: Mapped[list["Tag"]] = relationship(
+    tags: Mapped[list[Tag]] = relationship(
         back_populates="entry",
         lazy="selectin",
         cascade="all, delete-orphan",
@@ -110,7 +110,7 @@ class Entry(Base):
             list[str]: A list of tag names.
         """
         if hasattr(self, "_tag_names_cache"):
-            return self._tag_names_cache
+            return self._tag_names_cache  # type: ignore[no-any-return]
         return [tag.name for tag in self.tags]
 
 
@@ -126,7 +126,8 @@ class Todo(Base):
         priority (str): Urgency level (e.g., 'urgent', 'high', 'normal', 'low').
         status (str): Task completion status (e.g., 'pending', 'completed').
         due_date (datetime | None): Optional deadline for the task.
-        reminder_last_sent (datetime | None): Timestamp of the last reminder notification.
+        reminder_last_sent (datetime | None): Timestamp of the last
+            reminder notification.
         created_at (datetime): Creation timestamp.
         completed_at (datetime | None): Completion timestamp.
         tags (list[Tag]): Collection of tags for this task.
@@ -149,7 +150,7 @@ class Todo(Base):
     )
     completed_at: Mapped[datetime | None] = mapped_column(DateTime)
 
-    tags: Mapped[list["Tag"]] = relationship(
+    tags: Mapped[list[Tag]] = relationship(
         back_populates="todo",
         lazy="selectin",
         cascade="all, delete-orphan",
@@ -164,7 +165,7 @@ class Todo(Base):
             list[str]: A list of tag names.
         """
         if hasattr(self, "_tag_names_cache"):
-            return self._tag_names_cache
+            return self._tag_names_cache  # type: ignore[no-any-return]
         return [tag.name for tag in self.tags]
 
 

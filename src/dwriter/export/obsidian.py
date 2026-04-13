@@ -17,12 +17,12 @@ def strip_rich_markup(text: str) -> str:
     Returns:
         Clean text with Rich tags removed.
     """
-    # Pattern to target Rich syntax: [bold], [#cba6f7], [dim], [/], [bold #cba6f7], [/#23c76b], etc.
-    # It avoids stripping [[wikilinks]] by ensuring we don't match if it's a double bracket.
+    # Pattern to target Rich syntax: [bold], [#cba6f7], [dim], [/], [bold #cba6f7], [/#23c76b], etc.  # noqa: E501
+    # It avoids stripping [[wikilinks]] by ensuring we don't match if it's a double bracket.  # noqa: E501
     # Matches a '[' NOT preceded by '[', followed by optional '/',
     # then optionally either a style word (with optional attributes) or a hex color,
     # followed by ']' NOT followed by ']'.
-    rich_tag_pattern = r"(?<!\[)\[/?(?:[a-zA-Z]+(?: [a-zA-Z0-9#_]*)*|#[a-fA-F0-9]{6})?\](?!\])"
+    rich_tag_pattern = r"(?<!\[)\[/?(?:[a-zA-Z]+(?: [a-zA-Z0-9#_]*)*|#[a-fA-F0-9]{6})?\](?!\])"  # noqa: E501
     return re.sub(rich_tag_pattern, "", text)
 
 
@@ -95,7 +95,7 @@ def render_review_note(
     ]
 
     body = [
-        f"# {num_days}-Day Review · {start_date.strftime('%Y-%m-%d')} – {end_date.strftime('%Y-%m-%d')}",
+        f"# {num_days}-Day Review · {start_date.strftime('%Y-%m-%d')} – {end_date.strftime('%Y-%m-%d')}",  # noqa: E501
         "",
         content,
         "",
@@ -113,7 +113,8 @@ def get_note_path(
 
     Args:
         config: Obsidian configuration.
-        note_type: The type of note (standup, weekly-retro, burnout-check, catch-up, review).
+        note_type: The type of note (standup, weekly-retro,
+            burnout-check, catch-up, review).
         date: The date for the filename.
         title: Optional title for the filename.
 
@@ -151,7 +152,7 @@ def write_note(path: Path, content: str) -> None:
         tmp_path.write_text(content, encoding="utf-8")
         os.replace(tmp_path, path)
     except OSError as e:
-        raise OSError(f"Failed to write Obsidian note to {path}: {e}")
+        raise OSError(f"Failed to write Obsidian note to {path}: {e}") from e
 
 
 def obsidian_is_configured(config: ObsidianConfig) -> bool:

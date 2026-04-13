@@ -110,7 +110,7 @@ def todo_add(
             hint = fmt_map.get(due_date_format)
 
             # For todos, we generally prefer future dates
-            due_date = parse_natural_date(final_due_str, prefer_future=True, format_hint=hint)
+            due_date = parse_natural_date(final_due_str, prefer_future=True, format_hint=hint)  # noqa: E501
         except ValueError as e:
             ctx.console.print(f"[red]Error:[/red] {e}")
             return

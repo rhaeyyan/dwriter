@@ -157,7 +157,7 @@ class BriefingDisplayModal(ModalScreen[None]):
             self.dismiss()
 
 
-class CatchUpModal(ModalScreen[dict | None]):
+class CatchUpModal(ModalScreen[dict[str, Any] | None]):
     """Form modal to gather criteria for a 'Catch Up' briefing."""
 
     DEFAULT_CSS = """
@@ -311,7 +311,7 @@ class CatchUpModal(ModalScreen[dict | None]):
         elif btn_id == "btn-range-toggle":
             self._set_range_mode(not self._use_custom_range)
 
-    def _collect_criteria(self) -> dict | None:
+    def _collect_criteria(self) -> dict[str, Any] | None:
         """Reads and validates form values. Returns criteria dict or None on error."""
         from ...date_utils import parse_natural_date
 
@@ -455,7 +455,7 @@ class FollowUpModal(ModalScreen[None]):
             )
             
             self.app.call_from_thread(thinking.stop)
-            self.app.call_from_thread(log.mount, AIChatMessage(answer))
+            self.app.call_from_thread(log.mount, AIChatMessage(answer))  # type: ignore[arg-type]
         except Exception as e:
             self.app.call_from_thread(thinking.stop)
             self.app.notify(f"Chat error: {e}", severity="error")

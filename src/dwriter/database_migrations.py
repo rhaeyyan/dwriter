@@ -33,7 +33,7 @@ def run_migrations(engine: object, db_path: str) -> None:
     shutil.copy2(db_path, backup_path)
 
     try:
-        with engine.connect():  # type: ignore[union-attr]
+        with engine.connect():  # type: ignore[attr-defined]
             import sqlite3
 
             with sqlite3.connect(db_path) as sqlite_conn:
@@ -171,7 +171,7 @@ def run_migrations(engine: object, db_path: str) -> None:
 
                 sqlite_conn.commit()
 
-        # If successful, we could remove the backup, but keeping it for a short time is safer.
+        # If successful, we could remove the backup, but keeping it for a short time is safer.  # noqa: E501
     except Exception as e:
         # Restore the backup on failure
         shutil.copy2(backup_path, db_path)

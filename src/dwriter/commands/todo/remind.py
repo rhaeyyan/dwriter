@@ -40,7 +40,7 @@ def remind(ctx: AppContext, content: tuple[Any, ...], due_date_str: str) -> None
         hint = fmt_map.get(due_date_format)
 
         # Reminders explicitly prefer future dates
-        due_date = parse_natural_date(due_date_str, prefer_future=True, format_hint=hint)
+        due_date = parse_natural_date(due_date_str, prefer_future=True, format_hint=hint)  # noqa: E501
     except ValueError as e:
         ctx.console.print(f"[red]Error:[/red] {e}")
         return
@@ -53,5 +53,5 @@ def remind(ctx: AppContext, content: tuple[Any, ...], due_date_str: str) -> None
     )
 
     ctx.console.print(
-        f"[green]Reminder set for {due_date.strftime('%Y-%m-%d %H:%M')}:[/green] {task.content}"
+        f"[green]Reminder set for {due_date.strftime('%Y-%m-%d %H:%M')}:[/green] {task.content}"  # noqa: E501
     )

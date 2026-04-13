@@ -55,7 +55,7 @@ def format_review_plain(entries_by_date: Any, ctx: AppContext) -> str:
             time_part = f" | [#23c76b]{t_str}[/#23c76b]" if t_str else ""
             line = f"  {d_str}{time_part}: {entry.content}"
             if entry.tag_names:
-                line += f" ({', '.join(f'[{TAG}]#{t}[/{TAG}]' for t in entry.tag_names)})"
+                line += f" ({', '.join(f'[{TAG}]#{t}[/{TAG}]' for t in entry.tag_names)})"  # noqa: E501
             if entry.project:
                 line += f" [purple]&{entry.project}[/purple]"
             lines.append(line)

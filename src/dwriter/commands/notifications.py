@@ -171,7 +171,7 @@ def install_notifications(ctx: AppContext, interval: int, dry_run: bool) -> None
     # Friendly reminder about the config toggle
     if not ctx.config.display.notifications_enabled:
         console.print(
-            "\n[yellow]Note:[/yellow] Push notifications are currently [bold]disabled[/bold] in config.\n"
+            "\n[yellow]Note:[/yellow] Push notifications are currently [bold]disabled[/bold] in config.\n"  # noqa: E501
             "Enable them with:\n"
             "  [bold]dwriter config set notifications_enabled true[/bold]"
         )
@@ -225,7 +225,7 @@ def uninstall_notifications(ctx: AppContext) -> None:
     console.print("[green]✔[/green] Notifications daemon removed.")
 
 
-def _show_non_linux_instructions(console: click.utils._DefaultTextStderr | object) -> None:  # type: ignore[name-defined]
+def _show_non_linux_instructions(console: click.utils._DefaultTextStderr | object) -> None:  # type: ignore[name-defined]  # noqa: E501
     """Print setup instructions for non-Linux platforms."""
     import click as _click  # local to avoid circular issues
 
@@ -245,11 +245,11 @@ def _show_non_linux_instructions(console: click.utils._DefaultTextStderr | objec
             "<string>--check-only</string></array>\n"
             "     <key>StartInterval</key><integer>300</integer>\n"
             "   </dict></plist>\n\n"
-            "3. Load it:  launchctl load ~/Library/LaunchAgents/com.dwriter.remind.plist\n"
+            "3. Load it:  launchctl load ~/Library/LaunchAgents/com.dwriter.remind.plist\n"  # noqa: E501
         )
     elif sys.platform == "win32":  # Windows
         _click.echo(
-            "Windows: Use Task Scheduler to run 'dwriter --check-only' every 5 minutes.\n\n"
+            "Windows: Use Task Scheduler to run 'dwriter --check-only' every 5 minutes.\n\n"  # noqa: E501
             "  schtasks /Create /SC MINUTE /MO 5 /TN \"dwriterRemind\" "
             "/TR \"dwriter --check-only\"\n"
         )

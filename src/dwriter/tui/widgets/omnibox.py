@@ -12,6 +12,7 @@ from typing import Any
 from rich.segment import Segment
 from rich.style import Style
 from textual.reactive import reactive
+from textual.strip import Strip
 from textual.widgets import Input
 
 
@@ -52,7 +53,7 @@ class Omnibox(Input):
         else:
             self.pending_tokens = []
 
-    def _on_key(self, event: Any) -> None:
+    async def _on_key(self, event: Any) -> None:
         """Handle key events for Tab-acceptance and ghost text clearing."""
         if event.key == "tab" and self.pending_tokens:
             # Accept the first pending token
@@ -77,14 +78,17 @@ class Omnibox(Input):
                 self.ghost_text = ""
                 self.pending_tokens = []
 
-    def render_line(self, y: int) -> list[Segment]:
+    def render_line(self, y: int) -> Strip:
         """Override to render dim ghost text at the end of the input buffer."""
-        segments = super().render_line(y)
+        strip = super().render_line(y)
 
         # Only render ghost text on the line where the cursor/text is (y=0 for Input)
         if y == 0 and self.ghost_text and self.value:
             # Add a space before ghost text if the value doesn't end with one
             prefix = " " if not self.value.endswith(" ") else ""
-            segments.append(Segment(f"{prefix}{self.ghost_text}", Style(color="#626262", italic=True)))
+            ghost = Segment(
+                f"{prefix}{self.ghost_text}", Style(color="#626262", italic=True)
+            )
+            strip = Strip(list(strip) + [ghost])
 
-        return segments
+        return strip

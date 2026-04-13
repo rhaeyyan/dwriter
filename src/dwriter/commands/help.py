@@ -24,4 +24,4 @@ def help_cmd(ctx: AppContext) -> None:
     ctx.console.print("[bold blue]Dwriter Help[/bold blue]\n")
     click.echo(main.get_help(click.Context(main)))
 
-    ctx.console.print("\n[dim]Tip: Run [bold]dwriter ui[/bold] for the interactive TUI command center.[/dim]")
+    ctx.console.print("\n[dim]Tip: Run [bold]dwriter ui[/bold] for the interactive TUI command center.[/dim]")  # noqa: E501

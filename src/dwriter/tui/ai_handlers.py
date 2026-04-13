@@ -14,9 +14,9 @@ if TYPE_CHECKING:
 class AIHandlersMixin:
     """Mixin providing AI recommendation handling methods for DWriterApp."""
 
-    def on_semantic_recommendation_ready(self, message: SemanticRecommendationReady) -> None:
+    def on_semantic_recommendation_ready(self, message: SemanticRecommendationReady) -> None:  # noqa: E501
         """Handle proactive AI recommendations."""
-        self.pending_recommendation = message  # type: ignore[attr-defined]
+        self.pending_recommendation = message
 
         parts = []
         if message.project:
@@ -34,7 +34,7 @@ class AIHandlersMixin:
             pass
 
         self.notify(  # type: ignore[attr-defined]
-            f"AI Suggests: {suggested}. Press [Tab] to accept tokens or [Ctrl+A] for all.",
+            f"AI Suggests: {suggested}. Press [Tab] to accept tokens or [Ctrl+A] for all.",  # noqa: E501
             title="✨ Smart Suggestion",
             severity="information",
             timeout=10
@@ -42,12 +42,12 @@ class AIHandlersMixin:
 
     def action_apply_recommendation(self) -> None:
         """Apply the pending AI recommendation."""
-        if not self.pending_recommendation:  # type: ignore[attr-defined]
+        if not self.pending_recommendation:
             self.notify("No pending recommendations.")  # type: ignore[attr-defined]
             return
 
-        message = self.pending_recommendation  # type: ignore[attr-defined]
-        self.pending_recommendation = None  # type: ignore[attr-defined]
+        message = self.pending_recommendation
+        self.pending_recommendation = None  # type: ignore[assignment]
 
         # Clear ghost text
         try:

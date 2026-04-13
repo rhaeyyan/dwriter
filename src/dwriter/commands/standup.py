@@ -87,7 +87,7 @@ def standup(
 
     # Fetch data via service
     yesterday = datetime.now() - timedelta(days=1)
-    entries, pending_todos = fetch_standup_data(ctx.db, yesterday, with_todos=with_todos)
+    entries, pending_todos = fetch_standup_data(ctx.db, yesterday, with_todos=with_todos)  # noqa: E501
 
     # Handle empty state
     if not entries and not pending_todos and not weekly:
@@ -118,7 +118,7 @@ def standup(
         obs_cfg = ctx.config.obsidian
         if not obsidian_is_configured(obs_cfg):
             ctx.console.print(
-                "[yellow]![/yellow] Obsidian vault not configured. Set [bold]obsidian.vault_path[/bold] in config."
+                "[yellow]![/yellow] Obsidian vault not configured. Set [bold]obsidian.vault_path[/bold] in config."  # noqa: E501
             )
         else:
             # Strip Rich markup before rendering the note

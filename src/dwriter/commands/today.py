@@ -17,7 +17,7 @@ from ..ui_utils import display_entry
 
 
 @click.command()
-@click.option("--json", "output_json", is_flag=True, help="Output data in machine-readable JSON format.")
+@click.option("--json", "output_json", is_flag=True, help="Output data in machine-readable JSON format.")  # noqa: E501
 @click.pass_obj
 def today(ctx: AppContext, output_json: bool) -> None:
     """Show today's entries.

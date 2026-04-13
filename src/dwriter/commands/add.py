@@ -18,7 +18,7 @@ from ..git_utils import get_git_info
 from ..ui_utils import display_entry
 
 
-@click.command(context_settings={"help_option_names": ["-h", "--help"], "allow_interspersed_args": True})
+@click.command(context_settings={"help_option_names": ["-h", "--help"], "allow_interspersed_args": True})  # noqa: E501
 @click.argument("content", nargs=-1, required=False)
 @click.option(
     "-t",
@@ -113,7 +113,7 @@ def add(
             input_blocks = [f"{stdin_data} {cli_content}".strip()]
     else:
         if not cli_content:
-            raise click.UsageError("No content provided. Use 'dwriter add \"content\"' or --stdin.")
+            raise click.UsageError("No content provided. Use 'dwriter add \"content\"' or --stdin.")  # noqa: E501
         input_blocks = [cli_content]
 
     # Process each block
@@ -160,9 +160,9 @@ def _process_entry(
 
     # VALIDATION: Prevent saving empty entries
     if not final_content.strip():
-        # If we have tags/projects but no content, it's a "metadata-only" entry which we disallow
+        # If we have tags/projects but no content, it's a "metadata-only" entry which we disallow  # noqa: E501
         # to prevent accidental pollution from failed pipes or typos.
-        ctx.console.print("[yellow]Empty entry content detected. Entry not saved.[/yellow]")
+        ctx.console.print("[yellow]Empty entry content detected. Entry not saved.[/yellow]")  # noqa: E501
         return
 
     # Parse the date

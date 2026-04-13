@@ -5,10 +5,10 @@ This module provides the main entry point for the dwriter CLI application.
 
 from __future__ import annotations
 
+from typing import Any
+
 import click
 from rich.console import Console
-
-from typing import Any
 
 from . import __version__
 from .config import ConfigManager
@@ -113,7 +113,7 @@ class AppContext:
         if reminders:
             from .tui.colors import REMINDER_COLOR
             if not silent:
-                self.console.print(f"\n[{REMINDER_COLOR}]🔔 ACTIVE REMINDERS:[/{REMINDER_COLOR}]")
+                self.console.print(f"\n[{REMINDER_COLOR}]🔔 ACTIVE REMINDERS:[/{REMINDER_COLOR}]")  # noqa: E501
             self._reminders_shown = True
             for r in reminders:
                 if r.due_date:
@@ -125,7 +125,7 @@ class AppContext:
                     due_str = "No due date"
 
                 self.console.print(
-                    f"  [{REMINDER_COLOR}]![/{REMINDER_COLOR}] [{r.id}] {r.content} (Due: {due_str})"
+                    f"  [{REMINDER_COLOR}]![/{REMINDER_COLOR}] [{r.id}] {r.content} (Due: {due_str})"  # noqa: E501
                 )
 
                 # Update the database so we don't spam them repeatedly
@@ -139,7 +139,7 @@ class AppContext:
                 for r in reminders:
                     send_system_notification("dwriter Reminder", r.content)
         elif not silent and force:
-            self.console.print("[green]No active reminders. You're all caught up![/green]")
+            self.console.print("[green]No active reminders. You're all caught up![/green]")  # noqa: E501
 
 
 @click.group(invoke_without_command=True)
@@ -212,8 +212,8 @@ def _launch_tui(ctx_obj: AppContext, starting_tab: str | None = None) -> None:
 
 
 @click.command()
-@click.option("--dashboard", "tab", flag_value="dashboard", help="Start on dashboard screen")
-@click.option("--2brain", "tab", flag_value="second-brain", help="Start on 2nd-Brain screen")
+@click.option("--dashboard", "tab", flag_value="dashboard", help="Start on dashboard screen")  # noqa: E501
+@click.option("--2brain", "tab", flag_value="second-brain", help="Start on 2nd-Brain screen")  # noqa: E501
 @click.option("--logs", "tab", flag_value="logs", help="Start on logs tab")
 @click.option("--todo", "tab", flag_value="todo", help="Start on todo tab")
 @click.option("--timer", "tab", flag_value="timer", help="Start on timer tab")

@@ -63,7 +63,8 @@ class PermissionEnforcer:
             tool_name (str): The name of the tool attempting to execute.
 
         Returns:
-            EnforcementResult: A dataclass containing the allow/deny status and rationale.
+            EnforcementResult: A dataclass containing the allow/deny
+                status and rationale.
         """
         if self.active_mode == PermissionMode.DANGER_FULL_ACCESS:
             return EnforcementResult(True, "Full access granted by user.")
@@ -89,7 +90,7 @@ class PermissionEnforcer:
                 False, f"Tool '{tool_name}' requires explicit user confirmation."
             )
 
-        return EnforcementResult(False, f"Unknown tool or permission state: {tool_name}")
+        return EnforcementResult(False, f"Unknown tool or permission state: {tool_name}")  # noqa: E501
 
 
 def permission_mode_from_str(mode_str: str) -> PermissionMode:

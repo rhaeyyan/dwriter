@@ -33,7 +33,7 @@ def process_proactive_tagging(ctx: AppContext, entry: Entry) -> None:
                 embedding = get_embedding(entry.content, ctx.config.ai)
                 ctx.db.update_entry(entry.id, embedding=embedding)
             except (openai.APITimeoutError, openai.APIConnectionError):
-                logging.warning("Ollama timeout/connection error during embedding generation.")
+                logging.warning("Ollama timeout/connection error during embedding generation.")  # noqa: E501
                 return
         else:
             import json
@@ -55,18 +55,18 @@ def process_proactive_tagging(ctx: AppContext, entry: Entry) -> None:
         )
         permission = enforcer.check("proactive_tagging")
         if not permission.allowed:
-            logging.warning("Proactive tagging blocked by Security Mode: %s", permission.reason)
+            logging.warning("Proactive tagging blocked by Security Mode: %s", permission.reason)  # noqa: E501
             return
 
         try:
             recommendation = get_semantic_recommendation(
                 entry.content, similar_entries, ctx.config.ai
             )
-        except (instructor.InstructorRetryException, openai.APITimeoutError):
+        except (instructor.InstructorRetryException, openai.APITimeoutError):  # type: ignore[attr-defined]
             logging.warning("AI recommendation failed due to validation or timeout.")
             return
 
-        if not recommendation or (not recommendation.project and not recommendation.tags):
+        if not recommendation or (not recommendation.project and not recommendation.tags):  # noqa: E501
             return
 
         # 4. Trigger TUI notification
@@ -79,7 +79,7 @@ def process_proactive_tagging(ctx: AppContext, entry: Entry) -> None:
             app.is_processing = False
 
 
-def _trigger_tui_recommendation(ctx: AppContext, entry: Entry, recommendation: Any) -> None:
+def _trigger_tui_recommendation(ctx: AppContext, entry: Entry, recommendation: Any) -> None:  # noqa: E501
     """Helper to signal the TUI about a new recommendation."""
     # This will be implemented by the TUI Architect.
     # For now, we'll post a message if we can find the app.

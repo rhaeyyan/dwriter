@@ -94,7 +94,7 @@ class EntryResultsView(ListView):
         """
         from ...ui_utils import format_entry_datetime
 
-        date_str, time_str = format_entry_datetime(entry, self.app.ctx.config)
+        date_str, time_str = format_entry_datetime(entry, self.app.ctx.config)  # type: ignore[attr-defined]
         score_color = self._get_score_color(score)
         tags_str = ""
         if entry.tag_names:
@@ -142,7 +142,7 @@ class EntryResultsView(ListView):
 
         # Apply the exact same timestamp logic here
         if todo.status == "completed" and todo.completed_at:
-            date_fmt_setting = self.app.ctx.config.display.date_format
+            date_fmt_setting = self.app.ctx.config.display.date_format  # type: ignore[attr-defined]
             fmt_map = {
                 "YYYY-MM-DD": "%Y-%m-%d",
                 "MM/DD/YYYY": "%m/%d/%Y",
@@ -187,7 +187,7 @@ class EntryResultsView(ListView):
 
         # Content on second line with indentation - add check emoji for completed todos
         if todo.status == "completed":
-            use_emojis = self.app.ctx.config.display.use_emojis
+            use_emojis = self.app.ctx.config.display.use_emojis  # type: ignore[attr-defined]
             check_icon = get_icon("check", use_emojis)
             return f"[dim]{first_line}\n    {check_icon} {safe_content}[/dim]"
 

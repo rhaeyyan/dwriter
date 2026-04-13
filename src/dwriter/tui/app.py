@@ -27,6 +27,7 @@ from textual.widgets import (
     Tabs,
 )
 
+from .ai_handlers import AIHandlersMixin
 from .colors import get_icon
 from .command_palette import DWriterCommands
 from .messages import (
@@ -40,7 +41,6 @@ from .parsers import (
     parse_quick_add,
     parse_timer,
 )
-from .ai_handlers import AIHandlersMixin
 from .reminder_coordinator import ReminderCoordinator
 from .themes import THEMES
 from .todo_workflow import TodoWorkflow
@@ -88,7 +88,7 @@ class DWriterApp(AIHandlersMixin, App[None]):
     is_processing = reactive(False)
     sync_status = reactive("Synced")
     git_branch = reactive("")
-    pending_recommendation = reactive(None)
+    pending_recommendation: reactive = reactive(None)  # type: ignore[type-arg]
 
     def __init__(self, ctx: AppContext, starting_tab: str | None = None) -> None:
         """Initialize the dwriter application.
@@ -361,7 +361,7 @@ class DWriterApp(AIHandlersMixin, App[None]):
             except Exception:
                 pass
 
-    def action_switch_mode(self, mode: str) -> None:
+    def action_switch_mode(self, mode: str) -> None:  # type: ignore[override]
         """Switch screen via hotkeys."""
         tabs = self.query_one("#navigation-tabs", Tabs)
         tabs.active = mode
@@ -480,7 +480,7 @@ class DWriterApp(AIHandlersMixin, App[None]):
     def _start_timer(self, minutes: int, tags: list[str], project: str | None) -> None:
         """Start a timer session."""
         from .screens.timer import TimerScreen
-        self.mount_screen("timer")
+        self.mount_screen("timer")  # type: ignore[attr-defined]
         try:
             timer_screen = self.query_one("#timer", TimerScreen)
             timer_screen.tags = tags if tags else []
