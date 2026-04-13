@@ -1,5 +1,5 @@
 # dwriter: AI Edition 📝
-Experimental: v4.8.2
+Experimental: v4.8.4
 ### *The minimalist journal for those who live in the terminal powered by a Dual-Model AI Pipeline (Gemma 4).*
 
 **dwriter** is a high-signal, low-friction journaling tool designed to capture your work without breaking your flow. It bridges the gap between the raw speed of a command-line interface and the visual clarity of a modern dashboard.
