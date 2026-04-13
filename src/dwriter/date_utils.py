@@ -41,8 +41,8 @@ def parse_natural_date(
     now = datetime.now()
     today_midnight = now.replace(hour=0, minute=0, second=0, microsecond=0)
 
-    # Handle relative offsets first: +Nh, +Nm (e.g., +2h, +30m)
-    rel_time_match = re.match(r"^\+(?P<value>\d+)(?P<unit>[hm])$", date_str)
+    # Handle relative offsets first: +Nh, +Nm (e.g., +2h, +30min)
+    rel_time_match = re.match(r"^\+(?P<value>\d+)(?P<unit>h|min|mins|minute|minutes)$", date_str)
     if rel_time_match:
         value = int(rel_time_match.group("value"))
         unit = rel_time_match.group("unit")
