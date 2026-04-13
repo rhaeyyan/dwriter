@@ -1,5 +1,22 @@
 # dwriter Update Notes
 
+## Version 4.8.4 - April 12, 2026
+
+### 🚀 Key Features
+
+#### 1. Overdue Task Awareness
+- **"Overdue" status**: Tasks past their due date (or past their due time, if specified) now display as **Overdue** in the TUI board.
+- **"Today" status**: Tasks due today that are not yet past their due time are labeled as **Today**.
+- **Visual indicators**: Overdue labels and times use the `$error` (red) semantic color, while Today labels use `$success` (green) for high-signal visibility.
+
+### 🛠 Internal Architecture & Quality
+- **Major Pre-flight Cleanup**: Resolved over 120 Ruff line-length (`E501`) violations and 80+ Mypy type-checking errors across the entire codebase.
+- **Date Utility**: Added `format_due_date` to `date_utils.py` to centralize overdue logic across the TUI and CLI.
+- **Unit Testing**: Added 7 new test cases in `tests/test_date_utils.py` to verify overdue, today, and future date formatting across various time scenarios.
+- **Dead Code Removal**: Deleted the 635-line `src/dwriter/analytics.py` file, which was superseded by the `analytics/` package.
+
+---
+
 ## Version 4.8.2 - April 12, 2026
 
 ### 🛠 Internal Architecture
