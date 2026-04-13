@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from dwriter.date_utils import parse_date_or_default, parse_natural_date
+from dwriter.date_utils import format_due_date, parse_date_or_default, parse_natural_date
 
 
 class TestParseNaturalDate:
@@ -376,3 +376,51 @@ class TestFutureDates:
             hour=12, minute=0, second=0, microsecond=0
         )
         assert result == expected
+
+
+class TestFormatDueDate:
+    """Tests for format_due_date function."""
+
+    def test_overdue_yesterday(self):
+        """Test that yesterday's date is marked as Overdue."""
+        yesterday = datetime.now() - timedelta(days=1)
+        assert format_due_date(yesterday) == "Overdue"
+
+    def test_overdue_past_time_today(self):
+        """Test that a past time today is marked as Overdue."""
+        past_time = datetime.now() - timedelta(hours=1)
+        # Only test if it's still the same day
+        if past_time.day == datetime.now().day:
+            assert format_due_date(past_time) == "Overdue"
+
+    def test_today_future_time(self):
+        """Test that a future time today is marked as Today."""
+        future_time = datetime.now() + timedelta(hours=1)
+        # Only test if it's still the same day
+        if future_time.day == datetime.now().day:
+            assert format_due_date(future_time) == "Today"
+
+    def test_today_no_time(self):
+        """Test that today at midnight is marked as Today (not overdue)."""
+        today_midnight = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        assert format_due_date(today_midnight) == "Today"
+
+    def test_future_date(self):
+        """Test formatting a future date."""
+        future_date = datetime.now() + timedelta(days=2)
+        day_name = future_date.strftime("%A")
+        date_str = future_date.strftime("%Y-%m-%d")
+        assert format_due_date(future_date) == f"{day_name} {date_str}"
+
+    def test_completed_is_never_overdue(self):
+        """Test that completed tasks never show as Overdue."""
+        yesterday = datetime.now() - timedelta(days=1)
+        date_str = yesterday.strftime("%Y-%m-%d")
+        assert format_due_date(yesterday, is_completed=True) == date_str
+
+    def test_custom_format(self):
+        """Test custom date format."""
+        future_date = datetime.now() + timedelta(days=2)
+        day_name = future_date.strftime("%A")
+        date_str = future_date.strftime("%d/%m/%Y")
+        assert format_due_date(future_date, date_format="%d/%m/%Y") == f"{day_name} {date_str}"

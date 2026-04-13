@@ -47,7 +47,7 @@ def sync(ctx: AppContext, push: bool, pull: bool, remote: str | None) -> None:
         # 1. Fetch
         subprocess.run(["git", "fetch", "origin"], cwd=sync_dir, capture_output=True)
         # 2. Merge (Git level)
-        subprocess.run(["git", "merge", "origin/main"], cwd=sync_dir, capture_output=True)
+        subprocess.run(["git", "merge", "origin/main"], cwd=sync_dir, capture_output=True)  # noqa: E501
         # 3. Merge into SQLite
         merge_jsonl_to_db(ctx.db, sync_dir)
         console.print("[green]Remote changes merged into local database.[/green]")
@@ -59,12 +59,12 @@ def sync(ctx: AppContext, push: bool, pull: bool, remote: str | None) -> None:
         # 2. Git Commit
         subprocess.run(["git", "add", "."], cwd=sync_dir, capture_output=True)
         subprocess.run(
-            ["git", "commit", "-m", f"Sync from {os.uname().nodename} at {click.format_filename(str(Path.cwd()))}"],
+            ["git", "commit", "-m", f"Sync from {os.uname().nodename} at {click.format_filename(str(Path.cwd()))}"],  # noqa: E501
             cwd=sync_dir,
             capture_output=True
         )
         # 3. Git Push
-        result = subprocess.run(["git", "push", "origin", "main"], cwd=sync_dir, capture_output=True)
+        result = subprocess.run(["git", "push", "origin", "main"], cwd=sync_dir, capture_output=True)  # noqa: E501
         if result.returncode == 0:
             console.print("[green]Local changes pushed to remote.[/green]")
         else:

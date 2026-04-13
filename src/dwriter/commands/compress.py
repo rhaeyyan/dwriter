@@ -32,7 +32,8 @@ def compress(ctx: AppContext, force: bool) -> None:
 
     Args:
         ctx: The application context.
-        force: If True, regenerates the summary even if one already exists for the period.
+        force: If True, regenerates the summary even if one already exists
+            for the period.
 
     Examples:
         dwriter compress            # Summarize the previous week

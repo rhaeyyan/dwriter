@@ -131,7 +131,7 @@ def parse_natural_date(
             else:
                 raise ValueError(f"Unable to parse date: '{date_str}'")
         elif re.match(r"^[\+\-]\d+[dwmo]$", day_str):
-            val = int(re.search(r"\d+", day_str).group())
+            val = int(re.search(r"\d+", day_str).group())  # type: ignore[union-attr]
             unit = day_str[-1]
             sign = 1 if day_str.startswith("+") else -1
             if unit == "d":
@@ -227,6 +227,47 @@ def parse_natural_date(
             continue
 
     raise ValueError(f"Unable to parse date: '{date_str}'")
+
+
+def format_due_date(
+    due_date: datetime,
+    date_format: str = "%Y-%m-%d",
+    use_24hr: bool = False,
+    is_completed: bool = False,
+) -> str:
+    """Format a due date with 'Overdue' and 'Today' awareness.
+
+    Args:
+        due_date: The datetime to format.
+        date_format: The format string for the date part.
+        use_24hr: Whether to use 24-hour time format.
+        is_completed: If True, the date is never considered overdue.
+
+    Returns:
+        A formatted string (e.g., "Overdue", "Today", or "Tuesday 2026-04-07").
+    """
+    if is_completed:
+        return due_date.strftime(date_format)
+
+    now = datetime.now()
+    today = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    due_date_day = due_date.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    # If it's before today, it's overdue
+    if due_date_day < today:
+        return "Overdue"
+
+    # If it's today, check if it has a time and if that time has passed
+    if due_date_day == today:
+        # If the due_date has a time (not midnight), check if it's passed
+        if (due_date.hour != 0 or due_date.minute != 0) and due_date < now:
+            return "Overdue"
+        return "Today"
+
+    # Otherwise, standard format: Weekday YYYY-MM-DD
+    day_name = due_date.strftime("%A")
+    formatted_date = due_date.strftime(date_format)
+    return f"{day_name} {formatted_date}"
 
 
 def parse_date_or_default(

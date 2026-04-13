@@ -24,9 +24,9 @@ from ..tui.colors import PROJECT, TAG
 
 
 @click.command()
-@click.option("--weekly", is_flag=True, help="Show the 7-day Weekly Pulse wrap-up summary.")
-@click.option("--narrative", is_flag=True, help="Generate an AI-powered 'Spotify Wrapped' style narrative.")
-@click.option("--json", "output_json", is_flag=True, help="Output data in machine-readable JSON format.")
+@click.option("--weekly", is_flag=True, help="Show the 7-day Weekly Pulse wrap-up summary.")  # noqa: E501
+@click.option("--narrative", is_flag=True, help="Generate an AI-powered 'Spotify Wrapped' style narrative.")  # noqa: E501
+@click.option("--json", "output_json", is_flag=True, help="Output data in machine-readable JSON format.")  # noqa: E501
 @click.pass_obj
 def stats(ctx: AppContext, weekly: bool, narrative: bool, output_json: bool) -> None:
     """View a text-based summary of your productivity.
@@ -133,10 +133,10 @@ def stats(ctx: AppContext, weekly: bool, narrative: bool, output_json: bool) -> 
         ctx.console.print(table)
         ctx.console.print()
 
-    ctx.console.print("[dim]Run [bold]dwriter ui[/bold] for the full interactive dashboard.[/dim]")
+    ctx.console.print("[dim]Run [bold]dwriter ui[/bold] for the full interactive dashboard.[/dim]")  # noqa: E501
 
 
-def _display_ai_narrative(ctx: AppContext, engine: AnalyticsEngine, weekly: bool) -> None:
+def _display_ai_narrative(ctx: AppContext, engine: AnalyticsEngine, weekly: bool) -> None:  # noqa: E501
     """Generate and display an AI-powered narrative summary."""
     days = 7 if weekly else 30
     since = datetime.now() - timedelta(days=days)
@@ -167,8 +167,8 @@ def _display_ai_narrative(ctx: AppContext, engine: AnalyticsEngine, weekly: bool
                     {
                         "role": "system",
                         "content": (
-                            "Generate a comprehensive, narrative-style productivity report. "
-                            "Be conversational but concise. Identify the biggest win and the main struggle."
+                            "Generate a comprehensive, narrative-style productivity report. "  # noqa: E501
+                            "Be conversational but concise. Identify the biggest win and the main struggle."  # noqa: E501
                         ),
                     },
                     {"role": "user", "content": data_summary},
@@ -178,7 +178,7 @@ def _display_ai_narrative(ctx: AppContext, engine: AnalyticsEngine, weekly: bool
             ctx.console.print(Panel(
                 f"[bold green]🏆 Biggest Win:[/bold green] {narrative.biggest_win}\n"
                 f"[bold red]🧗 Main Struggle:[/bold red] {narrative.main_struggle}\n"
-                f"[bold blue]🎯 Suggested Focus:[/bold blue] {narrative.suggested_focus}\n\n"
+                f"[bold blue]🎯 Suggested Focus:[/bold blue] {narrative.suggested_focus}\n\n"  # noqa: E501
                 f"[italic]{narrative.summary}[/italic]",
                 title="✨ AI Narrative Wrap-up",
                 border_style="magenta"

@@ -23,9 +23,17 @@ class AnalyticsEngine:
         fourteen_days_ago = now - timedelta(days=14)
 
         with self.db.Session() as session:
-            fresh = session.query(Todo).filter(Todo.status == "pending", Todo.created_at >= three_days_ago).count()
-            stale = session.query(Todo).filter(Todo.status == "pending", Todo.created_at < three_days_ago, Todo.created_at >= fourteen_days_ago).count()
-            dead = session.query(Todo).filter(Todo.status == "pending", Todo.created_at < fourteen_days_ago).count()
+            fresh = session.query(Todo).filter(
+                Todo.status == "pending", Todo.created_at >= three_days_ago
+            ).count()
+            stale = session.query(Todo).filter(
+                Todo.status == "pending",
+                Todo.created_at < three_days_ago,
+                Todo.created_at >= fourteen_days_ago,
+            ).count()
+            dead = session.query(Todo).filter(
+                Todo.status == "pending", Todo.created_at < fourteen_days_ago
+            ).count()
             return fresh, stale, dead
 
     def get_say_do_ratio(self, days: int = 7) -> tuple[int, int]:
@@ -84,7 +92,7 @@ class AnalyticsEngine:
                 func.strftime("%H", Entry.created_at) >= "22"
             ).count()
 
-            return round((after_hours / total) * 100, 1)
+            return round((after_hours / total) * 100, 1)  # type: ignore[no-any-return]
 
     def get_priority_fulfillment(self) -> dict[str, float]:
         """Get average time-to-complete by priority level."""
@@ -321,7 +329,9 @@ class AnalyticsEngine:
 
         with self.db.Session() as session:
             # 1. Check for Deep Diver (Focus Ratio)
-            total_entries = session.query(Entry).filter(Entry.created_at >= cutoff).count()
+            total_entries = (
+                session.query(Entry).filter(Entry.created_at >= cutoff).count()
+            )
             focus_entries = session.query(Entry).filter(
                 Entry.created_at >= cutoff,
                 Entry.content.like("⏱️%")
@@ -331,7 +341,9 @@ class AnalyticsEngine:
                 return "The Deep Diver"
 
             # 2. Check for The Closer (Completions vs Creations)
-            created_todos = session.query(Todo).filter(Todo.created_at >= cutoff).count()
+            created_todos = (
+                session.query(Todo).filter(Todo.created_at >= cutoff).count()
+            )
             completed_todos = session.query(Todo).filter(
                 Todo.status == "completed",
                 Todo.completed_at >= cutoff
@@ -366,12 +378,16 @@ class AnalyticsEngine:
             entry_stats = session.query(
                 func.strftime("%H", Entry.created_at),
                 func.count(Entry.id)
-            ).filter(Entry.created_at >= cutoff).group_by(func.strftime("%H", Entry.created_at)).all()
+            ).filter(Entry.created_at >= cutoff).group_by(
+                func.strftime("%H", Entry.created_at)
+            ).all()
 
             todo_stats = session.query(
                 func.strftime("%H", Todo.created_at),
                 func.count(Todo.id)
-            ).filter(Todo.created_at >= cutoff).group_by(func.strftime("%H", Todo.created_at)).all()
+            ).filter(Todo.created_at >= cutoff).group_by(
+                func.strftime("%H", Todo.created_at)
+            ).all()
 
             hourly_counts: dict[str, int] = {}
             for hour, count in entry_stats + todo_stats:
@@ -476,7 +492,10 @@ class AnalyticsEngine:
                 .order_by(func.date(Entry.created_at))
                 .all()
             )
-            dates = sorted([datetime.strptime(r[0], "%Y-%m-%d").date() for r in dates_raw if r[0]])
+            dates = sorted([
+                datetime.strptime(r[0], "%Y-%m-%d").date()
+                for r in dates_raw if r[0]
+            ])
 
             if dates:
                 cs = 1

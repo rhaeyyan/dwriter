@@ -94,7 +94,7 @@ def format_todos(todos: Any, output_format: str) -> str:
 
         if todo.tag_names:
             if output_format == "bullets":
-                tags_list = ", ".join(f"[{TAG}]#{tag}[/{TAG}]" for tag in todo.tag_names)
+                tags_list = ", ".join(f"[{TAG}]#{tag}[/{TAG}]" for tag in todo.tag_names)  # noqa: E501
             else:
                 tags_list = ", ".join(f"#{tag}" for tag in todo.tag_names)
             line += f" ({tags_list})"

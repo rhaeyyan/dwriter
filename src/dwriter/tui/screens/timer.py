@@ -230,7 +230,7 @@ class TimerProgressBar(Static):
 
         time_str = f"{self.remaining_seconds // 60:02d}:{self.remaining_seconds % 60:02d}"
         color = self._get_gradient_color(progress)
-        use_emojis = self.app.ctx.config.display.use_emojis
+        use_emojis = self.app.ctx.config.display.use_emojis  # type: ignore[attr-defined]
         fill_char, empty_char = ("▮", "▯") if use_emojis else ("#", ".")
         
         self.update(f"[bold #00E5FF]{time_str}[/bold #00E5FF]  [{color}]{fill_char * filled}[/][#313244]{empty_char * empty}[/]  [bold #00E5FF]{percentage}%[/bold #00E5FF]")

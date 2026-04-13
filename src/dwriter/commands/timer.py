@@ -13,7 +13,7 @@ import click
 from rich.progress import BarColumn, Progress, TextColumn, TimeRemainingColumn
 
 
-@click.command(context_settings={"help_option_names": ["-h", "--help"], "allow_interspersed_args": True})
+@click.command(context_settings={"help_option_names": ["-h", "--help"], "allow_interspersed_args": True})  # noqa: E501
 @click.argument("args", nargs=-1)
 @click.option(
     "-t",
@@ -41,8 +41,8 @@ def timer(
     You can provide minutes, tags (#tag), and projects (&project)
     directly as arguments or use explicit options.
 
-    [bold yellow]Note:[/bold yellow] When using shorthand like &project or #tag in your shell,
-    wrap the command in quotes to avoid shell interpretation:
+    [bold yellow]Note:[/bold yellow] When using shorthand like &project or
+    #tag in your shell, wrap the command in quotes to avoid shell interpretation:
       dwriter timer "25 &work #deepwork"
 
     To use the interactive TUI timer with more controls, run:
@@ -70,7 +70,7 @@ def timer(
             parsed_project = parsed.project
             parsed_content = parsed.content
         else:
-            # If minutes aren't found, try parsing as a regular entry to get tags/project
+            # If minutes aren't found, try parsing as a regular entry to get tags/project  # noqa: E501
             # and default to 25 minutes.
             quick_parsed = parse_quick_add(arg_str)
             parsed_tags = quick_parsed.tags
@@ -95,7 +95,7 @@ def timer(
 
     seconds = minutes * 60
 
-    ctx.console.print(f"[bold green]Starting {minutes}-minute focus timer...[/bold green]")
+    ctx.console.print(f"[bold green]Starting {minutes}-minute focus timer...[/bold green]")  # noqa: E501
     if project:
         ctx.console.print(f"Project: [purple]&{project}[/purple]")
     if all_tags:

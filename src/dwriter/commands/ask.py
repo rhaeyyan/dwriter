@@ -61,8 +61,8 @@ def ask(ctx: AppContext, content: tuple[str, ...]) -> None:
 
     with Status("Thinking...", console=ctx.console, spinner="dots") as status:
         # Configure Instructor hooks for dynamic status updates
-        client.on("completion:kwargs", lambda *args, **kwargs: status.update("Analyzing request context..."))
-        client.on("completion:response", lambda *args, **kwargs: status.update("Categorizing intent..."))
+        client.on("completion:kwargs", lambda *args, **kwargs: status.update("Analyzing request context..."))  # noqa: E501
+        client.on("completion:response", lambda *args, **kwargs: status.update("Categorizing intent..."))  # noqa: E501
         client.on("completion:error", lambda *args, **kwargs: status.stop())
 
         try:
@@ -74,7 +74,7 @@ def ask(ctx: AppContext, content: tuple[str, ...]) -> None:
                 messages=[
                     {
                         "role": "system",
-                        "content": get_system_prompt("Categorize the user's request into one of the main functional areas."),
+                        "content": get_system_prompt("Categorize the user's request into one of the main functional areas."),  # noqa: E501
                     },
                     {"role": "user", "content": query_text},
                 ],
@@ -104,7 +104,7 @@ def ask(ctx: AppContext, content: tuple[str, ...]) -> None:
         except (ConnectionError, openai.APIConnectionError):
             status.stop()
             ctx.console.print(
-                "\n[bold red]Connection Error:[/bold red] Unable to connect to AI provider. "
+                "\n[bold red]Connection Error:[/bold red] Unable to connect to AI provider. "  # noqa: E501
                 "If using Ollama, ensure it is running with `ollama serve`."
             )
             return
@@ -152,16 +152,16 @@ def _execute_general_query(ctx: AppContext, client: Any, query: str) -> None:
                 {
                     "role": "system",
                     "content": (
-                        "You are dwriter 2nd-Brain. Use the provided historical context to answer "
-                        "the user's questions about their past habits, trends, and accomplishments. "
-                        "IMPORTANT: You are an analytical assistant. You CANNOT perform actions "
-                        "like adding tasks or logging entries. If asked to do so, explain that "
+                        "You are dwriter 2nd-Brain. Use the provided historical context to answer "  # noqa: E501
+                        "the user's questions about their past habits, trends, and accomplishments. "  # noqa: E501
+                        "IMPORTANT: You are an analytical assistant. You CANNOT perform actions "  # noqa: E501
+                        "like adding tasks or logging entries. If asked to do so, explain that "  # noqa: E501
                         "you are designed for reflection and analysis only."
                     ),
                 },
                 {
                     "role": "user",
-                    "content": f"Context:\n{historical_context}\n{current_tasks}\n\nQuestion: {query}",
+                    "content": f"Context:\n{historical_context}\n{current_tasks}\n\nQuestion: {query}",  # noqa: E501
                 },
             ],
         )
@@ -195,7 +195,7 @@ def _execute_reflection(ctx: AppContext, client: Any) -> None:
                 {
                     "role": "system",
                     "content": get_system_prompt(
-                        "Generate a personalized journaling prompt based on recent activity. "
+                        "Generate a personalized journaling prompt based on recent activity. "  # noqa: E501
                         "Identify recurring themes and ask a targeted question."
                     ),
                 },
@@ -207,7 +207,7 @@ def _execute_reflection(ctx: AppContext, client: Any) -> None:
         return
 
     ctx.console.print("\n[bold blue]Personalized Reflection:[/bold blue]")
-    ctx.console.print(Panel(reflection.prompt_text, title="Reflection Prompt", border_style="blue"))
+    ctx.console.print(Panel(reflection.prompt_text, title="Reflection Prompt", border_style="blue"))  # noqa: E501
     if reflection.recurring_themes:
         themes_str = f"[{TAG}]#{' #'.join(reflection.recurring_themes)}[/{TAG}]"
         ctx.console.print(f"[dim]Detected Themes: {themes_str}[/dim]")
@@ -240,19 +240,19 @@ def _execute_context_restore(ctx: AppContext, client: Any) -> None:
                 {
                     "role": "system",
                     "content": get_system_prompt(
-                        "Provide a 'Welcome Back' summary to restore the user's workflow context. "
+                        "Provide a 'Welcome Back' summary to restore the user's workflow context. "  # noqa: E501
                         "Summarize their last known state and highlight urgent items."
                     ),
                 },
-                {"role": "user", "content": f"Recent activity context:\n{activity_summary}"},
+                {"role": "user", "content": f"Recent activity context:\n{activity_summary}"},  # noqa: E501
             ],
         )
     except Exception as e:
         ctx.console.print(f"[red]Error restoring context:[/red] {e}")
         return
 
-    ctx.console.print("\n[bold green]Welcome Back! Here is where you left off:[/bold green]")
-    ctx.console.print(Panel(restore.summary_of_last_known_state, title="Context Summary", border_style="green"))
+    ctx.console.print("\n[bold green]Welcome Back! Here is where you left off:[/bold green]")  # noqa: E501
+    ctx.console.print(Panel(restore.summary_of_last_known_state, title="Context Summary", border_style="green"))  # noqa: E501
 
     if restore.urgent_pending_items:
         ctx.console.print("\n[bold red]Immediate Priorities:[/bold red]")
@@ -276,7 +276,7 @@ def _execute_analytics(ctx: AppContext, client: Any) -> None:
 
     stats_data = f"Total Entries: {len(recent_entries)}\n"
     stats_data += f"Total Tasks Added: {len(recent_todos)}\n"
-    stats_data += f"Tasks Completed: {len([t for t in recent_todos if t.status == 'completed'])}\n"
+    stats_data += f"Tasks Completed: {len([t for t in recent_todos if t.status == 'completed'])}\n"  # noqa: E501
     stats_data += "Sample Content:\n"
     stats_data += "\n".join([f"- {e.content}" for e in recent_entries[:20]])
 
@@ -287,8 +287,8 @@ def _execute_analytics(ctx: AppContext, client: Any) -> None:
                 {
                     "role": "system",
                     "content": (
-                        "Identify hidden productivity patterns and correlations in the user's data. "
-                        "Look for peak performance times, project intensity, and recurring bottlenecks. "
+                        "Identify hidden productivity patterns and correlations in the user's data. "  # noqa: E501
+                        "Look for peak performance times, project intensity, and recurring bottlenecks. "  # noqa: E501
                         "Provide actionable insights in a concise, bulleted format."
                     ),
                 },
@@ -296,6 +296,6 @@ def _execute_analytics(ctx: AppContext, client: Any) -> None:
             ],
         )
         ctx.console.print("\n[bold magenta]Hidden Patterns Analyzer:[/bold magenta]")
-        ctx.console.print(Panel(analysis.choices[0].message.content, title="Productivity Insights", border_style="magenta"))
+        ctx.console.print(Panel(analysis.choices[0].message.content, title="Productivity Insights", border_style="magenta"))  # noqa: E501
     except Exception as e:
         ctx.console.print(f"[red]Error analyzing patterns:[/red] {e}")

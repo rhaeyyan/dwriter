@@ -91,7 +91,7 @@ def push_sync(db: Database) -> bool:
         serialize_db(db, sync_dir)
 
         # 2. Git Commit
-        subprocess.run(["git", "add", "."], cwd=sync_dir, check=True, capture_output=True)
+        subprocess.run(["git", "add", "."], cwd=sync_dir, check=True, capture_output=True)  # noqa: E501
 
         # Check if there are changes to commit
         diff = subprocess.run(

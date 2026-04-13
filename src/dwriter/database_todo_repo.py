@@ -44,7 +44,7 @@ class TodoSummaryRepository:
         due_date: datetime | None = None,
     ) -> Todo:
         """Creates and persists a new todo task."""
-        return self._queued_write(  # type: ignore[attr-defined]
+        return self._queued_write(  # type: ignore[attr-defined, no-any-return]
             self._add_todo_sync,
             content,
             priority=priority,
@@ -81,7 +81,7 @@ class TodoSummaryRepository:
             session.commit()
             session.refresh(todo)
 
-            todo._tag_names_cache = list(tags) if tags else []
+            todo._tag_names_cache = list(tags) if tags else []  # type: ignore[attr-defined]
             return todo
 
     def get_todo(self, todo_id: int) -> Todo:
@@ -100,7 +100,7 @@ class TodoSummaryRepository:
             todo = session.get(Todo, todo_id)
             if not todo:
                 raise ValueError(f"Todo with id {todo_id} not found")
-            return todo
+            return todo  # type: ignore[no-any-return]
 
     def get_todos(self, status: str | None = "pending") -> list[Todo]:
         """Retrieves tasks sorted by priority, urgency (due date), and creation time.
@@ -151,7 +151,7 @@ class TodoSummaryRepository:
         reminder_last_sent: datetime | None = None,
     ) -> Todo:
         """Modifies attributes of an existing todo task."""
-        return self._queued_write(  # type: ignore[attr-defined]
+        return self._queued_write(  # type: ignore[attr-defined, no-any-return]
             self._update_todo_sync,
             todo_id,
             content=content,
@@ -203,7 +203,7 @@ class TodoSummaryRepository:
 
             session.commit()
             session.refresh(todo)
-            return todo
+            return todo  # type: ignore[no-any-return]
 
     def get_reminders(
         self, due_before: datetime, reminded_since: datetime
@@ -232,7 +232,7 @@ class TodoSummaryRepository:
 
     def delete_todo(self, todo_id: int) -> bool:
         """Permanently removes a todo task from the database."""
-        return self._queued_write(self._delete_todo_sync, todo_id)  # type: ignore[attr-defined]
+        return self._queued_write(self._delete_todo_sync, todo_id)  # type: ignore[attr-defined, no-any-return]
 
     def _delete_todo_sync(self, todo_id: int) -> bool:
         """Synchronous implementation of delete_todo."""
@@ -254,7 +254,7 @@ class TodoSummaryRepository:
         summary_type: str = "weekly",
     ) -> Summary:
         """Stores a new AI-generated period summary."""
-        return self._queued_write(  # type: ignore[attr-defined]
+        return self._queued_write(  # type: ignore[attr-defined, no-any-return]
             self._add_summary_sync,
             content,
             period_start,
@@ -319,4 +319,4 @@ class TodoSummaryRepository:
                 .order_by(Summary.period_end.desc())
                 .limit(1)
             )
-            return session.scalars(stmt).first()
+            return session.scalars(stmt).first()  # type: ignore[no-any-return]

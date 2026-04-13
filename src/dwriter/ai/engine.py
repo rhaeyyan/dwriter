@@ -51,7 +51,8 @@ def _sanitize_agent_output(text: str) -> str:
 
     # 2.5 Strip common LLM preambles/postambles surrounding tool calls
     clean_text = re.sub(
-        r"(?im)^(?:here is|here's)\s+(?:the\s+|a\s+)?(?:json|function call|tool call|function|tool).*?$",
+        r"(?im)^(?:here is|here's)\s+"
+        r"(?:the\s+|a\s+)?(?:json|function call|tool call|function|tool).*?$",
         '', clean_text
     )
     clean_text = re.sub(r'(?im)^\(note:.*?\)$', '', clean_text)
@@ -139,11 +140,16 @@ def ask_second_brain_agentic(
                     "properties": {
                         "query": {
                             "type": "string",
-                            "description": "Natural language search query describing what to find.",
+                            "description": (
+                                "Natural language search query describing what to find."
+                            ),
                         },
                         "project": {
                             "type": "string",
-                            "description": "Optional: filter by project name (without the & prefix).",
+                            "description": (
+                                "Optional: filter by project name"
+                                " (without the & prefix)."
+                            ),
                         },
                     },
                     "required": ["query"],
@@ -165,11 +171,16 @@ def ask_second_brain_agentic(
                     "properties": {
                         "date_str": {
                             "type": "string",
-                            "description": "The date in YYYY-MM-DD format. Omit for yesterday.",
+                            "description": (
+                                "The date in YYYY-MM-DD format. Omit for yesterday."
+                            ),
                         },
                         "project": {
                             "type": "string",
-                            "description": "Optional: filter by project name (without the & prefix).",
+                            "description": (
+                                "Optional: filter by project name"
+                                " (without the & prefix)."
+                            ),
                         },
                     },
                 },
@@ -194,7 +205,10 @@ def ask_second_brain_agentic(
                         },
                         "project": {
                             "type": "string",
-                            "description": "Optional: filter by project name (without the & prefix).",
+                            "description": (
+                                "Optional: filter by project name"
+                                " (without the & prefix)."
+                            ),
                         },
                     },
                     "required": ["query"],
@@ -225,7 +239,9 @@ def ask_second_brain_agentic(
     ]
 
     full_response_parts = []
-    enforcer = PermissionEnforcer(mode=permission_mode_from_str(config.features.permission_mode))
+    enforcer = PermissionEnforcer(
+        mode=permission_mode_from_str(config.features.permission_mode)
+    )
 
     while True:
         response = client.chat.completions.create(
@@ -246,8 +262,8 @@ def ask_second_brain_agentic(
             break
 
         for tool_call in message.tool_calls:
-            function_name = tool_call.function.name
-            arguments = json.loads(tool_call.function.arguments)
+            function_name = tool_call.function.name  # type: ignore[union-attr]
+            arguments = json.loads(tool_call.function.arguments)  # type: ignore[union-attr]
 
             # Security check before execution
             permission = enforcer.check(function_name)
@@ -257,7 +273,9 @@ def ask_second_brain_agentic(
                         "role": "tool",
                         "tool_call_id": tool_call.id,
                         "name": function_name,
-                        "content": f"System Error: Permission Denied - {permission.reason}",
+                        "content": (
+                            f"System Error: Permission Denied - {permission.reason}"
+                        ),
                     }
                 )
                 continue
@@ -267,7 +285,7 @@ def ask_second_brain_agentic(
 
             if function_name in AVAILABLE_TOOLS:
                 tool_func = AVAILABLE_TOOLS[function_name]
-                result = tool_func(db=db, **arguments)
+                result = tool_func(db=db, **arguments)  # type: ignore[operator]
 
                 messages.append(
                     {
@@ -302,7 +320,8 @@ def generate_targeted_briefing(
         briefing_type: One of 'weekly_retro', 'burnout_check', 'catch_up'.
         config: AI configuration.
         context_data: Static context (history).
-        extra_data: Specific data for the briefing (e.g., filtered entries for Catch Up).
+        extra_data: Specific data for the briefing (e.g., filtered entries
+            for Catch Up).
 
     Returns:
         str: The AI-generated briefing in Markdown. Returns clean Markdown
@@ -314,15 +333,16 @@ def generate_targeted_briefing(
 
     system_prompts = {
         "weekly_retro": (
-            "You are the dwriter 2nd-Brain. Generate a 'Weekly Retrospective' briefing. "
-            "Focus on: 1. Biggest Wins, 2. Velocity Trends, 3. Project Momentum, "
+            "You are the dwriter 2nd-Brain. Generate a 'Weekly Retrospective' briefing."
+            " Focus on: 1. Biggest Wins, 2. Velocity Trends, 3. Project Momentum, "
             "4. Areas for improvement next week. "
             "Use a professional yet encouraging tone. Use clean Markdown formatting. "
             "Limit to 4-5 concise paragraphs or bullet groups."
         ),
         "burnout_check": (
-            "You are the dwriter 2nd-Brain. Generate a 'Burnout & Productivity' assessment. "
-            "Analyze after-hours work, context switching, and say-do ratios. "
+            "You are the dwriter 2nd-Brain. "
+            "Generate a 'Burnout & Productivity' assessment."
+            " Analyze after-hours work, context switching, and say-do ratios. "
             "Provide actionable advice to reduce stress and improve focus. "
             "Be direct and supportive. Use Markdown highlights."
         ),
@@ -335,7 +355,9 @@ def generate_targeted_briefing(
         ),
     }
 
-    prompt = system_prompts.get(briefing_type, "Provide a general productivity briefing.")
+    prompt = system_prompts.get(
+        briefing_type, "Provide a general productivity briefing."
+    )
 
     user_content = f"### ANALYTICS & CONTEXT:\n{context_data}\n"
     if extra_data:

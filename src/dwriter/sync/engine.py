@@ -58,7 +58,7 @@ def serialize_db(db: Database, sync_dir: Path) -> None:
                 "due_date": todo.due_date.isoformat() if todo.due_date else None,
                 "tags": todo.tag_names,
                 "created_at": todo.created_at.isoformat(),
-                "completed_at": todo.completed_at.isoformat() if todo.completed_at else None,
+                "completed_at": todo.completed_at.isoformat() if todo.completed_at else None,  # noqa: E501
             }
             f.write(json.dumps(data) + "\n")
     os.replace(todos_tmp_path, todos_path)
@@ -135,9 +135,9 @@ def _merge_todo(db: Database, data: dict[str, Any]) -> None:
             existing.project = data["project"]
             existing.priority = data["priority"]
             existing.status = data["status"]
-            existing.due_date = datetime.fromisoformat(data["due_date"]) if data["due_date"] else None
+            existing.due_date = datetime.fromisoformat(data["due_date"]) if data["due_date"] else None  # noqa: E501
             existing.created_at = datetime.fromisoformat(data["created_at"])
-            existing.completed_at = datetime.fromisoformat(data["completed_at"]) if data["completed_at"] else None
+            existing.completed_at = datetime.fromisoformat(data["completed_at"]) if data["completed_at"] else None  # noqa: E501
             existing.tags = [Tag(name=t) for t in data["tags"]]
 
             session.commit()

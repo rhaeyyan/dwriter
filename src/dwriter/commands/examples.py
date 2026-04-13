@@ -36,7 +36,7 @@ def examples(ctx: AppContext) -> None:
     ctx.console.print("   dwriter review --days 7 # Summary of last 7 days")
 
     ctx.console.print("\n[bold cyan]5. Unified Dashboard (TUI)[/bold cyan]")
-    ctx.console.print("   dwriter                # Launch the full interactive dashboard")
+    ctx.console.print("   dwriter                # Launch the full interactive dashboard")  # noqa: E501
     ctx.console.print("   dwriter ui --todo      # Launch directly to the todo board")
 
-    ctx.console.print("\n[dim]Visit the documentation for advanced configuration and use cases.[/dim]")
+    ctx.console.print("\n[dim]Visit the documentation for advanced configuration and use cases.[/dim]")  # noqa: E501

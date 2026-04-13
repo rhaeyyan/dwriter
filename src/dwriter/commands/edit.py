@@ -108,8 +108,8 @@ def _bulk_edit_today(ctx: AppContext) -> None:
     for entry in entries:
         ctx.console.print(f"  [[{PROJECT}]{entry.id}[/{PROJECT}]] {entry.content}")
 
-    ctx.console.print("\nTo edit a specific entry, run: [bold]dwriter edit --id <ID>[/bold]")
-    ctx.console.print("To use the interactive editor, run: [bold]dwriter ui --logs[/bold]")
+    ctx.console.print("\nTo edit a specific entry, run: [bold]dwriter edit --id <ID>[/bold]")  # noqa: E501
+    ctx.console.print("To use the interactive editor, run: [bold]dwriter ui --logs[/bold]")  # noqa: E501
 
 
 @click.command()

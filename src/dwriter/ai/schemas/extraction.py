@@ -57,12 +57,12 @@ class EntryMetadata(BaseModel):
     """
 
     implicit_mood: str = Field(
-        description="A single word describing the emotional tone, e.g., Stressed, Focused, Tired, Excited"
+        description="A single word describing the emotional tone, e.g., Stressed, Focused, Tired, Excited"  # noqa: E501
     )
     life_domain: str = Field(
-        description="Categorize into: Health, Career, Social, Admin, Deep Work, or Leisure"
+        description="Categorize into: Health, Career, Social, Admin, Deep Work, or Leisure"  # noqa: E501
     )
-    energy_level: int = Field(description="Inferred energy level from 1 to 10", ge=1, le=10)
+    energy_level: int = Field(description="Inferred energy level from 1 to 10", ge=1, le=10)  # noqa: E501
 
 
 class SemanticRecommendation(BaseModel):
@@ -74,7 +74,7 @@ class SemanticRecommendation(BaseModel):
     """
 
     project: str | None = Field(
-        description="A single recommended project name, prefixed with '&'. Return null if no strong match."
+        description="A single recommended project name, prefixed with '&'. Return null if no strong match."  # noqa: E501
     )
     tags: list[str] = Field(
         description="Up to two recommended hashtags, each prefixed with '#'."

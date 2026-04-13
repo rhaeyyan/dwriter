@@ -40,7 +40,7 @@ def get_daily_standup(
         end_date = datetime.combine(target_date.date(), time.max)
 
         # We use a simple version of report generation here for the AI to consume
-        entries = db.get_entries_in_range(start_date, end_date, exclude_projects=[project] if project else None)
+        entries = db.get_entries_in_range(start_date, end_date, exclude_projects=[project] if project else None)  # noqa: E501
 
         # Filter for the specific project if provided
         if project:
@@ -54,7 +54,7 @@ def get_daily_standup(
         else:
             for e in entries:
                 p_str = f" &{e.project}" if e.project else ""
-                t_str = f" {' '.join(f'#{t}' for t in e.tag_names)}" if e.tag_names else ""
+                t_str = f" {' '.join(f'#{t}' for t in e.tag_names)}" if e.tag_names else ""  # noqa: E501
                 clean_content = e.content.lstrip("✅⏱️ ")
                 lines.append(f"- {clean_content}{p_str}{t_str}")
 
@@ -63,11 +63,11 @@ def get_daily_standup(
         tomorrow = today + timedelta(days=1)
         pending_todos = [
             t for t in db.get_all_todos()
-            if t.status == "pending" and t.due_date and (t.due_date.date() == today or t.due_date.date() == tomorrow)
+            if t.status == "pending" and t.due_date and (t.due_date.date() == today or t.due_date.date() == tomorrow)  # noqa: E501
         ]
 
         if project:
-            pending_todos = [t for t in pending_todos if t.project == project.lstrip("&")]
+            pending_todos = [t for t in pending_todos if t.project == project.lstrip("&")]  # noqa: E501
 
         lines.append("\n**Plan for today:**")
         if not pending_todos:

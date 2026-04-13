@@ -28,7 +28,7 @@ class EntryRepository:
         embedding: list[float] | None = None,
     ) -> Entry:
         """Persists a new journal entry to the database."""
-        return self._queued_write(  # type: ignore[attr-defined]
+        return self._queued_write(  # type: ignore[attr-defined, no-any-return]
             self._add_entry_sync,
             content,
             tags=tags,
@@ -80,7 +80,7 @@ class EntryRepository:
             session.commit()
             session.refresh(entry)
 
-            entry._tag_names_cache = list(tags) if tags else []
+            entry._tag_names_cache = list(tags) if tags else []  # type: ignore[attr-defined]
             return entry
 
     def get_entry(self, entry_id: int) -> Entry:
@@ -99,7 +99,7 @@ class EntryRepository:
             entry = session.get(Entry, entry_id)
             if not entry:
                 raise ValueError(f"Entry with id {entry_id} not found")
-            return entry
+            return entry  # type: ignore[no-any-return]
 
     def get_entries_by_date(self, date: datetime) -> list[Entry]:
         """Retrieves all entries recorded on a specific calendar date.
@@ -126,7 +126,7 @@ class EntryRepository:
         exclude_projects: list[str] | None = None,
         exclude_tags: list[str] | None = None,
     ) -> list[Entry]:
-        """Retrieves entries that fall within a specified date range with exclusion filters.
+        """Retrieves entries within a specified date range with exclusion filters.
 
         Args:
             start_date (datetime): The beginning of the range (inclusive).
@@ -143,8 +143,8 @@ class EntryRepository:
             if exclude_projects:
                 from sqlalchemy import not_, or_
 
-                prefix_excludes = [p.lower() for p in exclude_projects if p.endswith(":")]
-                exact_excludes = [p.lower() for p in exclude_projects if not p.endswith(":")]
+                prefix_excludes = [p.lower() for p in exclude_projects if p.endswith(":")]  # noqa: E501
+                exact_excludes = [p.lower() for p in exclude_projects if not p.endswith(":")]  # noqa: E501
 
                 conditions = []
                 if exact_excludes:
@@ -153,7 +153,7 @@ class EntryRepository:
                     conditions.append(func.lower(Entry.project).like(f"{prefix}%"))
 
                 if conditions:
-                    stmt = stmt.where(or_(Entry.project.is_(None), not_(or_(*conditions))))
+                    stmt = stmt.where(or_(Entry.project.is_(None), not_(or_(*conditions))))  # noqa: E501
 
             if exclude_tags:
                 from sqlalchemy import not_
@@ -215,7 +215,7 @@ class EntryRepository:
             Entry | None: The newest Entry object, or None if the database is empty.
         """
         with self.Session() as session:  # type: ignore[attr-defined]
-            return session.scalars(
+            return session.scalars(  # type: ignore[no-any-return]
                 select(Entry).order_by(Entry.created_at.desc()).limit(1)
             ).first()
 
@@ -229,7 +229,7 @@ class EntryRepository:
         embedding: list[float] | None = None,
     ) -> Entry:
         """Modifies attributes of an existing journal entry."""
-        return self._queued_write(  # type: ignore[attr-defined]
+        return self._queued_write(  # type: ignore[attr-defined, no-any-return]
             self._update_entry_sync,
             entry_id,
             content=content,
@@ -269,11 +269,11 @@ class EntryRepository:
 
             session.commit()
             session.refresh(entry)
-            return entry
+            return entry  # type: ignore[no-any-return]
 
     def delete_entry(self, entry_id: int) -> bool:
         """Removes an entry from the database."""
-        return self._queued_write(self._delete_entry_sync, entry_id)  # type: ignore[attr-defined]
+        return self._queued_write(self._delete_entry_sync, entry_id)  # type: ignore[attr-defined, no-any-return]
 
     def _delete_entry_sync(self, entry_id: int) -> bool:
         """Synchronous implementation of delete_entry."""
@@ -299,7 +299,7 @@ class EntryRepository:
 
     def delete_entries_before(self, before_date: datetime) -> int:
         """Deletes all journal entries recorded before a given date."""
-        return self._queued_write(self._delete_entries_before_sync, before_date)  # type: ignore[attr-defined]
+        return self._queued_write(self._delete_entries_before_sync, before_date)  # type: ignore[attr-defined, no-any-return]
 
     def _delete_entries_before_sync(self, before_date: datetime) -> int:
         """Synchronous implementation of delete_entries_before."""
@@ -309,7 +309,7 @@ class EntryRepository:
             session.commit()
             return (
                 int(result.rowcount) if result.rowcount is not None else 0
-            )  # type: ignore[attr-defined]
+            )
 
     def get_all_entries_count(self) -> int:
         """Calculates the total number of journal entries in the database.
@@ -423,7 +423,7 @@ class EntryRepository:
         """
         with self.Session() as session:  # type: ignore[attr-defined]
             # 1. Fetch Entries
-            entry_stmt = select(Entry).where(Entry.created_at.between(start_date, end_date))
+            entry_stmt = select(Entry).where(Entry.created_at.between(start_date, end_date))  # noqa: E501
             if project:
                 entry_stmt = entry_stmt.where(Entry.project == project)
             if tags:

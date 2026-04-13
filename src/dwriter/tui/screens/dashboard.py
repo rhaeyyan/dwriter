@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -160,7 +160,7 @@ class StreakCalendar(Static):
 
         today = datetime.now().date()
         start_date = today - timedelta(days=365)
-        self.entries_by_date = self.ctx.db.get_entries_count_by_date(start_date, today)
+        self.entries_by_date = self.ctx.db.get_entries_count_by_date(start_date, today)  # type: ignore[arg-type]
         self._render_calendar()
 
     def _get_level(self, count: int) -> int:
@@ -182,8 +182,8 @@ class StreakCalendar(Static):
         start_date = today - timedelta(days=num_weeks * 7 - 1)
         start_date = start_date - timedelta(days=start_date.weekday())
 
-        weeks: list[list[tuple[datetime, int] | None] | None] = []
-        current_week: list[tuple[datetime, int] | None] = []
+        weeks: list[list[tuple[date, int] | None] | None] = []
+        current_week: list[tuple[date, int] | None] = []
 
         current_date = start_date
         while current_date <= today:
@@ -374,7 +374,7 @@ class DashboardScreen(Container):
         except Exception:
             pass
 
-    def _update_ui(self, nudges, spark_data) -> None:
+    def _update_ui(self, nudges: Any, spark_data: Any) -> None:
         try:
             pulse_panel = self.query_one("#pulse-panel", UnifiedPulsePanel)
             if pulse_panel:

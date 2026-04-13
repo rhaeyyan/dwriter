@@ -318,7 +318,7 @@ class SecondBrainScreen(Vertical):
         elif button_id == "btn-burnout":
             self._generate_briefing("burnout_check")
         elif button_id == "btn-catchup":
-            def _on_catchup_result(criteria: dict | None) -> None:
+            def _on_catchup_result(criteria: dict[str, Any] | None) -> None:
                 if criteria is None:
                     return
                 narrative = self.query_one("#narrative-text", Static)
@@ -536,7 +536,7 @@ class SecondBrainScreen(Vertical):
             self.app.call_from_thread(thinking.stop)
 
     @work(thread=True)
-    def _generate_catchup_briefing(self, criteria: dict) -> None:
+    def _generate_catchup_briefing(self, criteria: dict[str, Any]) -> None:
         """Fetches activity data and runs the Catch Up AI briefing in a background worker."""
         from .briefing_modals import BriefingDisplayModal
 

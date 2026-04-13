@@ -34,7 +34,7 @@ def _execute_list(ctx: AppContext, show_all: bool, output_json: bool = False) ->
                 "due_date": task.due_date.isoformat() if task.due_date else None,
                 "tags": task.tag_names,
                 "created_at": task.created_at.isoformat(),
-                "completed_at": task.completed_at.isoformat() if task.completed_at else None,
+                "completed_at": task.completed_at.isoformat() if task.completed_at else None,  # noqa: E501
             })
         sys.stdout.write(json.dumps(data, indent=2) + "\n")
         return
@@ -81,7 +81,7 @@ def _execute_list(ctx: AppContext, show_all: bool, output_json: bool = False) ->
             days_until = (due_date_only - today).days
 
             if days_until < 0:
-                due_str = f"[{DUE_OVERDUE}]{due_date.strftime('%Y-%m-%d')}[/{DUE_OVERDUE}]"
+                due_str = f"[{DUE_OVERDUE}]{due_date.strftime('%Y-%m-%d')}[/{DUE_OVERDUE}]"  # noqa: E501
             elif days_until == 0:
                 if due_date.hour == 0 and due_date.minute == 0:
                     due_str = f"[{DUE_TODAY}]TODAY[/{DUE_TODAY}]"

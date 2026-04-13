@@ -40,7 +40,7 @@ class ExportFormatScreen(ModalScreen[str]):
     """
 
     def compose(self) -> ComposeResult:
-        use_emojis = self.app.ctx.config.display.use_emojis
+        use_emojis = self.app.ctx.config.display.use_emojis  # type: ignore[attr-defined]
         with Container(id="export-container"):
             yield Label(f"{get_icon('export', use_emojis)} Export As", id="export-title")
             yield Button(f"\\[ {get_icon('markdown', use_emojis)} MARKDOWN ]", id="export-markdown", variant="primary")
@@ -313,7 +313,7 @@ class StandupScreen(ModalScreen[None]):
             sys.stdout.flush()
 
         try:
-            async with self.app.suspend():
+            async with self.app.suspend():  # type: ignore[attr-defined]
                 _do_resize()
         except Exception:
             # Fallback: try direct write if suspend fails
@@ -803,7 +803,9 @@ class StandupScreen(ModalScreen[None]):
             
             entries.sort(key=lambda x: x.created_at, reverse=True)
 
-            grouped, tags_set, projects_set = {}, set(), set()
+            grouped: dict[str, list[Any]] = {}
+            tags_set: set[str] = set()
+            projects_set: set[str] = set()
             for e in entries:
                 d_str = e.created_at.strftime("%A, %Y-%m-%d")
                 if d_str not in grouped:
