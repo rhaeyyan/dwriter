@@ -14,6 +14,16 @@ if TYPE_CHECKING:
 from .engine import merge_jsonl_to_db, serialize_db
 
 
+def _rebuild_graph_index(db: Database) -> None:
+    """Rebuilds the LadybugDB graph index from SQLite after a sync pull."""
+    try:
+        from ..graph import GraphProjector
+        GraphProjector().build_index(db)
+        _log_sync("Graph index rebuilt.")
+    except Exception as e:
+        _log_sync(f"Graph index rebuild failed (non-fatal): {e}")
+
+
 def _log_sync(message: str) -> None:
     """Logs a message to the sync log file."""
     log_dir = Path.home() / ".dwriter" / "logs"
@@ -63,6 +73,8 @@ def pull_sync(db: Database) -> bool:
             # 3. Merge into SQLite
             merge_jsonl_to_db(db, sync_dir)
             _log_sync("Sync pull successful.")
+            # 4. Rebuild graph index from updated SQLite
+            _rebuild_graph_index(db)
             return True
         else:
             return False

@@ -2,6 +2,22 @@
 
 This module provides read-only tools that the AI can call to search
 the local journal, todos, and git context.
+
+Graph-backed tools (run_cypher, search_graph) are preferred for new agent
+prompts. The legacy fuzzy-search tools (search_journal, search_todos,
+get_daily_standup) are retained for backward compatibility.
+
+Graph schema for Cypher queries:
+  Nodes: Entry(uuid, content, project, created_at, implicit_mood,
+               life_domain, energy_level)
+         Todo(uuid, content, project, priority, status, due_date,
+              created_at, completed_at)
+         Tag(name)  Project(name)
+  Edges: (Entry)-[:ENTRY_HAS_TAG]->(Tag)
+         (Todo)-[:TODO_HAS_TAG]->(Tag)
+         (Entry)-[:ENTRY_IN_PROJECT]->(Project)
+         (Todo)-[:TODO_IN_PROJECT]->(Project)
+         (Entry)-[:REFERENCES_TODO]->(Todo)
 """
 
 import json
@@ -173,6 +189,55 @@ def search_todos(
         return json.dumps(results, indent=2)
     except Exception as e:
         return f"Error searching todos: {str(e)}"
+
+
+def run_cypher(query: str, params: dict[str, Any] | None = None) -> str:
+    """Executes a read-only Cypher query against the LadybugDB graph index.
+
+    Use this for graph traversals, co-occurrence queries, and aggregations
+    that span entries, todos, tags, and projects. The graph schema is
+    documented in this module's docstring.
+
+    Args:
+        query (str): A read-only Cypher query (MATCH/RETURN only).
+        params (dict | None): Named parameters referenced in the query.
+
+    Returns:
+        str: JSON array of result rows, or an error message.
+    """
+    try:
+        from ..graph import GraphProjector
+        projector = GraphProjector()
+        rows = projector.run_cypher(query, params)
+        return json.dumps(rows, indent=2, default=str)
+    except Exception as e:
+        return f"Error executing Cypher query: {e}"
+
+
+def search_graph(query: str, target: str = "journal") -> str:
+    """Full-text search over the graph index using LadybugDB FTS.
+
+    Prefer this over search_journal/search_todos for natural language queries.
+
+    Args:
+        query (str): Natural language search terms.
+        target (str): "journal" to search entries, "todos" to search tasks.
+
+    Returns:
+        str: JSON array of matching items with relevance scores.
+    """
+    try:
+        from ..graph import GraphProjector, search_graph_journal, search_graph_todos
+        projector = GraphProjector()
+        if target == "todos":
+            results = search_graph_todos(query, projector)
+        else:
+            results = search_graph_journal(query, projector)
+        if not results:
+            return f"No matching {target} found."
+        return json.dumps(results, indent=2, default=str)
+    except Exception as e:
+        return f"Error searching graph: {e}"
 
 
 def fetch_recent_commits(limit: int = 10) -> str:

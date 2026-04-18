@@ -7,6 +7,7 @@ from .config import config
 from .delete import delete
 from .edit import edit
 from .examples import examples
+from .graph import graph
 from .help import help_cmd
 from .notifications import install_notifications, uninstall_notifications
 from .review import review
@@ -28,6 +29,7 @@ __all__ = [
     "done",
     "edit",
     "examples",
+    "graph",
     "help_cmd",
     "install_notifications",
     "review",

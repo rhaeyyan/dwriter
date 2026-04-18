@@ -56,10 +56,15 @@ When your question mentions a project name (e.g. `&dwriter`) or a tag (e.g. `#de
 
 In **Follow-up** mode, the 2nd-Brain can actively search your data mid-conversation using tools:
 
-- `search_journal`: For past work and specific notes.
-- `get_daily_standup`: For structured daily reports.
-- `search_todos`: For specific tasks and overdue items.
-- `fetch_recent_commits`: For recent code changes and git activity.
+**Graph-backed tools (recommended):**
+- `run_cypher`: Executes a Cypher query against the graph index for graph traversals and cross-entity aggregation (e.g. *"What projects co-occur with #friction?"*).
+- `search_graph`: Full-text search over journal entries or todos using the graph index FTS engine.
+
+**Legacy tools (retained for compatibility):**
+- `search_journal`: Fuzzy search over past work and specific notes.
+- `get_daily_standup`: Structured daily report for a given date.
+- `search_todos`: Fuzzy search over tasks and overdue items.
+- `fetch_recent_commits`: Recent code changes and git activity.
 
 ---
 

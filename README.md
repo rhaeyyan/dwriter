@@ -1,5 +1,5 @@
 # dwriter: AI Edition 📝
-Experimental: v4.8.4
+Experimental: v4.10.0
 ### *The minimalist journal for those who live in the terminal powered by a Dual-Model AI Pipeline (Gemma 4).*
 
 **dwriter** is a high-signal, low-friction journaling tool designed to capture your work without breaking your flow. It bridges the gap between the raw speed of a command-line interface and the visual clarity of a modern dashboard.
@@ -17,6 +17,7 @@ Modern productivity apps are often cluttered with distractions. **dwriter** is d
 *   **🎨 Unified Dashboard:** Launch the Terminal User Interface (TUI) to reflect, search your history, or manage a visual todo board.
 *   **📖 High-Signal Readability:** All logs and AI responses now feature **hanging indentation**, ensuring multi-line entries align perfectly for rapid scanning.
 *   **🤖 Standup Automation:** Instantly transform your raw logs into formatted summaries for Slack, Jira, or Markdown.
+*   **🕸️ Graph Index:** A LadybugDB property-graph index runs alongside SQLite as a derived read layer — powering FTS, graph traversal queries, and the Analytical Engine. Fully local, regenerable with `dw graph rebuild`.
 *   **📝 Obsidian Integration:** Seamlessly export AI briefings and periodic reviews directly to your Obsidian vault as clean Markdown notes.
 *   **📅 Natural Language:** Talk to your journal like a human. `dwriter add "Fixed the bug" --date "last Friday"` just works.
 
