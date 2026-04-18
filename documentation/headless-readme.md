@@ -99,6 +99,7 @@ Harness your historical data for deeper insights. These features require an Olla
 | `dwriter ask "query"` | Ask natural language questions about your history or productivity. |
 | `dwriter compress` | Generate a structured weekly retrospective from your activity logs. |
 | `dwriter sync` | Synchronize your journal data across devices via Git. |
+| `dwriter graph rebuild` | Rebuild the graph index from SQLite (run once after install or after a manual data import). |
 
 ### Querying your 2nd-Brain
 Ask for summaries, trend analysis, or advice based on your own data:

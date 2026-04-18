@@ -43,6 +43,8 @@ class PermissionEnforcer:
             "get_daily_standup",
             "get_stats",
             "proactive_tagging",
+            "run_cypher",
+            "search_graph",
         }
         self._append_tools = {
             "add_entry",
