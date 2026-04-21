@@ -16,7 +16,6 @@ Modern productivity apps are often cluttered with distractions. **dwriter** is d
 *   **🧠 Dual-Model 2nd-Brain:** Reflect on your history with an interactive chat powered by a specialized reasoning pipeline.
 *   **🔁 Closed Learning Loop:** The AI now automatically extracts **Facts** (durable preferences, goals, and constraints) from your logs, building a personalized knowledge base that persists across sessions.
 *   **🎨 Unified Dashboard:** Launch the Terminal User Interface (TUI) to reflect, search your history, or manage a visual todo board.
-*   **📖 High-Signal Readability:** All logs and AI responses now feature **hanging indentation**, ensuring multi-line entries align perfectly for rapid scanning.
 *   **🤖 Standup Automation:** Instantly transform your raw logs into formatted summaries for Slack, Jira, or Markdown.
 *   **🕸️ Graph Index:** A LadybugDB property-graph index runs alongside SQLite as a derived read layer — powering FTS, graph traversal queries, and the Analytical Engine. Fully local, regenerable with `dw graph rebuild`.
 *   **📝 Obsidian Integration:** Seamlessly export AI briefings and periodic reviews directly to your Obsidian vault as clean Markdown notes.
