@@ -188,6 +188,47 @@ class GraphProjector:
         for todo in db.get_all_todos():
             self.project_todo(todo)
 
+    def project_fact(
+        self,
+        uuid: str,
+        text: str,
+        category: str,
+        extracted_at: str,
+        source_entry_uuid: str,
+    ) -> None:
+        """Upserts one Fact node and its EXTRACTED_FROM edge."""
+        with self._lock:
+            self._conn.execute(
+                "MATCH (f:Fact {uuid: $uuid}) DETACH DELETE f",
+                {"uuid": uuid},
+            )
+            self._conn.execute(
+                """CREATE (:Fact {
+                    uuid: $uuid, text: $text, category: $category,
+                    extracted_at: $extracted_at, source_entry_uuid: $source_entry_uuid
+                })""",
+                {
+                    "uuid": uuid,
+                    "text": text,
+                    "category": category,
+                    "extracted_at": extracted_at,
+                    "source_entry_uuid": source_entry_uuid,
+                },
+            )
+            self._conn.execute(
+                "MATCH (f:Fact {uuid: $f_id}), (e:Entry {uuid: $e_id})"
+                " CREATE (f)-[:EXTRACTED_FROM]->(e)",
+                {"f_id": uuid, "e_id": source_entry_uuid},
+            )
+
+    def delete_facts_for_entry(self, source_entry_uuid: str) -> None:
+        """Deletes all facts extracted from a specific entry."""
+        with self._lock:
+            self._conn.execute(
+                "MATCH (f:Fact {source_entry_uuid: $uuid}) DETACH DELETE f",
+                {"uuid": source_entry_uuid},
+            )
+
     # ------------------------------------------------------------------
     # Query API (used by ai/tools.py)
     # ------------------------------------------------------------------
@@ -209,11 +250,27 @@ class GraphProjector:
         index_name: str,
         limit: int = 10,
     ) -> list[dict[str, Any]]:
-        """Runs a full-text search and returns matching nodes with scores."""
+        """Runs a full-text search over Entry/Todo nodes and returns matching nodes with scores."""
         cypher = (
             f"CALL QUERY_FTS_INDEX('{node_table}', '{index_name}', $q, top := {limit})"
             " RETURN node.uuid AS uuid, node.content AS content,"
             " node.project AS project, score ORDER BY score DESC"
+        )
+        with self._lock:
+            result = self._conn.execute(cypher, {"q": query})
+            return list(result.rows_as_dict())  # type: ignore[union-attr, arg-type]
+
+    def search_facts_fts(
+        self,
+        query: str,
+        limit: int = 10,
+    ) -> list[dict[str, Any]]:
+        """Runs a full-text search over Fact nodes and returns matching facts with scores."""
+        cypher = (
+            f"CALL QUERY_FTS_INDEX('Fact', 'fact_fts_idx', $q, top := {limit})"
+            " RETURN node.uuid AS uuid, node.text AS text,"
+            " node.category AS category, node.source_entry_uuid AS source_entry_uuid,"
+            " score ORDER BY score DESC"
         )
         with self._lock:
             result = self._conn.execute(cypher, {"q": query})

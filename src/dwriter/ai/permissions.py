@@ -45,6 +45,7 @@ class PermissionEnforcer:
             "proactive_tagging",
             "run_cypher",
             "search_graph",
+            "search_facts",
         }
         self._append_tools = {
             "add_entry",

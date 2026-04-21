@@ -240,6 +240,29 @@ def search_graph(query: str, target: str = "journal") -> str:
         return f"Error searching graph: {e}"
 
 
+def search_facts(query: str) -> str:
+    """Searches the user's extracted durable facts and preferences.
+
+    Use this to retrieve durable facts, long-term goals, and preferences
+    the user has established over time.
+
+    Args:
+        query (str): Natural language search terms.
+
+    Returns:
+        str: JSON array of matching facts with relevance scores.
+    """
+    try:
+        from ..graph import GraphProjector, search_graph_facts
+        projector = GraphProjector()
+        results = search_graph_facts(query, projector)
+        if not results:
+            return "No matching facts found."
+        return json.dumps(results, indent=2, default=str)
+    except Exception as e:
+        return f"Error searching facts: {e}"
+
+
 def fetch_recent_commits(limit: int = 10) -> str:
     """Fetches recent git commit messages from the current git repository.
 
