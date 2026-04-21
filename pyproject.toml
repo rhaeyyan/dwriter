@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dwriter"
-version = "4.10.0"
+version = "4.10.1"
 description = "A low-friction terminal journaling tool for tracking daily tasks and generating standup summaries"
 readme = "README.md"
 license = {text = "MIT"}

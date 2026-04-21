@@ -16,6 +16,7 @@ from dwriter.ai.permissions import PermissionEnforcer, permission_mode_from_str
 from dwriter.ai.tools import (
     fetch_recent_commits,
     get_daily_standup,
+    search_facts,
     search_journal,
     search_todos,
 )
@@ -27,6 +28,7 @@ AVAILABLE_TOOLS = {
     "search_journal": search_journal,
     "search_todos": search_todos,
     "fetch_recent_commits": fetch_recent_commits,
+    "search_facts": search_facts,
 }
 
 
@@ -233,6 +235,27 @@ def ask_second_brain_agentic(
                             "description": "Number of commits to fetch (default 10).",
                         },
                     },
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "search_facts",
+                "description": (
+                    "Searches the user's extracted durable facts and preferences. "
+                    "Use this to retrieve durable facts, long-term goals, and "
+                    "preferences the user has established over time."
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "Natural language search query.",
+                        },
+                    },
+                    "required": ["query"],
                 },
             },
         },

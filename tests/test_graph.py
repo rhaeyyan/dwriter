@@ -62,6 +62,45 @@ class TestGraphProjectorSchema:
         assert "ENTRY_IN_PROJECT" in tables
         assert "TODO_IN_PROJECT" in tables
         assert "REFERENCES_TODO" in tables
+        assert "EXTRACTED_FROM" in tables
+
+
+class TestFactProjection:
+    def test_project_fact_inserts_node(
+        self, tmp_graph: GraphProjector, mock_entry: MagicMock
+    ) -> None:
+        tmp_graph.project_entry(mock_entry)
+        tmp_graph.project_fact("fact-1", "Likes Python", "preference", "2026-04-20T10:00:00", mock_entry.uuid)
+        rows = tmp_graph.run_cypher(
+            "MATCH (f:Fact {uuid: $uuid}) RETURN f.text AS text",
+            {"uuid": "fact-1"},
+        )
+        assert len(rows) == 1
+        assert rows[0]["text"] == "Likes Python"
+
+    def test_project_fact_creates_extracted_from_edge(
+        self, tmp_graph: GraphProjector, mock_entry: MagicMock
+    ) -> None:
+        tmp_graph.project_entry(mock_entry)
+        tmp_graph.project_fact("fact-1", "Likes Python", "preference", "2026-04-20T10:00:00", mock_entry.uuid)
+        rows = tmp_graph.run_cypher(
+            "MATCH (f:Fact {uuid: $uuid})-[:EXTRACTED_FROM]->(e:Entry) RETURN e.uuid AS e_uuid",
+            {"uuid": "fact-1"},
+        )
+        assert len(rows) == 1
+        assert rows[0]["e_uuid"] == mock_entry.uuid
+
+    def test_project_fact_is_idempotent(
+        self, tmp_graph: GraphProjector, mock_entry: MagicMock
+    ) -> None:
+        tmp_graph.project_entry(mock_entry)
+        tmp_graph.project_fact("fact-1", "Likes Python", "preference", "2026-04-20T10:00:00", mock_entry.uuid)
+        tmp_graph.project_fact("fact-1", "Likes Python", "preference", "2026-04-20T10:00:00", mock_entry.uuid)
+        rows = tmp_graph.run_cypher(
+            "MATCH (f:Fact {uuid: $uuid}) RETURN f.uuid AS f_uuid",
+            {"uuid": "fact-1"},
+        )
+        assert len(rows) == 1
 
 
 class TestEntryProjection:

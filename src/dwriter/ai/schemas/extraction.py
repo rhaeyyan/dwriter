@@ -79,3 +79,19 @@ class SemanticRecommendation(BaseModel):
     tags: list[str] = Field(
         description="Up to two recommended hashtags, each prefixed with '#'."
     )
+
+
+class ExtractedFact(BaseModel):
+    """A durable fact or preference extracted from user input."""
+
+    text: str = Field(description="The extracted fact statement.")
+    category: str = Field(
+        description="Must be one of: 'preference', 'pattern', 'goal', "
+        "'constraint', 'context'"
+    )
+
+
+class FactBatch(BaseModel):
+    """Collection of facts extracted from one or more entries."""
+
+    facts: list[ExtractedFact] = Field(description="List of extracted facts.")

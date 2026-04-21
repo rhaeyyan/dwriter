@@ -24,6 +24,14 @@ NODE_TABLES = [
     )""",
     "CREATE NODE TABLE Tag(name STRING, PRIMARY KEY(name))",
     "CREATE NODE TABLE Project(name STRING, PRIMARY KEY(name))",
+    """CREATE NODE TABLE Fact(
+        uuid STRING,
+        text STRING,
+        category STRING,
+        extracted_at STRING,
+        source_entry_uuid STRING,
+        PRIMARY KEY(uuid)
+    )""",
 ]
 
 REL_TABLES = [
@@ -32,9 +40,11 @@ REL_TABLES = [
     "CREATE REL TABLE ENTRY_IN_PROJECT(FROM Entry TO Project)",
     "CREATE REL TABLE TODO_IN_PROJECT(FROM Todo TO Project)",
     "CREATE REL TABLE REFERENCES_TODO(FROM Entry TO Todo)",
+    "CREATE REL TABLE EXTRACTED_FROM(FROM Fact TO Entry)",
 ]
 
 FTS_INDICES = [
     ("Entry", "entry_fts_idx", ["content"]),
     ("Todo", "todo_fts_idx", ["content"]),
+    ("Fact", "fact_fts_idx", ["text"]),
 ]

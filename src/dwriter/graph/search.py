@@ -23,3 +23,12 @@ def search_graph_todos(
 ) -> list[dict[str, Any]]:
     """FTS search over Todo nodes in the graph index."""
     return projector.search_fts(query, "Todo", "todo_fts_idx", limit)
+
+
+def search_graph_facts(
+    query: str,
+    projector: GraphProjector,
+    limit: int = 10,
+) -> list[dict[str, Any]]:
+    """FTS search over Fact nodes in the graph index."""
+    return projector.search_facts_fts(query, limit)
