@@ -75,14 +75,21 @@ Run `dwriter` to launch the TUI. Built with the **Textual** framework, it provid
 | `1-5` | Switch Screens: 2nd-Brain, Logs, To-Do, Timer, Settings. |
 | `/` | Focus the **Omnibox** (Quick-Add) from anywhere. |
 | `Ctrl+P` | Launch the **Command Palette** (Fuzzy-find actions). |
-| `Ctrl+A` | Apply all pending AI suggestions. |
-
+# 📘 dwriter: The Definitive Technical & User Manual (v4.10.1)
+...
 ### 🧠 The 2nd-Brain & 7-Day Pulse
 - **The Pulse:** A heavy analytics operation that runs once every 24 hours. It calculates your "Momentum" (task velocity) and identifies your "Big Rock" (the project taking most of your time).
+- **Fact Memory (New):** dwriter automatically extracts "Facts" — durable preferences, recurring goals, and persistent constraints — from your journal entries. These are stored in a dedicated Fact index in the graph.
 - **Modern Feedback:** During AI reasoning, a sleek **Modern Spinner** (Braille-style) provides non-intrusive feedback, ensuring you know the system is active during complex inference.
 - **Throttling Logic:** To preserve terminal performance, the full pulse is cached. Subsequent launches return a minimalist greeting until the next calendar day.
-- **Live Context:** The 2nd-Brain re-loads your latest entries and todos each time you open the screen, so entries logged during your session are immediately visible to the AI.
-- **Agentic Tool Calls:** The AI has access to four tools it calls automatically based on your query: `search_journal` (past entries), `search_todos` (tasks), `get_daily_standup` (daily reports), and `fetch_recent_commits` (git history). You do not need to invoke these manually.
+- **Live Context:** The 2nd-Brain re-loads your latest entries, todos, and **Facts** each time you open the screen, so entries logged during your session are immediately visible to the AI.
+- **Agentic Tool Calls:** The AI has access to specialized tools it calls automatically:
+    - **`search_facts`**: Search through extracted durable preferences and goals.
+    - **`run_cypher`**: Execute Cypher queries against the graph index for complex traversals.
+    - **`search_graph`**: Full-Text Search (FTS) across entries and todos via the graph.
+    - **`get_daily_standup`**: Structured daily reports.
+    - **`fetch_recent_commits`**: Git history and code changes.
+
 
 ---
 
