@@ -41,7 +41,10 @@ Beyond the UI, the AI uses a sophisticated multi-layered memory system to answer
 
 ### The Context Stack
 
-Every AI query is answered using three layers of memory:
+Every AI query is answered using four layers of memory:
+
+**Fact Memory (Durable Preferences)**
+The AI maintains a list of extracted "Facts" — durable preferences, recurring goals, and persistent constraints (e.g., *"I prefer backend work in the morning"*, *"I am allergic to Java"*). These are automatically extracted via the **Closed Learning Loop**.
 
 **Short-Term Memory (Past 72 Hours)**
 Your 20 most recent journal entries and up to 10 pending tasks are always in view. This is the AI's immediate awareness.
@@ -57,6 +60,7 @@ When your question mentions a project name (e.g. `&dwriter`) or a tag (e.g. `#de
 In **Follow-up** mode, the 2nd-Brain can actively search your data mid-conversation using tools:
 
 **Graph-backed tools (recommended):**
+- `search_facts`: Searches the **Fact Index** for durable user preferences and goals.
 - `run_cypher`: Executes a Cypher query against the graph index for graph traversals and cross-entity aggregation (e.g. *"What projects co-occur with #friction?"*).
 - `search_graph`: Full-text search over journal entries or todos using the graph index FTS engine.
 

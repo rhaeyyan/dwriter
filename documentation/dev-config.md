@@ -77,7 +77,7 @@ Download and install Ollama from [ollama.com](https://ollama.com/).
 We recommend the **Gemma 4** family for the best balance of speed and reasoning:
 ```bash
 ollama pull gemma4:e4b  # Main Brain (ReAct/Chat)
-ollama pull gemma4:e2b  # Daemon (Background/Tagging)
+ollama pull gemma4:e2b  # Daemon (Background/Facts)
 ```
 
 ### 3. Update your dwriter config
@@ -88,7 +88,7 @@ Add an `[ai]` section to your `~/.dwriter/config.toml` (or use `dwriter config e
 enabled = true
 base_url = "http://localhost:11434/v1"  # Default Ollama API endpoint
 chat_model = "gemma4:e4b"               # 2nd-Brain ReAct loop
-daemon_model = "gemma4:e2b"             # Background Auto-Tagging
+daemon_model = "gemma4:e2b"             # Background Fact Extraction & Tagging
 
 [ai.features]
 permission_mode = "append-only"         # Options: read-only, append-only, prompt, danger-full-access
@@ -154,10 +154,11 @@ We maintain high standards using `ruff`, `mypy`, and `pytest`.
 
 ## 📊 Project Architecture
 
-**dwriter** is designed with a **Headless-First** architecture:
-- **Core Logic:** Decoupled from the UI to ensure the CLI remains fast and scriptable.
-- **TUI Layer:** Built with the [Textual](https://textual.textualize.io/) framework for a rich, interactive experience.
-- **Storage:** Uses SQLite for local-first, lightning-fast data persistence.
+**dwriter** is designed with a **CQRS-inspired** architecture:
+- **Write Path:** SQLite (SQLAlchemy) stores your raw logs and tasks. All writes are non-blocking.
+- **Read Path (Graph):** [LadybugDB](https://github.com/rhaeyyan/ladybug) maintains a property-graph index of your history, powering Cypher queries and FTS5 search.
+- **AI Layer:** Built with a specialized reasoning pipeline using Gemma 4. Context is compressed and prioritized before inference.
+- **TUI Layer:** Built with [Textual](https://textual.textualize.io/) for high-density, keyboard-driven interaction.
 
 ---
 

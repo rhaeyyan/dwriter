@@ -92,27 +92,27 @@ dwriter timer "45 &engine_overhaul #deepwork"
 
 ## 🤖 AI & Intelligence
 
-Harness your historical data for deeper insights. These features require an Ollama-compatible AI backend.
+Harness your historical data for deeper insights. These features require a local or remote AI backend (like Ollama).
 
 | Command | Description |
 | :--- | :--- |
-| `dwriter ask "query"` | Ask natural language questions about your history or productivity. |
+| `dwriter ask "query"` | Ask natural language questions about your history, facts, or productivity. |
 | `dwriter compress` | Generate a structured weekly retrospective from your activity logs. |
 | `dwriter sync` | Synchronize your journal data across devices via Git. |
-| `dwriter graph rebuild` | Rebuild the graph index from SQLite (run once after install or after a manual data import). |
+| `dwriter graph rebuild` | Rebuild the LadybugDB graph index from SQLite. Run this after install or sync issues. |
 
 ### Querying your 2nd-Brain
-Ask for summaries, trend analysis, or advice based on your own data:
+The `ask` command uses a ReAct loop with access to graph-backed tools and your extracted **Facts**:
 
 ```bash
 # Query recent wins
 dwriter ask "What were my biggest wins this week?"
 
-# Analyze project time
+# Analyze project time (uses graph index)
 dwriter ask "How much progress did I make on &project-x?"
 
-# Strategic advice
-dwriter ask "Based on my history, what is my most productive time of day?"
+# Query durable facts
+dwriter ask "What are my current long-term goals according to my logs?"
 ```
 
 ---
@@ -137,6 +137,9 @@ dwriter standup --weekly
 
 # View your weekly productivity summary (headless)
 dwriter stats --weekly
+
+# JSON output for custom dashboards
+dwriter stats --weekly --json
 ```
 
 ---

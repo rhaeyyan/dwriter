@@ -52,6 +52,7 @@ On your second computer (after installing **dwriter**):
 **dwriter** is designed to handle syncing for you automatically.
 
 *   **When you start:** Every time you open the TUI (by typing `dwriter`), it automatically "Pulls" (downloads) any new changes from your other devices.
+*   **Graph Auto-Rebuild:** After every successful "Pull," dwriter automatically rebuilds your **Graph Index** in the background to ensure your AI 2nd-Brain and Analytics are always up to date with your synced data.
 *   **When you work:** Every time you add a note or complete a task, **dwriter** waits 10 seconds and then "Pushes" (uploads) the change to the cloud in the background.
 *   **Manual Sync:** If you ever want to force a sync right now, just type:
     ```bash
