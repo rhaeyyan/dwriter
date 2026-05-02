@@ -46,6 +46,23 @@ To ensure smooth handoffs between AI agents, a strict protocol is enforced:
    - **Domain:** Global operational memory.
    - **Mandate:** Gating sessions, bumping versions, running pre-flight checks, and maintaining the `HISTORY.md` audit log.
 
+## Core Concepts & Architectural Features
+To deliver a high-signal experience, `dwriter` implements several advanced architectural patterns that elevate it from a simple text logger to an intelligent journal.
+
+### 1. The Closed Learning Loop (Fact Extraction)
+**What it is:** The AI doesn't just read your logs; it learns from them. The Closed Learning Loop is a background process that automatically parses human text into structured `Fact` objects. It extracts durable user preferences (e.g., *"I prefer working on backend tasks in the morning"*), recurring goals (*"Release the beta by June"*), and persistent constraints (*"I am allergic to Java"*).
+**Purpose:** Most AI tools suffer from amnesia or require manual "system prompt" tuning. By storing these facts as dedicated nodes in the LadybugDB graph index (linked via `EXTRACTED_FROM` relationships), the 2nd-Brain agent can query your personal constraints mid-conversation using the `search_facts` tool. This results in highly personalized, context-aware advice without the user ever having to manually configure their preferences.
+
+### 2. The Dual-Model Pipeline
+**What it is:** An orchestration pattern that routes different types of AI tasks to specialized models.
+- **The Main Brain (Reasoning):** A heavier, reasoning-capable model (like Gemma) handles the interactive 2nd-Brain chat, where context understanding and nuanced responses are critical.
+- **The Daemon (Extraction):** A faster, lightweight model runs entirely in the background. It is solely responsible for strictly typed tasks via `Instructor`—like silently parsing a new journal entry to extract tags, projects, and Facts.
+**Purpose:** This bifurcation keeps the application highly performant and resource-efficient. The user isn't forced to wait for a heavy reasoning model to boot up just to parse a `#tag` from a CLI command.
+
+### 3. The 7-Day Pulse & Deterministic Analytics
+**What it is:** A heavy analytics operation (isolated from the AI domains) that runs once every 24 hours. It calculates actionable metrics like "Momentum" (task completion velocity) and identifies the user's "Big Rock" (the project consuming the majority of their time).
+**Purpose:** Users often miss the "forest for the trees" when logging chronologically. The Pulse provides an automated, high-level behavioral archetype (e.g., "The Deep Diver" or "The Firefighter"). By caching this heavy calculation and throttling it to run only once a day, the app provides instant, rich dashboard insights without degrading terminal performance.
+
 ## Technical Stack Choices
 Every dependency in `dwriter` was chosen intentionally to maximize local performance and minimize friction.
 
