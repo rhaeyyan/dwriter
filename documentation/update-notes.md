@@ -1,5 +1,14 @@
 # dwriter Update Notes
 
+## Version 4.10.2 - May 1, 2026
+
+### 🛠 Improvements & Fixes
+- **CLI Formatting**: Resolved an issue in the `add` and `search` CLI commands where rich text markup codes were artificially inflating string lengths during the `textwrap` phase. This caused tags with hyphens to wrap unnaturally mid-word.
+- **Search Output**: Fixed a minor spacing inconsistency before the `Project:` field in the `dwriter search` command output.
+- **Documentation**: Updated all references to reflect the `4.10.2` version.
+
+---
+
 ## Version 4.10.1 - April 20, 2026
 
 ### 🚀 Key Features
