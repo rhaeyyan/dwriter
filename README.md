@@ -142,11 +142,14 @@ The 2nd-Brain acts as a specialized analytical layer over your logs.
 | :--- | :--- |
 | 🧠 **[2nd-Brain Guide](documentation/2ND-BRAIN-GUIDE.md)** | **How to get the most out of the AI 2nd-Brain — facts, logging habits, and analytics.** |
 | 📘 **[User Manual](documentation/user-manual.md)** | **The complete technical guide to every feature.** |
+| 📓 **[Development History](documentation/development-history.md)** | **The agentic engineering journal, documenting the CLI to Textual TUI transition.** |
 | 🔄 **[Sync Guide](documentation/sync-guide.md)** | **Simple, step-by-step instructions for non-technical users.** |
 | 🚀 **[Update Notes](documentation/update-notes.md)** | **New in v4.10.2:** CLI tag formatting word-wrap bug fix. |
 | 🛠️ **[Command Reference](documentation/headless-readme.md)** | A complete guide to every CLI command and flag. |
 | 📖 **[Creative Use Cases](documentation/use-cases.md)** | 20 ways to use dwriter for brewing, fitness, travel, and more. |
 | ⚙️ **[Dev & Guide](documentation/dev-config.md)** | Customizing your themes, default projects, and dev setup. |
+
+> **Looking for the AI-Free version?** Switch to the [main branch](https://github.com/rhaeyyan/dwriter/tree/main).
 
 ---
 
