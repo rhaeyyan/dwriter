@@ -120,7 +120,7 @@ def search(
             if entry.tag_names:
                 tags_str = " ".join(f"[{TAG}]#[/]{t}" for t in entry.tag_names)
             if entry.project:
-                project_str = f" [{PROJECT}]Project:[/{PROJECT}] &{entry.project}"
+                project_str = f"[{PROJECT}]Project:[/{PROJECT}] &{entry.project}"
             else:
                 project_str = ""
 
