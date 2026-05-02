@@ -75,3 +75,25 @@ Every dependency in `dwriter` was chosen intentionally to maximize local perform
 *   **`dwriter-ai`**: The AI edition. Features the full Dual-Model pipeline, 2nd-Brain Command Center, and Graph-based Fact extraction.
 
 The agentic framework allows features developed on the AI branch (like TUI improvements or headless refactors) to be safely ported back to the `main` branch, ensuring both applications evolve together without cross-contamination of AI dependencies.
+
+---
+
+## 🚀 The Evolution: From Headless CLI to Modern TUI
+The transition of `dwriter` from a strictly command-line interface to a rich Terminal User Interface (TUI) was a major milestone. 
+
+Initially, `dwriter` focused exclusively on **headless execution** (`dwriter add`, `dwriter search`), favoring speed. However, as the feature set expanded to include complex project graphs and daily analytical pulses, the need for a persistent, dashboard-style view became clear.
+
+By adopting **Textual**, the application gained:
+1. **Interactive Event Loops:** Transitioning from simple synchronous Python scripts to an asynchronous, reactive event loop.
+2. **Component Architecture:** Building modular UI widgets (like the Omnibox and Standup Modals) that encapsulate their own state and styling.
+3. **Thread-Safe Concurrency:** Using Textual worker threads to run heavy analytics and AI RAG queries in the background without freezing the UI. This required enforcing strict SQLite lock patterns in the QA Lead domain.
+
+## 🧠 Skills & Knowledge Acquired
+Building and scaling `dwriter` through Agentic Engineering fostered deep expertise across several modern Python domains:
+
+- **Asynchronous UI Development (Textual):** Mastering CSS-like stylesheets in Python, reactive properties, and message-passing event buses.
+- **Advanced Concurrency:** Managing race conditions between Textual background workers and local SQLite database sessions.
+- **Graph Databases (LadybugDB):** Understanding CQRS (Command Query Responsibility Segregation) by using a relational database (SQLite) for writes and projecting it into a graph index for topological reads and FTS.
+- **AI Tool Integration (Instructor & Gemma):** Migrating away from unstructured prompt-engineering to strict, Pydantic-enforced JSON outputs. Implementing an extraction loop where the AI acts as a background daemon parsing human text into structured `Fact` objects.
+- **Multi-Agent Orchestration:** Learning how to effectively write "System Prompts" that bind AI to specific architectural domains (e.g. keeping the Analytics Engineer strictly separated from the AI Specialist).
+- **Git Branch Parity:** Managing parallel releases from the same repository by strictly guarding module imports and safely backporting UI features from the experimental AI branch to the deterministic main branch.
