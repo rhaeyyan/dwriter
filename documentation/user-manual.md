@@ -75,7 +75,7 @@ Run `dwriter` to launch the TUI. Built with the **Textual** framework, it provid
 | `1-5` | Switch Screens: 2nd-Brain, Logs, To-Do, Timer, Settings. |
 | `/` | Focus the **Omnibox** (Quick-Add) from anywhere. |
 | `Ctrl+P` | Launch the **Command Palette** (Fuzzy-find actions). |
-# 📘 dwriter: The Definitive Technical & User Manual (v4.10.1)
+# 📘 dwriter: The Definitive Technical & User Manual (v4.10.2)
 ...
 ### 🧠 The 2nd-Brain & 7-Day Pulse
 - **The Pulse:** A heavy analytics operation that runs once every 24 hours. It calculates your "Momentum" (task velocity) and identifies your "Big Rock" (the project taking most of your time).
