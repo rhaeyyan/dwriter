@@ -1,10 +1,12 @@
 # dwriter 📝
 v4.8.4
+> **Looking for the AI features (2nd-Brain & Facts)?** Switch to the [dwriter-ai branch](https://github.com/rhaeyyan/dwriter/tree/dwriter-ai).
 ### *The minimalist journal for those who live in the terminal.*
 
 **dwriter** is a high-signal, low-friction journaling tool designed to capture your work without breaking your flow. It bridges the gap between the raw speed of a command-line interface and the visual clarity of a modern dashboard.
 
 Whether you are a software engineer tracking "deep work," a freelancer logging billable hours, or a student managing assignments, **dwriter** stays out of your way until you need it.
+
 
 ---
 
@@ -158,8 +160,6 @@ dwriter sync --pull
 | 🛠️ **[Command Reference](documentation/headless-readme.md)** | A complete guide to every CLI command and flag. |
 | 📖 **[Creative Use Cases](documentation/use-cases.md)** | 20 ways to use dwriter for brewing, fitness, travel, and more. |
 | ⚙️ **[Dev & Guide](documentation/dev-config.md)** | Customizing your themes, default projects, and dev setup. |
-
-> **Looking for the AI features (2nd-Brain & Facts)?** Switch to the [dwriter-ai branch](https://github.com/rhaeyyan/dwriter/tree/dwriter-ai).
 
 ---
 
