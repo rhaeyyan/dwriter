@@ -250,7 +250,10 @@ class GraphProjector:
         index_name: str,
         limit: int = 10,
     ) -> list[dict[str, Any]]:
-        """Runs a full-text search over Entry/Todo nodes and returns matching nodes with scores."""
+        """Run a full-text search over Entry/Todo nodes.
+
+        Returns matching nodes with scores.
+        """
         cypher = (
             f"CALL QUERY_FTS_INDEX('{node_table}', '{index_name}', $q, top := {limit})"
             " RETURN node.uuid AS uuid, node.content AS content,"
@@ -265,7 +268,10 @@ class GraphProjector:
         query: str,
         limit: int = 10,
     ) -> list[dict[str, Any]]:
-        """Runs a full-text search over Fact nodes and returns matching facts with scores."""
+        """Run a full-text search over Fact nodes.
+
+        Returns matching facts with scores.
+        """
         cypher = (
             f"CALL QUERY_FTS_INDEX('Fact', 'fact_fts_idx', $q, top := {limit})"
             " RETURN node.uuid AS uuid, node.text AS text,"
