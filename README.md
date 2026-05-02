@@ -135,6 +135,18 @@ dwriter sync --pull
 
 ---
 
+## 🛠️ Tech Stack
+
+**dwriter** is built with a focus on local-first performance and modern terminal aesthetics.
+
+- **Language:** Python 3.10+
+- **UI Framework:** [Textual](https://textual.textualize.io/) (TUI) & [Rich](https://rich.readthedocs.io/) (CLI)
+- **Database:** SQLite
+- **Search:** RapidFuzz (Fuzzy CLI)
+- **Tooling:** [uv](https://github.com/astral-sh/uv) (Package Management), Ruff (Linting), Mypy (Types), Pytest (Testing)
+
+---
+
 ## 📖 Explore Further
 
 | Document | Description |
