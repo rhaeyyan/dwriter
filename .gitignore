@@ -62,6 +62,8 @@ Thumbs.db
 
 # Day Writer data (user-specific)
 ~/.day-writer/
+dwriter.db
+dwriter.db*.bak
 gemini.md
 GEMINI.md
 documentation/HISTORY.md

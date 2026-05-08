@@ -465,7 +465,7 @@ class DWriterApp(AIHandlersMixin, App[None]):
                 content=parsed_entry.content,
                 tags=all_tags,
                 project=project,
-                created_at=parsed_entry.created_at
+                created_at=parsed_entry.created_at,
             )
             self.notify(f"Logged: {parsed_entry.content}")
             self.post_message(EntryAdded(

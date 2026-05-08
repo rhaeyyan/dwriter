@@ -187,7 +187,7 @@ class SecondBrainScreen(Vertical):
 
     #insight-triggers Button.active {
         background: #cba6f7;
-        color: $background;
+        color: #89dceb;
         text-style: bold;
     }
 
@@ -333,160 +333,9 @@ class SecondBrainScreen(Vertical):
     @work(thread=True)
     def _generate_report(self, report_type: str) -> None:
         """Runs a deterministic analytics report in a background thread."""
-        from ...analytics import AnalyticsEngine, InsightGenerator
+        from ..report_builders import build_report
 
-        engine = AnalyticsEngine(self.ctx.db)
-        lines: list[str] = []
-        title = ""
-
-        if report_type == "energy":
-            title = "🔋 Energy Radar"
-            distribution = engine.get_domain_energy_distribution()
-            if not distribution:
-                lines.append(
-                    "[dim]No energy data yet. Add entries with life domain "
-                    "classifications to populate this report.[/]"
-                )
-            else:
-                lines.append("[bold]Average energy level by life domain[/]\n")
-                for domain, avg in sorted(
-                    distribution.items(), key=lambda x: x[1], reverse=True
-                ):
-                    bar_width = 14
-                    filled = int((avg / 10) * bar_width)
-                    bar = "█" * filled + "░" * (bar_width - filled)
-                    color = (
-                        "#a6e3a1" if avg >= 7 else "#f9e2af" if avg >= 5 else "#f38ba8"
-                    )
-                    lines.append(
-                        f"  [bold]{domain:<12}[/] [{color}]{bar}[/]"
-                        f"  [bold #cba6f7]{avg:.1f}[/]"
-                    )
-
-        elif report_type == "momentum":
-            title = "⚡ Momentum Report"
-            added, done = engine.get_say_do_ratio(days=7)
-            current_cleared, delta = engine.get_velocity_delta()
-            say_do = (done / max(added, 1)) * 100
-            bar_width = 14
-            filled = int(say_do * bar_width / 100)
-            bar = "█" * filled + "░" * (bar_width - filled)
-            trend_color = "#a6e3a1" if delta >= 0 else "#f38ba8"
-            trend_icon = "↑" if delta >= 0 else "↓"
-            completion_color = (
-                "#a6e3a1" if say_do >= 70 else "#f9e2af" if say_do >= 40 else "#f38ba8"
-            )
-            lines.append("[bold]Say-Do Ratio  (last 7 days)[/]\n")
-            lines.append(
-                f"  [{completion_color}]{bar}[/]  [bold #cba6f7]{say_do:.0f}%[/]"
-            )
-            lines.append(f"  {done} completed  /  {added} added\n")
-            lines.append("[bold]Velocity Delta[/]\n")
-            lines.append(
-                f"  [{trend_color}]{trend_icon} {abs(delta)}%[/] vs. last week"
-                f"  ({current_cleared} tasks cleared)"
-            )
-
-        elif report_type == "golden-hour":
-            title = "🕒 Golden Hour"
-            peak = engine.get_golden_hour()
-            pulse = engine.get_weekly_pulse()
-            lines.append("[bold]Peak Productivity Window[/]\n")
-            lines.append(f"  [bold #cba6f7]{peak}[/]  ← highest activity density\n")
-            if pulse:
-                lines.append("[bold]Activity by Day of Week[/]\n")
-                max_count = max(pulse.values()) or 1
-                for day, count in pulse.items():
-                    bar_width = 14
-                    filled = int((count / max_count) * bar_width)
-                    bar = "█" * filled + "░" * (bar_width - filled)
-                    lines.append(f"  [bold]{day:<4}[/] {bar}  [dim]{count}[/]")
-
-        elif report_type == "stale":
-            title = "⚠️ Stale Task Report"
-            fresh, stale, dead = engine.get_task_staleness()
-            stale_todos = self.ctx.db.get_stale_todos(limit=7)
-            total = fresh + stale + dead
-            lines.append("[bold]Task Age Breakdown[/]\n")
-            lines.append(f"  [bold #a6e3a1]Fresh[/]  (< 3 days)    {fresh}")
-            lines.append(f"  [bold #f9e2af]Stale[/]  (3–14 days)   {stale}")
-            lines.append(f"  [bold #f38ba8]Dead[/]   (> 14 days)   {dead}")
-            lines.append("  [dim]──────────────────────────[/]")
-            lines.append(f"  Total pending: {total}\n")
-            if stale_todos:
-                now = datetime.now()
-                lines.append("[bold]Oldest Pending Tasks[/]\n")
-                for t in stale_todos:
-                    days_old = (now - t.created_at).days
-                    proj = (
-                        f"[bold #F77F00]&{t.project}[/] " if t.project else ""
-                    )
-                    snippet = (
-                        t.content[:32] + "…" if len(t.content) > 32 else t.content
-                    )
-                    age_color = (
-                        "#f38ba8" if days_old > 14 else
-                        "#f9e2af" if days_old > 3 else "#a6e3a1"
-                    )
-                    lines.append(
-                        f"  {proj}{snippet}  [{age_color}]{days_old}d[/]"
-                    )
-
-        elif report_type == "focus":
-            title = "🏷️ Focus Report"
-            tag_velocity = engine.get_tag_velocity(days=14)
-            big_rock = engine.get_big_rock(days=7)
-            context_switches = engine.get_context_switches(days=7)
-            lines.append("[bold]Top Tags  (last 14 days)[/]\n")
-            if tag_velocity:
-                for tag, count, trend in tag_velocity[:6]:
-                    trend_color = (
-                        "#a6e3a1" if "↑" in trend or "↗" in trend
-                        else "#f38ba8" if "↓" in trend or "↘" in trend
-                        else "#cdd6f4"
-                    )
-                    lines.append(
-                        f"  [bold #66D0BC]#{tag:<14}[/]"
-                        f" {count:>3}  [{trend_color}]{trend}[/]"
-                    )
-            else:
-                lines.append("  [dim]No tag data yet.[/]")
-            if big_rock:
-                proj, pct = big_rock
-                lines.append("\n[bold]Big Rock[/]\n")
-                lines.append(
-                    f"  [bold #F77F00]&{proj}[/] claimed"
-                    f" [bold #cba6f7]{pct:.0f}%[/] of your bandwidth"
-                )
-            lines.append("\n[bold]Context Switches[/]\n")
-            switch_color = (
-                "#f38ba8" if context_switches > 4
-                else "#f9e2af" if context_switches > 2
-                else "#a6e3a1"
-            )
-            lines.append(
-                f"  [{switch_color}]{context_switches:.1f}[/] avg projects/day"
-            )
-
-        elif report_type == "pulse":
-            title = "🎭 Weekly Pulse"
-            wrapup = InsightGenerator(engine).generate_weekly_wrapup()
-            lines.append("[bold]7-Day Snapshot[/]\n")
-            for insight in wrapup:
-                lines.append(f"  {insight}")
-            deep_work, shallow_work, deep_ratio = engine.get_deep_work_ratio(days=7)
-            focus_color = (
-                "#a6e3a1" if deep_ratio >= 30
-                else "#f9e2af" if deep_ratio >= 15
-                else "#f38ba8"
-            )
-            lines.append("\n[bold]Deep Work Ratio[/]\n")
-            lines.append(
-                f"  [{focus_color}]{deep_ratio:.0f}%[/] deep"
-                f"  ({deep_work} sessions vs {shallow_work} shallow)"
-            )
-
-        body = "\n".join(lines)
+        title, body = build_report(report_type, self.ctx.db)
         display_text = f"[bold #cba6f7]▸ {title}[/]\n\n{body}"
         narrative = self.query_one("#narrative-text", Static)
         self.app.call_from_thread(narrative.update, display_text)

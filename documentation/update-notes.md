@@ -1,5 +1,36 @@
 # dwriter Update Notes
 
+## Version 4.10.3 - May 8, 2026
+
+### 🚀 Features
+
+#### 1. Insight Hub — Redesigned Report Layouts
+All six Insight Hub reports have been rebuilt with richer, more structured layouts that make better use of available screen space:
+- **Energy Radar**: Wider domain bars, color-coded green/yellow/red by level, peak and low domain summary.
+- **Momentum**: Contextual execution assessment (strong / moderate / low) appended to the Say-Do ratio.
+- **Golden Hour**: Day-of-week activity bars now intensity-colored relative to the peak day.
+- **Stale Tasks**: Full entry content on the first line, project + age bar on the second — no truncation. Health summary bar at top. Task limit raised from 7 → 10.
+- **Focus**: Big Rock project now renders a proportional bandwidth bar. Context switch count labeled with a qualitative assessment.
+- **Weekly Pulse**: 7-day Mon–Sun activity grid (block characters + count row) added alongside the Deep Work Ratio bar.
+
+#### 2. Active Insight Trigger Color Fix
+The selected insight trigger button now renders its label in **cyan** (`#89dceb`) instead of near-black. Visible in all themes.
+
+#### 3. Energy Slider & Mood Picker in Quick-Add Forms
+Two new optional fields appear in the **Quick Add Entry** modal (Logs screen) and the **Session Complete** modal (timer completion):
+- **Energy slider (1–10):** Color-coded handle (green ≥8 / yellow ≥5 / red <5). Keyboard-navigable with ←/→, clickable on the track.
+- **Mood dropdown:** 🌊 Flow / 😊 Good / 😐 Meh / 😔 Low — blank by default. Both fields write to the existing `energy_level` and `implicit_mood` columns, so the Energy Radar and Weekly Pulse reports reflect user-supplied values immediately.
+
+#### 4. Timer Break Toggle Fix
+Flipping the Break toggle now immediately updates the minutes input field to the configured break duration. Previously the field retained the work duration (25m default), causing the timer to start at the wrong length.
+
+### 🏗 Internal Architecture
+
+- **`src/dwriter/tui/report_builders.py`** (new): Report text-building logic extracted from `SecondBrainScreen._generate_report()` into a pure-function module. `second_brain.py` reduced from 598 → 447 lines, clearing the 600-line File-Size Ceiling Guard.
+- **`src/dwriter/tui/widgets/energy_slider.py`** (new): Lightweight `EnergySlider` widget — no Textual `Slider` dependency.
+
+---
+
 ## Version 4.10.2 - May 1, 2026
 
 ### 🛠 Improvements & Fixes

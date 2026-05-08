@@ -12,11 +12,12 @@ from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Horizontal, Vertical
 from textual.screen import ModalScreen
-from textual.widgets import Button, Header, Input, Label, ListItem, ListView
+from textual.widgets import Button, Header, Input, Label, ListItem, ListView, Select
 
 from ...database import Entry
 from ...search_utils import search_items
 from ..colors import PROJECT, TAG, get_icon
+from ..widgets.energy_slider import EnergySlider
 
 
 class QuickAddEntryModal(ModalScreen):  # type: ignore[type-arg]
@@ -30,7 +31,7 @@ class QuickAddEntryModal(ModalScreen):  # type: ignore[type-arg]
     #edit-modal-container {
         width: 80;
         height: auto;
-        max-height: 40;
+        max-height: 52;
         background: $surface;
         border: solid $success;
         padding: 1 2;
@@ -82,16 +83,22 @@ class QuickAddEntryModal(ModalScreen):  # type: ignore[type-arg]
         text-style: italic;
     }
 
-    #save-exit-row {
-        width: 100%;
+    #energy-mood-row {
         height: auto;
-        align: right middle;
+        align: left middle;
+        padding: 0 0 1 0;
     }
 
-    #save-exit-btn {
+    #energy-mood-row Label {
         width: auto;
-        margin: 0;
+        color: $text-muted;
+        padding: 0 1;
     }
+
+    #quick-add-energy-slider {
+        width: 28;
+    }
+
 
     #edit-buttons {
         align: center middle;
@@ -113,15 +120,13 @@ class QuickAddEntryModal(ModalScreen):  # type: ignore[type-arg]
         """Initializes the quick add modal."""
         super().__init__(**kwargs)
         self.result: tuple[
-            str | None, list[str] | None, str | None, datetime | None
-        ] = (None, None, None, None)
+            str | None, list[str] | None, str | None, datetime | None, int | None, str | None
+        ] = (None, None, None, None, None, None)
 
     def compose(self) -> ComposeResult:
         """Composes the modal layout."""
         use_emojis = self.app.ctx.config.display.use_emojis  # type: ignore[attr-defined]
         with Container(id="edit-modal-container"):
-            with Horizontal(id="save-exit-row"):
-                yield Button(f"{get_icon('save', use_emojis)} Save & Exit", id="save-exit-btn", variant="success")
             yield Label(f"{get_icon('plus', use_emojis)} Quick Add Entry", id="edit-modal-title")
 
             yield Label("Content:", id="edit-content-label")
@@ -148,7 +153,19 @@ class QuickAddEntryModal(ModalScreen):  # type: ignore[type-arg]
 
             yield Label(f"Date: yesterday, today, {date_fmt} | Time: 2pm, 14:30", id="help-text")
 
-            with Container(id="edit-buttons"):
+            with Horizontal(id="energy-mood-row"):
+                yield Label("Energy:")
+                yield EnergySlider(id="quick-add-energy-slider")
+                yield Label("Mood:", id="mood-label")
+                yield Select(
+                    [("🌊 Flow", "flow"), ("😊 Good", "good"), ("😐 Meh", "meh"), ("😔 Low", "low")],
+                    prompt="— pick mood —",
+                    allow_blank=True,
+                    id="quick-add-mood",
+                )
+
+            with Horizontal(id="edit-buttons"):
+                yield Button(f"{get_icon('save', use_emojis)} Save & Exit", id="save-exit-btn", variant="success")
                 yield Button("\\[ CANCEL ]", id="cancel-btn", variant="default")
 
     def on_mount(self) -> None:
@@ -223,7 +240,10 @@ class QuickAddEntryModal(ModalScreen):  # type: ignore[type-arg]
                     created_at = parsed_date.replace(hour=0, minute=0)
 
         tags = [t.strip() for t in tags_str.split(",") if t.strip()] if tags_str else None
-        self.result = (content, tags, project, created_at)
+        energy_level = self.query_one("#quick-add-energy-slider", EnergySlider).value
+        mood_val = self.query_one("#quick-add-mood", Select).value
+        mood = None if mood_val is Select.BLANK else str(mood_val)
+        self.result = (content, tags, project, created_at, energy_level, mood)
         self.dismiss(self.result)
 
     def action_cancel(self) -> None:
@@ -1187,11 +1207,19 @@ class LogsScreen(Container):
     def action_quick_add(self) -> None:
         """Opens the modal for creating a new journal entry."""
         def on_dismiss(result: Any) -> None:
-            if result is None or result[0] is None: return
-            content, tags, project, created_at = result
-            
+            if result is None or result[0] is None:
+                return
+            content, tags, project, created_at, energy_level, mood = result
+
             async def add_worker() -> None:
-                self.ctx.db.add_entry(content=content, tags=tags, project=project, created_at=created_at)
+                self.ctx.db.add_entry(
+                    content=content,
+                    tags=tags,
+                    project=project,
+                    created_at=created_at,
+                    energy_level=energy_level,
+                    implicit_mood=mood,
+                )
                 self.notify("New entry added")
                 self._load_data()
                 self._display_recent_entries()

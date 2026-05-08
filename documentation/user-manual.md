@@ -1,4 +1,4 @@
-# 📘 dwriter: The Definitive Technical & User Manual (v4.4.0)
+# 📘 dwriter: The Definitive Technical & User Manual (v4.10.3)
 
 This manual provides a tiered guide to **dwriter**, covering everything from basic journaling to the underlying distributed state architecture. It is designed for both casual users seeking a clean workflow and developers looking to integrate or extend the system.
 

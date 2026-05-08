@@ -19,6 +19,7 @@ $border-muted: #45475a;
     margin-right: 1;
 }
 
+
 #omnibox-hint {
     width: 1fr;
     height: 1;
