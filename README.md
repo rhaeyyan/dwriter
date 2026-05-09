@@ -14,13 +14,15 @@ Whether you are a software engineer tracking "deep work," a freelancer logging b
 Modern productivity apps are often cluttered with distractions. **dwriter** is designed to prioritize your focus:
 
 *   **⚡ Immediate Capture:** Use the "Headless CLI" to log thoughts, tasks, or focus sessions in seconds without leaving your terminal environment.
-*   **🧠 Dual-Model 2nd-Brain:** Reflect on your history with an interactive chat powered by a specialized reasoning pipeline.
+*   **🧠 Dual-Model 2nd-Brain:** A Strategic Command Center with analytics reports, preset AI briefings, and a **💬 Follow-up** chat for freeform questions — powered by a specialized reasoning pipeline.
 *   **🔁 Closed Learning Loop:** The AI now automatically extracts **Facts** (durable preferences, goals, and constraints) from your logs, building a personalized knowledge base that persists across sessions.
 *   **🎨 Unified Dashboard:** Launch the Terminal User Interface (TUI) to reflect, search your history, or manage a visual todo board.
 *   **🤖 Standup Automation:** Instantly transform your raw logs into formatted summaries for Slack, Jira, or Markdown.
 *   **🕸️ Graph Index:** A LadybugDB property-graph index runs alongside SQLite as a derived read layer — powering FTS, graph traversal queries, and the Analytical Engine. Fully local, regenerable with `dw graph rebuild`.
 *   **📝 Obsidian Integration:** Seamlessly export AI briefings and periodic reviews directly to your Obsidian vault as clean Markdown notes.
 *   **📅 Natural Language:** Talk to your journal like a human. `dwriter add "Fixed the bug" --date "last Friday"` just works.
+
+> **See it in action:** [21 Creative Workflows →](documentation/use-cases.md)
 
 ---
 
@@ -63,11 +65,13 @@ uv tool install --upgrade .
 ## 🎮 How to Use dwriter
 
 ### 🧠 The AI 2nd-Brain (Reflection)
-To **launch** the interactive chat:
+To **launch** the TUI and open the Strategic Command Center:
 
 ```bash
 dwriter
 ```
+
+Navigate to the **🧠 2nd-Brain** tab. Use the top trigger buttons (Energy, Momentum, Golden Hour, etc.) for instant analytics, the bottom row for preset AI briefings (Weekly Retro, Burnout Check, Catch Up), or press **💬 Follow-up** to open a freeform chat where you can ask anything about your history.
 
 **dwriter** features a context-aware "2nd-Brain" designed for deep reflection. It uses a specialized three-tier memory system and a governed **Analytical Engine** to ensure architectural integrity:
 - **Fact Memory (New):** Durable user preferences and constraints extracted automatically via the **Closed Learning Loop**.
@@ -78,7 +82,7 @@ dwriter
 ### 📊 The Visual Dashboard (TUI)
 Navigate between screens using the tab bar:
 
-- **🧠 2nd-Brain:** Query your history and get productivity advice.
+- **🧠 2nd-Brain:** Analytics triggers, AI briefings, and the **💬 Follow-up** chat for freeform questions.
 - **✅ To-do Board:** Keyboard-driven task board with priorities and overdue tracking.
 - **⏱️ Focus Timer:** A full-screen countdown that auto-logs your progress.
 - **🔍 Search/Edit:** Live-filtering fuzzy search across all your history with refined indentation.
