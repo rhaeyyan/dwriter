@@ -1,5 +1,23 @@
 # dwriter Update Notes
 
+## Version 4.8.5 - May 15, 2026
+
+### 🐛 Bug Fixes
+
+#### Sync push failure: "src refspec main does not match any"
+`dwriter sync --push` (and `dwriter sync --remote`) would fail with the error below on machines where `git init.defaultBranch` was not explicitly configured:
+
+```
+Push failed: error: src refspec main does not match any
+error: failed to push some refs to '<remote>'
+```
+
+**Root cause:** `git init` without `-b main` creates a `master` branch on git ≥ 2.28 when `init.defaultBranch` is unset. The sync engine hard-coded `"main"` in both the merge and push steps, so `git push origin main` found no matching local branch.
+
+**Fix:** `git init` now always passes `-b main` (`commands/sync.py`). Existing sync repos already initialised on `master` are automatically renamed to `main` on the next `dwriter sync` call — no manual action required.
+
+---
+
 ## Version 4.8.4 - April 12, 2026
 
 ### 🚀 TUI Parity & Enhancements

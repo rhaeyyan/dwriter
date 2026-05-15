@@ -156,7 +156,7 @@ dwriter sync --pull
 | 📘 **[User Manual](documentation/user-manual.md)** | **The complete technical guide to every feature.** |
 | 📓 **[Development History](documentation/development-history.md)** | **The agentic engineering journal, documenting the CLI to Textual TUI transition.** |
 | 🔄 **[Sync Guide](documentation/sync-guide.md)** | **Simple, step-by-step instructions for non-technical users.** |
-| 🚀 **[Update Notes](documentation/update-notes.md)** | **New in v3.7.0:** Guard 4 compliance & module decomposition. |
+| 🚀 **[Update Notes](documentation/update-notes.md)** | **New in v4.8.5:** Sync push bug fix. v4.8.4: TUI parity & module decomposition. |
 | 🛠️ **[Command Reference](documentation/headless-readme.md)** | A complete guide to every CLI command and flag. |
 | 📖 **[Creative Use Cases](documentation/use-cases.md)** | 20 ways to use dwriter for brewing, fitness, travel, and more. |
 | ⚙️ **[Dev & Guide](documentation/dev-config.md)** | Customizing your themes, default projects, and dev setup. |
@@ -168,5 +168,6 @@ dwriter sync --pull
 *   **Shell Characters:** Always wrap your entries in `"quotes"` if they contain `#tags` or `&projects`.
 *   **Clipboard:** On Linux, install `xclip` or `xsel` to enable copy-to-clipboard.
 *   **Customization:** Run `dwriter config edit` to tweak your default settings.
+*   **Sync push error (`src refspec main does not match any`):** Fixed in v4.8.5 — just run `dwriter sync` again and it self-heals. On older versions, run `git -C ~/.dwriter/sync branch -m master main` once, then retry.
 
 ---
