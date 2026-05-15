@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import threading
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -109,6 +110,13 @@ def add(
     entry = ctx.db.add_entry(
         content=final_content, tags=all_tags, project=project, created_at=entry_date
     )
+
+    # Keep graph index fresh without blocking the CLI response
+    from ..graph import GraphProjector
+    threading.Thread(
+        target=lambda: GraphProjector().build_index_incremental(ctx.db),
+        daemon=True,
+    ).start()
 
     if ctx.config.display.show_confirmation:
         display_entry(ctx.console, entry, ctx.config)

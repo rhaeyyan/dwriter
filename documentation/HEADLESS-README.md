@@ -157,13 +157,12 @@ auto_sync = true
 
 ## 🗂️ Graph Index
 
-dwriter maintains a local graph index (LadybugDB) for fast analytics. It is built automatically on sync but can be rebuilt manually:
+dwriter maintains a local graph index (LadybugDB) for fast analytics. It is updated automatically when you add entries, but can be synced manually:
 
 ```bash
-dwriter graph rebuild
+dwriter graph rebuild          # incremental sync (default, fast)
+dwriter graph rebuild --full   # wipe and rebuild from scratch after bulk deletions
 ```
-
-Run once after install or after a manual data import.
 
 ---
 

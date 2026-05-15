@@ -489,6 +489,15 @@ class DWriterApp(App[None]):
         except Exception:
             pass
 
+        # Keep graph index fresh in the background
+        if message.entry_id > 0:
+            from ..graph import GraphProjector
+            self.run_worker(
+                lambda: GraphProjector().build_index_incremental(self.ctx.db),
+                thread=True,
+                exclusive=False,
+            )
+
         # Trigger auto-sync if it's a real entry (id > 0)
         if message.entry_id > 0:
             self._sync_coordinator.trigger_push_debounced()

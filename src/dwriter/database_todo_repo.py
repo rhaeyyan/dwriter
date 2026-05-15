@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timedelta
 
-from sqlalchemy import case, select
+from sqlalchemy import case, or_, select
 
 from .database_models import Tag, Todo
 
@@ -13,9 +13,42 @@ from .database_models import Tag, Todo
 class TodoRepository:
     """Mixin providing todo CRUD operations for the Database class."""
 
-    # ------------------------------------------------------------------
-    # Todo CRUD
-    # ------------------------------------------------------------------
+    def get_todos_since(self, watermark: datetime) -> list[Todo]:
+        """Retrieves todos created or completed after the given watermark timestamp."""
+        with self.Session() as session:  # type: ignore[attr-defined]
+            stmt = (
+                select(Todo)
+                .where(
+                    or_(
+                        Todo.created_at > watermark,
+                        Todo.completed_at > watermark,
+                    )
+                )
+                .order_by(Todo.created_at.asc())
+            )
+            return list(session.scalars(stmt).all())
+
+    def get_all_todos(
+        self,
+        project: str | None = None,
+        tags: list[str] | None = None,
+    ) -> list[Todo]:
+        """Fetches all todo tasks with optional filtering.
+
+        Args:
+            project (str | None): Optional project filter.
+            tags (list[str] | None): Optional tag filter.
+
+        Returns:
+            list[Todo]: A list of all matching todos.
+        """
+        with self.Session() as session:  # type: ignore[attr-defined]
+            stmt = select(Todo).order_by(Todo.created_at.desc())
+            if project:
+                stmt = stmt.where(Todo.project == project)
+            if tags:
+                stmt = stmt.join(Todo.tags).where(Tag.name.in_(tags))
+            return list(session.scalars(stmt).all())
 
     def add_todo(
         self,

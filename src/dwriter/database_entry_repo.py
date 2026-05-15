@@ -312,6 +312,16 @@ class EntryRepository:
             stmt = select(func.distinct(Tag.name)).order_by(Tag.name)
             return list(session.scalars(stmt).all())
 
+    def get_entries_since(self, watermark: datetime) -> list[Entry]:
+        """Retrieves entries created or updated after the given watermark timestamp."""
+        with self.Session() as session:  # type: ignore[attr-defined]
+            stmt = (
+                select(Entry)
+                .where(Entry.updated_at > watermark)
+                .order_by(Entry.updated_at.asc())
+            )
+            return list(session.scalars(stmt).all())
+
     def get_entries_with_tags_count(self) -> dict[str, int]:
         """Get entry counts grouped by tag."""
         with self.Session() as session:  # type: ignore[attr-defined]

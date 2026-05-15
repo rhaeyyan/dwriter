@@ -5,6 +5,7 @@ from __future__ import annotations
 import queue
 import threading
 from collections.abc import Callable
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -107,6 +108,31 @@ class Database(EntryRepository, TodoRepository):
             meta.value = str(next_val)
             session.commit()
             return next_val
+
+    def get_graph_watermark(self) -> datetime | None:
+        """Returns the timestamp of the last successful incremental graph sync."""
+        with self.Session() as session:
+            stmt = select(SyncMetadata).where(SyncMetadata.key == "last_graph_sync")
+            meta = session.scalar(stmt)
+            if not meta:
+                return None
+            return datetime.fromisoformat(meta.value)
+
+    def set_graph_watermark(self, ts: datetime) -> None:
+        """Records the timestamp of a completed incremental graph sync."""
+        self._queued_write(self._set_graph_watermark_sync, ts)
+
+    def _set_graph_watermark_sync(self, ts: datetime) -> None:
+        """Synchronous implementation of set_graph_watermark."""
+        with self.Session() as session:
+            stmt = select(SyncMetadata).where(SyncMetadata.key == "last_graph_sync")
+            meta = session.scalar(stmt)
+            if not meta:
+                meta = SyncMetadata(key="last_graph_sync", value=ts.isoformat())
+                session.add(meta)
+            else:
+                meta.value = ts.isoformat()
+            session.commit()
 
     # ------------------------------------------------------------------
     # Utility

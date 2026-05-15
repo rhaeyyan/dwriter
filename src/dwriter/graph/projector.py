@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import threading
+from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -187,6 +188,25 @@ class GraphProjector:
             self.project_entry(entry)
         for todo in db.get_all_todos():
             self.project_todo(todo)
+
+
+    def build_index_incremental(self, db: Database) -> None:
+        """Projects only records modified since the last sync watermark.
+
+        Falls back to a full rebuild when no watermark exists (first run).
+        Deleted entries are not removed incrementally — use build_index() after
+        bulk deletions.
+        """
+        watermark = db.get_graph_watermark()
+        if watermark is None:
+            self.build_index(db)
+        else:
+            for entry in db.get_entries_since(watermark):
+                self.project_entry(entry)
+            for todo in db.get_todos_since(watermark):
+                self.project_todo(todo)
+        db.set_graph_watermark(datetime.utcnow())
+
 
     # ------------------------------------------------------------------
     # Query API (used by ai/tools.py)
