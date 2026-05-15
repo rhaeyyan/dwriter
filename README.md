@@ -1,5 +1,5 @@
 # dwriter: AI Edition 📝
-Experimental: v4.10.4
+Experimental: v4.10.5
 > **Looking for the AI-Free version?** Switch to the [main branch](https://github.com/rhaeyyan/dwriter/tree/main).
 ### *The minimalist journal for those who live in the terminal powered by a Dual-Model AI Pipeline (Gemma 4).*
 
