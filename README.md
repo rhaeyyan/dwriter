@@ -1,5 +1,5 @@
 # dwriter: AI Edition 📝
-Experimental: v4.10.3
+Experimental: v4.10.4
 > **Looking for the AI-Free version?** Switch to the [main branch](https://github.com/rhaeyyan/dwriter/tree/main).
 ### *The minimalist journal for those who live in the terminal powered by a Dual-Model AI Pipeline (Gemma 4).*
 
@@ -18,7 +18,7 @@ Modern productivity apps are often cluttered with distractions. **dwriter** is d
 *   **🔁 Closed Learning Loop:** The AI now automatically extracts **Facts** (durable preferences, goals, and constraints) from your logs, building a personalized knowledge base that persists across sessions.
 *   **🎨 Unified Dashboard:** Launch the Terminal User Interface (TUI) to reflect, search your history, or manage a visual todo board.
 *   **🤖 Standup Automation:** Instantly transform your raw logs into formatted summaries for Slack, Jira, or Markdown.
-*   **🕸️ Graph Index:** A LadybugDB property-graph index runs alongside SQLite as a derived read layer — powering FTS, graph traversal queries, and the Analytical Engine. Fully local, regenerable with `dw graph rebuild`.
+*   **🕸️ Graph Index:** A LadybugDB property-graph index runs alongside SQLite as a derived read layer — powering FTS, graph traversal queries, and the Analytical Engine. Fully local and always current — the index updates automatically in the background after every `dwriter add`. Use `dw graph rebuild` for a fast incremental sync, or `dw graph rebuild --full` to wipe and rebuild from scratch.
 *   **📝 Obsidian Integration:** Seamlessly export AI briefings and periodic reviews directly to your Obsidian vault as clean Markdown notes.
 *   **📅 Natural Language:** Talk to your journal like a human. `dwriter add "Fixed the bug" --date "last Friday"` just works.
 
@@ -149,7 +149,7 @@ The 2nd-Brain acts as a specialized analytical layer over your logs.
 | 📘 **[User Manual](documentation/user-manual.md)** | **The complete technical guide to every feature.** |
 | 📓 **[Development History](documentation/development-history.md)** | **The agentic engineering journal, documenting the CLI to Textual TUI transition.** |
 | 🔄 **[Sync Guide](documentation/sync-guide.md)** | **Simple, step-by-step instructions for non-technical users.** |
-| 🚀 **[Update Notes](documentation/update-notes.md)** | **New in v4.10.3:** Insight Hub report layouts, energy slider & mood picker in quick-add. |
+| 🚀 **[Update Notes](documentation/update-notes.md)** | **New in v4.10.4:** Incremental graph index, auto-sync on every `add`. |
 | 🛠️ **[Command Reference](documentation/headless-readme.md)** | A complete guide to every CLI command and flag. |
 | 📖 **[Creative Use Cases](documentation/use-cases.md)** | 20 ways to use dwriter for brewing, fitness, travel, and more. |
 | ⚙️ **[Dev & Guide](documentation/dev-config.md)** | Customizing your themes, default projects, and dev setup. |

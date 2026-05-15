@@ -5,13 +5,28 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timedelta
 
-from sqlalchemy import case, select
+from sqlalchemy import case, or_, select
 
 from .database_models import Summary, Tag, Todo
 
 
 class TodoSummaryRepository:
     """Mixin providing todo and summary CRUD methods for Database."""
+
+    def get_todos_since(self, watermark: datetime) -> list[Todo]:
+        """Retrieves todos created or completed after the given watermark timestamp."""
+        with self.Session() as session:  # type: ignore[attr-defined]
+            stmt = (
+                select(Todo)
+                .where(
+                    or_(
+                        Todo.created_at > watermark,
+                        Todo.completed_at > watermark,
+                    )
+                )
+                .order_by(Todo.created_at.asc())
+            )
+            return list(session.scalars(stmt).all())
 
     def get_all_todos(
         self,

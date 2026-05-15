@@ -99,7 +99,7 @@ Harness your historical data for deeper insights. These features require a local
 | `dwriter ask "query"` | Ask natural language questions about your history, facts, or productivity. |
 | `dwriter compress` | Generate a structured weekly retrospective from your activity logs. |
 | `dwriter sync` | Synchronize your journal data across devices via Git. |
-| `dwriter graph rebuild` | Rebuild the LadybugDB graph index from SQLite. Run this after install or sync issues. |
+| `dwriter graph rebuild` | Incrementally sync the graph index (fast, default). Use `--full` to wipe and rebuild from scratch after bulk deletions. |
 
 ### Querying your 2nd-Brain
 The `ask` command uses a ReAct loop with access to graph-backed tools and your extracted **Facts**:

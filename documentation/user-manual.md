@@ -1,4 +1,4 @@
-# 📘 dwriter: The Definitive Technical & User Manual (v4.10.3)
+# 📘 dwriter: The Definitive Technical & User Manual (v4.10.4)
 
 This manual provides a tiered guide to **dwriter**, covering everything from basic journaling to the underlying distributed state architecture. It is designed for both casual users seeking a clean workflow and developers looking to integrate or extend the system.
 
@@ -13,7 +13,7 @@ The `add` command is the heartbeat of dwriter.
 - **Basic Usage:** `dwriter add "Content"`
 - **Metadata Shorthand:** Use `#tag` for categorization and `&project` for project grouping.
 - **Natural Language Dates:** Uses a relative date parser (e.g., `yesterday`, `3 days ago`, `last Friday`).
-- **Technical Detail:** Content is sanitized via regex before storage. Metadata is extracted into separate relational tables in the SQLite database to allow for high-speed indexing.
+- **Technical Detail:** Content is sanitized via regex before storage. Metadata is extracted into separate relational tables in the SQLite database. The LadybugDB graph index is updated incrementally in a background daemon thread after each add — FTS, Cypher queries, and the Analytical Engine reflect your latest entry immediately, with no manual intervention.
 
 ### ✅ Task Management (`todo`)
 

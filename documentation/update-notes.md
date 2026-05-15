@@ -1,5 +1,31 @@
 # dwriter Update Notes
 
+## Version 4.10.4 - May 14, 2026
+
+### 🚀 Features
+
+#### 1. Incremental Graph Index
+`dwriter graph rebuild` is now incremental by default. Instead of wiping and re-projecting every node on each run, it reads a watermark timestamp stored in `SyncMetadata` and only projects entries and todos that have been created or updated since the last sync. First run (no watermark) falls back to a full rebuild automatically.
+
+Use `dwriter graph rebuild --full` to force a complete wipe-and-rebuild — the correct path after bulk deletions or index corruption.
+
+#### 2. Auto-Sync Graph on Every Add
+The graph index now updates automatically in the background after every `dwriter add` (CLI) and every entry submitted via the TUI omnibox. No manual `graph rebuild` is needed during normal use. The index is always current — FTS, Cypher queries, and the Analytical Engine reflect your latest entry the moment it is logged.
+
+### 🏗 Internal Architecture
+
+- **`database.py`**: `get_graph_watermark() -> datetime | None` and `set_graph_watermark(ts: datetime)` added. Watermark stored as `SyncMetadata(key="last_graph_sync")`, ISO 8601 string — mirrors the existing `lamport_clock` KV pattern. No schema migration required.
+- **`database_entry_repo.py`**: `get_entries_since(watermark)` — `WHERE updated_at > watermark ORDER BY updated_at ASC`.
+- **`database_todo_repo.py`**: `get_todos_since(watermark)` — `WHERE created_at > watermark OR completed_at > watermark` (Todo has no `updated_at`).
+- **`graph/projector.py`**: `build_index_incremental(db)` added alongside `build_index()`. Reads watermark, projects delta, writes new watermark. Falls back to `build_index()` on first run then sets watermark.
+- **`commands/graph.py`**: `rebuild` command gains `--full / -f` flag. Default path calls `build_index_incremental()`; `--full` calls `build_index()` and sets watermark.
+- **`commands/add.py`**: Daemon thread started after `db.add_entry()` to call `build_index_incremental()`. Mirrors the existing proactive-tagging pattern — zero CLI latency impact.
+- **`tui/app.py`**: `on_entry_added()` handler now spawns a Textual thread worker to call `build_index_incremental()` after every entry submitted via the TUI.
+
+All seven files contain zero AI imports — commits classified **Portable** by Branch Integration Steward.
+
+---
+
 ## Version 4.10.3 - May 8, 2026
 
 ### 🚀 Features

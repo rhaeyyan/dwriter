@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 import click
@@ -17,16 +18,22 @@ def graph() -> None:
 
 
 @graph.command()
+@click.option("--full", "-f", is_flag=True, help="Wipe and rebuild from scratch.")
 @click.pass_obj
-def rebuild(ctx: AppContext) -> None:
-    """Rebuild the graph index from SQLite (clears and reprojects all data)."""
+def rebuild(ctx: AppContext, full: bool) -> None:
+    """Sync the graph index. Defaults to incremental; use --full to wipe and rebuild."""
     console = Console()
-    console.print("[blue]Rebuilding graph index...[/blue]")
     try:
         from ..graph import GraphProjector
         projector = GraphProjector()
-        projector.build_index(ctx.db)
-        console.print("[green]Graph index rebuilt successfully.[/green]")
+        if full:
+            console.print("[blue]Rebuilding graph index (full)...[/blue]")
+            projector.build_index(ctx.db)
+            ctx.db.set_graph_watermark(datetime.utcnow())
+        else:
+            console.print("[blue]Syncing graph index...[/blue]")
+            projector.build_index_incremental(ctx.db)
+        console.print("[green]Graph index synced successfully.[/green]")
     except Exception as e:
-        console.print(f"[red]Rebuild failed: {e}[/red]")
+        console.print(f"[red]Graph sync failed: {e}[/red]")
         raise SystemExit(1) from e
