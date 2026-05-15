@@ -74,6 +74,19 @@ In the Visual Dashboard (`dwriter`), look at the **Status Bar** at the bottom.
 ### "Can I use this without a remote cloud?"
 Yes! Syncing is completely optional. If you don't set a `--remote`, your data stays only on your local machine.
 
+### "I see: `KeyError: 'implicit_mood'` when running `dwriter sync`"
+This was a bug in versions before **v4.10.5** where pulling journal data from a device on an older version of dwriter caused a crash. Older devices serialized entries without the `implicit_mood`, `life_domain`, and `energy_level` fields, and the merge step did not handle their absence gracefully.
+
+**If you are on v4.10.5 or later**, the fix is automatic — just run `dwriter sync` again and it will pull cleanly.
+
+**If you are on an older version**, upgrade first:
+```bash
+uv tool install --upgrade dwriter
+```
+Then retry `dwriter sync`.
+
+---
+
 ### "I see: `Push failed: error: src refspec main does not match any`"
 This was a bug in versions before **v4.10.5** where the local sync repository was initialised with a `master` branch instead of `main`, but the push step always looked for `main`.
 

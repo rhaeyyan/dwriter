@@ -107,9 +107,9 @@ def _merge_entry(db: Database, data: dict[str, Any]) -> None:
             existing.content = data["content"]
             existing.project = data["project"]
             existing.created_at = datetime.fromisoformat(data["created_at"])
-            existing.implicit_mood = data["implicit_mood"]
-            existing.life_domain = data["life_domain"]
-            existing.energy_level = data["energy_level"]
+            existing.implicit_mood = data.get("implicit_mood")
+            existing.life_domain = data.get("life_domain")
+            existing.energy_level = data.get("energy_level")
             existing.tags = [Tag(name=t) for t in data["tags"]]
 
             session.commit()
