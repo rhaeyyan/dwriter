@@ -74,6 +74,17 @@ In the Visual Dashboard (`dwriter`), look at the **Status Bar** at the bottom.
 ### "Can I use this without a remote cloud?"
 Yes! Syncing is completely optional. If you don't set a `--remote`, your data stays only on your local machine.
 
+### "I see: `Push failed: error: src refspec main does not match any`"
+This was a bug in versions before **v4.10.5** where the local sync repository was initialised with a `master` branch instead of `main`, but the push step always looked for `main`.
+
+**If you are on v4.10.5 or later**, the fix is automatic — just run `dwriter sync` again and it will self-heal.
+
+**If you are on an older version**, run this one-time command to fix it manually:
+```bash
+git -C ~/.dwriter/sync branch -m master main
+```
+Then retry `dwriter sync --push`.
+
 ---
 
 [⬅️ Back to README](../README.md)
