@@ -1,5 +1,5 @@
 # dwriter 📝
-v4.8.4
+v4.8.5
 > **Looking for the AI features (2nd-Brain & Facts)?** Switch to the [dwriter-ai branch](https://github.com/rhaeyyan/dwriter/tree/dwriter-ai).
 ### *The minimalist journal for those who live in the terminal.*
 
@@ -67,7 +67,7 @@ uv tool install --upgrade .
 Launch the full dashboard:
 
 ```bash
-dwriter ui
+dwriter
 ```
 
 Navigate between screens using the tab bar:
