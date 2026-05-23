@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from dwriter.date_utils import parse_date_or_default, parse_natural_date
+from dwriter.date_utils import format_due_date, parse_date_or_default, parse_natural_date
 
 
 class TestParseNaturalDate:
@@ -292,8 +292,8 @@ class TestFutureDates:
         assert result == expected
 
     def test_plus_months_shorthand(self):
-        """Test parsing '+3m' shorthand (approximate 30-day months)."""
-        result = parse_natural_date("+3m")
+        """Test parsing '+3mo' shorthand (approximate 30-day months)."""
+        result = parse_natural_date("+3mo")
         expected = (datetime.now() + timedelta(days=90)).replace(
             hour=0, minute=0, second=0, microsecond=0
         )
@@ -330,3 +330,97 @@ class TestFutureDates:
             hour=0, minute=0, second=0, microsecond=0
         )
         assert result == expected
+
+    def test_next_monday(self):
+        """Test parsing 'next Monday'."""
+        result = parse_natural_date("next Monday")
+        today = datetime.now()
+        days_ahead = (0 - today.weekday()) % 7
+        if days_ahead == 0:
+            days_ahead = 7
+        expected = (today + timedelta(days=days_ahead)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        assert result == expected
+        assert result.weekday() == 0
+
+    def test_next_friday(self):
+        """Test parsing 'next Friday'."""
+        result = parse_natural_date("next Friday")
+        today = datetime.now()
+        days_ahead = (4 - today.weekday()) % 7
+        if days_ahead == 0:
+            days_ahead = 7
+        expected = (today + timedelta(days=days_ahead)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        assert result == expected
+        assert result.weekday() == 4
+
+    def test_combined_shorthand_with_time(self):
+        """Test parsing '+4d 2pm'."""
+        result = parse_natural_date("+4d 2pm")
+        expected = (datetime.now() + timedelta(days=4)).replace(
+            hour=14, minute=0, second=0, microsecond=0
+        )
+        assert result == expected
+
+    def test_next_monday_with_time(self):
+        """Test parsing 'next monday 12:00 pm'."""
+        result = parse_natural_date("next monday 12:00 pm")
+        today = datetime.now()
+        days_ahead = (0 - today.weekday()) % 7
+        if days_ahead == 0:
+            days_ahead = 7
+        expected = (today + timedelta(days=days_ahead)).replace(
+            hour=12, minute=0, second=0, microsecond=0
+        )
+        assert result == expected
+
+
+class TestFormatDueDate:
+    """Tests for format_due_date function."""
+
+    def test_overdue_yesterday(self):
+        """Test that yesterday's date is marked as Overdue."""
+        yesterday = datetime.now() - timedelta(days=1)
+        assert format_due_date(yesterday) == "Overdue"
+
+    def test_overdue_past_time_today(self):
+        """Test that a past time today is marked as Overdue."""
+        past_time = datetime.now() - timedelta(hours=1)
+        # Only test if it's still the same day
+        if past_time.day == datetime.now().day:
+            assert format_due_date(past_time) == "Overdue"
+
+    def test_today_future_time(self):
+        """Test that a future time today is marked as Today."""
+        future_time = datetime.now() + timedelta(hours=1)
+        # Only test if it's still the same day
+        if future_time.day == datetime.now().day:
+            assert format_due_date(future_time) == "Today"
+
+    def test_today_no_time(self):
+        """Test that today at midnight is marked as Today (not overdue)."""
+        today_midnight = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        assert format_due_date(today_midnight) == "Today"
+
+    def test_future_date(self):
+        """Test formatting a future date."""
+        future_date = datetime.now() + timedelta(days=2)
+        day_name = future_date.strftime("%A")
+        date_str = future_date.strftime("%Y-%m-%d")
+        assert format_due_date(future_date) == f"{day_name} {date_str}"
+
+    def test_completed_is_never_overdue(self):
+        """Test that completed tasks never show as Overdue."""
+        yesterday = datetime.now() - timedelta(days=1)
+        date_str = yesterday.strftime("%Y-%m-%d")
+        assert format_due_date(yesterday, is_completed=True) == date_str
+
+    def test_custom_format(self):
+        """Test custom date format."""
+        future_date = datetime.now() + timedelta(days=2)
+        day_name = future_date.strftime("%A")
+        date_str = future_date.strftime("%d/%m/%Y")
+        assert format_due_date(future_date, date_format="%d/%m/%Y") == f"{day_name} {date_str}"

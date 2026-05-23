@@ -16,7 +16,7 @@ from ._helpers import _execute_edit, _execute_list, _execute_rm
 
 @click.group(
     invoke_without_command=True,
-    context_settings={"help_option_names": ["-h", "--help"], "allow_interspersed_args": True},
+    context_settings={"help_option_names": ["-h", "--help"], "allow_interspersed_args": True},  # noqa: E501
 )
 @click.argument("content", required=False, nargs=-1)
 @click.option(
@@ -114,14 +114,14 @@ def todo(
                 task_id = int(args[0])
                 _execute_rm(app_ctx, task_id)
             except ValueError:
-                app_ctx.console.print("[red]Error: 'rm' requires a numeric task ID.[/red]")
+                app_ctx.console.print("[red]Error: 'rm' requires a numeric task ID.[/red]")  # noqa: E501
             return
         elif subcommand == "edit" and args:
             try:
                 task_id = int(args[0])
                 _execute_edit(app_ctx, task_id)
             except ValueError:
-                app_ctx.console.print("[red]Error: 'edit' requires a numeric task ID.[/red]")
+                app_ctx.console.print("[red]Error: 'edit' requires a numeric task ID.[/red]")  # noqa: E501
             return
         elif subcommand == "add" and args:
             # Shift content to remove 'add' and proceed to normal add logic
@@ -170,7 +170,7 @@ def todo(
                 hint = fmt_map.get(due_date_format)
 
                 # For todos, we generally prefer future dates
-                due_date = parse_natural_date(final_due_str, prefer_future=True, format_hint=hint)
+                due_date = parse_natural_date(final_due_str, prefer_future=True, format_hint=hint)  # noqa: E501
             except ValueError as e:
                 app_ctx.console.print(f"[red]Error:[/red] {e}")
                 return
@@ -197,7 +197,7 @@ def todo(
                 if due_date.hour == 0 and due_date.minute == 0:
                     due_str = f" [dim](due: {due_date.strftime('%Y-%m-%d')})[/dim]"
                 else:
-                    due_str = f" [dim](due: {due_date.strftime('%Y-%m-%d %H:%M')})[/dim]"
+                    due_str = f" [dim](due: {due_date.strftime('%Y-%m-%d %H:%M')})[/dim]"  # noqa: E501
 
             tags_str = ""
             if task.tag_names:
