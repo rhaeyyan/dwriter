@@ -554,7 +554,7 @@ class DeleteConfirmModal(ModalScreen):  # type: ignore[type-arg]
     #delete-modal-container {
         width: 50;
         height: auto;
-        min-height: 8;
+        max-height: 12;
         background: $surface;
         border: solid $error;
         padding: 0 2;
@@ -618,7 +618,7 @@ class DeleteConfirmModal(ModalScreen):  # type: ignore[type-arg]
                 f'"{self.entry_content[:50]}{"..." if len(self.entry_content) > 50 else ""}"',
                 id="delete-modal-content",
             )
-            with Container(id="delete-buttons"):
+            with Horizontal(id="delete-buttons"):
                 yield Button("\\[ DELETE ]", id="delete-btn", variant="error")
                 yield Button("\\[ CANCEL ]", id="cancel-btn", variant="default")
 

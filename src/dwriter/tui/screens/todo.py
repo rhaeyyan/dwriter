@@ -993,8 +993,7 @@ class TodoScreen(Container):
         padding: 0;
     }
 
-    /* Use Textual's auto-generated ID for the tab to guarantee maximum CSS specificity */
-    #todo-tabs #tab-add-pane {
+    #todo-tabs Tabs Tab#tab-add-pane {
         color: $success;
         text-style: bold;
         background: transparent;
@@ -1002,13 +1001,13 @@ class TodoScreen(Container):
         min-width: 0;
     }
 
-    #todo-tabs #tab-add-pane:hover {
+    #todo-tabs Tabs Tab#tab-add-pane:hover {
         background: $success 20%;
         color: $success;
         text-style: bold;
     }
 
-    #todo-tabs #tab-add-pane.-active {
+    #todo-tabs Tabs Tab#tab-add-pane.-active {
         background: $success;
         color: $background;
         text-style: bold;
