@@ -18,9 +18,10 @@ from textual.binding import Binding
 from textual.containers import Container, Horizontal, Vertical
 from textual.reactive import reactive
 from textual.screen import ModalScreen
-from textual.widgets import Button, Input, Label, Static, Switch
+from textual.widgets import Button, Input, Label, Select, Static, Switch
 
 from ..colors import PROJECT, TAG, get_icon
+from ..widgets.energy_slider import EnergySlider
 from ..messages import EntryAdded, TimerStateChanged
 from ..parsers import parse_quick_add
 
@@ -70,6 +71,22 @@ class SessionCompleteModal(ModalScreen):  # type: ignore[type-arg]
         margin-bottom: 1;
     }
 
+    #energy-mood-row {
+        height: auto;
+        align: left middle;
+        padding: 0 0 1 0;
+    }
+
+    #energy-mood-row Label {
+        width: auto;
+        color: $text-muted;
+        padding: 0 1;
+    }
+
+    #session-energy-slider {
+        width: 28;
+    }
+
     #edit-buttons {
         height: auto;
         align: center middle;
@@ -109,7 +126,7 @@ class SessionCompleteModal(ModalScreen):  # type: ignore[type-arg]
         self.default_content = default_content
         self.tags = tags or []
         self.project = project
-        self.result: str | None = None
+        self.result: tuple[str, int | None, str | None] | None = None
 
     def compose(self) -> ComposeResult:
         """Composes the modal layout."""
@@ -139,6 +156,17 @@ class SessionCompleteModal(ModalScreen):  # type: ignore[type-arg]
                     classes="session-meta",
                 )
 
+            with Horizontal(id="energy-mood-row"):
+                yield Label("Energy:")
+                yield EnergySlider(id="session-energy-slider")
+                yield Label("Mood:", id="mood-label")
+                yield Select(
+                    [("🌊 Flow", "flow"), ("😊 Good", "good"), ("😐 Meh", "meh"), ("😔 Low", "low")],
+                    prompt="— pick mood —",
+                    allow_blank=True,
+                    id="session-mood",
+                )
+
             with Horizontal(id="edit-buttons"):
                 yield Button("\\[ LOG ENTRY ]", id="save-btn", variant="success")
                 yield Button("\\[ SKIP ]", id="cancel-btn", variant="default")
@@ -149,7 +177,11 @@ class SessionCompleteModal(ModalScreen):  # type: ignore[type-arg]
 
     def action_save(self) -> None:
         """Saves the entry content and dismisses the modal."""
-        self.result = self.query_one("#edit-input", Input).value.strip()
+        content = self.query_one("#edit-input", Input).value.strip()
+        energy_level = self.query_one("#session-energy-slider", EnergySlider).value
+        mood_val = self.query_one("#session-mood", Select).value
+        mood = None if mood_val is Select.BLANK else str(mood_val)
+        self.result = (content, energy_level, mood)
         self.dismiss(self.result)
 
     def action_cancel(self) -> None:
@@ -648,21 +680,34 @@ class TimerScreen(Container):
         completed_minutes = self.initial_minutes
         default_content = f"Completed {completed_minutes}m timer session"
 
-        def on_dismiss(result: str | None) -> None:
+        def on_dismiss(result: tuple[str, int | None, str | None] | None) -> None:
             if result:
+                content, energy_level, mood = result
                 async def save_worker() -> None:
                     try:
-                        parsed = parse_quick_add(result)
+                        parsed = parse_quick_add(content)
                         all_tags = list(self.tags)
                         for tag in parsed.tags:
-                            if tag not in all_tags: all_tags.append(tag)
+                            if tag not in all_tags:
+                                all_tags.append(tag)
 
                         project = parsed.project or ("Break" if self.is_break_mode else self.project)
-                        entry = self.ctx.db.add_entry(content=parsed.content, tags=all_tags, project=project, created_at=datetime.now())
-                        self.post_message(EntryAdded(entry_id=entry.id, content=entry.content, created_at=entry.created_at))
+                        entry = self.ctx.db.add_entry(
+                            content=parsed.content,
+                            tags=all_tags,
+                            project=project,
+                            created_at=datetime.now(),
+                            energy_level=energy_level,
+                            implicit_mood=mood,
+                        )
+                        self.post_message(EntryAdded(
+                            entry_id=entry.id,
+                            content=entry.content,
+                            created_at=entry.created_at,
+                        ))
                     except Exception as e:
                         self.notify(f"Log error: {e}", severity="error")
-                
+
                 self.run_worker(save_worker())
             self._reset_timer()
 
@@ -720,6 +765,8 @@ class TimerScreen(Container):
         self.remaining_seconds = new_seconds
         
         try: self.query_one("#timer-break-switch", Switch).value = self.is_break_mode
+        except Exception: pass
+        try: self.query_one("#input-duration", Input).value = str(new_duration)
         except Exception: pass
         self._update_display()
         self.update_session_meta()
