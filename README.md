@@ -1,5 +1,5 @@
 # dwriter: AI Edition 📝
-Experimental: v4.10.6
+Experimental: v4.10.7
 > **Looking for the AI-Free version?** Switch to the [main branch](https://github.com/rhaeyyan/dwriter/tree/main).
 ### *The minimalist journal for those who live in the terminal powered by a Dual-Model AI Pipeline (Gemma 4).*
 
@@ -150,7 +150,7 @@ The 2nd-Brain acts as a specialized analytical layer over your logs.
 | 📘 **[User Manual](documentation/user-manual.md)** | **The complete technical guide to every feature.** |
 | 📓 **[Development History](documentation/development-history.md)** | **The agentic engineering journal, documenting the CLI to Textual TUI transition.** |
 | 🔄 **[Sync Guide](documentation/sync-guide.md)** | **Simple, step-by-step instructions for non-technical users.** |
-| 🚀 **[Update Notes](documentation/update-notes.md)** | **New in v4.10.6:** HNSW vector index + RRF hybrid search + `search_semantic` AI tool. v4.10.5: Sync pull `KeyError` fix + sync push branch fix. |
+| 🚀 **[Update Notes](documentation/update-notes.md)** | **New in v4.10.7:** Visual overhaul — underline inputs, `·` separator, hanging-indent word-wrap. v4.10.6: HNSW vector index + RRF hybrid search + `search_semantic`. |
 | 🛠️ **[Command Reference](documentation/headless-readme.md)** | A complete guide to every CLI command and flag. |
 | 📖 **[Creative Use Cases](documentation/use-cases.md)** | 20 ways to use dwriter for brewing, fitness, travel, and more. |
 | ⚙️ **[Dev & Guide](documentation/dev-config.md)** | Customizing your themes, default projects, and dev setup. |
