@@ -21,7 +21,8 @@ def wrap_with_hanging_indent(
     text: str,
     width: int = 80,
     initial_indent: str = "",
-    subsequent_indent: str = "    "
+    subsequent_indent: str = "    ",
+    break_on_hyphens: bool = True
 ) -> str:
     """Wraps text with a hanging indent for better readability.
 
@@ -30,6 +31,7 @@ def wrap_with_hanging_indent(
         width: The maximum width of the wrapped lines.
         initial_indent: Indentation for the first line.
         subsequent_indent: Indentation for all lines after the first.
+        break_on_hyphens: Whether to break words on hyphens.
 
     Returns:
         The wrapped text with hanging indents.
@@ -42,6 +44,7 @@ def wrap_with_hanging_indent(
         initial_indent=initial_indent,
         subsequent_indent=subsequent_indent,
         break_long_words=True,
+        break_on_hyphens=break_on_hyphens,
         replace_whitespace=False
     )
 
@@ -117,12 +120,18 @@ def display_entry(console: "Console", entry: "Entry", config: "Config") -> None:
     console.print(f"{full_prefix}{wrapped_content}")
 
     if entry.tag_names:
-        tags_str = " ".join(f"[{TAG}]#[/]{t}" for t in entry.tag_names)
-        wrapped_tags = wrap_with_hanging_indent(
-            tags_str,
+        plain_tags = " ".join(f"#{t}" for t in entry.tag_names)
+        wrapped_plain = wrap_with_hanging_indent(
+            plain_tags,
             width=console.width if console.width > 0 else 80,
-            initial_indent=f"    [{TAG}]Tags:[/{TAG}] ",
-            subsequent_indent="          " # Match length of "    Tags: "
+            initial_indent="    Tags: ",
+            subsequent_indent="          ",
+            break_on_hyphens=False
+        )
+        wrapped_tags = wrapped_plain.replace(
+            "#", f"[{TAG}]#[/]"
+        ).replace(
+            "Tags:", f"[{TAG}]Tags:[/{TAG}]"
         )
         console.print(wrapped_tags)
 
