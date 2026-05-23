@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import threading
 from datetime import datetime
 from pathlib import Path
@@ -9,7 +10,7 @@ from typing import TYPE_CHECKING, Any
 
 import ladybug as lb
 
-from .schema import FTS_INDICES, NODE_TABLES, REL_TABLES
+from .schema import FTS_INDICES, NODE_TABLES, REL_TABLES, VECTOR_INDICES
 
 if TYPE_CHECKING:
     from ..database import Database, Entry, Todo
@@ -64,12 +65,27 @@ class GraphProjector:
                     self._conn.execute(ddl)
                 except Exception:
                     pass
+        # Migrate existing Entry tables that pre-date the embedding column.
+        try:
+            self._conn.execute(
+                "ALTER TABLE Entry ADD embedding FLOAT[768]"
+            )
+        except Exception:
+            pass
         for node_table, index_name, props in FTS_INDICES:
             props_str = str(props).replace("'", '"')
             try:
                 self._conn.execute(
                     f"CALL CREATE_FTS_INDEX('{node_table}', "  # noqa: E501
                     f"'{index_name}', {props_str})"
+                )
+            except Exception:
+                pass
+        for node_table, index_name, prop in VECTOR_INDICES:
+            try:
+                self._conn.execute(
+                    f"CALL CREATE_VECTOR_INDEX('{node_table}', "
+                    f"'{index_name}', '{prop}')"
                 )
             except Exception:
                 pass
@@ -97,6 +113,9 @@ class GraphProjector:
     def project_entry(self, entry: Entry) -> None:
         """Upserts one Entry node and its tag/project edges."""
         created = entry.created_at.isoformat() if entry.created_at else ""
+        emb: list[float] | None = None
+        if isinstance(entry.embedding, bytes):
+            emb = json.loads(entry.embedding.decode("utf-8"))
         with self._lock:
             self._conn.execute(
                 "MATCH (e:Entry {uuid: $uuid}) DETACH DELETE e",
@@ -106,7 +125,8 @@ class GraphProjector:
                 """CREATE (:Entry {
                     uuid: $uuid, content: $content, project: $project,
                     created_at: $created_at, implicit_mood: $implicit_mood,
-                    life_domain: $life_domain, energy_level: $energy_level
+                    life_domain: $life_domain, energy_level: $energy_level,
+                    embedding: $embedding
                 })""",
                 {
                     "uuid": entry.uuid,
@@ -116,6 +136,7 @@ class GraphProjector:
                     "implicit_mood": entry.implicit_mood or "",
                     "life_domain": entry.life_domain or "",
                     "energy_level": float(entry.energy_level or 0.0),
+                    "embedding": emb,
                 },
             )
             for tag in entry.tag_names:
@@ -189,7 +210,6 @@ class GraphProjector:
         for todo in db.get_all_todos():
             self.project_todo(todo)
 
-
     def build_index_incremental(self, db: Database) -> None:
         """Projects only records modified since the last sync watermark.
 
@@ -207,6 +227,46 @@ class GraphProjector:
                 self.project_todo(todo)
         db.set_graph_watermark(datetime.utcnow())
 
+    def project_fact(
+        self,
+        uuid: str,
+        text: str,
+        category: str,
+        extracted_at: str,
+        source_entry_uuid: str,
+    ) -> None:
+        """Upserts one Fact node and its EXTRACTED_FROM edge."""
+        with self._lock:
+            self._conn.execute(
+                "MATCH (f:Fact {uuid: $uuid}) DETACH DELETE f",
+                {"uuid": uuid},
+            )
+            self._conn.execute(
+                """CREATE (:Fact {
+                    uuid: $uuid, text: $text, category: $category,
+                    extracted_at: $extracted_at, source_entry_uuid: $source_entry_uuid
+                })""",
+                {
+                    "uuid": uuid,
+                    "text": text,
+                    "category": category,
+                    "extracted_at": extracted_at,
+                    "source_entry_uuid": source_entry_uuid,
+                },
+            )
+            self._conn.execute(
+                "MATCH (f:Fact {uuid: $f_id}), (e:Entry {uuid: $e_id})"
+                " CREATE (f)-[:EXTRACTED_FROM]->(e)",
+                {"f_id": uuid, "e_id": source_entry_uuid},
+            )
+
+    def delete_facts_for_entry(self, source_entry_uuid: str) -> None:
+        """Deletes all facts extracted from a specific entry."""
+        with self._lock:
+            self._conn.execute(
+                "MATCH (f:Fact {source_entry_uuid: $uuid}) DETACH DELETE f",
+                {"uuid": source_entry_uuid},
+            )
 
     # ------------------------------------------------------------------
     # Query API (used by ai/tools.py)
@@ -237,6 +297,44 @@ class GraphProjector:
             f"CALL QUERY_FTS_INDEX('{node_table}', '{index_name}', $q, top := {limit})"
             " RETURN node.uuid AS uuid, node.content AS content,"
             " node.project AS project, score ORDER BY score DESC"
+        )
+        with self._lock:
+            result = self._conn.execute(cypher, {"q": query})
+            return list(result.rows_as_dict())  # type: ignore[union-attr, arg-type]
+
+    def search_vector(
+        self,
+        query_embedding: list[float],
+        limit: int = 10,
+    ) -> list[dict[str, Any]]:
+        """ANN search over Entry nodes using the HNSW vector index.
+
+        Only entries that have been projected with an embedding are returned.
+        Results are ordered by ascending distance (closest first).
+        """
+        cypher = (
+            f"CALL QUERY_VECTOR_INDEX('Entry', 'entry_vec_idx', $emb, {limit})"
+            " RETURN node.uuid AS uuid, node.content AS content,"
+            " node.project AS project, distance ORDER BY distance ASC"
+        )
+        with self._lock:
+            result = self._conn.execute(cypher, {"emb": query_embedding})
+            return list(result.rows_as_dict())  # type: ignore[union-attr, arg-type]
+
+    def search_facts_fts(
+        self,
+        query: str,
+        limit: int = 10,
+    ) -> list[dict[str, Any]]:
+        """Run a full-text search over Fact nodes.
+
+        Returns matching facts with scores.
+        """
+        cypher = (
+            f"CALL QUERY_FTS_INDEX('Fact', 'fact_fts_idx', $q, top := {limit})"
+            " RETURN node.uuid AS uuid, node.text AS text,"
+            " node.category AS category, node.source_entry_uuid AS source_entry_uuid,"
+            " score ORDER BY score DESC"
         )
         with self._lock:
             result = self._conn.execute(cypher, {"q": query})

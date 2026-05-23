@@ -1,5 +1,7 @@
 """LadybugDB schema DDL for the dwriter graph index."""
 
+EMBEDDING_DIM = 768  # nomic-embed-text output dimension
+
 NODE_TABLES = [
     """CREATE NODE TABLE Entry(
         uuid STRING,
@@ -9,6 +11,7 @@ NODE_TABLES = [
         implicit_mood STRING,
         life_domain STRING,
         energy_level DOUBLE,
+        embedding FLOAT[768],
         PRIMARY KEY(uuid)
     )""",
     """CREATE NODE TABLE Todo(
@@ -24,6 +27,14 @@ NODE_TABLES = [
     )""",
     "CREATE NODE TABLE Tag(name STRING, PRIMARY KEY(name))",
     "CREATE NODE TABLE Project(name STRING, PRIMARY KEY(name))",
+    """CREATE NODE TABLE Fact(
+        uuid STRING,
+        text STRING,
+        category STRING,
+        extracted_at STRING,
+        source_entry_uuid STRING,
+        PRIMARY KEY(uuid)
+    )""",
 ]
 
 REL_TABLES = [
@@ -32,9 +43,15 @@ REL_TABLES = [
     "CREATE REL TABLE ENTRY_IN_PROJECT(FROM Entry TO Project)",
     "CREATE REL TABLE TODO_IN_PROJECT(FROM Todo TO Project)",
     "CREATE REL TABLE REFERENCES_TODO(FROM Entry TO Todo)",
+    "CREATE REL TABLE EXTRACTED_FROM(FROM Fact TO Entry)",
 ]
 
 FTS_INDICES = [
     ("Entry", "entry_fts_idx", ["content"]),
     ("Todo", "todo_fts_idx", ["content"]),
+    ("Fact", "fact_fts_idx", ["text"]),
+]
+
+VECTOR_INDICES = [
+    ("Entry", "entry_vec_idx", "embedding"),
 ]

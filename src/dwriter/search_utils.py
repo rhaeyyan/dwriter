@@ -4,9 +4,33 @@ This module provides fuzzy matching capabilities for searching
 journal entries and to-do tasks.
 """
 
+import math
 from typing import Any
 
 from rapidfuzz import fuzz, process
+
+
+def cosine_similarity(vec1: list[float], vec2: list[float]) -> float:
+    """Calculates the cosine similarity between two vectors.
+
+    Args:
+        vec1 (list[float]): The first vector.
+        vec2 (list[float]): The second vector.
+
+    Returns:
+        float: The cosine similarity score (-1.0 to 1.0).
+    """
+    if not vec1 or not vec2:
+        return 0.0
+
+    dot_product = sum(a * b for a, b in zip(vec1, vec2, strict=False))
+    magnitude1 = math.sqrt(sum(a * a for a in vec1))
+    magnitude2 = math.sqrt(sum(b * b for b in vec2))
+
+    if magnitude1 == 0 or magnitude2 == 0:
+        return 0.0
+
+    return dot_product / (magnitude1 * magnitude2)
 
 
 def search_items(
@@ -93,3 +117,24 @@ def find_multiple_matches(
         List of tuples containing (item, score) sorted by score descending.
     """
     return search_items(query, items, limit=limit, threshold=threshold)
+
+
+def rrf_fuse(
+    ranked_id_lists: list[list[str]],
+    k: int = 60,
+) -> list[str]:
+    """Fuse multiple ranked ID lists via Reciprocal Rank Fusion.
+
+    Args:
+        ranked_id_lists: Each inner list is a ranked sequence of item IDs,
+            best match first.
+        k: RRF smoothing constant (standard default: 60).
+
+    Returns:
+        Merged list of IDs, highest RRF score first.
+    """
+    scores: dict[str, float] = {}
+    for ranked in ranked_id_lists:
+        for rank, item_id in enumerate(ranked, start=1):
+            scores[item_id] = scores.get(item_id, 0.0) + 1.0 / (k + rank)
+    return sorted(scores, key=lambda i: scores[i], reverse=True)

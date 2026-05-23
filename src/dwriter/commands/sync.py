@@ -19,7 +19,7 @@ from ..sync.engine import merge_jsonl_to_db, serialize_db
 @click.command()
 @click.option("--push", is_flag=True, help="Push local changes to remote")
 @click.option("--pull", is_flag=True, help="Pull remote changes and merge")
-@click.option("--remote", help="Set remote Git URL for the sync repo")
+@click.option("--remote", help="Set remote Git URL")
 @click.pass_obj
 def sync(ctx: AppContext, push: bool, pull: bool, remote: str | None) -> None:
     """Synchronize journal data across devices using Git."""
@@ -27,59 +27,61 @@ def sync(ctx: AppContext, push: bool, pull: bool, remote: str | None) -> None:
     sync_dir = Path.home() / ".dwriter" / "sync"
     sync_dir.mkdir(parents=True, exist_ok=True)
 
-    # Initialize Git repo if needed
+    # Initialize Git repo if not exists
     if not (sync_dir / ".git").exists():
         console.print("[yellow]Initializing sync repository...[/yellow]")
         subprocess.run(["git", "init", "-b", "main"], cwd=sync_dir, capture_output=True)
         if remote:
             subprocess.run(
-                ["git", "remote", "add", "origin", remote], cwd=sync_dir, capture_output=True
+                ["git", "remote", "add", "origin", remote],
+                cwd=sync_dir, capture_output=True
             )
     else:
         # Migrate repos initialized before -b main was used (master → main)
         branch_result = subprocess.run(
-            ["git", "branch", "--show-current"], cwd=sync_dir, capture_output=True, text=True
+            ["git", "branch", "--show-current"],
+            cwd=sync_dir, capture_output=True, text=True
         )
         if branch_result.stdout.strip() == "master":
-            subprocess.run(["git", "branch", "-m", "master", "main"], cwd=sync_dir, capture_output=True)
+            subprocess.run(
+                ["git", "branch", "-m", "master", "main"],
+                cwd=sync_dir, capture_output=True
+            )
 
     if remote and (sync_dir / ".git").exists():
+        # Update remote if provided
         subprocess.run(
-            ["git", "remote", "set-url", "origin", remote], cwd=sync_dir, capture_output=True
+            ["git", "remote", "set-url", "origin", remote],
+            cwd=sync_dir, capture_output=True
         )
 
-    # Default to both if neither flag is given
     if not push and not pull:
+        # Default to both if none specified
         push = pull = True
 
     if pull:
         console.print("[blue]Pulling remote changes...[/blue]")
+        # 1. Fetch
         subprocess.run(["git", "fetch", "origin"], cwd=sync_dir, capture_output=True)
-        subprocess.run(
-            ["git", "merge", "origin/main"], cwd=sync_dir, capture_output=True
-        )
+        # 2. Merge (Git level)
+        subprocess.run(["git", "merge", "origin/main"], cwd=sync_dir, capture_output=True)  # noqa: E501
+        # 3. Merge into SQLite
         merge_jsonl_to_db(ctx.db, sync_dir)
         console.print("[green]Remote changes merged into local database.[/green]")
 
     if push:
         console.print("[blue]Pushing local changes...[/blue]")
+        # 1. Dump SQLite to JSONL
         serialize_db(ctx.db, sync_dir)
+        # 2. Git Commit
         subprocess.run(["git", "add", "."], cwd=sync_dir, capture_output=True)
         subprocess.run(
-            [
-                "git",
-                "commit",
-                "-m",
-                f"Sync from {os.uname().nodename}",
-            ],
+            ["git", "commit", "-m", f"Sync from {os.uname().nodename} at {click.format_filename(str(Path.cwd()))}"],  # noqa: E501
             cwd=sync_dir,
-            capture_output=True,
+            capture_output=True
         )
-        result = subprocess.run(
-            ["git", "push", "origin", "main"],
-            cwd=sync_dir,
-            capture_output=True,
-        )
+        # 3. Git Push
+        result = subprocess.run(["git", "push", "origin", "main"], cwd=sync_dir, capture_output=True)  # noqa: E501
         if result.returncode == 0:
             console.print("[green]Local changes pushed to remote.[/green]")
         else:
