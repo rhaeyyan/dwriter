@@ -1,5 +1,26 @@
 # dwriter Update Notes
 
+## Version 4.10.6 - May 23, 2026
+
+### 🚀 Vector Projection & RRF Hybrid Search
+
+#### Graph Vector Index
+- The LadybugDB graph index now stores a `FLOAT[768]` embedding column on `Entry` nodes.
+- An HNSW vector index (`entry_vec_idx`) is created automatically when the schema is initialized — idempotent across restarts via `ALTER TABLE Entry ADD embedding FLOAT[768]` + `CREATE_VECTOR_INDEX`.
+- `GraphProjector.project_entry()` decodes stored embeddings and writes them into the vector index alongside the entry node. Entries without embeddings index cleanly with a `NULL` embedding and remain retrievable via FTS.
+- `GraphProjector.search_vector(query_embedding, limit)` performs approximate nearest-neighbour (ANN) lookup via `QUERY_VECTOR_INDEX('Entry', 'entry_vec_idx', $emb, limit)`.
+
+#### Reciprocal Rank Fusion (RRF)
+- `rrf_fuse(ranked_id_lists, k=60)` added to `search_utils.py`. Accepts any number of UUID-ranked lists and returns a single fused ranking without depending on raw relevance scores.
+- `hybrid_search_entries(query, query_embedding, projector, limit)` in `graph/search.py` issues an FTS search and a vector ANN search in parallel, then fuses both result lists via RRF. Entries with no embedding still appear via FTS; entries with no FTS hit still appear via vector similarity.
+
+#### `search_semantic` AI Tool (AI Edition only)
+- New tool exposed to the 2nd-Brain agent: `search_semantic(query)` embeds the query string and calls `hybrid_search_entries`, returning up to 10 conceptually relevant entries ranked by fused FTS + ANN score.
+- The agent uses this instead of plain FTS when the user asks questions that may not match exact logged wording — e.g., "what was I working on when I felt stuck?" surfaces flow-state and blocker entries even without keyword overlap.
+- This tool is **AI Edition only** and not ported to `main`.
+
+---
+
 ## Version 4.10.5 - May 15, 2026
 
 ### 🐛 Bug Fixes

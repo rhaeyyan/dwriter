@@ -1,5 +1,5 @@
 # dwriter: AI Edition 📝
-Experimental: v4.10.5
+Experimental: v4.10.6
 > **Looking for the AI-Free version?** Switch to the [main branch](https://github.com/rhaeyyan/dwriter/tree/main).
 ### *The minimalist journal for those who live in the terminal powered by a Dual-Model AI Pipeline (Gemma 4).*
 
@@ -18,7 +18,8 @@ Modern productivity apps are often cluttered with distractions. **dwriter** is d
 *   **🔁 Closed Learning Loop:** The AI now automatically extracts **Facts** (durable preferences, goals, and constraints) from your logs, building a personalized knowledge base that persists across sessions.
 *   **🎨 Unified Dashboard:** Launch the Terminal User Interface (TUI) to reflect, search your history, or manage a visual todo board.
 *   **🤖 Standup Automation:** Instantly transform your raw logs into formatted summaries for Slack, Jira, or Markdown.
-*   **🕸️ Graph Index:** A LadybugDB property-graph index runs alongside SQLite as a derived read layer — powering FTS, graph traversal queries, and the Analytical Engine. Fully local and always current — the index updates automatically in the background after every `dwriter add`. Use `dw graph rebuild` for a fast incremental sync, or `dw graph rebuild --full` to wipe and rebuild from scratch.
+*   **🕸️ Graph Index:** A LadybugDB property-graph index runs alongside SQLite as a derived read layer — powering FTS, Cypher graph traversal, HNSW vector search (`FLOAT[768]` embeddings), and the Analytical Engine. Fully local and always current — the index updates automatically in the background after every `dwriter add`. Use `dw graph rebuild` for a fast incremental sync, or `dw graph rebuild --full` to wipe and rebuild from scratch.
+*   **🔍 Hybrid Search:** Full-text and vector ANN results are fused via **Reciprocal Rank Fusion (RRF)** into a single best-match ranking. The 2nd-Brain's `search_semantic` tool uses this pipeline to surface relevant entries even when query wording doesn't exactly match logged text.
 *   **📝 Obsidian Integration:** Seamlessly export AI briefings and periodic reviews directly to your Obsidian vault as clean Markdown notes.
 *   **📅 Natural Language:** Talk to your journal like a human. `dwriter add "Fixed the bug" --date "last Friday"` just works.
 
@@ -76,7 +77,7 @@ Navigate to the **🧠 2nd-Brain** tab. Use the top trigger buttons (Energy, Mom
 **dwriter** features a context-aware "2nd-Brain" designed for deep reflection. It uses a specialized three-tier memory system and a governed **Analytical Engine** to ensure architectural integrity:
 - **Fact Memory (New):** Durable user preferences and constraints extracted automatically via the **Closed Learning Loop**.
 - **Short-Term Memory:** Seamless access to your last 72 hours of activity, optimized via **Deterministic Compression**.
-- **Targeted History:** On-demand retrieval of past entries when you mention specific projects or tags — powered by a **LadybugDB Graph Index**.
+- **Targeted History:** On-demand retrieval of past entries when you mention specific projects or tags — powered by **hybrid FTS + vector search** (RRF fusion) via the LadybugDB Graph Index. The `search_semantic` tool embeds your query and fuses ANN and FTS rankings for the most relevant matches.
 - **Governed Security:** All AI-driven insights are filtered through a customizable **Security Mode** (`permission_mode`) such as Read-Only, Append-Only, or Prompt.
 
 ### 📊 The Visual Dashboard (TUI)
@@ -124,7 +125,7 @@ The 2nd-Brain acts as a specialized analytical layer over your logs.
 
 **Proactive Intelligence:** After logging an entry, **dwriter** will semantically analyze your history and suggest relevant `#tags` and `&projects`. Simply press `Ctrl+A` in the TUI to apply them instantly.
 
-**Graph-Powered Search:** The AI can execute complex graph queries (Cypher) and Full-Text Search (FTS) against your history to find connections you might have missed.
+**Graph-Powered Hybrid Search:** The AI executes Cypher graph queries, Full-Text Search (FTS), and HNSW vector ANN search against your history — then fuses the ranked results via Reciprocal Rank Fusion (RRF). The `search_semantic` tool lets the 2nd-Brain find entries that are *conceptually* related to your question even when no keywords match.
 
 ---
 
@@ -136,7 +137,7 @@ The 2nd-Brain acts as a specialized analytical layer over your logs.
 - **UI Framework:** [Textual](https://textual.textualize.io/) (TUI) & [Rich](https://rich.readthedocs.io/) (CLI)
 - **Database:** SQLite (Write-side) & [LadybugDB](https://github.com/rhaeyyan/ladybug) (Graph Read-side)
 - **AI Integration:** [Instructor](https://github.com/jxnl/instructor) (Structured Outputs) & [OpenAI SDK](https://github.com/openai/openai-python)
-- **Search:** RapidFuzz (Fuzzy CLI) & FTS5 (Graph Index)
+- **Search:** RapidFuzz (Fuzzy CLI), FTS5 + HNSW vector ANN (Graph Index), RRF hybrid fusion
 - **Tooling:** [uv](https://github.com/astral-sh/uv) (Package Management), Ruff (Linting), Mypy (Types), Pytest (Testing)
 
 ---
@@ -149,7 +150,7 @@ The 2nd-Brain acts as a specialized analytical layer over your logs.
 | 📘 **[User Manual](documentation/user-manual.md)** | **The complete technical guide to every feature.** |
 | 📓 **[Development History](documentation/development-history.md)** | **The agentic engineering journal, documenting the CLI to Textual TUI transition.** |
 | 🔄 **[Sync Guide](documentation/sync-guide.md)** | **Simple, step-by-step instructions for non-technical users.** |
-| 🚀 **[Update Notes](documentation/update-notes.md)** | **New in v4.10.5:** Sync pull `KeyError` fix + sync push branch fix. v4.10.4: Incremental graph index, auto-sync on every `add`. |
+| 🚀 **[Update Notes](documentation/update-notes.md)** | **New in v4.10.6:** HNSW vector index + RRF hybrid search + `search_semantic` AI tool. v4.10.5: Sync pull `KeyError` fix + sync push branch fix. |
 | 🛠️ **[Command Reference](documentation/headless-readme.md)** | A complete guide to every CLI command and flag. |
 | 📖 **[Creative Use Cases](documentation/use-cases.md)** | 20 ways to use dwriter for brewing, fitness, travel, and more. |
 | ⚙️ **[Dev & Guide](documentation/dev-config.md)** | Customizing your themes, default projects, and dev setup. |
