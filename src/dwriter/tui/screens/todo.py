@@ -6,6 +6,7 @@ marking them complete, and editing/deleting.
 
 from __future__ import annotations
 
+import re
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
@@ -81,12 +82,15 @@ class AddTodoForm(Vertical):
     }
 
     Label {
-        text-style: bold;
+        color: $text-muted;
         padding: 1 0 0 0;
     }
 
     Input {
         margin-bottom: 1;
+        border: none;
+        border-bottom: solid $primary;
+        padding: 1 2 0 2;
     }
     """
 
@@ -220,7 +224,7 @@ class EditTodoModal(ModalScreen):  # type: ignore[type-arg]
     }
 
     #edit-content-label, #edit-date-label, #edit-time-label, #edit-tags-label, #edit-project-label {
-        text-style: bold;
+        color: $text-muted;
         padding: 1 0 0 0;
     }
 
@@ -228,11 +232,17 @@ class EditTodoModal(ModalScreen):  # type: ignore[type-arg]
         width: 100%;
         height: 3;
         margin: 0 0 1 0;
+        border: none;
+        border-bottom: solid $primary;
+        padding: 1 2 0 2;
     }
 
     #date-input, #time-input, #tags-input, #project-input {
         width: 100%;
         margin: 0 0 1 0;
+        border: none;
+        border-bottom: solid $primary;
+        padding: 1 2 0 2;
     }
 
     .horizontal-row {
@@ -689,6 +699,45 @@ class EditProjectModal(ModalScreen):  # type: ignore[type-arg]
             self.action_cancel()
 
 
+def _wrap_todo_with_hanging_indent(text: str, indent: str) -> str:
+    """Wrap text with a hanging indentation pattern for todo items.
+
+    Args:
+        text: The text content to wrap (may contain Rich markup).
+        indent: The indentation string for the first line.
+
+    Returns:
+        The text wrapped with consistent hanging indentation.
+    """
+    tag_pattern = re.compile(r"\[/?[^]]*\]")
+    visible_text = tag_pattern.sub("", text)
+    wrap_width = 70
+    words = visible_text.split()
+    if not words:
+        return f"{indent}{text}"
+
+    lines: list[str] = []
+    current_line_words: list[str] = []
+    current_visible_len = 0
+
+    for word in words:
+        word_visible_len = len(tag_pattern.sub("", word))
+        if current_visible_len + len(current_line_words) + word_visible_len <= wrap_width:
+            current_line_words.append(word)
+            current_visible_len += word_visible_len
+        else:
+            lines.append(" ".join(current_line_words))
+            current_line_words = [word]
+            current_visible_len = word_visible_len
+
+    if current_line_words:
+        lines.append(" ".join(current_line_words))
+
+    indent_prefix = indent
+    return (f"{indent_prefix}{lines[0]}\n" +
+            "\n".join(f"{indent_prefix}{line}" for line in lines[1:]))
+
+
 class TodoListView(ListView):
     """ListView for displaying todo tasks."""
 
@@ -881,10 +930,10 @@ class TodoListView(ListView):
             f" [{PROJECT}]&{safe_project}[/{PROJECT}]" if safe_project else ""
         )
 
-        # Format: Due date priority | #tags : Project on first line, content on second line
-        first_line = f"{d_str} {pri_str} | {tags_str}{project_str}"
+        first_line = f"{d_str} {pri_str}  [dim]·[/]  {tags_str}{project_str}"
 
-        # Determine if this is an active reminder for highlighting
+        indent = "  "
+
         is_active_reminder = (
             todo.status == "pending"
             and todo.priority == "urgent"
@@ -892,17 +941,19 @@ class TodoListView(ListView):
             and todo.due_date <= datetime.now() + timedelta(minutes=30)
         )
 
-        # Content on second line with reduced indentation - add check emoji for completed todos
         if todo.status == "completed":
             use_emojis = self.app.ctx.config.display.use_emojis
             check_icon = get_icon("check", use_emojis)
-            return f"[dim]{first_line}\n  {check_icon} {safe_content}[/dim]"
-
+            content_text = f"{check_icon} {safe_content}"
+            wrapped = _wrap_todo_with_hanging_indent(content_text, indent)
+            return f"[dim]{first_line}\n{wrapped}[/dim]"
         if is_active_reminder:
-            # Ruby/Cyberpunk alert style: bold red on dark background with pulsing feel
-            return f"[bold #FF0000]{first_line}\n  🔔 {safe_content}[/bold #FF0000]"
+            content_text = f"🔔 {safe_content}"
+            wrapped = _wrap_todo_with_hanging_indent(content_text, indent)
+            return f"[bold #FF0000]{first_line}\n{wrapped}[/bold #FF0000]"
 
-        return f"{first_line}\n  [bold white]{safe_content}[/bold white]"
+        wrapped = _wrap_todo_with_hanging_indent(safe_content, indent)
+        return f"{first_line}\n[bold white]{wrapped}[/bold white]"
 
     @property
     def selected_todo(self) -> Todo | None:
@@ -929,7 +980,8 @@ class TodoScreen(Container):
         margin: 1 2;
         padding: 1 2;
         background: $panel;
-        border: solid $secondary;
+        border: none;
+        border-bottom: solid $primary;
     }
 
     #todo-title {
@@ -948,7 +1000,7 @@ class TodoScreen(Container):
 
     TodoListView {
         height: 1fr;
-        border: solid $secondary;
+        border: solid $primary;
         background: $panel;
         padding: 0;
     }
@@ -960,7 +1012,7 @@ class TodoScreen(Container):
     ListItem {
         height: auto;
         margin-bottom: 1;
-        padding: 0;
+        padding: 0 2;
     }
 
     Label {
