@@ -1,5 +1,5 @@
 # dwriter 📝
-v4.8.5
+v4.10.5
 > **Looking for the AI features (2nd-Brain & Facts)?** Switch to the [dwriter-ai branch](https://github.com/rhaeyyan/dwriter/tree/dwriter-ai).
 ### *The minimalist journal for those who live in the terminal.*
 
@@ -15,12 +15,14 @@ Whether you are a software engineer tracking "deep work," a freelancer logging b
 Modern productivity apps are often cluttered with distractions. **dwriter** is designed to prioritize your focus:
 
 *   **⚡ Immediate Capture:** Use the "Headless CLI" to log thoughts, tasks, or focus sessions in seconds without leaving your terminal environment.
-*   **📈 Weekly Pulse Analytics:** Behavioral analytics engine surfaces archetypes, golden hours, momentum deltas, and project spotlights from your rolling 7-day activity.
+*   **📈 Weekly Pulse Analytics:** Behavioral analytics engine surfaces archetypes, golden hours, momentum deltas, and project spotlights from your rolling 7-day activity — powered by a LadybugDB graph index.
 *   **🎨 Unified Dashboard:** Launch the Terminal User Interface (TUI) to reflect, search your history, or manage a visual todo board.
 *   **📖 High-Signal Readability:** All logs feature **hanging indentation**, ensuring multi-line entries align perfectly for rapid scanning.
 *   **🤖 Standup Automation:** Instantly transform your raw logs into formatted summaries for Slack, Jira, or Markdown.
 *   **📝 Obsidian Integration:** Seamlessly export briefings and periodic reviews directly to your Obsidian vault as clean Markdown notes.
 *   **📅 Natural Language:** Talk to your journal like a human. `dwriter add "Fixed the bug" --date "last Friday"` just works.
+*   **🔍 Hybrid Search:** Full-text and vector-powered search fused with Reciprocal Rank Fusion for best-match retrieval across your entire history.
+*   **🧠 Energy & Mood Tracking:** Log your energy level (1–10) and mood (Flow / Good / Meh / Low) directly from the quick-add and timer forms.
 
 ---
 
@@ -72,10 +74,10 @@ dwriter
 
 Navigate between screens using the tab bar:
 
-- **✅ To-do Board:** Keyboard-driven task board with priorities.
-- **⏱️ Focus Timer:** A full-screen countdown that auto-logs your progress.
+- **✅ To-do Board:** Keyboard-driven task board with priorities and overdue detection.
+- **⏱️ Focus Timer:** A full-screen countdown that auto-logs your progress with energy and mood capture on session complete.
 - **🔍 Search/Edit:** Live-filtering fuzzy search across all your history with refined indentation.
-- **📈 Weekly Pulse:** Behavioral analytics updated every 24 hours.
+- **📈 Weekly Pulse:** Behavioral analytics updated every 24 hours, powered by graph queries.
 
 **Observability:** The TUI features a persistent **Status Bar** that displays your current active Git branch and real-time **Background Sync** monitoring (`[✅ Synced]`, `[🧠 Syncing...]`).
 
@@ -98,6 +100,18 @@ dwriter todo add "Review the pull request" --priority urgent
 dwriter stats --json
 dwriter today --json
 ```
+
+### 🔍 Managing the Graph Index
+dwriter maintains a LadybugDB graph index used for analytics and search. It updates automatically whenever you add an entry.
+
+```bash
+# Incrementally sync new entries into the graph (runs automatically, but can be forced)
+dwriter graph rebuild
+
+# Wipe and fully reconstruct the graph index from scratch
+dwriter graph rebuild --full
+```
+
 ---
 
 ## 💡 Mastering the Workflow
@@ -110,21 +124,22 @@ dwriter today --json
 - **Ghost Text Suggestions:** As you type in the TUI omnibox, token suggestions appear in dim "ghost text." Press `Tab` to selectively accept a `&project` or `#tag` token.
 - **Zero Double-Entry:** Use `dwriter done <id>` to complete a task; it's automatically moved to your journal.
 - **Auto-Sync:** Changes are automatically pulled on startup and pushed to your remote 10 seconds after your last edit.
+- **Auto-Graph Sync:** Adding an entry (headless or TUI) automatically triggers an incremental graph index update in the background.
 
 ### 🎨 Creative Organization & Retrieval
 - **Total Freedom:** Use `#tags` and `&projects` however you like (e.g., `#draft`, `&home:renovation`).
 - **Fuzzy Search:** Don't worry about perfect spelling. Use `/` in the TUI or `dwriter search "query"`.
+- **Hybrid Search:** The graph index fuses full-text and vector similarity results using Reciprocal Rank Fusion (RRF) for more precise retrieval.
 - **Hierarchical Depth:** Use colons to organize complex structures like `&client:acme:q4-report`.
 
 ### 🧘 Deep Reflection (The Visual Dashboard)
 - **The Dashboard:** Run `dwriter ui` to manage your todo board and activity map.
 - **Visual History:** Revisit your work through a chronological log.
 - **Easy Correction:** Use the interactive `dwriter edit` to quickly fix typos.
+- **Energy & Mood:** Each entry can carry an energy level (1–10 slider) and a mood tag (🌊 Flow / 😊 Good / 😐 Meh / 😔 Low), recorded from quick-add and timer completion forms.
 
 ### 🔄 Multi-Device Synchronization
 Keep your journal consistent across every machine you use. **dwriter** uses a Git-backed synchronization engine to ensure your data merges flawlessly without corruption.
-
-**New to syncing?** Read our **[Step-by-Step Sync Guide](documentation/sync-guide.md)** for a simple, non-technical walkthrough.
 
 ```bash
 # Connect to your private sync repository
@@ -143,8 +158,9 @@ dwriter sync --pull
 
 - **Language:** Python 3.10+
 - **UI Framework:** [Textual](https://textual.textualize.io/) (TUI) & [Rich](https://rich.readthedocs.io/) (CLI)
-- **Database:** SQLite
-- **Search:** RapidFuzz (Fuzzy CLI)
+- **Primary Database:** SQLite (write-of-record)
+- **Graph Index:** [LadybugDB](https://github.com/rhaeyyan/ladybug) ≥ 0.15.3 (KuzuDB-backed; FTS + HNSW vector search)
+- **Search:** RapidFuzz (fuzzy CLI) + RRF hybrid fusion (graph)
 - **Tooling:** [uv](https://github.com/astral-sh/uv) (Package Management), Ruff (Linting), Mypy (Types), Pytest (Testing)
 
 ---
@@ -155,11 +171,10 @@ dwriter sync --pull
 | :--- | :--- |
 | 📘 **[User Manual](documentation/user-manual.md)** | **The complete technical guide to every feature.** |
 | 📓 **[Development History](documentation/development-history.md)** | **The agentic engineering journal, documenting the CLI to Textual TUI transition.** |
-| 🔄 **[Sync Guide](documentation/sync-guide.md)** | **Simple, step-by-step instructions for non-technical users.** |
-| 🚀 **[Update Notes](documentation/update-notes.md)** | **New in v4.8.5:** Sync push bug fix. v4.8.4: TUI parity & module decomposition. |
-| 🛠️ **[Command Reference](documentation/headless-readme.md)** | A complete guide to every CLI command and flag. |
-| 📖 **[Creative Use Cases](documentation/use-cases.md)** | 20 ways to use dwriter for brewing, fitness, travel, and more. |
-| ⚙️ **[Dev & Guide](documentation/dev-config.md)** | Customizing your themes, default projects, and dev setup. |
+| 🚀 **[Update Notes](documentation/update-notes.md)** | **New in v4.10.5:** Vector projection & hybrid search. v4.10.4: Incremental graph index + auto-sync. v4.10.3: Energy/mood forms + timer fix. |
+| 🛠️ **[Command Reference](documentation/HEADLESS-README.md)** | A complete guide to every CLI command and flag, including `dwriter graph rebuild`. |
+| 📖 **[Creative Use Cases](documentation/USE_CASES.md)** | 20 ways to use dwriter for brewing, fitness, travel, and more. |
+| ⚙️ **[Dev & Config Guide](documentation/DEV-and-CONFIG.md)** | Customizing your themes, default projects, and dev setup. CQRS architecture overview. |
 
 ---
 
@@ -169,5 +184,6 @@ dwriter sync --pull
 *   **Clipboard:** On Linux, install `xclip` or `xsel` to enable copy-to-clipboard.
 *   **Customization:** Run `dwriter config edit` to tweak your default settings.
 *   **Sync push error (`src refspec main does not match any`):** Fixed in v4.8.5 — just run `dwriter sync` again and it self-heals. On older versions, run `git -C ~/.dwriter/sync branch -m master main` once, then retry.
+*   **Graph index out of date:** Run `dwriter graph rebuild` to incrementally sync, or `dwriter graph rebuild --full` to wipe and reconstruct from scratch. The index updates automatically on every `dwriter add`, but a manual rebuild is useful after bulk imports or sync pulls.
 
 ---

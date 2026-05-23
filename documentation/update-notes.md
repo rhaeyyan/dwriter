@@ -1,5 +1,64 @@
 # dwriter Update Notes
 
+## Version 4.10.5 - May 23, 2026
+
+### 🚀 Vector Projection & RRF Hybrid Search
+
+#### Graph Vector Index
+- The LadybugDB graph index now stores a `FLOAT[768]` embedding column on `Entry` nodes.
+- An HNSW vector index (`entry_vec_idx`) is created automatically when the schema is applied.
+- `GraphProjector.search_vector(query_embedding, limit)` performs approximate nearest-neighbour (ANN) search via `QUERY_VECTOR_INDEX`.
+- `GraphProjector._ensure_schema()` handles the idempotent `ALTER TABLE … ADD embedding` migration — existing graphs gain the column transparently on the next rebuild.
+
+#### Reciprocal Rank Fusion (RRF)
+- `rrf_fuse(ranked_id_lists, k=60)` added to `search_utils.py`. Combines multiple ranked UUID lists into a single fused ranking with no raw-score dependencies.
+- `hybrid_search_entries(query, query_embedding, projector, limit)` in `graph/search.py` fuses FTS and vector ANN results via RRF, giving robust retrieval even when entries lack embeddings or FTS hits.
+
+---
+
+## Version 4.10.4 - May 23, 2026
+
+### 🚀 Incremental Graph Index + Auto-Sync on Add
+
+#### Incremental Indexing
+- `GraphProjector.build_index_incremental(db)` syncs only entries and todos created since the `last_graph_sync` watermark stored in `SyncMetadata`. Falls back to a full rebuild on first run.
+- New database helpers: `get_graph_watermark()`, `set_graph_watermark(ts)`.
+- New repo helpers: `get_entries_since(watermark)`, `get_todos_since(watermark)`.
+
+#### Auto-Sync on Add
+- `dwriter add` (headless) now triggers `build_index_incremental` in a background daemon thread immediately after writing the entry — no manual rebuild needed.
+- TUI quick-add dispatches the same incremental rebuild via a `run_worker` on the `EntryAdded` message.
+- The sync daemon (`sync/daemon.py`) also triggers an incremental rebuild after a successful pull.
+
+#### CLI — `dwriter graph`
+- New `dwriter graph rebuild` command: runs an incremental sync by default.
+- `dwriter graph rebuild --full`: wipes the graph database and rebuilds from all entries.
+
+---
+
+## Version 4.10.3 - May 23, 2026
+
+### 🚀 Insight Hub — Energy & Mood Forms + Timer Fix
+
+#### EnergySlider Widget
+- New `tui/widgets/energy_slider.py`: horizontal 1–10 slider rendered as `══════════════●────  7`.
+- Keyboard navigable (left/right arrow keys) and click-to-position. Color-coded: green (high), yellow (mid), red (low).
+
+#### MoodPicker Widget
+- New `tui/widgets/mood_picker.py`: keyboard-navigable button group with four states — 🌊 Flow, 😊 Good, 😐 Meh, 😔 Low.
+
+#### Quick-Add & Timer Forms
+- `QuickAddEntryModal` (logs screen) and `SessionCompleteModal` (timer screen) now include an `energy-mood-row` with `EnergySlider` + `MoodPicker`.
+- `energy_level` (int, 1–10) and `implicit_mood` (str) are passed through to `add_entry()` and stored in the database.
+
+#### Timer Break Toggle Fix
+- Switching between Focus and Break mode now immediately updates the `#input-duration` Input widget with the correct duration, eliminating stale values when toggling mode mid-session.
+
+#### `format_due_date` Utility
+- `date_utils.format_due_date(due_date, date_format, use_24hr, is_completed)` returns `"Overdue"`, `"Today"`, or `"Weekday YYYY-MM-DD"`. Completed tasks are never marked overdue.
+
+---
+
 ## Version 4.8.5 - May 15, 2026
 
 ### 🐛 Bug Fixes
