@@ -34,6 +34,7 @@ dependencies = [
     "rich>=13.0",
     "rapidfuzz>=3.0",
     "textual>=0.44.0",
+    "ladybug>=0.15.3",
 ]
 
 [project.optional-dependencies]

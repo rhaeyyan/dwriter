@@ -155,6 +155,18 @@ auto_sync = true
 
 ---
 
+## 🗂️ Graph Index
+
+dwriter maintains a local graph index (LadybugDB) for fast analytics. It is built automatically on sync but can be rebuilt manually:
+
+```bash
+dwriter graph rebuild
+```
+
+Run once after install or after a manual data import.
+
+---
+
 ## 🏷️ Git Auto-Tagging
 
 When you add an entry inside a Git repository, dwriter can automatically apply the repo name as `&project` and the branch as a `#git-<branch>` tag.
