@@ -1,5 +1,5 @@
 # dwriter 📝
-v4.10.5
+v4.10.6
 > **Looking for the AI features (2nd-Brain & Facts)?** Switch to the [dwriter-ai branch](https://github.com/rhaeyyan/dwriter/tree/dwriter-ai).
 ### *The minimalist journal for those who live in the terminal.*
 
@@ -171,7 +171,7 @@ dwriter sync --pull
 | :--- | :--- |
 | 📘 **[User Manual](documentation/user-manual.md)** | **The complete technical guide to every feature.** |
 | 📓 **[Development History](documentation/development-history.md)** | **The agentic engineering journal, documenting the CLI to Textual TUI transition.** |
-| 🚀 **[Update Notes](documentation/update-notes.md)** | **New in v4.10.5:** Vector projection & hybrid search. v4.10.4: Incremental graph index + auto-sync. v4.10.3: Energy/mood forms + timer fix. |
+| 🚀 **[Update Notes](documentation/update-notes.md)** | **New in v4.10.6:** Visual overhaul — underline inputs, `·` separator, hanging-indent word-wrap. v4.10.5: Vector projection & hybrid search. |
 | 🛠️ **[Command Reference](documentation/HEADLESS-README.md)** | A complete guide to every CLI command and flag, including `dwriter graph rebuild`. |
 | 📖 **[Creative Use Cases](documentation/USE_CASES.md)** | 20 ways to use dwriter for brewing, fitness, travel, and more. |
 | ⚙️ **[Dev & Config Guide](documentation/DEV-and-CONFIG.md)** | Customizing your themes, default projects, and dev setup. CQRS architecture overview. |

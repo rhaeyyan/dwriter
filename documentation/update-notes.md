@@ -1,5 +1,35 @@
 # dwriter Update Notes
 
+## Version 4.10.6 - May 23, 2026
+
+### 🎨 Visual Overhaul
+
+#### Input Field Style
+All input fields across the TUI have switched to a clean underline style:
+- `border: solid` replaced with `border: none` + `border-bottom: solid $primary` on every `Input` widget.
+- Focus state uses `border-bottom: solid $accent` for a consistent highlight without a full box border.
+- Padding standardised to `1 2 0 2` across modals and config sections.
+- Affects: `QuickAddEntryModal`, `EditEntryModal`, `EditTodoModal`, `AddTodoForm`, `ConfigureScreen`, `SessionCompleteModal`, `TimerScreen` config section, `RangeSelectionScreen`, `FilterSelectionScreen`.
+
+#### Label Style
+Section labels changed from `text-style: bold` to `color: $text-muted` throughout `QuickAddEntryModal`, `EditTodoModal`, `AddTodoForm`, and `TimerScreen` config section.
+
+#### List Entry Formatting
+- **Separator**: `|` replaced with `·` (`[dim]·[/]`) in both `LogsResultsView._format_entry()` and `TodoListView._format_todo()`.
+- **Hanging indent**: Long entry content wraps with a consistent 2-space hanging indent via `_wrap_with_hanging_indent()` (logs) and `_wrap_todo_with_hanging_indent()` (todos). Rich markup tags are stripped before computing visible line width.
+
+#### Panel & Border Updates
+- `LogsScreen`: list border `#45475a` → `$primary`; background `$surface` → `$background`; `ListItem` padding `0` → `1 2`.
+- `TodoScreen`: search panel `border: solid $secondary` → `border-bottom: solid $primary`; list border `$secondary` → `$primary`; `ListItem` padding `0` → `0 2`.
+- `StandupScreen`: daily/weekly editor background hardcoded `#0d0f18` → `$background`.
+- `TimerScreen`: config panel border `#3b494c` → `$primary`; config label `text-style: bold` removed.
+- `ConfigureScreen`: section panels use `border-left: solid $primary` instead of `border: solid $border-blurred`.
+
+#### Themes
+`THEME_OPTIONS` in `themes.py` refactored to use a named `_THEME_ORDER` intermediate list for clarity.
+
+---
+
 ## Version 4.10.5 - May 23, 2026
 
 ### 🚀 Vector Projection & RRF Hybrid Search
