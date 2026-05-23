@@ -1,5 +1,7 @@
 """LadybugDB schema DDL for the dwriter graph index."""
 
+EMBEDDING_DIM = 768  # nomic-embed-text output dimension
+
 NODE_TABLES = [
     """CREATE NODE TABLE Entry(
         uuid STRING,
@@ -9,6 +11,7 @@ NODE_TABLES = [
         implicit_mood STRING,
         life_domain STRING,
         energy_level DOUBLE,
+        embedding FLOAT[768],
         PRIMARY KEY(uuid)
     )""",
     """CREATE NODE TABLE Todo(
@@ -47,4 +50,8 @@ FTS_INDICES = [
     ("Entry", "entry_fts_idx", ["content"]),
     ("Todo", "todo_fts_idx", ["content"]),
     ("Fact", "fact_fts_idx", ["text"]),
+]
+
+VECTOR_INDICES = [
+    ("Entry", "entry_vec_idx", "embedding"),
 ]

@@ -9,15 +9,26 @@ get_daily_standup) are retained for backward compatibility.
 
 Graph schema for Cypher queries:
   Nodes: Entry(uuid, content, project, created_at, implicit_mood,
-               life_domain, energy_level)
+               life_domain, energy_level, embedding FLOAT[768])
          Todo(uuid, content, project, priority, status, due_date,
               created_at, completed_at)
          Tag(name)  Project(name)
+         Fact(uuid, text, category, extracted_at, source_entry_uuid)
   Edges: (Entry)-[:ENTRY_HAS_TAG]->(Tag)
          (Todo)-[:TODO_HAS_TAG]->(Tag)
          (Entry)-[:ENTRY_IN_PROJECT]->(Project)
          (Todo)-[:TODO_IN_PROJECT]->(Project)
          (Entry)-[:REFERENCES_TODO]->(Todo)
+         (Fact)-[:EXTRACTED_FROM]->(Entry)
+
+Vector search (entries with embeddings only):
+  CALL QUERY_VECTOR_INDEX('Entry', 'entry_vec_idx', $emb, 10)
+  RETURN node.uuid, distance ORDER BY distance ASC
+
+Exact cosine similarity (brute-force, use for small result sets):
+  MATCH (e:Entry) WHERE e.embedding IS NOT NULL
+  RETURN e.uuid, array_cosine_similarity(e.embedding, $emb) AS score
+  ORDER BY score DESC LIMIT 10
 """
 
 import json
@@ -195,8 +206,12 @@ def run_cypher(query: str, params: dict[str, Any] | None = None) -> str:
     """Executes a read-only Cypher query against the LadybugDB graph index.
 
     Use this for graph traversals, co-occurrence queries, and aggregations
-    that span entries, todos, tags, and projects. The graph schema is
-    documented in this module's docstring.
+    that span entries, todos, tags, projects, and facts. The full graph schema
+    (including vector search syntax) is documented in this module's docstring.
+
+    Vector search: pass the query embedding as a $emb parameter and use
+    QUERY_VECTOR_INDEX or array_cosine_similarity — both are valid. Only
+    entries that were projected with an embedding will appear in vector results.
 
     Args:
         query (str): A read-only Cypher query (MATCH/RETURN only).

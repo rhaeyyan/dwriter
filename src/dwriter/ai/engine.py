@@ -259,6 +259,34 @@ def ask_second_brain_agentic(
                 },
             },
         },
+        {
+            "type": "function",
+            "function": {
+                "name": "search_semantic",
+                "description": (
+                    "Hybrid semantic search over journal entries — combines vector "
+                    "similarity with full-text search via Reciprocal Rank Fusion. "
+                    "Prefer this over search_journal for conceptual or thematic "
+                    "queries where exact keywords may not match — e.g. "
+                    "'times I felt overwhelmed', 'deep work sessions', "
+                    "'anything about team dynamics'. "
+                    "Falls back gracefully for entries without embeddings."
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": (
+                                "Conceptual or natural language query describing "
+                                "what to find semantically."
+                            ),
+                        },
+                    },
+                    "required": ["query"],
+                },
+            },
+        },
     ]
 
     full_response_parts = []
@@ -306,10 +334,19 @@ def ask_second_brain_agentic(
             if app_context:
                 app_context.post_message(AIToolEvent(tool_name=function_name))
 
-            if function_name in AVAILABLE_TOOLS:
+            if function_name == "search_semantic":
+                result = search_semantic(config=config, **arguments)
+                messages.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": tool_call.id,
+                        "name": function_name,
+                        "content": str(result),
+                    }
+                )
+            elif function_name in AVAILABLE_TOOLS:
                 tool_func = AVAILABLE_TOOLS[function_name]
                 result = tool_func(db=db, **arguments)  # type: ignore[operator]
-
                 messages.append(
                     {
                         "role": "tool",
@@ -446,6 +483,33 @@ def get_embedding(text: str, config: AIConfig) -> list[float]:
     client = OpenAI(base_url=config.base_url, api_key="ollama")
     response = client.embeddings.create(model="nomic-embed-text", input=text)
     return response.data[0].embedding
+
+
+def search_semantic(query: str, config: AIConfig) -> str:
+    """Hybrid semantic + FTS search over journal entries.
+
+    Generates a query embedding, then fuses ANN vector results with FTS results
+    via Reciprocal Rank Fusion. Returns entries that are conceptually related to
+    the query even when exact keywords don't match.
+
+    Args:
+        query (str): Natural language search query.
+        config (AIConfig): AI configuration (needed for embedding endpoint).
+
+    Returns:
+        str: JSON array of matching entries, or an error message.
+    """
+    try:
+        from dwriter.graph import GraphProjector, hybrid_search_entries
+
+        embedding = get_embedding(query, config)
+        projector = GraphProjector()
+        results = hybrid_search_entries(query, embedding, projector)
+        if not results:
+            return "No semantically matching entries found."
+        return json.dumps(results, indent=2, default=str)
+    except Exception as e:
+        return f"Error in semantic search: {e}"
 
 
 def get_semantic_recommendation(

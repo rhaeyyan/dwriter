@@ -32,18 +32,28 @@ def sync(ctx: AppContext, push: bool, pull: bool, remote: str | None) -> None:
         console.print("[yellow]Initializing sync repository...[/yellow]")
         subprocess.run(["git", "init", "-b", "main"], cwd=sync_dir, capture_output=True)
         if remote:
-            subprocess.run(["git", "remote", "add", "origin", remote], cwd=sync_dir, capture_output=True)
+            subprocess.run(
+                ["git", "remote", "add", "origin", remote],
+                cwd=sync_dir, capture_output=True
+            )
     else:
         # Migrate repos initialized before -b main was used (master → main)
         branch_result = subprocess.run(
-            ["git", "branch", "--show-current"], cwd=sync_dir, capture_output=True, text=True
+            ["git", "branch", "--show-current"],
+            cwd=sync_dir, capture_output=True, text=True
         )
         if branch_result.stdout.strip() == "master":
-            subprocess.run(["git", "branch", "-m", "master", "main"], cwd=sync_dir, capture_output=True)
+            subprocess.run(
+                ["git", "branch", "-m", "master", "main"],
+                cwd=sync_dir, capture_output=True
+            )
 
     if remote and (sync_dir / ".git").exists():
         # Update remote if provided
-        subprocess.run(["git", "remote", "set-url", "origin", remote], cwd=sync_dir, capture_output=True)
+        subprocess.run(
+            ["git", "remote", "set-url", "origin", remote],
+            cwd=sync_dir, capture_output=True
+        )
 
     if not push and not pull:
         # Default to both if none specified

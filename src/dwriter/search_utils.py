@@ -117,3 +117,24 @@ def find_multiple_matches(
         List of tuples containing (item, score) sorted by score descending.
     """
     return search_items(query, items, limit=limit, threshold=threshold)
+
+
+def rrf_fuse(
+    ranked_id_lists: list[list[str]],
+    k: int = 60,
+) -> list[str]:
+    """Fuse multiple ranked ID lists via Reciprocal Rank Fusion.
+
+    Args:
+        ranked_id_lists: Each inner list is a ranked sequence of item IDs,
+            best match first.
+        k: RRF smoothing constant (standard default: 60).
+
+    Returns:
+        Merged list of IDs, highest RRF score first.
+    """
+    scores: dict[str, float] = {}
+    for ranked in ranked_id_lists:
+        for rank, item_id in enumerate(ranked, start=1):
+            scores[item_id] = scores.get(item_id, 0.0) + 1.0 / (k + rank)
+    return sorted(scores, key=lambda i: scores[i], reverse=True)
