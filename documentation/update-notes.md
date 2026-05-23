@@ -14,6 +14,21 @@
 - `rrf_fuse(ranked_id_lists, k=60)` added to `search_utils.py`. Combines multiple ranked UUID lists into a single fused ranking with no raw-score dependencies.
 - `hybrid_search_entries(query, query_embedding, projector, limit)` in `graph/search.py` fuses FTS and vector ANN results via RRF, giving robust retrieval even when entries lack embeddings or FTS hits.
 
+### 🐛 Bug Fixes
+
+#### Sync pull failure: `KeyError: 'implicit_mood'`
+`dwriter sync` (pull direction) would crash with a `KeyError` when pulling JSONL produced by a device still on an older version of dwriter that did not yet serialize the `implicit_mood`, `life_domain`, or `energy_level` columns:
+
+```
+KeyError: 'implicit_mood'
+  File ".../dwriter/sync/engine.py", line 110, in _merge_entry
+    existing.implicit_mood = data["implicit_mood"]
+```
+
+**Root cause:** `_merge_entry` in `sync/engine.py` used hard-coded key access for all three columns added in the v4.10.3 schema migration. Any JSONL file serialized before that migration — i.e., from a device that hadn't yet upgraded — was missing those keys, causing a `KeyError` on the first such entry.
+
+**Fix:** All three accesses changed to `data.get(...)`, defaulting to `None`. Entries pulled from older devices now merge cleanly with those fields left `NULL`.
+
 ---
 
 ## Version 4.10.4 - May 23, 2026

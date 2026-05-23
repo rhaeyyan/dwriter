@@ -21,7 +21,7 @@ Modern productivity apps are often cluttered with distractions. **dwriter** is d
 *   **🤖 Standup Automation:** Instantly transform your raw logs into formatted summaries for Slack, Jira, or Markdown.
 *   **📝 Obsidian Integration:** Seamlessly export briefings and periodic reviews directly to your Obsidian vault as clean Markdown notes.
 *   **📅 Natural Language:** Talk to your journal like a human. `dwriter add "Fixed the bug" --date "last Friday"` just works.
-*   **🔍 Hybrid Search:** Full-text and vector-powered search fused with Reciprocal Rank Fusion for best-match retrieval across your entire history.
+*   **🔍 Hybrid Search:** FTS and HNSW vector ANN results (`FLOAT[768]` embeddings) fused with Reciprocal Rank Fusion (RRF) for best-match retrieval across your entire history.
 *   **🧠 Energy & Mood Tracking:** Log your energy level (1–10) and mood (Flow / Good / Meh / Low) directly from the quick-add and timer forms.
 
 ---
@@ -160,7 +160,7 @@ dwriter sync --pull
 - **UI Framework:** [Textual](https://textual.textualize.io/) (TUI) & [Rich](https://rich.readthedocs.io/) (CLI)
 - **Primary Database:** SQLite (write-of-record)
 - **Graph Index:** [LadybugDB](https://github.com/rhaeyyan/ladybug) ≥ 0.15.3 (KuzuDB-backed; FTS + HNSW vector search)
-- **Search:** RapidFuzz (fuzzy CLI) + RRF hybrid fusion (graph)
+- **Search:** RapidFuzz (fuzzy CLI), FTS5 + HNSW vector ANN (Graph Index), RRF hybrid fusion
 - **Tooling:** [uv](https://github.com/astral-sh/uv) (Package Management), Ruff (Linting), Mypy (Types), Pytest (Testing)
 
 ---
