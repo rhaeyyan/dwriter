@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 import click
@@ -29,7 +29,7 @@ def rebuild(ctx: AppContext, full: bool) -> None:
         if full:
             console.print("[blue]Rebuilding graph index (full)...[/blue]")
             projector.build_index(ctx.db)
-            ctx.db.set_graph_watermark(datetime.utcnow())
+            ctx.db.set_graph_watermark(datetime.now(timezone.utc).replace(tzinfo=None))
         else:
             console.print("[blue]Syncing graph index...[/blue]")
             projector.build_index_incremental(ctx.db)
