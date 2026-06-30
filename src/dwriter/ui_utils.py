@@ -8,7 +8,7 @@ from textual.containers import Container, ScrollableContainer
 from textual.screen import ModalScreen
 from textual.widgets import Static
 
-from .tui.colors import PROJECT, TAG, get_icon
+from .tui.colors import PROJECT, TAG, get_icon, get_weekday_color
 
 if TYPE_CHECKING:
     from rich.console import Console
@@ -85,58 +85,68 @@ def format_entry_datetime(
 
 
 def display_entry(console: "Console", entry: "Entry", config: "Config") -> None:
-    """Display a single journal entry to the console with hanging indentation."""
-    date_str, time_str = format_entry_datetime(entry)
+    """Display a single journal entry with a weekday-colored gutter rail.
 
-    # Calculate the prefix to determine the subsequent indentation width
-    if time_str is None:
-        prefix = (
-            f"[{PROJECT}][{entry.id}][/{PROJECT}] "
-            if config.display.show_id else ""
-        )
-        raw_prefix = f"[{entry.id}] " if config.display.show_id else ""
-        full_prefix = f"{prefix}{date_str}: "
-        raw_full_prefix = f"{raw_prefix}{date_str}: "
+    Layout::
+
+          Wkdy · <date> · <time> · <domain>                      #id
+        ▌ <content, wrapped under the rail>
+        ▌ #tag · #tag · &project
+
+    The weekday label and the rail share the day's color (see
+    ``WEEKDAY_COLORS``), so a list of entries reads as colored day-bands down
+    the gutter. ``life_domain`` is read defensively so this renderer stays
+    portable to the AI-free ``main`` branch where the column does not exist.
+    """
+    width = console.width if console.width > 0 else 80
+    date_str, time_str = format_entry_datetime(entry, config)
+
+    weekday = entry.created_at.weekday()
+    rail_color = get_weekday_color(weekday)
+    weekday_abbr = entry.created_at.strftime("%a")
+    rail = f"[{rail_color}]▌[/{rail_color}] "
+
+    # --- Header line: weekday colored, everything else dim, id right-aligned ---
+    plain_parts = [weekday_abbr, date_str]
+    styled_parts = [
+        f"[{rail_color}]{weekday_abbr}[/{rail_color}]",
+        f"[dim]{date_str}[/dim]",
+    ]
+    if time_str:
+        plain_parts.append(time_str)
+        styled_parts.append(f"[dim]{time_str}[/dim]")
+    domain = getattr(entry, "life_domain", None)
+    if domain:
+        plain_parts.append(domain)
+        styled_parts.append(f"[dim]{domain}[/dim]")
+
+    plain_header = " · ".join(plain_parts)
+    styled_header = " [dim]·[/dim] ".join(styled_parts)
+
+    if config.display.show_id:
+        plain_id = f"#{entry.id}"
+        pad = max(width - 2 - len(plain_header) - len(plain_id), 1)
+        console.print(f"  {styled_header}{' ' * pad}[dim]{plain_id}[/dim]")
     else:
-        prefix = (
-            f"[{PROJECT}][{entry.id}][/{PROJECT}] {date_str}"
-            if config.display.show_id else date_str
-        )
-        raw_prefix = f"[{entry.id}] {date_str}" if config.display.show_id else date_str
-        full_prefix = f"{prefix} | [#23c76b]{time_str}[/#23c76b]: "
-        raw_full_prefix = f"{raw_prefix} | {time_str}: "
+        console.print(f"  {styled_header}")
 
-    # The subsequent indent should match the length of the visible prefix
-    indent_width = len(raw_full_prefix)
-    subsequent_indent = " " * indent_width
-
+    # --- Body: each wrapped line carries the rail in the day's color ---
+    content_width = max(width - 2, 20)
     wrapped_content = wrap_with_hanging_indent(
         entry.content,
-        width=console.width if console.width > 0 else 80,
+        width=content_width,
         initial_indent="",
-        subsequent_indent=subsequent_indent
+        subsequent_indent="",
     )
+    for line in wrapped_content.split("\n"):
+        console.print(f"{rail}{line}")
 
-    console.print(f"{full_prefix}{wrapped_content}")
-
-    if entry.tag_names:
-        plain_tags = " ".join(f"#{t}" for t in entry.tag_names)
-        wrapped_plain = wrap_with_hanging_indent(
-            plain_tags,
-            width=console.width if console.width > 0 else 80,
-            initial_indent="    Tags: ",
-            subsequent_indent="          ",
-            break_on_hyphens=False
-        )
-        wrapped_tags = wrapped_plain.replace(
-            "#", f"[{TAG}]#[/]"
-        ).replace(
-            "Tags:", f"[{TAG}]Tags:[/{TAG}]"
-        )
-        console.print(wrapped_tags)
-
+    # --- Footer: tags then project, on a single railed line ---
+    footer_parts = [f"[{TAG}]#{t}[/{TAG}]" for t in entry.tag_names]
     if entry.project:
-        console.print(f"    [{PROJECT}]Project:[/{PROJECT}] &{entry.project}")
+        footer_parts.append(f"[{PROJECT}]&{entry.project}[/{PROJECT}]")
+    if footer_parts:
+        console.print(f"{rail}{' [dim]·[/dim] '.join(footer_parts)}")
 
 
 class HelpOverlay(ModalScreen[None]):
