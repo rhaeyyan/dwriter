@@ -454,7 +454,7 @@ class DWriterApp(App[None]):
     def _start_timer(self, minutes: int, tags: list[str], project: str | None) -> None:
         """Start a timer session."""
         from .screens.timer import TimerScreen
-        self.mount_screen("timer")  # type: ignore[attr-defined]
+        self.action_switch_mode("timer")
         try:
             timer_screen = self.query_one("#timer", TimerScreen)
             timer_screen.tags = tags if tags else []
