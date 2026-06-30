@@ -46,6 +46,7 @@ class PermissionEnforcer:
             "run_cypher",
             "search_graph",
             "search_facts",
+            "search_semantic",
         }
         self._append_tools = {
             "add_entry",

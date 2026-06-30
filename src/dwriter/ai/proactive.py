@@ -12,8 +12,9 @@ if TYPE_CHECKING:
 import instructor
 import openai
 
-from .engine import get_embedding, get_semantic_recommendation
+from .engine import get_semantic_recommendation
 from .permissions import PermissionEnforcer, permission_mode_from_str
+from .semantic import get_embedding
 
 
 def process_proactive_tagging(ctx: AppContext, entry: Entry) -> None:

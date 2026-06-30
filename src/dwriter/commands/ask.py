@@ -124,7 +124,7 @@ def _execute_general_query(ctx: AppContext, client: Any, query: str) -> None:
         client: AI client.
         query: User's natural language question.
     """
-    from ..ai.engine import get_embedding
+    from ..ai.semantic import get_embedding
 
     try:
         # Generate query embedding and retrieve similar entries

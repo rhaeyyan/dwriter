@@ -13,6 +13,7 @@ from openai import OpenAI
 
 from dwriter.ai.compression import SummaryCompressor
 from dwriter.ai.permissions import PermissionEnforcer, permission_mode_from_str
+from dwriter.ai.semantic import search_semantic
 from dwriter.ai.tools import (
     fetch_recent_commits,
     get_daily_standup,
@@ -293,6 +294,9 @@ def ask_second_brain_agentic(
     enforcer = PermissionEnforcer(
         mode=permission_mode_from_str(config.features.permission_mode)
     )
+    # Opened lazily on first semantic search and reused for the rest of this
+    # invocation, so a multi-step ReAct loop doesn't reopen the graph per call.
+    shared_projector: Any = None
 
     while True:
         response = client.chat.completions.create(
@@ -335,7 +339,13 @@ def ask_second_brain_agentic(
                 app_context.post_message(AIToolEvent(tool_name=function_name))
 
             if function_name == "search_semantic":
-                result = search_semantic(config=config, **arguments)
+                if shared_projector is None:
+                    from dwriter.graph import GraphProjector
+
+                    shared_projector = GraphProjector()
+                result = search_semantic(
+                    config=config, projector=shared_projector, **arguments
+                )
                 messages.append(
                     {
                         "role": "tool",
@@ -468,48 +478,6 @@ def get_raw_ai_client(config: AIConfig) -> OpenAI:
         OpenAI: The standard OpenAI client.
     """
     return OpenAI(base_url=config.base_url, api_key="ollama")
-
-
-def get_embedding(text: str, config: AIConfig) -> list[float]:
-    """Generates a vector embedding for the given text using the Ollama API.
-
-    Args:
-        text (str): The source text to embed.
-        config (AIConfig): The AI configuration settings.
-
-    Returns:
-        list[float]: The generated embedding vector.
-    """
-    client = OpenAI(base_url=config.base_url, api_key="ollama")
-    response = client.embeddings.create(model="nomic-embed-text", input=text)
-    return response.data[0].embedding
-
-
-def search_semantic(query: str, config: AIConfig) -> str:
-    """Hybrid semantic + FTS search over journal entries.
-
-    Generates a query embedding, then fuses ANN vector results with FTS results
-    via Reciprocal Rank Fusion. Returns entries that are conceptually related to
-    the query even when exact keywords don't match.
-
-    Args:
-        query (str): Natural language search query.
-        config (AIConfig): AI configuration (needed for embedding endpoint).
-
-    Returns:
-        str: JSON array of matching entries, or an error message.
-    """
-    try:
-        from dwriter.graph import GraphProjector, hybrid_search_entries
-
-        embedding = get_embedding(query, config)
-        projector = GraphProjector()
-        results = hybrid_search_entries(query, embedding, projector)
-        if not results:
-            return "No semantically matching entries found."
-        return json.dumps(results, indent=2, default=str)
-    except Exception as e:
-        return f"Error in semantic search: {e}"
 
 
 def get_semantic_recommendation(
