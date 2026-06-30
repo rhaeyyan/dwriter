@@ -68,37 +68,12 @@ To deliver a high-signal experience, `dwriter` implements several advanced archi
 ### 1. Data Storage & Recall Architecture (CQRS)
 `dwriter` strictly separates its write path from its read path, using SQLite for durable, relational storage and LadybugDB for topological and full-text search (FTS).
 
-```mermaid
-flowchart TD
-    User([User (CLI / TUI)]) --> |Writes / Updates| SQLite[(SQLite Relational DB)]
-    SQLite --> |Background Sync Daemon| GraphProj[LadybugDB Projector]
-    GraphProj --> |Projects Nodes & Edges| Ladybug[(LadybugDB Graph Index)]
-    
-    Ladybug --> |Cypher Queries| Analytics[Deterministic Analytics]
-    Ladybug --> |Vector & FTS Search| RAG[AI RAG Pipeline]
-    
-    Analytics --> |Dashboard Metrics| User
-    SQLite --> |Direct Read (Raw Logs & Todos)| User
-```
+![Data Storage Architecture](images/storage.png)
 
 ### 2. The 2nd-Brain Harness & Dual-Model Pipeline
 To balance performance and intelligence, tasks are routed either to a heavy reasoning model (interactive chat) or a fast extraction daemon (background parsing).
 
-```mermaid
-flowchart LR
-    Input([User Input / Log]) --> Router{Task Router}
-    
-    %% Main Brain Path
-    Router -->|Interactive Chat| MainBrain[Main Brain (Reasoning Model)]
-    MainBrain <-->|search_facts, RAG Queries| Ladybug[(LadybugDB Index)]
-    MainBrain -->|Nuanced Response| UI[2nd-Brain Chat UI]
-    
-    %% Daemon Path
-    Router -->|Background Parsing| Daemon[Daemon (Extraction Model)]
-    Daemon -->|Instructor Pydantic Schemas| StructData{Structured JSON}
-    StructData -->|Extracts Tags & Projects| SQLite[(SQLite)]
-    StructData -->|Extracts User Facts| Ladybug
-```
+![Dual-Model Pipeline](images/dual-model.png)
 
 ## Technical Stack Choices
 Every dependency in `dwriter` was chosen intentionally to maximize local performance and minimize friction.
