@@ -63,6 +63,43 @@ To deliver a high-signal experience, `dwriter` implements several advanced archi
 **What it is:** A heavy analytics operation (isolated from the AI domains) that runs once every 24 hours. It calculates actionable metrics like "Momentum" (task completion velocity) and identifies the user's "Big Rock" (the project consuming the majority of their time).
 **Purpose:** Users often miss the "forest for the trees" when logging chronologically. The Pulse provides an automated, high-level behavioral archetype (e.g., "The Deep Diver" or "The Firefighter"). By caching this heavy calculation and throttling it to run only once a day, the app provides instant, rich dashboard insights without degrading terminal performance.
 
+## Systems Architecture Diagrams
+
+### 1. Data Storage & Recall Architecture (CQRS)
+`dwriter` strictly separates its write path from its read path, using SQLite for durable, relational storage and LadybugDB for topological and full-text search (FTS).
+
+```mermaid
+flowchart TD
+    User([User (CLI / TUI)]) --> |Writes / Updates| SQLite[(SQLite Relational DB)]
+    SQLite --> |Background Sync Daemon| GraphProj[LadybugDB Projector]
+    GraphProj --> |Projects Nodes & Edges| Ladybug[(LadybugDB Graph Index)]
+    
+    Ladybug --> |Cypher Queries| Analytics[Deterministic Analytics]
+    Ladybug --> |Vector & FTS Search| RAG[AI RAG Pipeline]
+    
+    Analytics --> |Dashboard Metrics| User
+    SQLite --> |Direct Read (Raw Logs & Todos)| User
+```
+
+### 2. The 2nd-Brain Harness & Dual-Model Pipeline
+To balance performance and intelligence, tasks are routed either to a heavy reasoning model (interactive chat) or a fast extraction daemon (background parsing).
+
+```mermaid
+flowchart LR
+    Input([User Input / Log]) --> Router{Task Router}
+    
+    %% Main Brain Path
+    Router -->|Interactive Chat| MainBrain[Main Brain (Reasoning Model)]
+    MainBrain <-->|search_facts, RAG Queries| Ladybug[(LadybugDB Index)]
+    MainBrain -->|Nuanced Response| UI[2nd-Brain Chat UI]
+    
+    %% Daemon Path
+    Router -->|Background Parsing| Daemon[Daemon (Extraction Model)]
+    Daemon -->|Instructor Pydantic Schemas| StructData{Structured JSON}
+    StructData -->|Extracts Tags & Projects| SQLite[(SQLite)]
+    StructData -->|Extracts User Facts| Ladybug
+```
+
 ## Technical Stack Choices
 Every dependency in `dwriter` was chosen intentionally to maximize local performance and minimize friction.
 
