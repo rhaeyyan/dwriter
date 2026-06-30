@@ -135,7 +135,6 @@ class QuickAddEntryModal(ModalScreen):  # type: ignore[type-arg]
             yield Label("Project:", id="edit-project-label")
             yield Input(id="project-input", placeholder="Project name (optional)")
 
-            lock_mode = self.app.ctx.config.display.lock_mode
             date_fmt = self.app.ctx.config.display.date_format
             fmt_map = {
                 "YYYY-MM-DD": "%Y-%m-%d",

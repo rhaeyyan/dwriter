@@ -203,7 +203,8 @@ def render_block_bar(
 
     parts = []
     if full_blocks > 0:
-        parts.append(f"[{bar_color}]{'█' * full_blocks if use_emojis else '#' * full_blocks}[/]")
+        block = "█" * full_blocks if use_emojis else "#" * full_blocks
+        parts.append(f"[{bar_color}]{block}[/]")
     if frac_index > 0 and use_emojis:
         parts.append(f"[{bar_color}]{_BLOCK_CHARS[frac_index]}[/]")
     elif frac_index > 0:
@@ -262,7 +263,8 @@ def render_block_bar_rich(
 
     text = Text()
     if full_blocks > 0:
-        text.append("█" * full_blocks if use_emojis else "#" * full_blocks, style=bar_color)
+        block = "█" * full_blocks if use_emojis else "#" * full_blocks
+        text.append(block, style=bar_color)
     if frac_index > 0 and use_emojis:
         text.append(_BLOCK_CHARS[frac_index], style=bar_color)
     elif frac_index > 0:

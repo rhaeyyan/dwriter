@@ -149,6 +149,8 @@ def run_migrations(engine: Engine, db_path: str) -> None:
     except Exception as e:
         shutil.copy2(backup_path, db_path)
         console = Console()
-        console.print(f"[bold red]FATAL DATABASE ERROR:[/bold red] Migration failed. {e}")
+        console.print(
+            f"[bold red]FATAL DATABASE ERROR:[/bold red] Migration failed. {e}"
+        )
         console.print("[yellow]Database has been rolled back from backup.[/yellow]")
         sys.exit(1)

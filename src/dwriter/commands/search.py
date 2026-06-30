@@ -24,7 +24,12 @@ def format_score(score: float) -> str:
         return f"[dim]{percentage}%[/dim]"
 
 
-@click.command(context_settings={"help_option_names": ["-h", "--help"], "allow_interspersed_args": True})
+@click.command(
+    context_settings={
+        "help_option_names": ["-h", "--help"],
+        "allow_interspersed_args": True,
+    }
+)
 @click.argument("query", nargs=-1)
 @click.option(
     "-p",
@@ -87,8 +92,13 @@ def search(
     # If no query provided, explain how to search or suggest UI
     if query_str is None:
         ctx.console.print("[yellow]No search query provided.[/yellow]")
-        ctx.console.print("  - [bold]CLI:[/] Provide a query (e.g., `dwriter search 'bugfix'`)")
-        ctx.console.print("  - [bold]TUI:[/] Run `dwriter ui --search` for interactive fuzzy-finding")
+        ctx.console.print(
+            "  - [bold]CLI:[/] Provide a query (e.g., `dwriter search 'bugfix'`)"
+        )
+        ctx.console.print(
+            "  - [bold]TUI:[/] Run `dwriter ui --search` for interactive "
+            "fuzzy-finding"
+        )
         return
 
     # Execute search with optional filters

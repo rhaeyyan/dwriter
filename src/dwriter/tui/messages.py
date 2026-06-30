@@ -70,6 +70,7 @@ class SyncStatus(Message):
     """
 
     def __init__(self, is_syncing: bool, message: str) -> None:
+        """Store the sync state and accompanying status message."""
         super().__init__()
         self.is_syncing = is_syncing
         self.message = message

@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "sqlite": {
+      "command": "uvx",
+      "args": ["mcp-server-sqlite", "--db-path", "/home/rayan/Documents/Python-Projects/dwriter/dwriter.db"]
+    },
+    "git": {
+      "command": "uvx",
+      "args": ["mcp-server-git", "--repository", "/home/rayan/Documents/Python-Projects/dwriter"]
+    }
+  }
+}

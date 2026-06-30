@@ -21,9 +21,9 @@ from textual.screen import ModalScreen
 from textual.widgets import Button, Input, Label, Select, Static, Switch
 
 from ..colors import PROJECT, TAG, get_icon
-from ..widgets.energy_slider import EnergySlider
 from ..messages import EntryAdded, TimerStateChanged
 from ..parsers import parse_quick_add
+from ..widgets.energy_slider import EnergySlider
 
 
 class SessionCompleteModal(ModalScreen):  # type: ignore[type-arg]

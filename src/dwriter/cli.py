@@ -116,7 +116,9 @@ class AppContext:
                 for r in reminders:
                     send_system_notification("dwriter Reminder", r.content)
         elif not silent and force:
-            self.console.print("[green]No active reminders. You're all caught up![/green]")
+            self.console.print(
+                "[green]No active reminders. You're all caught up![/green]"
+            )
 
 
 @click.group(invoke_without_command=True)
@@ -127,7 +129,9 @@ class AppContext:
 @click.version_option(version=__version__, prog_name="dwriter")
 def main(ctx: click.Context, check_only: bool) -> None:
     """Dwriter - A minimalist journal for the terminal.
-    ... (rest of docstring)
+
+    A high-signal, low-friction terminal journaling tool with a
+    headless-first architecture.
     """
     try:
         ctx.obj = AppContext()
@@ -177,7 +181,9 @@ def _launch_tui(ctx_obj: AppContext, starting_tab: str = "dashboard") -> None:
 
 
 @click.command()
-@click.option("--dashboard", "tab", flag_value="dashboard", help="Start on dashboard tab")
+@click.option(
+    "--dashboard", "tab", flag_value="dashboard", help="Start on dashboard tab"
+)
 @click.option("--logs", "tab", flag_value="logs", help="Start on logs tab")
 @click.option("--todo", "tab", flag_value="todo", help="Start on todo tab")
 @click.option("--timer", "tab", flag_value="timer", help="Start on timer tab")

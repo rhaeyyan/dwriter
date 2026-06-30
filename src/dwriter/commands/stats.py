@@ -20,8 +20,15 @@ from ..tui.colors import PROJECT, TAG
 
 
 @click.command()
-@click.option("--weekly", is_flag=True, help="Show the 7-day Weekly Pulse wrap-up summary.")
-@click.option("--json", "output_json", is_flag=True, help="Output data in machine-readable JSON format.")
+@click.option(
+    "--weekly", is_flag=True, help="Show the 7-day Weekly Pulse wrap-up summary."
+)
+@click.option(
+    "--json",
+    "output_json",
+    is_flag=True,
+    help="Output data in machine-readable JSON format.",
+)
 @click.pass_obj
 def stats(ctx: AppContext, weekly: bool, output_json: bool) -> None:
     """View a text-based summary of your productivity.
@@ -118,4 +125,7 @@ def stats(ctx: AppContext, weekly: bool, output_json: bool) -> None:
         ctx.console.print(table)
         ctx.console.print()
 
-    ctx.console.print("[dim]Run [bold]dwriter ui[/bold] for the full interactive dashboard.[/dim]")
+    ctx.console.print(
+        "[dim]Run [bold]dwriter ui[/bold] for the full interactive "
+        "dashboard.[/dim]"
+    )

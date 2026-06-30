@@ -18,10 +18,10 @@ class OmniboxMixin:
             self.query_one("#omnibox-footer").set_class(not value, "hidden")  # type: ignore[attr-defined]
         except Exception:
             pass
-        self._sync_omnibox_visibility()  # type: ignore[attr-defined]
+        self._sync_omnibox_visibility()
 
     def _sync_omnibox_visibility(self) -> None:
-        """Central logic for omnibox visibility using CSS classes and focus management."""
+        """Manage omnibox visibility via CSS classes and focus state."""
         from .widgets.omnibox import Omnibox
 
         try:
@@ -86,7 +86,8 @@ class OmniboxMixin:
                     if step == "task":
                         omnibox.placeholder = "Enter task description..."
                         hint.update(
-                            f"Task text with optional #tag &project {bullet} 'q' to cancel"
+                            f"Task text with optional #tag &project {bullet} "
+                            "'q' to cancel"
                         )
                     elif step == "tags":
                         current_tags = (
@@ -108,25 +109,30 @@ class OmniboxMixin:
                             "Add tags/project (or press Enter to skip)..."
                         )
                     elif step == "priority":
+                        wf = self._todo_workflow  # type: ignore[attr-defined]
                         omnibox.placeholder = (
                             "Priority: L=Low, N=Normal, H=High, U=Urgent "
                             "(or Enter for Normal)"
                         )
                         hint.update(
-                            f"Task: {self._todo_workflow.state.content[:40]}... {bullet} 'q' to cancel"  # type: ignore[attr-defined]
+                            f"Task: {wf.state.content[:40]}... {bullet} "
+                            "'q' to cancel"
                         )
                     elif step == "due_date":
+                        wf = self._todo_workflow  # type: ignore[attr-defined]
                         date_fmt = self.ctx.config.display.date_format  # type: ignore[attr-defined]
                         omnibox.placeholder = (
                             f"Due date: {date_fmt}, today, tomorrow, 5d, 2w, 3m "
                             "(or Enter for none)"
                         )
                         hint.update(
-                            f"Priority: {self._todo_workflow.state.priority.upper()} {bullet} "  # type: ignore[attr-defined]
+                            f"Priority: {wf.state.priority.upper()} {bullet} "
                             "'q' to cancel"
                         )
                 else:
-                    omnibox.placeholder = "Enter Task and press Enter to start multi-step add"
+                    omnibox.placeholder = (
+                        "Enter Task and press Enter to start multi-step add"
+                    )
                     hint.update(
                         f"Enter Task and press Enter to start multi-step add {bullet} "
                         "'q' to cancel"
@@ -134,7 +140,8 @@ class OmniboxMixin:
             elif screen_name == "timer":
                 omnibox.placeholder = "Start timer... (use #tag &project MINUTES)"
                 hint.update(
-                    f"Press / to focus {bullet} Enter: #tag &project 15 starts 15min timer"
+                    f"Press / to focus {bullet} Enter: #tag &project 15 "
+                    "starts 15min timer"
                 )
             else:
                 date_fmt = self.ctx.config.display.date_format  # type: ignore[attr-defined]
@@ -142,7 +149,8 @@ class OmniboxMixin:
                     f"#tag &project YOUR-ENTRY | #tag &project YOUR-ENTRY {date_fmt}"
                 )
                 hint.update(
-                    f"#tag &project YOUR-ENTRY {bullet} #tag &project YOUR-ENTRY {date_fmt}"
+                    f"#tag &project YOUR-ENTRY {bullet} "
+                    f"#tag &project YOUR-ENTRY {date_fmt}"
                 )
         except Exception:
             pass

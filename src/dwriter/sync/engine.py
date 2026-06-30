@@ -55,7 +55,9 @@ def serialize_db(db: Database, sync_dir: Path) -> None:
                 "due_date": todo.due_date.isoformat() if todo.due_date else None,
                 "tags": todo.tag_names,
                 "created_at": todo.created_at.isoformat(),
-                "completed_at": todo.completed_at.isoformat() if todo.completed_at else None,
+                "completed_at": (
+                    todo.completed_at.isoformat() if todo.completed_at else None
+                ),
             }
             f.write(json.dumps(data) + "\n")
     os.replace(todos_tmp, todos_path)

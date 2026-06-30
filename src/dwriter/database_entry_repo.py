@@ -107,8 +107,12 @@ class EntryRepository:
             if exclude_projects:
                 from sqlalchemy import not_, or_
 
-                prefix_excludes = [p.lower() for p in exclude_projects if p.endswith(":")]
-                exact_excludes = [p.lower() for p in exclude_projects if not p.endswith(":")]
+                prefix_excludes = [
+                    p.lower() for p in exclude_projects if p.endswith(":")
+                ]
+                exact_excludes = [
+                    p.lower() for p in exclude_projects if not p.endswith(":")
+                ]
                 conditions: list[Any] = []
                 if exact_excludes:
                     conditions.append(func.lower(Entry.project).in_(exact_excludes))

@@ -15,7 +15,12 @@ from ..git_utils import get_git_info
 from ..ui_utils import display_entry
 
 
-@click.command(context_settings={"help_option_names": ["-h", "--help"], "allow_interspersed_args": True})
+@click.command(
+    context_settings={
+        "help_option_names": ["-h", "--help"],
+        "allow_interspersed_args": True,
+    }
+)
 @click.argument("content", nargs=-1, required=True)
 @click.option(
     "-t",

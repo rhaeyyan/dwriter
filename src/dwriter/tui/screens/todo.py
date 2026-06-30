@@ -896,7 +896,7 @@ class TodoListView(ListView):
                     d_str = f"[{DUE_SOON}]99+[/{DUE_SOON}]"
             else:
                 # Absolute date formats with day of week coloring
-                DAY_COLORS = {
+                day_colors = {
                     "Monday": "#6A9FE8",
                     "Tuesday": "#56C8C8",
                     "Wednesday": "#72C472",
@@ -906,7 +906,7 @@ class TodoListView(ListView):
                     "Sunday": "#E86060",
                 }
                 day_name = todo.due_date.strftime("%A")
-                day_color = DAY_COLORS.get(day_name, "#FFFFFF")
+                day_color = day_colors.get(day_name, "#FFFFFF")
 
                 # Mapping our config keys to strftime formats
                 fmt_map = {

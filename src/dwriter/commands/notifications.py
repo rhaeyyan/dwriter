@@ -171,7 +171,8 @@ def install_notifications(ctx: AppContext, interval: int, dry_run: bool) -> None
     # Friendly reminder about the config toggle
     if not ctx.config.display.notifications_enabled:
         console.print(
-            "\n[yellow]Note:[/yellow] Push notifications are currently [bold]disabled[/bold] in config.\n"
+            "\n[yellow]Note:[/yellow] Push notifications are currently "
+            "[bold]disabled[/bold] in config.\n"
             "Enable them with:\n"
             "  [bold]dwriter config set notifications_enabled true[/bold]"
         )
@@ -245,11 +246,13 @@ def _show_non_linux_instructions(console: object) -> None:
             "<string>--check-only</string></array>\n"
             "     <key>StartInterval</key><integer>300</integer>\n"
             "   </dict></plist>\n\n"
-            "3. Load it:  launchctl load ~/Library/LaunchAgents/com.dwriter.remind.plist\n"
+            "3. Load it:  launchctl load "
+            "~/Library/LaunchAgents/com.dwriter.remind.plist\n"
         )
     elif sys.platform == "win32":  # Windows
         _click.echo(
-            "Windows: Use Task Scheduler to run 'dwriter --check-only' every 5 minutes.\n\n"
+            "Windows: Use Task Scheduler to run 'dwriter --check-only' "
+            "every 5 minutes.\n\n"
             "  schtasks /Create /SC MINUTE /MO 5 /TN \"dwriterRemind\" "
             "/TR \"dwriter --check-only\"\n"
         )
