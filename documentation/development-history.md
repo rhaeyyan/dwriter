@@ -95,6 +95,11 @@ graph TD
     Analytics -- "Dashboard Metrics" --> User
 ```
 
+**Diagram Walkthrough:**
+- **The Write Path:** When a user logs an entry via the CLI or TUI, it is immediately written to a robust, local **SQLite Database** to ensure zero-latency saves and strict durability.
+- **The Sync & Projection:** A background daemon silently watches SQLite and projects new relational data into **LadybugDB**, converting standard text into a complex graph of interconnected nodes and edges.
+- **The Read Path:** When the user or the AI needs to recall information, they do not query SQLite. Instead, they query the LadybugDB graph index, which handles complex Cypher queries for analytics and Full-Text/Vector search for the AI's RAG pipeline.
+
 ### 2. The 2nd-Brain Harness & Dual-Model Pipeline
 To balance performance and intelligence, tasks are routed either to a heavy reasoning model (interactive chat) or a fast extraction daemon (background parsing).
 
@@ -134,6 +139,11 @@ graph LR
     JSON -- "Extracts User Facts" --> LadybugIndex
     JSON -- "Extracts Tags & Projects" --> SQLite
 ```
+
+**Diagram Walkthrough:**
+- **The Router:** Every user input is evaluated by a Task Router to determine if it requires deep reasoning or simple data extraction.
+- **The Main Brain (Interactive):** If the user is chatting with the 2nd-Brain, the request routes to a heavy reasoning model. This model actively queries the LadybugDB index to synthesize a nuanced, context-aware response for the UI.
+- **The Daemon (Background):** If the user is just logging a normal journal entry, the router silently hands it to a fast extraction model running in the background. It uses `Instructor` to extract strictly typed JSON schemas (like projects, tags, and facts) and pipes them directly into the databases without interrupting the user.
 
 ## Technical Stack Choices
 Every dependency in `dwriter` was chosen intentionally to maximize local performance and minimize friction.
