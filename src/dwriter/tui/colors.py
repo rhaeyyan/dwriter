@@ -30,6 +30,23 @@ TAG = "bold #66D0BC"            # Aquamarine tags pop against red
 # Project colors
 PROJECT = "bold #F77F00"        # Bright Orange projects
 
+# Weekday colors
+WEEKDAY_COLORS = {
+    0: "#89b4fa",  # Monday: Blue
+    1: "#fab387",  # Tuesday: Orange
+    2: "#f9e2af",  # Wednesday: Yellow
+    3: "#a6e3a1",  # Thursday: Green
+    4: "#94e2d5",  # Friday: Teal
+    5: "#cba6f7",  # Saturday: Mauve
+    6: "#f38ba8",  # Sunday: Red
+}
+
+
+def get_weekday_color(weekday: int) -> str:
+    """Get the color for a day of the week (0=Monday, 6=Sunday)."""
+    return WEEKDAY_COLORS.get(weekday, "#ffffff")
+
+
 # Priority colors
 PRIORITY_URGENT = "#D53E0F"     # Vibrant Red
 PRIORITY_HIGH = "#FCBF49"       # Yellow
