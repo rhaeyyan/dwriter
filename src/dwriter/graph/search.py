@@ -45,9 +45,24 @@ def hybrid_search_entries(
     vec_ids = [r["uuid"] for r in vec_rows]
     fused_ids = rrf_fuse([fts_ids, vec_ids])[:limit]
 
-    # Build a lookup from both result sets and return in fused order.
+    # FTS rows carry a `score`, vector rows carry a `distance` — the two are not
+    # comparable, so we drop both and expose the fused `rank` (1 = best) as the
+    # single relevance signal. This keeps every returned row on one schema.
     by_uuid: dict[str, dict[str, Any]] = {}
     for row in fts_rows + vec_rows:
         by_uuid.setdefault(row["uuid"], row)
 
-    return [by_uuid[uid] for uid in fused_ids if uid in by_uuid]
+    fused: list[dict[str, Any]] = []
+    for rank, uid in enumerate(fused_ids, start=1):
+        hit = by_uuid.get(uid)
+        if hit is None:
+            continue
+        fused.append(
+            {
+                "uuid": uid,
+                "content": hit.get("content", ""),
+                "project": hit.get("project", ""),
+                "rank": rank,
+            }
+        )
+    return fused

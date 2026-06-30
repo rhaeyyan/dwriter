@@ -3,17 +3,20 @@
 from __future__ import annotations
 
 import json
+import logging
 import threading
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import ladybug as lb
 
-from .schema import FTS_INDICES, NODE_TABLES, REL_TABLES, VECTOR_INDICES
+from .schema import EMBEDDING_DIM, FTS_INDICES, NODE_TABLES, REL_TABLES, VECTOR_INDICES
 
 if TYPE_CHECKING:
     from ..database import Database, Entry, Todo
+
+logger = logging.getLogger(__name__)
 
 
 def get_graph_path() -> Path:
@@ -115,7 +118,19 @@ class GraphProjector:
         created = entry.created_at.isoformat() if entry.created_at else ""
         emb: list[float] | None = None
         if isinstance(entry.embedding, bytes):
-            emb = json.loads(entry.embedding.decode("utf-8"))
+            try:
+                emb = json.loads(entry.embedding.decode("utf-8"))
+            except (ValueError, UnicodeDecodeError):
+                logger.debug("Unreadable embedding for %s; skipping", entry.uuid)
+                emb = None
+        if emb is not None and len(emb) != EMBEDDING_DIM:
+            logger.debug(
+                "Embedding dim %d != %d for %s; skipping vector",
+                len(emb),
+                EMBEDDING_DIM,
+                entry.uuid,
+            )
+            emb = None
         with self._lock:
             self._conn.execute(
                 "MATCH (e:Entry {uuid: $uuid}) DETACH DELETE e",
@@ -225,7 +240,7 @@ class GraphProjector:
                 self.project_entry(entry)
             for todo in db.get_todos_since(watermark):
                 self.project_todo(todo)
-        db.set_graph_watermark(datetime.utcnow())
+        db.set_graph_watermark(datetime.now(timezone.utc).replace(tzinfo=None))
 
     def project_fact(
         self,
