@@ -63,6 +63,78 @@ To deliver a high-signal experience, `dwriter` implements several advanced archi
 **What it is:** A heavy analytics operation (isolated from the AI domains) that runs once every 24 hours. It calculates actionable metrics like "Momentum" (task completion velocity) and identifies the user's "Big Rock" (the project consuming the majority of their time).
 **Purpose:** Users often miss the "forest for the trees" when logging chronologically. The Pulse provides an automated, high-level behavioral archetype (e.g., "The Deep Diver" or "The Firefighter"). By caching this heavy calculation and throttling it to run only once a day, the app provides instant, rich dashboard insights without degrading terminal performance.
 
+## Systems Architecture Diagrams
+
+### 1. Data Storage & Recall Architecture (CQRS)
+`dwriter` strictly separates its write path from its read path, using SQLite for durable, relational storage and LadybugDB for topological and full-text search (FTS).
+
+```mermaid
+graph TD
+    %% Define Node Styles
+    classDef user fill:#10b981,stroke:#047857,color:white;
+    classDef db fill:#1f2937,stroke:#111827,color:white;
+    classDef process fill:#3b82f6,stroke:#2563eb,color:white;
+
+    %% Nodes
+    User(["User (CLI / TUI)"]):::user
+    SQLite[("SQLite Relational DB")]:::db
+    Projector["LadybugDB Projector"]:::process
+    GraphIndex[("LadybugDB Graph Index")]:::db
+    Analytics["Deterministic Analytics"]:::process
+    RAG["AI RAG Pipeline"]:::process
+
+    %% Relationships
+    User -- "Writes / Updates" --> SQLite
+    SQLite -- "Direct Read (Raw Logs & Todos)" --> User
+    SQLite -- "Background Sync Daemon" --> Projector
+    Projector -- "Projects Nodes & Edges" --> GraphIndex
+    
+    GraphIndex -- "Cypher Queries" --> Analytics
+    GraphIndex -- "Vector & FTS Search" --> RAG
+    
+    Analytics -- "Dashboard Metrics" --> User
+```
+
+### 2. The 2nd-Brain Harness & Dual-Model Pipeline
+To balance performance and intelligence, tasks are routed either to a heavy reasoning model (interactive chat) or a fast extraction daemon (background parsing).
+
+```mermaid
+graph LR
+    %% Define Node Styles
+    classDef input fill:#10b981,stroke:#047857,color:white;
+    classDef router fill:#4b5563,stroke:#374151,color:white;
+    classDef brain fill:#8b5cf6,stroke:#7c3aed,color:white;
+    classDef daemon fill:#f59e0b,stroke:#d97706,color:white;
+    classDef db fill:#1f2937,stroke:#111827,color:white;
+
+    %% Nodes
+    Input(["User Input / Log"]):::input
+    Router{"Task Router"}:::router
+    
+    MainBrain["Main Brain (Reasoning Model)"]:::brain
+    ChatUI(["2nd-Brain Chat UI"]):::input
+    
+    Daemon["Daemon (Extraction Model)"]:::daemon
+    JSON{"Structured JSON"}:::router
+    
+    LadybugIndex[("LadybugDB Index")]:::db
+    SQLite[("SQLite")]:::db
+
+    %% Relationships
+    Input --> Router
+
+    %% Top Path (Interactive)
+    Router -- "Interactive Chat" --> MainBrain
+    MainBrain -- "search_facts, RAG Queries" --> LadybugIndex
+    MainBrain -- "Nuanced Response" --> ChatUI
+
+    %% Bottom Path (Background)
+    Router -- "Background Parsing" --> Daemon
+    Daemon -- "Instructor Pydantic Schemas" --> JSON
+    JSON -- "Extracts User Facts" --> LadybugIndex
+    JSON -- "Extracts Tags & Projects" --> SQLite
+```
+
 ## Technical Stack Choices
 Every dependency in `dwriter` was chosen intentionally to maximize local performance and minimize friction.
 
