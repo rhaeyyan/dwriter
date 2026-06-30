@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     DateTime,
@@ -77,6 +78,10 @@ class Entry(Base):
         cascade="all, delete-orphan",
     )
 
+    if TYPE_CHECKING:
+        # Runtime-only cache set by repository writes; not a mapped column.
+        _tag_names_cache: list[str]
+
     @property
     def tag_names(self) -> list[str]:
         """Return tag names, using cache if available."""
@@ -110,6 +115,10 @@ class Todo(Base):
         lazy="selectin",
         cascade="all, delete-orphan",
     )
+
+    if TYPE_CHECKING:
+        # Runtime-only cache set by repository writes; not a mapped column.
+        _tag_names_cache: list[str]
 
     @property
     def tag_names(self) -> list[str]:

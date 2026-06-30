@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from ...cli import AppContext
+    from ..app import DWriterApp
 
 from textual.app import ComposeResult
 from textual.binding import Binding
@@ -31,6 +32,8 @@ from ..colors import (
 
 class EntryResultsView(ListView):
     """ListView for displaying entry and todo search results."""
+
+    app: DWriterApp
 
     def __init__(
         self, items: list[tuple[Entry | Todo, float]] | None = None, **kwargs: Any

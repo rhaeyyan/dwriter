@@ -17,7 +17,7 @@ class InsightGenerator:
     def _colorize(self, text: str) -> str:
         """Colorize tags and projects, safely ignoring Rich formatting tags."""
 
-        def replacer(match: re.Match) -> str:
+        def replacer(match: re.Match[str]) -> str:
             if match.group(1):
                 # Group 1 matched a Rich tag like [bold #f38ba8], leave
                 # it completely alone!

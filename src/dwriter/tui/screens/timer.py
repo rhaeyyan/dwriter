@@ -682,7 +682,9 @@ class TimerScreen(Container):
 
         def on_dismiss(result: tuple[str, int | None, str | None] | None) -> None:
             if result:
-                content, energy_level, mood = result
+                # mood is collected by the form but not persisted on the
+                # AI-free main branch (no implicit_mood column).
+                content, energy_level, _mood = result
                 async def save_worker() -> None:
                     try:
                         parsed = parse_quick_add(content)
@@ -698,7 +700,6 @@ class TimerScreen(Container):
                             project=project,
                             created_at=datetime.now(),
                             energy_level=energy_level,
-                            implicit_mood=mood,
                         )
                         self.post_message(EntryAdded(
                             entry_id=entry.id,

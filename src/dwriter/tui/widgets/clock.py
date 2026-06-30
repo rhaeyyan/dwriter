@@ -7,6 +7,7 @@ both 24-hour and 12-hour time formats.
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 
 from textual.widgets import Static
 
@@ -31,7 +32,7 @@ class Clock(Static):
     }
     """
 
-    def __init__(self, use_24hr: bool = True, **kwargs) -> None:
+    def __init__(self, use_24hr: bool = True, **kwargs: Any) -> None:
         """Initialize the clock widget.
 
         Args:

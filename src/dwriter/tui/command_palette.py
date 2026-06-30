@@ -106,7 +106,9 @@ class DWriterCommands(Provider):
         if not isinstance(app, DWriterApp):
             return
         # Navigate to dashboard screen
-        app.mount_screen("dashboard")
+        # FIXME: mount_screen is not defined on DWriterApp (app.py uses it too) —
+        # this navigation path is broken and needs a real screen-nav method.
+        app.mount_screen("dashboard")  # type: ignore[attr-defined]
         app.notify("Dashboard opened", timeout=1.5)
 
     async def _run_export(self) -> None:

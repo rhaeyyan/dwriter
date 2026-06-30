@@ -3,19 +3,33 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from datetime import date, datetime
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from sqlalchemy import delete, func, select
 
 from .database_models import Entry, Tag
 
 if TYPE_CHECKING:
-    pass
+    from collections.abc import Callable
+
+    from sqlalchemy.orm import Session as SASession
+    from sqlalchemy.orm import sessionmaker
+
+_T = TypeVar("_T")
 
 
 class EntryRepository:
     """Mixin providing entry CRUD operations for the Database class."""
+
+    if TYPE_CHECKING:
+        # Provided by the host Database class this mixin is composed into.
+        Session: sessionmaker[SASession]
+        _get_next_lamport: Callable[[], int]
+
+        def _queued_write(
+            self, fn: Callable[..., _T], *args: Any, **kwargs: Any
+        ) -> _T: ...
 
     # ------------------------------------------------------------------
     # Entry CRUD
@@ -32,7 +46,7 @@ class EntryRepository:
         energy_level: int | None = None,
     ) -> Entry:
         """Add a new journal entry."""
-        return self._queued_write(  # type: ignore[attr-defined]
+        return self._queued_write(
             self._add_entry_sync,
             content,
             tags=tags,
@@ -53,8 +67,8 @@ class EntryRepository:
         life_domain: str | None = None,
         energy_level: int | None = None,
     ) -> Entry:
-        next_clock = self._get_next_lamport()  # type: ignore[attr-defined]
-        with self.Session() as session:  # type: ignore[attr-defined]
+        next_clock = self._get_next_lamport()
+        with self.Session() as session:
             entry = Entry(
                 uuid=str(uuid.uuid4()),
                 lamport_clock=next_clock,
@@ -76,7 +90,7 @@ class EntryRepository:
 
     def get_entry(self, entry_id: int) -> Entry:
         """Retrieve a single entry by ID."""
-        with self.Session() as session:  # type: ignore[attr-defined]
+        with self.Session() as session:
             entry = session.get(Entry, entry_id)
             if not entry:
                 raise ValueError(f"Entry with id {entry_id} not found")
@@ -84,7 +98,7 @@ class EntryRepository:
 
     def get_entries_by_date(self, date: datetime) -> list[Entry]:
         """Retrieve all entries for a specific date."""
-        with self.Session() as session:  # type: ignore[attr-defined]
+        with self.Session() as session:
             date_str = date.strftime("%Y-%m-%d")
             stmt = (
                 select(Entry)
@@ -101,7 +115,7 @@ class EntryRepository:
         exclude_tags: list[str] | None = None,
     ) -> list[Entry]:
         """Retrieve entries within a date range with optional exclusion filters."""
-        with self.Session() as session:  # type: ignore[attr-defined]
+        with self.Session() as session:
             stmt = select(Entry).where(Entry.created_at.between(start_date, end_date))
 
             if exclude_projects:
@@ -136,7 +150,7 @@ class EntryRepository:
 
     def get_latest_entry(self) -> Entry | None:
         """Retrieve the most recent entry."""
-        with self.Session() as session:  # type: ignore[attr-defined]
+        with self.Session() as session:
             return session.scalars(
                 select(Entry).order_by(Entry.created_at.desc()).limit(1)
             ).first()
@@ -150,7 +164,7 @@ class EntryRepository:
         created_at: datetime | None = None,
     ) -> Entry:
         """Update an existing entry."""
-        return self._queued_write(  # type: ignore[attr-defined]
+        return self._queued_write(
             self._update_entry_sync,
             entry_id,
             content=content,
@@ -167,8 +181,8 @@ class EntryRepository:
         project: str | None = None,
         created_at: datetime | None = None,
     ) -> Entry:
-        next_clock = self._get_next_lamport()  # type: ignore[attr-defined]
-        with self.Session() as session:  # type: ignore[attr-defined]
+        next_clock = self._get_next_lamport()
+        with self.Session() as session:
             entry = session.get(Entry, entry_id)
             if not entry:
                 raise ValueError(f"Entry {entry_id} not found")
@@ -187,10 +201,10 @@ class EntryRepository:
 
     def delete_entry(self, entry_id: int) -> bool:
         """Delete an entry by ID."""
-        return self._queued_write(self._delete_entry_sync, entry_id)  # type: ignore[attr-defined]
+        return self._queued_write(self._delete_entry_sync, entry_id)
 
     def _delete_entry_sync(self, entry_id: int) -> bool:
-        with self.Session() as session:  # type: ignore[attr-defined]
+        with self.Session() as session:
             entry = session.get(Entry, entry_id)
             if entry:
                 session.delete(entry)
@@ -200,10 +214,10 @@ class EntryRepository:
 
     def delete_entry_by_todo_id(self, todo_id: int) -> None:
         """Delete entry linked to a todo ID."""
-        self._queued_write(self._delete_entry_by_todo_id_sync, todo_id)  # type: ignore[attr-defined]
+        self._queued_write(self._delete_entry_by_todo_id_sync, todo_id)
 
     def _delete_entry_by_todo_id_sync(self, todo_id: int) -> None:
-        with self.Session() as session:  # type: ignore[attr-defined]
+        with self.Session() as session:
             session.query(Entry).filter(Entry.todo_id == todo_id).delete(
                 synchronize_session=False
             )
@@ -211,18 +225,19 @@ class EntryRepository:
 
     def delete_entries_before(self, before_date: datetime) -> int:
         """Delete all entries before a specific date."""
-        return self._queued_write(self._delete_entries_before_sync, before_date)  # type: ignore[attr-defined]
+        return self._queued_write(self._delete_entries_before_sync, before_date)
 
     def _delete_entries_before_sync(self, before_date: datetime) -> int:
-        with self.Session() as session:  # type: ignore[attr-defined]
+        with self.Session() as session:
             stmt = delete(Entry).where(Entry.created_at < before_date)
             result = session.execute(stmt)
             session.commit()
-            return int(result.rowcount) if result.rowcount is not None else 0  # type: ignore[attr-defined]
+            rowcount = result.rowcount  # type: ignore[attr-defined]
+            return int(rowcount) if rowcount is not None else 0
 
     def get_all_entries_count(self) -> int:
         """Get the total count of all entries."""
-        with self.Session() as session:  # type: ignore[attr-defined]
+        with self.Session() as session:
             return session.scalar(select(func.count(Entry.id))) or 0
 
     def get_entries_paginated(
@@ -233,7 +248,7 @@ class EntryRepository:
         tags: list[str] | None = None,
     ) -> list[Entry]:
         """Retrieve a page of entries, optionally filtered."""
-        with self.Session() as session:  # type: ignore[attr-defined]
+        with self.Session() as session:
             stmt = select(Entry).order_by(Entry.created_at.desc())
             if project:
                 stmt = stmt.where(Entry.project == project)
@@ -244,7 +259,7 @@ class EntryRepository:
 
     def get_entries_with_streaks(self) -> list[datetime]:
         """Get unique dates with entries."""
-        with self.Session() as session:  # type: ignore[attr-defined]
+        with self.Session() as session:
             stmt = (
                 select(func.distinct(func.date(Entry.created_at)))
                 .order_by(Entry.created_at.desc())
@@ -254,7 +269,7 @@ class EntryRepository:
 
     def get_project_stats(self) -> dict[str, int]:
         """Get entry counts grouped by project."""
-        with self.Session() as session:  # type: ignore[attr-defined]
+        with self.Session() as session:
             stmt = (
                 select(Entry.project, func.count(Entry.id))
                 .group_by(Entry.project)
@@ -264,10 +279,10 @@ class EntryRepository:
             return {project: count for project, count in results if project}
 
     def get_entries_count_by_date(
-        self, start_date: datetime, end_date: datetime
+        self, start_date: date, end_date: date
     ) -> dict[str, int]:
         """Get entry counts grouped by date."""
-        with self.Session() as session:  # type: ignore[attr-defined]
+        with self.Session() as session:
             stmt = (
                 select(func.date(Entry.created_at), func.count(Entry.id))
                 .where(Entry.created_at.between(start_date, end_date))
@@ -279,7 +294,7 @@ class EntryRepository:
 
     def get_date_range(self) -> tuple[datetime | None, datetime | None]:
         """Get the date range of all entries."""
-        with self.Session() as session:  # type: ignore[attr-defined]
+        with self.Session() as session:
             stmt = select(func.min(Entry.created_at), func.max(Entry.created_at))
             result = session.execute(stmt).first()
             if result and result[0] and result[1]:
@@ -292,7 +307,7 @@ class EntryRepository:
         tags: list[str] | None = None,
     ) -> list[Entry]:
         """Retrieve all entries, optionally filtered."""
-        with self.Session() as session:  # type: ignore[attr-defined]
+        with self.Session() as session:
             stmt = select(Entry).order_by(Entry.created_at.desc())
             if project:
                 stmt = stmt.where(Entry.project == project)
@@ -302,7 +317,7 @@ class EntryRepository:
 
     def get_unique_projects(self) -> list[str]:
         """Retrieve a list of all unique project names."""
-        with self.Session() as session:  # type: ignore[attr-defined]
+        with self.Session() as session:
             stmt = (
                 select(func.distinct(Entry.project))
                 .where(Entry.project.isnot(None))
@@ -312,13 +327,13 @@ class EntryRepository:
 
     def get_unique_tags(self) -> list[str]:
         """Retrieve a list of all unique tag names."""
-        with self.Session() as session:  # type: ignore[attr-defined]
+        with self.Session() as session:
             stmt = select(func.distinct(Tag.name)).order_by(Tag.name)
             return list(session.scalars(stmt).all())
 
     def get_entries_since(self, watermark: datetime) -> list[Entry]:
         """Retrieves entries created or updated after the given watermark timestamp."""
-        with self.Session() as session:  # type: ignore[attr-defined]
+        with self.Session() as session:
             stmt = (
                 select(Entry)
                 .where(Entry.updated_at > watermark)
@@ -328,7 +343,7 @@ class EntryRepository:
 
     def get_entries_with_tags_count(self) -> dict[str, int]:
         """Get entry counts grouped by tag."""
-        with self.Session() as session:  # type: ignore[attr-defined]
+        with self.Session() as session:
             stmt = (
                 select(Tag.name, func.count(Tag.id))
                 .group_by(Tag.name)

@@ -4,18 +4,36 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime, timedelta
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from sqlalchemy import case, or_, select
 
 from .database_models import Tag, Todo
 
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from sqlalchemy.orm import Session as SASession
+    from sqlalchemy.orm import sessionmaker
+
+_T = TypeVar("_T")
+
 
 class TodoRepository:
     """Mixin providing todo CRUD operations for the Database class."""
 
+    if TYPE_CHECKING:
+        # Provided by the host Database class this mixin is composed into.
+        Session: sessionmaker[SASession]
+        _get_next_lamport: Callable[[], int]
+
+        def _queued_write(
+            self, fn: Callable[..., _T], *args: Any, **kwargs: Any
+        ) -> _T: ...
+
     def get_todos_since(self, watermark: datetime) -> list[Todo]:
         """Retrieves todos created or completed after the given watermark timestamp."""
-        with self.Session() as session:  # type: ignore[attr-defined]
+        with self.Session() as session:
             stmt = (
                 select(Todo)
                 .where(
@@ -37,7 +55,7 @@ class TodoRepository:
         due_date: datetime | None = None,
     ) -> Todo:
         """Add a new task."""
-        return self._queued_write(  # type: ignore[attr-defined]
+        return self._queued_write(
             self._add_todo_sync,
             content,
             priority=priority,
@@ -54,8 +72,8 @@ class TodoRepository:
         tags: list[str] | None = None,
         due_date: datetime | None = None,
     ) -> Todo:
-        next_clock = self._get_next_lamport()  # type: ignore[attr-defined]
-        with self.Session() as session:  # type: ignore[attr-defined]
+        next_clock = self._get_next_lamport()
+        with self.Session() as session:
             todo = Todo(
                 uuid=str(uuid.uuid4()),
                 lamport_clock=next_clock,
@@ -75,7 +93,7 @@ class TodoRepository:
 
     def get_todo(self, todo_id: int) -> Todo:
         """Retrieve a single todo by ID."""
-        with self.Session() as session:  # type: ignore[attr-defined]
+        with self.Session() as session:
             todo = session.get(Todo, todo_id)
             if not todo:
                 raise ValueError(f"Todo with id {todo_id} not found")
@@ -83,7 +101,7 @@ class TodoRepository:
 
     def get_todos(self, status: str | None = "pending") -> list[Todo]:
         """Retrieve tasks, ordered by priority and urgency."""
-        with self.Session() as session:  # type: ignore[attr-defined]
+        with self.Session() as session:
             stmt = select(Todo)
             if status:
                 stmt = stmt.where(Todo.status == status)
@@ -121,7 +139,7 @@ class TodoRepository:
         reminder_last_sent: datetime | None = None,
     ) -> Todo:
         """Update an existing task."""
-        return self._queued_write(  # type: ignore[attr-defined]
+        return self._queued_write(
             self._update_todo_sync,
             todo_id,
             content=content,
@@ -146,8 +164,8 @@ class TodoRepository:
         due_date: datetime | None = None,
         reminder_last_sent: datetime | None = None,
     ) -> Todo:
-        next_clock = self._get_next_lamport()  # type: ignore[attr-defined]
-        with self.Session() as session:  # type: ignore[attr-defined]
+        next_clock = self._get_next_lamport()
+        with self.Session() as session:
             todo = session.get(Todo, todo_id)
             if not todo:
                 raise ValueError(f"Todo {todo_id} not found")
@@ -176,7 +194,7 @@ class TodoRepository:
         self, due_before: datetime, reminded_since: datetime
     ) -> list[Todo]:
         """Query for urgent tasks that need a reminder alert."""
-        with self.Session() as session:  # type: ignore[attr-defined]
+        with self.Session() as session:
             stmt = (
                 select(Todo)
                 .where(Todo.status == "pending")
@@ -191,10 +209,10 @@ class TodoRepository:
 
     def delete_todo(self, todo_id: int) -> bool:
         """Delete a task by ID."""
-        return self._queued_write(self._delete_todo_sync, todo_id)  # type: ignore[attr-defined]
+        return self._queued_write(self._delete_todo_sync, todo_id)
 
     def _delete_todo_sync(self, todo_id: int) -> bool:
-        with self.Session() as session:  # type: ignore[attr-defined]
+        with self.Session() as session:
             todo = session.get(Todo, todo_id)
             if todo:
                 session.delete(todo)
@@ -208,7 +226,7 @@ class TodoRepository:
         tags: list[str] | None = None,
     ) -> list[Todo]:
         """Retrieve all todos, optionally filtered."""
-        with self.Session() as session:  # type: ignore[attr-defined]
+        with self.Session() as session:
             stmt = select(Todo).order_by(Todo.created_at.desc())
             if project:
                 stmt = stmt.where(Todo.project == project)

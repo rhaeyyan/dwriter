@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from ...cli import AppContext
+    from ..app import DWriterApp
 
 from textual.app import ComposeResult
 from textual.binding import Binding
@@ -22,6 +23,9 @@ from ..widgets.energy_slider import EnergySlider
 
 class QuickAddEntryModal(ModalScreen):  # type: ignore[type-arg]
     """Modal dialog for adding a new journal entry."""
+
+    if TYPE_CHECKING:
+        app: DWriterApp  # narrow Textual's App[Any] to the concrete app
 
     CSS = """
     QuickAddEntryModal {
@@ -230,6 +234,9 @@ class QuickAddEntryModal(ModalScreen):  # type: ignore[type-arg]
 
 class EditEntryModal(ModalScreen):  # type: ignore[type-arg]
     """Modal dialog for editing a journal entry."""
+
+    if TYPE_CHECKING:
+        app: DWriterApp  # narrow Textual's App[Any] to the concrete app
 
     CSS = """
     EditEntryModal {
@@ -563,6 +570,9 @@ class EditEntryModal(ModalScreen):  # type: ignore[type-arg]
 class DeleteConfirmModal(ModalScreen):  # type: ignore[type-arg]
     """Modal dialog for confirming entry deletion."""
 
+    if TYPE_CHECKING:
+        app: DWriterApp  # narrow Textual's App[Any] to the concrete app
+
     CSS = """
     DeleteConfirmModal {
         align: center middle;
@@ -708,6 +718,9 @@ def _wrap_with_hanging_indent(text: str, indent: str) -> str:
 
 class LogsResultsView(ListView):
     """ListView for displaying journal entry search results."""
+
+    if TYPE_CHECKING:
+        app: DWriterApp  # narrow Textual's App[Any] to the concrete app
 
     def __init__(
         self, items: list[tuple[Entry, float]] | None = None, **kwargs: Any
@@ -1094,7 +1107,7 @@ class LogsScreen(Container):
             results_view.append_item(entry, score=None)
 
         # Update button visibility
-        load_more_btn = self.query_one("#btn-load-more")
+        load_more_btn = self.query_one("#btn-load-more", Button)
         load_more_btn.display = self._has_more
         if not self._has_more:
             load_more_btn.label = "No more entries"
@@ -1137,7 +1150,8 @@ class LogsScreen(Container):
         item_data = results_view.highlighted_child.item_data  # type: ignore[attr-defined]
         if not item_data:
             return None
-        return item_data["item"]
+        entry: Entry | None = item_data["item"]
+        return entry
 
     def action_cursor_down(self) -> None:
         """Move cursor down in results list."""
@@ -1278,15 +1292,16 @@ class LogsScreen(Container):
         ) -> None:
             if result is None or result[0] is None:
                 return
-            content, tags, project, created_at, energy_level, mood = result
+            # mood is collected by the form but not persisted on the AI-free
+            # main branch (no implicit_mood column).
+            content, tags, project, created_at, energy_level, _mood = result
 
             self.ctx.db.add_entry(
-                content=content,
+                content=content or "",
                 tags=tags,
                 project=project,
                 created_at=created_at,
                 energy_level=energy_level,
-                implicit_mood=mood,
             )
             self.notify("New entry added", timeout=1.5)
             self._load_data()

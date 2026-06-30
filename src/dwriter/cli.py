@@ -5,12 +5,17 @@ This module provides the main entry point for the dwriter CLI application.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import click
 from rich.console import Console
 
 from . import __version__
 from .config import ConfigManager
 from .database import Database
+
+if TYPE_CHECKING:
+    from .tui.app import DWriterApp
 
 
 class DWriterError(Exception):
@@ -42,6 +47,10 @@ class AppContext:
         config: Configuration manager instance.
         db: Database instance.
     """
+
+    if TYPE_CHECKING:
+        # Set by DWriterApp on launch so commands/screens can reach the app.
+        app: DWriterApp
 
     def __init__(self) -> None:
         """Initialize the application context."""

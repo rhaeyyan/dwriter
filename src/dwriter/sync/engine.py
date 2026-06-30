@@ -100,7 +100,9 @@ def _merge_entry(db: Database, data: dict[str, Any]) -> None:
             existing.content = data["content"]
             existing.project = data["project"]
             existing.created_at = datetime.fromisoformat(data["created_at"])
-            existing.implicit_mood = data.get("implicit_mood")
+            # implicit_mood is an AI-edition column; absent on the main branch,
+            # so the assignment is a harmless no-op there (type-ignored).
+            existing.implicit_mood = data.get("implicit_mood")  # type: ignore[attr-defined]
             existing.life_domain = data.get("life_domain")
             existing.energy_level = data.get("energy_level")
             existing.tags = [Tag(name=t) for t in data["tags"]]

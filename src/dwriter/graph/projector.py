@@ -117,9 +117,11 @@ class GraphProjector:
         """Upserts one Entry node and its tag/project edges."""
         created = entry.created_at.isoformat() if entry.created_at else ""
         emb: list[float] | None = None
-        if isinstance(entry.embedding, bytes):
+        # embedding is an AI-edition column; absent on the main branch.
+        emb_raw = getattr(entry, "embedding", None)
+        if isinstance(emb_raw, bytes):
             try:
-                emb = json.loads(entry.embedding.decode("utf-8"))
+                emb = json.loads(emb_raw.decode("utf-8"))
             except (ValueError, UnicodeDecodeError):
                 logger.debug("Unreadable embedding for %s; skipping", entry.uuid)
                 emb = None
@@ -148,7 +150,7 @@ class GraphProjector:
                     "content": entry.content or "",
                     "project": entry.project or "",
                     "created_at": created,
-                    "implicit_mood": entry.implicit_mood or "",
+                    "implicit_mood": getattr(entry, "implicit_mood", None) or "",
                     "life_domain": entry.life_domain or "",
                     "energy_level": float(entry.energy_level or 0.0),
                     "embedding": emb,

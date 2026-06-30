@@ -425,6 +425,8 @@ class EditTodoModal(ModalScreen):  # type: ignore[type-arg]
 class AddTodoModal(ModalScreen):  # type: ignore[type-arg]
     """Modal dialog for adding a new todo."""
 
+    app: DWriterApp
+
     CSS = """
     AddTodoModal {
         align: center middle;
@@ -740,6 +742,8 @@ def _wrap_todo_with_hanging_indent(text: str, indent: str) -> str:
 
 class TodoListView(ListView):
     """ListView for displaying todo tasks."""
+
+    app: DWriterApp
 
     def __init__(self, todos: list[Todo] | None = None, **kwargs: Any) -> None:
         """Initialize the todo list view.
@@ -1244,7 +1248,7 @@ class TodoScreen(Container):
             self.query_one("#todos", TodoListView).focus()
             
         except Exception as e:
-            self.notify(f"Error adding task: {e}", variant="error")
+            self.notify(f"Error adding task: {e}", severity="error")
 
     def on_add_todo_form_add_todo_cancel(self, message: AddTodoForm.AddTodoCancel) -> None:
         """Handle cancel signal from AddTodoForm."""

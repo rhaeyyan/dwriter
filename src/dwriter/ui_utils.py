@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 
     from .config import Config
     from .database import Entry
+    from .tui.app import DWriterApp
 
 
 def wrap_with_hanging_indent(
@@ -151,6 +152,9 @@ def display_entry(console: "Console", entry: "Entry", config: "Config") -> None:
 
 class HelpOverlay(ModalScreen[None]):
     """Contextual help overlay showing keybindings and tips."""
+
+    if TYPE_CHECKING:
+        app: DWriterApp  # narrow Textual's App[Any] to the concrete app
 
     DEFAULT_CSS = """
     HelpOverlay {

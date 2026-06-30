@@ -321,12 +321,17 @@ class ConfigureScreen(Container):
             # Apply theme live immediately
             self.app.theme = config.display.theme
 
-            # Sync permanent_omnibox reactive so the change takes effect without restart
-            from ..app import DWriterApp  # type: ignore[attr-defined]
+            # Sync permanent_omnibox reactive so the change takes effect
+            # without restart
+            from ..app import DWriterApp
             if isinstance(self.app, DWriterApp):
                 self.app.permanent_omnibox = config.display.permanent_omnibox
 
-            self.app.notify("Configuration saved! Some changes require a restart.", severity="success", timeout=4)
+            self.app.notify(
+                "Configuration saved! Some changes require a restart.",
+                severity="information",
+                timeout=4,
+            )
         except ValueError as e:
             self.app.notify(f"Invalid input: {e}", severity="error")
         except Exception as e:
@@ -346,7 +351,7 @@ class ConfigureScreen(Container):
         self.query_one("#lock-mode-switch", Switch).value = config.display.lock_mode
         self.query_one("#permanent-omnibox-switch", Switch).value = config.display.permanent_omnibox
 
-        from ..app import DWriterApp  # type: ignore[attr-defined]
+        from ..app import DWriterApp
         if isinstance(self.app, DWriterApp):
             self.app.permanent_omnibox = config.display.permanent_omnibox
 
