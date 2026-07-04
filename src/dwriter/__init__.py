@@ -4,5 +4,12 @@ This package provides a command-line interface for tracking daily tasks
 and generating standup summaries.
 """
 
-__version__ = "3.7.0"
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as _pkg_version
+
+try:
+    __version__ = _pkg_version("dwriter")
+except PackageNotFoundError:
+    __version__ = "unknown"
+
 __author__ = "dwriter Contributors"

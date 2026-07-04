@@ -187,7 +187,7 @@ toml = [
 
 [[package]]
 name = "dwriter"
-version = "3.7.0"
+version = "4.10.6"
 source = { editable = "." }
 dependencies = [
     { name = "click" },
