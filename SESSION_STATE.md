@@ -11,8 +11,10 @@
   - Added a new automated guard, **Analytics AI-Free Guard**, to `agents/AGENTS.md` and `scripts/check_guards.sh`. First version checked a non-existent `analytics.py`; caught and fixed to check the actual `src/dwriter/analytics/` package, verified it fails on an injected violation.
   - Synced `agents/AGENTS.md` so it is now byte-identical between `main` and `dwriter-ai` (cherry-picked, preserving `dwriter-ai`'s legitimate `check_guards.sh` divergence — its Security Mode/Context Budget checks are unconditional since `ai/` always exists there, unlike main's vacuous-skip versions).
   - Commits: `103e4d5`, `f15f307` on `main`; `c77696e`, `98ad973` on `dwriter-ai`. All pushed to origin.
-  - **Unfinished:** `pyproject.toml` version (`3.7.0`) still doesn't match README (`v4.10.6`) — flagged, not touched. `agents/PORTING_MANIFEST.md` was not updated with these commits (unclear whether meta/framework doc commits need manifest entries, since they're cross-branch infra rather than a portable feature).
-  - **Next steps:** decide whether to bump `pyproject.toml` version, and clarify with the user whether framework/doc-only commits should get `PORTING_MANIFEST.md` entries going forward.
+  - Mirrored the `SESSION_STATE.md` log entry itself to `dwriter-ai` (`c9f736f`) so both branches' ledgers stay in sync.
+  - **Resolved `pyproject.toml` version drift:** root cause was `src/dwriter/__init__.py` hardcoding `__version__` as a second, independently-maintained string (never bumped since `3.7.0`, unlike `pyproject.toml`'s version field), so `dwriter --version` was reporting the wrong number to users. Ported `dwriter-ai`'s existing fix (dynamic `importlib.metadata.version("dwriter")` lookup) to `main` instead of only patching the number, then bumped `pyproject.toml`/`uv.lock` to `4.10.6` (matching `main`'s own documented state, not `dwriter-ai`'s `4.10.7`, which hasn't landed here). Verified `dwriter --version` prints `4.10.6`; full pre-flight (206 tests, ruff, mypy, guards) passes. Commit: `e06b403` on `main`, pushed. Not ported to `dwriter-ai` — it already had both the correct version and the correct pattern.
+  - **Unfinished:** `agents/PORTING_MANIFEST.md` was not updated with any of this session's commits (unclear whether meta/framework/version-drift-fix commits need manifest entries, since they're cross-branch infra rather than a portable feature).
+  - **Next steps:** clarify with the user whether framework/doc-only/infra commits should get `PORTING_MANIFEST.md` entries going forward.
 
 ## History
 
