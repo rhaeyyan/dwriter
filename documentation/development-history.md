@@ -5,8 +5,10 @@
 
 A major part of the development process was leveraging **Agentic Engineering**—using specialized AI personas to build, maintain, and refactor the codebase. The goal was intentionality: ensuring the resulting tool is easy to run (resource-wise) and intuitive to use, while keeping the codebase strictly organized and bug-free.
 
-## Agentic Engineering Framework
-The repository uses a multi-agent framework to maintain strict domain boundaries. This prevents architectural regression and spaghetti code. Work is delegated to specific "personas," each with a mandate and a bounded domain.
+## Legacy Agentic Engineering Framework (Archived)
+*Note: This describes the original 7-persona framework used up to July 2026. For the current framework, see the "Modern Streamlined Framework" section below.*
+
+The repository initially used a highly-segmented multi-agent framework to maintain strict domain boundaries. This prevented architectural regression but created handoff friction. Work was delegated to specific "personas," each with a mandate and a bounded domain.
 
 ### Global Handoff Protocol & Pre-Flight Checks
 To ensure smooth handoffs between AI agents, a strict protocol is enforced:
@@ -45,6 +47,28 @@ To ensure smooth handoffs between AI agents, a strict protocol is enforced:
 7. **The Quality Auditor (Session Orchestrator)**
    - **Domain:** Global operational memory.
    - **Mandate:** Gating sessions, bumping versions, running pre-flight checks, and maintaining the `HISTORY.md` audit log.
+
+## Modern Streamlined Framework (July 2026 onwards)
+To eliminate bureaucratic bloat and improve agent performance without sacrificing quality, the orchestration was heavily refactored:
+
+### 1. Persona Compression (3-Persona Model)
+The 7 legacy personas were merged into 3 highly effective roles, allowing agents to build full "vertical slices" instead of being bottlenecked by handoffs:
+1. **The Full-Stack Engineer**: Owns all AI-free logic (CLI, Textual UI, DB schema, analytics) on the `main` branch.
+2. **The AI & RAG Specialist**: Isolated specifically for the `dwriter-ai` branch logic (Gemma models, Instructor extraction).
+3. **The Project Maintainer**: Consolidates session tracking, cross-branch porting (`PORTING_MANIFEST.md`), and documentation.
+
+### 2. The Sprint Ledger (`SESSION_STATE.md`)
+The monolithic `HISTORY.md` file was replaced with an active `SESSION_STATE.md` ledger. To prevent context window explosion, an **Archive Threshold** was introduced: any ledger exceeding 150 lines or 5 sessions must have older entries moved to `ARCHIVED_SESSIONS.md`. 
+
+### 3. Advanced Orchestration Guardrails
+Adopted from external AI-native projects, the following hard limits were introduced:
+- **The 5-File Limit**: Autonomous tasks are capped at modifying 5 files to prevent unmanageable blast radiuses.
+- **Circuit Breaker (Rejection Loop Cap)**: Agents have a hard cap of 2 retry cycles on any automated loop (like fixing a test) before they must escalate.
+- **Fail Loud on Mismatch**: Agents are instructed to treat `SESSION_STATE.md` as episodic memory and the repository files as the procedural source of truth.
+- **Black-Box TDD**: Agents must write failing behavioral tests first, treating implementation code as a black box.
+
+### 4. Unified Context
+Both `GEMINI.md` and `CLAUDE.md` were symlinked to a single, unified `agents/AGENTS.md` file to ensure all agents ingest the exact same operational rules on startup.
 
 ## Core Concepts & Architectural Features
 To deliver a high-signal experience, `dwriter` implements several advanced architectural patterns that elevate it from a simple text logger to an intelligent journal.

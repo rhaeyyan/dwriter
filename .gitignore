@@ -64,16 +64,12 @@ Thumbs.db
 ~/.day-writer/
 dwriter.db
 dwriter.db*.bak
-gemini.md
-GEMINI.md
-documentation/HISTORY.md
 .geminiignore
 .gemini/
 
 # Stitch prototypes
 stitch/
-# Agent framework context
-agents/
-documentation/agents/
+
+# Agent framework context (legacy)
 .agents/
 .claude/

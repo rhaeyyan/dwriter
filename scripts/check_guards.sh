@@ -52,7 +52,7 @@ echo "=== Results: $PASS passed, $FAIL failed ==="
 echo ""
 
 if [ "$FAIL" -gt 0 ]; then
-    echo "Guard violations detected. Document each in HISTORY.md with file"
+    echo "Guard violations detected. Document each in SESSION_STATE.md with file"
     echo "path and line number, then assign remediation before proceeding."
     exit 1
 fi
