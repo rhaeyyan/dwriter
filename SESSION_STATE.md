@@ -13,8 +13,8 @@
   - Commits: `103e4d5`, `f15f307` on `main`; `c77696e`, `98ad973` on `dwriter-ai`. All pushed to origin.
   - Mirrored the `SESSION_STATE.md` log entry itself to `dwriter-ai` (`c9f736f`) so both branches' ledgers stay in sync.
   - **Resolved `pyproject.toml` version drift:** root cause was `src/dwriter/__init__.py` hardcoding `__version__` as a second, independently-maintained string (never bumped since `3.7.0`, unlike `pyproject.toml`'s version field), so `dwriter --version` was reporting the wrong number to users. Ported `dwriter-ai`'s existing fix (dynamic `importlib.metadata.version("dwriter")` lookup) to `main` instead of only patching the number, then bumped `pyproject.toml`/`uv.lock` to `4.10.6` (matching `main`'s own documented state, not `dwriter-ai`'s `4.10.7`, which hasn't landed here). Verified `dwriter --version` prints `4.10.6`; full pre-flight (206 tests, ruff, mypy, guards) passes. Commit: `e06b403` on `main`, pushed. Not ported to `dwriter-ai` — it already had both the correct version and the correct pattern.
-  - **Unfinished:** `agents/PORTING_MANIFEST.md` was not updated with any of this session's commits (unclear whether meta/framework/version-drift-fix commits need manifest entries, since they're cross-branch infra rather than a portable feature).
-  - **Next steps:** clarify with the user whether framework/doc-only/infra commits should get `PORTING_MANIFEST.md` entries going forward.
+  - **Settled the `PORTING_MANIFEST.md` question:** added a "Scope: Feature Commits Only" section stating the manifest tracks `dwriter-ai`-authored feature commits for possible porting to `main`, not framework/metadata files (`agents/`, `SESSION_STATE.md`, `check_guards.sh`, version metadata) — those carry no AI/non-AI distinction and the Project Maintainer syncs them directly. Matches the precedent already set by the original framework-consolidation commits (`99e4123`/`0f8ddf7`), which were never logged in the manifest either. No manifest entries needed for this session's commits going forward. Commit: `1e939a6` on `main`, `6f606fe` on `dwriter-ai`. Both pushed.
+  - **No open items remain from this session.**
 
 ## History
 
