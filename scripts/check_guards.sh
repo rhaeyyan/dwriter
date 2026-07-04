@@ -34,6 +34,10 @@ check "Security Mode Guard" \
 check "Context Budget Guard" \
     'grep -q "SummaryCompressor" src/dwriter/ai/engine.py'
 
+# Analytics AI-Free Guard: analytics.py must never import from src/dwriter/ai/, on either branch.
+check "Analytics AI-Free Guard" \
+    '! [ -f src/dwriter/analytics.py ] || ! grep -q "from dwriter\.ai\|from \.ai\|import dwriter\.ai" src/dwriter/analytics.py'
+
 # File-Size Ceiling Guard: No .py file outside tui/screens/ may exceed 600 lines.
 # TUI screen files are exempt (complex widget composition requires vertical length).
 check "File-Size Ceiling Guard" \
