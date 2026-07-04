@@ -3,6 +3,12 @@
 Maintained by the **Branch Integration Steward**.
 Tracks the status of every `dwriter-ai` commit relative to `main`.
 
+## Scope: Feature Commits Only
+
+This manifest tracks **feature commits authored on `dwriter-ai`** that may need to land on `main` — the Portability Rules below exist to classify code that could plausibly be AI-coupled and therefore needs review before crossing branches.
+
+**Framework and metadata files are out of scope** and do not get a manifest entry: `agents/AGENTS.md`, `agents/PORTING_MANIFEST.md` itself, `SESSION_STATE.md`/`ARCHIVED_SESSIONS.md`, `scripts/check_guards.sh`, and version metadata (`pyproject.toml`, `src/dwriter/__init__.py`, `uv.lock`). These files are shared infrastructure the Project Maintainer keeps in sync directly (cherry-pick or independent edit on each branch, per its mandate in `agents/AGENTS.md`) — there is no AI/non-AI distinction to classify, and the content is usually synced in the same session rather than queued for later review. This matches the precedent set by the original framework-consolidation commits (`99e4123` on `main` / `0f8ddf7` on `dwriter-ai`), which were never logged here either.
+
 ## Portability Rules
 A commit is **Portable** if it:
 - Touches no file under `src/dwriter/ai/`
