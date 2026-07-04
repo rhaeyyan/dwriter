@@ -45,7 +45,7 @@ Run `bash scripts/check_guards.sh`.
 - **The UI Isolation Guard:** Frontend components must never manage SQLAlchemy sessions directly.
 - **The Security Mode Guard:** All AI tool calls must pass through the `PermissionEnforcer`, gated by user-defined strictness (`read-only`, `append-only`, `prompt`, `danger-full-access`).
 - **The Context Budget Guard:** The `SummaryCompressor` must be invoked for all historical context injections (target: 1,200 chars / 24 lines).
-- **The Analytics AI-Free Guard:** `src/dwriter/analytics.py` must never import from `src/dwriter/ai/`, on either branch. Output must be identical across branches for identical input — divergence is a bug, not a feature difference.
+- **The Analytics AI-Free Guard:** `src/dwriter/analytics/` must never import from `src/dwriter/ai/`, on either branch. Output must be identical across branches for identical input — divergence is a bug, not a feature difference.
 - **File-Size Ceiling Guard:** No `.py` file outside `tui/screens/` may exceed 600 lines.
 
 ## 👥 Sub-Agents (Personas)
