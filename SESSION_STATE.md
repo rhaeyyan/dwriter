@@ -4,6 +4,12 @@
 > Keep only the latest session at the top; move older entries to the History section.
 > When this file exceeds 150 lines or contains more than 5 historical sessions, move older entries to [ARCHIVED_SESSIONS.md](ARCHIVED_SESSIONS.md).
 
+- **2026-07-04 (Documentation Redrafting: Persona-Based Workflows)**
+  - Audited `documentation/use-cases.md` (and `USE_CASES.md` on main) to reframe the workflows from a simple list into a highly targeted, persona-based catalog ("For Developers", "For Freelancers", "For Leaders", etc.).
+  - This change targets "as many different people as possible" by letting new visitors instantly find use cases tailored to their specific lifestyle/career, rather than burying developer workflows behind fermenting guides.
+  - No open items or blocked tasks.
+  - **Next steps:** Wait for user review of the newly restructured documentation.
+
 - **2026-07-03 (AGENTS.md Audit & Cross-Branch Sync)**
   - Audited `agents/AGENTS.md` against the pre-merge `FRAMEWORK.md`/`AGENTS.md` (recovered from `dfc3240^`) to find what the FRAMEWORK.md→AGENTS.md consolidation had silently dropped.
   - Restored: Two-Branch Product Model section, Project Overview (tech stack/install/user-facing terms), three Session-31 quality gates (Headless-First, Feature Intake Gate, Schema Change Gate), and guard specifics (Security Mode strictness levels, Context Budget numbers).
