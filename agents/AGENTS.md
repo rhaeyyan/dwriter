@@ -63,3 +63,28 @@ To eliminate bureaucratic bloat, `dwriter` operates under a streamlined 3-person
 ### 3. The Project Maintainer (Release & Quality)
 **Domain:** `agents/`, `documentation/`, and the session ledger (`SESSION_STATE.md`, `ARCHIVED_SESSIONS.md` at repo root).
 **Mandate:** Own the project's operational memory, documentation, and cross-branch integration. Maintains `SESSION_STATE.md`, `agents/PORTING_MANIFEST.md`, and user-facing docs. Authorized to cherry-pick between `dwriter-ai` and `main` — see Two-Branch Product Model above.
+
+## 🧰 Local Claude Code Tooling
+
+The 3 personas and several gates above are also formalized as machine-local Claude Code
+config under `.claude/` (gitignored — not tracked in git, so this describes tooling that
+exists on a given contributor's machine, not shared repo state; a fresh clone has none of it
+until set up). It complements the rules above, it doesn't replace them:
+- **`.claude/agents/*.md`** — the 3 personas as dispatchable subagents (`full-stack-engineer`,
+  `ai-rag-specialist`, `project-maintainer`), each carrying a domain self-check, since Claude
+  Code's `tools:` frontmatter restricts tool categories, not file paths.
+- **`.claude/hooks/pre-flight-check.sh`** — a Stop hook that runs the Pre-Flight Checklist
+  (pytest/ruff/mypy/guards) automatically, but only when uncommitted `.py` changes exist at
+  session end — doc-only or already-clean sessions skip it.
+- **`.claude/hooks/block-ai-on-main.sh`** — a PostToolUse hook that mechanically rejects any
+  write under `src/dwriter/ai/` while `main` is checked out, backstopping the Two-Branch
+  Product Model rule above with something sturdier than reviewer discipline.
+- **`.claude/skills/handoff/`** — inlines the `[SPEC]`/`[COMPLIANCE-REPORT]`/`[COMPLETION-REPORT]`
+  templates referenced under Handoffs & Limits, so they don't have to be recalled from
+  `Pursuit_AI-Native/AGENTS.md` by memory.
+- **`scripts/test_guards.sh`** — self-tests each guard in `check_guards.sh` by injecting a
+  synthetic violation and confirming it's caught, then confirming a clean pass afterward. Exists
+  because this repo has already shipped one guard that silently checked the wrong path.
+- **`scripts/check_portability.sh <sha>`** — mechanizes the Portability Rules in
+  `agents/PORTING_MANIFEST.md` for a first-pass Portable/AI-Only/Pending-Review suggestion; the
+  Project Maintainer still confirms it against the diff before logging a manifest row.
